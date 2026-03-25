@@ -24,7 +24,7 @@ const SILKS = [
 function Silk({ silk, size = 40 }) {
 const s = silk || SILKS[0];
 return (
-<svg width={size} height={size} viewBox="0 0 36 36" style={{ flexShrink: 0, filter: "drop
+<svg width={size} height={size} viewBox="0 0 36 36" style={{ flexShrink: 0, filter: "drop-shadow(0 1px 2px rgba(0,0,0,0.12))" }}>
 <ellipse cx="18" cy="20" rx="13" ry="11" fill={s.primary} />
 <ellipse cx="18" cy="11" rx="7" ry="8" fill={s.primary} />
 {s.pattern === "stripes" && <><rect x="5" y="14" width="26" height="3" fill={s.secondar
