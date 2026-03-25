@@ -24,16 +24,15 @@ const SILKS = [
 function Silk({ silk, size = 40 }) {
 const s = silk || SILKS[0];
 return (
-<svg width={size} height={size} viewBox="0 0 36 36" style={{ flexShrink: 0, filter: "drop-shadow(0 1px 2px rgba(0,0,0,0.12))" }}>
-<ellipse cx="18" cy="20" rx="13" ry="11" fill={s.primary} />
-<ellipse cx="18" cy="11" rx="7" ry="8" fill={s.primary} />
-{s.pattern === "stripes" && <><rect x="5" y="14" width="26" height="3" fill={s.secondar
-{s.pattern === "spots" && <><circle cx="12" cy="22" r="2.5" fill={s.secondary} opacity=
-{s.pattern === "chevron" && <polyline points="5,18 18,12 31,18" fill="none" stroke={s.s
-<ellipse cx="18" cy="8" rx="5" ry="4" fill={s.secondary} opacity="0.92" />
-<ellipse cx="18" cy="20" rx="13" ry="11" fill="none" stroke="rgba(0,0,0,0.08)" strokeWi
+<svg width={size} height={size} viewBox="0 0 36 36" style={{flexShrink:0,filter:"drop-shadow(0 1px 2px rgba(0,0,0,0.12))"}}>
+<ellipse cx="18" cy="20" rx="13" ry="11" fill={s.primary}/>
+<ellipse cx="18" cy="11" rx="7" ry="8" fill={s.primary}/>
+{s.pattern==="stripes"&&<><rect x="5" y="14" width="26" height="3" fill={s.secondary} opacity="0.45"/><rect x="5" y="20" width="26" height="3" fill={s.secondary} opacity="0.45"/></>}
+{s.pattern==="spots"&&<><circle cx="12" cy="22" r="2.5" fill={s.secondary} opacity="0.55"/><circle cx="24" cy="22" r="2.5" fill={s.secondary} opacity="0.55"/><circle cx="18" cy="17" r="2.5" fill={s.secondary} opacity="0.55"/></>}
+{s.pattern==="chevron"&&<polyline points="5,18 18,12 31,18" fill="none" stroke={s.secondary} strokeWidth="3" opacity="0.55"/>}
+<ellipse cx="18" cy="8" rx="5" ry="4" fill={s.secondary} opacity="0.92"/>
+<ellipse cx="18" cy="20" rx="13" ry="11" fill="none" stroke="rgba(0,0,0,0.08)" strokeWidth="1"/>
 </svg>
-);
 }
 // ─── DATA ─────────────────────────────────────────────────────────────────────
 const TODAY = new Date("2026-03-18");
