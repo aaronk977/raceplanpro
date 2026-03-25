@@ -48,8 +48,8 @@ goingPref: ["Good to Soft", "Soft", "Yielding"], distanceMin: 20, distanceMax: 2
 silk: SILKS[0],
 notes: "Cheltenham specialist. Keep fresh. De Bromhead says better than ever.",
 form: [
-{ date: "2025-12-28", venue: "Leopardstown", position: 2, runners: 8, raceClass: { date: "2025-03-13", venue: "Cheltenham", position: 1, runners: 13, raceClass: "Grade
-"Grade
+{ date: "2025-12-28", venue: "Leopardstown", position: 2, runners: 8, raceClass: "Grade 1", going: "Good to Yielding" },
+{ date: "2025-03-13", venue: "Cheltenham", position: 1, runners: 13, raceClass: "Grade 1", going: "Good to Soft" },
 ],
 arrivedDate: "2025-08-01", arrivedFrom: "Summer grass",
 provisionalEntries: [],
