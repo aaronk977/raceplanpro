@@ -32,7 +32,7 @@ return (
 {s.pattern==="chevron"&&<polyline points="5,18 18,12 31,18" fill="none" stroke={s.secondary} strokeWidth="3" opacity="0.55"/>}
 <ellipse cx="18" cy="8" rx="5" ry="4" fill={s.secondary} opacity="0.92"/>
 <ellipse cx="18" cy="20" rx="13" ry="11" fill="none" stroke="rgba(0,0,0,0.08)" strokeWidth="1"/>
-</svg>
+</svg>);
 }
 // ─── DATA ─────────────────────────────────────────────────────────────────────
 const TODAY = new Date("2026-03-18");
