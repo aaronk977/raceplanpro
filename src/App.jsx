@@ -1,6 +1,7 @@
-import { useState, useCallback } from "react";
+import { useState, useCallback } from "react";import { useState, useCallback } from "react";
 
-const C = {
+const ANTHROPIC_KEY = "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";
+
   bg: "#f0f4f8", navy: "#0a1628", navyMid: "#112240", navyLight: "#1a3360",
   card: "#ffffff", cardOff: "#f8fafc",
   gold: "#c9952a", goldLight: "#f5c842", goldBg: "rgba(201,149,42,0.10)",
