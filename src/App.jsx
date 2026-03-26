@@ -1,7 +1,5 @@
 import { useState, useCallback } from "react";
 
-const ANTHROPIC_KEY = import.meta.env.VITE_ANTHROPIC_API_KEY || "";
-
 const C = {
   bg: "#f0f4f8", navy: "#0a1628", navyMid: "#112240", navyLight: "#1a3360",
   card: "#ffffff", cardOff: "#f8fafc",
@@ -458,7 +456,7 @@ function ProvisionalEntries({ horses, setHorses }) {
           max_tokens: 5000,
           tools: [{ type: "web_search_20250305", name: "web_search" }],
           system: `Parse HRI provisional summary PDFs into a JSON array. Return ONLY raw JSON array, no markdown. Each race: {"id":"string","meetingRef":"string e.g. Limerick 55","raceRef":"string e.g. Race A","venue":"string","date":"YYYY-MM-DD","raceName":"string","discipline":"string","grade":"string","distanceFurlongs":number,"prizeMoney":number,"forecastGoing":"string","entryDeadline":"YYYY-MM-DDTHH:MM"}`,
-          messages: [{ role: "user", content: "Search for HRI provisional race summaries at hri-ras.ie/provisional-summaries and find the most recent provisional summary documents. Fetch and parse all races into a JSON array. If you cannot find PDFs directly, search for "HRI provisional summaries 2026 Ireland". Return only the JSON array with no markdown." }]
+          messages: [{ role: "user", content: "Search for HRI provisional race summaries at hri-ras.ie/provisional-summaries and find the most recent provisional summary documents. Fetch and parse all races into a JSON array. If you cannot find PDFs directly, search for HRI provisional summaries 2026 Ireland. Return only the JSON array with no markdown." }]
         })
       });
       const data = await res.json();
@@ -645,7 +643,7 @@ function RacePlanner({ horses, setHorses }) {
           model: "claude-sonnet-4-20250514", max_tokens: 5000,
           tools: [{ type: "web_search_20250305", name: "web_search" }],
           system: `Parse HRI race conditions PDF into JSON array. Return ONLY raw JSON array, no markdown. Each race: {"id":"r_venue_N","venue":string,"date":"YYYY-MM-DD","raceName":string,"discipline":"Flat|Hurdle|Chase|Bumper|NH Flat","raceType":"Maiden|Novice|Handicap|Novice Handicap|Weight For Age|Beginners|Bumper","grade":"Grade 1|Grade 2|Grade 3|Listed|Ungraded","surface":"Turf|AWT","distanceFurlongs":number,"prizeMoney":number,"ageMin":number,"ageMax":number|null,"sexRestriction":"Open|Mares|Fillies|Colts & Geldings","ratingMax":number|null,"isMaiden":boolean,"isNovice":boolean,"isEBF":boolean,"isSeries":boolean,"entryDeadline":"YYYY-MM-DDTHH:MM","declarationDeadline":"YYYY-MM-DDTHH:MM","forecastGoing":string} Dundalk=AWT, others=Turf.`,
-          messages: [{ role: "user", content: "Search for the HRI race conditions page at hri-ras.ie/upcoming-race-conditions or hri-ras.ie and find the most recent weekly race conditions document or PDF. It may be a direct link or embedded. Fetch the document and parse all upcoming Irish horse races into a JSON array. If you cannot find a PDF, search for "HRI race conditions 2026" to find the current document. Return only the JSON array with no markdown." }]
+          messages: [{ role: "user", content: "Search for the HRI race conditions page at hri-ras.ie/upcoming-race-conditions or hri-ras.ie and find the most recent weekly race conditions document or PDF. It may be a direct link or embedded. Fetch the document and parse all upcoming Irish horse races into a JSON array. If you cannot find a PDF, search for HRI race conditions 2026 to find the current document. Return only the JSON array with no markdown." }]
         })
       });
       const data = await res.json();
