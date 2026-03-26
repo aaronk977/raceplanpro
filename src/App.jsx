@@ -1,5 +1,7 @@
 import { useState, useCallback } from "react";
 
+const ANTHROPIC_KEY = import.meta.env.VITE_ANTHROPIC_API_KEY || "";
+
 const C = {
   bg: "#f0f4f8", navy: "#0a1628", navyMid: "#112240", navyLight: "#1a3360",
   card: "#ffffff", cardOff: "#f8fafc",
@@ -183,20 +185,17 @@ Your voice is authentic trainer language: "Not a great race — I'd be going the
 
 Use web_search to check likely runners and trainer record at the venue before writing.`;
 
-  const prompt = `Give me your honest take — trainer to trainer. Search first.
-
-HORSE: ${horse.name} | ${getAge(horse.dob)}yo ${horse.sex} | ${horse.trainer} | Rating: ${horse.nhRating ?? horse.flatRating ?? "—"}
-Headgear: ${horse.headgear || "None"} | ${daysSince ?? "?"} days since last run
-Notes: "${horse.notes}"
-
-RACE: ${race.raceName} | ${race.venue} | ${race.date}
-${race.grade} ${race.discipline} ${race.raceType} | ${race.distanceFurlongs}f | €${race.prizeMoney?.toLocaleString()} | ${race.forecastGoing} | ${daysToRace} days away
-
-Search: "${race.raceName} ${race.venue} 2026 runners" and "${horse.trainer} ${race.venue} record"
-
-Return ONLY raw JSON:
-{"scores":{"handicap_edge":7,"class_fit":8,"conditions_match":7,"timing":8,"cuteness":6},"overall":75,"bullets":[{"category":"The Field","icon":"🏟","point":"Honest read on who's in this. Is it winnable? Name rivals if found."},{"category":"How to Ride It","icon":"⚡","point":"Specific jockey instructions based on pace scenario."},{"category":"The Timing","icon":"📅","point":"Prep run, education, or genuine day out? Campaign picture."},{"category":"Equipment","icon":"🔧","point":"Anything worth trying or change for this race?"},{"category":"The Risk","icon":"⚠️","point":"One thing that could make this a bad idea. Direct."},{"category":"My Verdict","icon":"🎯","point":"What do you actually think? Be definitive."}],"conclusion":"3-4 sentences max. Trainer to trainer. What would you do?","recommendation":"STRONG"}
-Replace all template text with real analysis. recommendation = STRONG, CONSIDER, WAIT, or PASS.`;
+  const prompt = "Give me your honest take trainer to trainer. Search first.\n\n"
+    + "HORSE: " + horse.name + " | " + getAge(horse.dob) + "yo " + horse.sex
+    + " | " + horse.trainer + " | Rating: " + (horse.nhRating || horse.flatRating || "unknown")
+    + "\nHeadgear: " + (horse.headgear || "None")
+    + " | " + (daysSince || "?") + " days since last run"
+    + "\nNotes: " + horse.notes
+    + "\n\nRACE: " + race.raceName + " | " + race.venue + " | " + race.date
+    + " | " + race.distanceFurlongs + "f"
+    + " | " + (race.forecastGoing || "") + " | " + daysToRace + " days away"
+    + "\n\nSearch for recent runners in this race and trainer record at this venue."
+    + "\n\nReturn ONLY a raw JSON object with these keys: scores (object with handicap_edge, class_fit, conditions_match, timing, cuteness each scored 1-10), overall (number 0-100), bullets (array of 6 objects each with category, icon, point), conclusion (string 3-4 sentences), recommendation (one of STRONG or CONSIDER or WAIT or PASS). No markdown.";
 
   const res = await fetch("https://api.anthropic.com/v1/messages", {
     method: "POST",
@@ -455,7 +454,7 @@ function ProvisionalEntries({ horses, setHorses }) {
           model: "claude-sonnet-4-20250514",
           max_tokens: 5000,
           tools: [{ type: "web_search_20250305", name: "web_search" }],
-          system: `Parse HRI provisional summary PDFs into a JSON array. Return ONLY raw JSON array, no markdown. Each race: {"id":"string","meetingRef":"string e.g. Limerick 55","raceRef":"string e.g. Race A","venue":"string","date":"YYYY-MM-DD","raceName":"string","discipline":"string","grade":"string","distanceFurlongs":number,"prizeMoney":number,"forecastGoing":"string","entryDeadline":"YYYY-MM-DDTHH:MM"}`,
+          system: "Parse HRI provisional summary PDFs into a JSON array. Return ONLY raw JSON array, no markdown. Each race needs these fields: id, source set to provisional, meetingRef like Limerick 55, raceRef like Race A, venue, date in YYYY-MM-DD format, raceName, discipline, grade, distanceFurlongs as number, prizeMoney as number, forecastGoing, entryDeadline in YYYY-MM-DDTHH:MM format.",
           messages: [{ role: "user", content: "Search for HRI provisional race summaries at hri-ras.ie/provisional-summaries and find the most recent provisional summary documents. Fetch and parse all races into a JSON array. If you cannot find PDFs directly, search for HRI provisional summaries 2026 Ireland. Return only the JSON array with no markdown." }]
         })
       });
@@ -642,7 +641,7 @@ function RacePlanner({ horses, setHorses }) {
         body: JSON.stringify({
           model: "claude-sonnet-4-20250514", max_tokens: 5000,
           tools: [{ type: "web_search_20250305", name: "web_search" }],
-          system: `Parse HRI race conditions PDF into JSON array. Return ONLY raw JSON array, no markdown. Each race: {"id":"r_venue_N","venue":string,"date":"YYYY-MM-DD","raceName":string,"discipline":"Flat|Hurdle|Chase|Bumper|NH Flat","raceType":"Maiden|Novice|Handicap|Novice Handicap|Weight For Age|Beginners|Bumper","grade":"Grade 1|Grade 2|Grade 3|Listed|Ungraded","surface":"Turf|AWT","distanceFurlongs":number,"prizeMoney":number,"ageMin":number,"ageMax":number|null,"sexRestriction":"Open|Mares|Fillies|Colts & Geldings","ratingMax":number|null,"isMaiden":boolean,"isNovice":boolean,"isEBF":boolean,"isSeries":boolean,"entryDeadline":"YYYY-MM-DDTHH:MM","declarationDeadline":"YYYY-MM-DDTHH:MM","forecastGoing":string} Dundalk=AWT, others=Turf.`,
+          system: "Parse HRI race conditions PDF into JSON array. Return ONLY raw JSON array, no markdown. Each race needs: id, venue, date in YYYY-MM-DD format, raceName, discipline as Flat or Hurdle or Chase or Bumper, raceType as Maiden or Novice or Handicap or Weight For Age or Beginners or Bumper, grade as Grade 1 or Grade 2 or Grade 3 or Listed or Ungraded, surface as Turf or AWT where Dundalk is AWT and all others are Turf, distanceFurlongs as number, prizeMoney as number, ageMin as number, ageMax as number or null, sexRestriction as Open or Mares or Fillies or Colts and Geldings, ratingMax as number or null, isMaiden as boolean, isNovice as boolean, isEBF as boolean, isSeries as boolean, entryDeadline in YYYY-MM-DDTHH:MM format, declarationDeadline in YYYY-MM-DDTHH:MM format, forecastGoing.",
           messages: [{ role: "user", content: "Search for the HRI race conditions page at hri-ras.ie/upcoming-race-conditions or hri-ras.ie and find the most recent weekly race conditions document or PDF. It may be a direct link or embedded. Fetch the document and parse all upcoming Irish horse races into a JSON array. If you cannot find a PDF, search for HRI race conditions 2026 to find the current document. Return only the JSON array with no markdown." }]
         })
       });
