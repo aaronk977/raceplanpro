@@ -1,9 +1,6 @@
 import { useState, useCallback } from "react";
-import { useState, useCallback } from "react";
 
 const ANTHROPIC_KEY = import.meta.env.VITE_ANTHROPIC_API_KEY || "";
-
-const C = {
 
 const C = {
   bg: "#f0f4f8", navy: "#0a1628", navyMid: "#112240", navyLight: "#1a3360",
