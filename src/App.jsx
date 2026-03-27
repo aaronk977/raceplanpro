@@ -3,6 +3,8 @@ import { useState, useCallback } from "react";
 const ANTHROPIC_KEY = import.meta.env.VITE_ANTHROPIC_API_KEY || "";
 
 const C = {
+
+const C = {
   bg: "#f0f4f8", navy: "#0a1628", navyMid: "#112240", navyLight: "#1a3360",
   card: "#ffffff", cardOff: "#f8fafc",
   gold: "#c9952a", goldLight: "#f5c842", goldBg: "rgba(201,149,42,0.10)",
@@ -444,6 +446,50 @@ function ProvisionalEntries({ horses, setHorses }) {
   const [fetchStatus, setFetchStatus] = useState("idle");
   const [lastFetch, setLastFetch] = useState(null);
 
+  const handleProvPDFUpload = async (e) => {
+    const file = e.target.files[0];
+    if (!file) return;
+    setFetchStatus("fetching");
+    e.target.value = "";
+    try {
+      const reader = new FileReader();
+      reader.onload = async (ev) => {
+        const base64 = ev.target.result.split(",")[1];
+        const headers = {
+          "Content-Type": "application/json",
+          "x-api-key": ANTHROPIC_KEY,
+          "anthropic-version": "2023-06-01",
+          "anthropic-dangerous-direct-browser-access": "true",
+        };
+        const res = await fetch("https://api.anthropic.com/v1/messages", {
+          method: "POST",
+          headers,
+          body: JSON.stringify({
+            model: "claude-sonnet-4-20250514",
+            max_tokens: 5000,
+            messages: [{ role: "user", content: [
+              { type: "document", source: { type: "base64", media_type: "application/pdf", data: base64 } },
+              { type: "text", text: "Parse every race from this HRI provisional summary PDF into a JSON array. Return ONLY the raw JSON array. Each race needs: id as ps_N, source as provisional, meetingRef like Limerick 55, raceRef like Race A, venue, date in YYYY-MM-DD format, raceName, discipline, grade, distanceFurlongs as number, prizeMoney as number, forecastGoing, entryDeadline in YYYY-MM-DDTHH:MM format." }
+            ]}],
+          }),
+        });
+        const data = await res.json();
+        const text = (data.content || []).filter(b => b.type === "text").map(b => b.text).join("").trim();
+        const arr = text.match(/\[(.|
+)*\]/);
+        if (!arr) throw new Error("No races");
+        const parsed = JSON.parse(arr[0]);
+        setProvisionalRaces(parsed);
+        setLastFetch(new Date().toISOString());
+        setFetchStatus("done");
+      };
+      reader.readAsDataURL(file);
+    } catch (err) {
+      console.error(err);
+      setFetchStatus("error");
+    }
+  };
+
   const fetchProvisional = async () => {
     setFetchStatus("fetching");
     try {
@@ -504,9 +550,10 @@ function ProvisionalEntries({ horses, setHorses }) {
               {lastFetch ? `Last fetched: ${new Date(lastFetch).toLocaleString("en-IE", { weekday: "short", day: "numeric", month: "short", hour: "2-digit", minute: "2-digit" })}` : "hri-ras.ie/provisional-summaries — use these to plan medication courses in advance"}
             </div>
           </div>
-          <Btn onClick={fetchProvisional} disabled={fetchStatus === "fetching"} style={{ fontSize: 12, padding: "8px 16px" }}>
-            {fetchStatus === "fetching" ? <>⟳ Fetching…</> : <>⟳ {lastFetch ? "Refresh" : "Fetch Now"}</>}
-          </Btn>
+          <label style={{ background: fetchStatus === "fetching" ? C.cardOff : C.navy, color: fetchStatus === "fetching" ? C.textMid : "#fff", borderRadius: 9, padding: "8px 16px", fontSize: 12, fontWeight: 700, cursor: "pointer", display: "inline-flex", alignItems: "center", gap: 6 }}>
+            {fetchStatus === "fetching" ? "Reading PDF..." : "📄 Upload Provisional Summary PDF"}
+            <input type="file" accept=".pdf" onChange={handleProvPDFUpload} disabled={fetchStatus === "fetching"} style={{ display: "none" }} />
+          </label>
         </div>
         {provisionalRaces.length > 0 && (
           <div style={{ display: "flex", flexDirection: "column", gap: 6 }}>
@@ -632,27 +679,62 @@ function RacePlanner({ horses, setHorses }) {
 
   const showToast = (msg, color = C.green) => { setToast({ msg, color }); setTimeout(() => setToast(null), 4000); };
 
-  const fetchRaces = async () => {
+  const handlePDFUpload = async (e) => {
+    const file = e.target.files[0];
+    if (!file) return;
     setFetchStatus("fetching");
+    e.target.value = "";
     try {
-      const res = await fetch("https://api.anthropic.com/v1/messages", {
-        method: "POST",
-        headers: { "Content-Type": "application/json", "x-api-key": ANTHROPIC_KEY, "anthropic-version": "2023-06-01", "anthropic-dangerous-direct-browser-access": "true" },
-        body: JSON.stringify({
-          model: "claude-sonnet-4-20250514", max_tokens: 5000,
-          tools: [{ type: "web_search_20250305", name: "web_search" }],
-          system: "Parse HRI race conditions PDF into JSON array. Return ONLY raw JSON array, no markdown. Each race needs: id, venue, date in YYYY-MM-DD format, raceName, discipline as Flat or Hurdle or Chase or Bumper, raceType as Maiden or Novice or Handicap or Weight For Age or Beginners or Bumper, grade as Grade 1 or Grade 2 or Grade 3 or Listed or Ungraded, surface as Turf or AWT where Dundalk is AWT and all others are Turf, distanceFurlongs as number, prizeMoney as number, ageMin as number, ageMax as number or null, sexRestriction as Open or Mares or Fillies or Colts and Geldings, ratingMax as number or null, isMaiden as boolean, isNovice as boolean, isEBF as boolean, isSeries as boolean, entryDeadline in YYYY-MM-DDTHH:MM format, declarationDeadline in YYYY-MM-DDTHH:MM format, forecastGoing.",
-          messages: [{ role: "user", content: "Search for the HRI race conditions page at hri-ras.ie/upcoming-race-conditions or hri-ras.ie and find the most recent weekly race conditions document or PDF. It may be a direct link or embedded. Fetch the document and parse all upcoming Irish horse races into a JSON array. If you cannot find a PDF, search for HRI race conditions 2026 to find the current document. Return only the JSON array with no markdown." }]
-        })
-      });
-      const data = await res.json();
-      const text = data.content?.filter(b => b.type === "text").map(b => b.text).join("").trim();
-      const match = text.match(/\[[\s\S]*\]/);
-      if (!match) throw new Error("No races");
-      const parsed = JSON.parse(match[0]);
-      setRaces(parsed); setLastFetch(new Date().toISOString()); setFetchStatus("done");
-      showToast(`✓ ${parsed.length} races loaded from HRI`);
-    } catch (e) { console.error(e); setFetchStatus("error"); showToast("Failed to fetch — try again", C.red); }
+      const reader = new FileReader();
+      reader.onload = async (ev) => {
+        const base64 = ev.target.result.split(",")[1];
+        const headers = {
+          "Content-Type": "application/json",
+          "x-api-key": ANTHROPIC_KEY,
+          "anthropic-version": "2023-06-01",
+          "anthropic-dangerous-direct-browser-access": "true",
+        };
+        const res = await fetch("https://api.anthropic.com/v1/messages", {
+          method: "POST",
+          headers,
+          body: JSON.stringify({
+            model: "claude-sonnet-4-20250514",
+            max_tokens: 5000,
+            messages: [{
+              role: "user",
+              content: [
+                {
+                  type: "document",
+                  source: { type: "base64", media_type: "application/pdf", data: base64 }
+                },
+                {
+                  type: "text",
+                  text: "Parse every race from this HRI race conditions PDF into a JSON array. Return ONLY the raw JSON array with no markdown. Each race needs: id as r_N, venue, date in YYYY-MM-DD format, raceName, discipline as Flat or Hurdle or Chase or Bumper, raceType as Maiden or Novice or Handicap or Weight For Age or Beginners or Bumper, grade as Grade 1 or Grade 2 or Grade 3 or Listed or Ungraded, surface as Turf or AWT where Dundalk is AWT, distanceFurlongs as number, prizeMoney as number, ageMin as number, ageMax as number or null, sexRestriction as Open or Mares or Fillies or Colts and Geldings, ratingMax as number or null, isMaiden as boolean, isNovice as boolean, isEBF as boolean, entryDeadline in YYYY-MM-DDTHH:MM format, forecastGoing."
+                }
+              ]
+            }],
+          }),
+        });
+        const data = await res.json();
+        const text = (data.content || [])
+          .filter(b => b.type === "text")
+          .map(b => b.text)
+          .join("")
+          .trim();
+        const match = text.match(/\[[\s\S]*\]/);
+        if (!match) throw new Error("No races found in PDF");
+        const parsed = JSON.parse(match[0]);
+        setRaces(parsed);
+        setLastFetch(new Date().toISOString());
+        setFetchStatus("done");
+        showToast(parsed.length + " races loaded from PDF");
+      };
+      reader.readAsDataURL(file);
+    } catch (e) {
+      console.error(e);
+      setFetchStatus("error");
+      showToast("Failed to read PDF — try again", C.red);
+    }
   };
 
   const eligible = races.filter(r => {
@@ -730,12 +812,30 @@ function RacePlanner({ horses, setHorses }) {
         <div style={{ background: C.card, border: `1px solid ${C.border}`, borderRadius: 12, padding: "12px 16px", marginBottom: 12, boxShadow: C.shadow, display: "flex", justifyContent: "space-between", alignItems: "center" }}>
           <div>
             <div style={{ fontSize: 13, fontWeight: 700, color: C.text }}>HRI Race Conditions</div>
-            <div style={{ fontSize: 11, color: C.textMid, marginTop: 2 }}>{lastFetch ? `Updated ${new Date(lastFetch).toLocaleString("en-IE", { day: "numeric", month: "short", hour: "2-digit", minute: "2-digit" })}` : "hri-ras.ie/upcoming-race-conditions"}</div>
+            <div style={{ fontSize: 11, color: C.textMid, marginTop: 2 }}>{lastFetch ? `Updated ${new Date(lastFetch).toLocaleString("en-IE", { day: "numeric", month: "short", hour: "2-digit", minute: "2-digit" })}` : "Download PDF from hri-ras.ie/upcoming-race-conditions then upload here"}</div>
             {fetchStatus === "done" && <div style={{ fontSize: 11, color: C.green, fontWeight: 600, marginTop: 2 }}>✓ {races.length} races · {eligible.length} eligible for {selHorse.name}</div>}
           </div>
-          <Btn onClick={fetchRaces} disabled={fetchStatus === "fetching"} style={{ fontSize: 12, padding: "8px 16px" }}>
-            {fetchStatus === "fetching" ? "⟳ Fetching…" : `⟳ ${lastFetch ? "Refresh" : "Fetch Now"}`}
-          </Btn>
+          <label style={{
+            background: fetchStatus === "fetching" ? C.cardOff : C.navy,
+            color: fetchStatus === "fetching" ? C.textMid : "#fff",
+            borderRadius: 9,
+            padding: "8px 16px",
+            fontSize: 12,
+            fontWeight: 700,
+            cursor: fetchStatus === "fetching" ? "not-allowed" : "pointer",
+            display: "inline-flex",
+            alignItems: "center",
+            gap: 6,
+          }}>
+            {fetchStatus === "fetching" ? "Reading PDF..." : "📄 Upload Race Conditions PDF"}
+            <input
+              type="file"
+              accept=".pdf"
+              onChange={handlePDFUpload}
+              disabled={fetchStatus === "fetching"}
+              style={{ display: "none" }}
+            />
+          </label>
         </div>
 
         {/* Horse strip */}
@@ -763,7 +863,7 @@ function RacePlanner({ horses, setHorses }) {
           <div style={{ padding: 40, textAlign: "center", border: `1.5px dashed ${C.border}`, borderRadius: 14, color: C.textMid }}>
             <div style={{ fontSize: 26, marginBottom: 10 }}>📄</div>
             <div style={{ fontSize: 14, fontWeight: 700, color: C.text, marginBottom: 6 }}>No race conditions loaded</div>
-            <div style={{ fontSize: 13 }}>Tap <strong>Fetch Now</strong> above to pull this week's HRI conditions</div>
+            <div style={{ fontSize: 13 }}>Download the PDF from hri-ras.ie/upcoming-race-conditions then tap Upload above</div>
           </div>
         ) : eligible.length === 0 ? (
           <div style={{ padding: 32, textAlign: "center", border: `1.5px dashed ${C.border}`, borderRadius: 14, color: C.textMid }}>No eligible races for {selHorse.name} in current conditions</div>
@@ -890,13 +990,59 @@ function RacedayPrint({ horses }) {
     { id: "e1", horseId: "h3", meetingNo: "47", raceRef: "Race C", venue: "Dundalk", date: "2026-03-25", raceTime: "5:45 PM", raceName: "EBF Median Auction Maiden 7f", ballotNo: "" },
   ]);
   const [showAdd, setShowAdd] = useState(false);
+  const [csvStatus, setCsvStatus] = useState(null);
   const [ne, setNe] = useState({ horseId: "", meetingNo: "", raceRef: "", venue: "", date: "", raceTime: "", raceName: "", ballotNo: "" });
 
   const add = () => {
     if (!ne.horseId || !ne.raceName) return;
-    setEntries(p => [...p, { ...ne, id: `e_${Date.now()}` }]);
+    setEntries(p => [...p, { ...ne, id: "e_" + Date.now() }]);
     setNe({ horseId: "", meetingNo: "", raceRef: "", venue: "", date: "", raceTime: "", raceName: "", ballotNo: "" });
     setShowAdd(false);
+  };
+
+  const handleCSV = (e) => {
+    const file = e.target.files[0];
+    if (!file) return;
+    e.target.value = "";
+    const reader = new FileReader();
+    reader.onload = (ev) => {
+      try {
+        const lines = ev.target.result.split("\n").filter(l => l.trim());
+        const headers = lines[0].split(",").map(h => h.trim().toLowerCase().replace(/[^a-z0-9]/g, "_"));
+        const imported = [];
+        for (let i = 1; i < lines.length; i++) {
+          const cols = lines[i].split(",").map(c => c.trim().replace(/^"|"$/g, ""));
+          if (!cols[0]) continue;
+          const row = {};
+          headers.forEach((h, idx) => { row[h] = cols[idx] || ""; });
+          const horseName = row.horse_name || row.horse || row.name || cols[0];
+          const horse = horses.find(h =>
+            h.name.toLowerCase() === horseName.toLowerCase() ||
+            h.name.toLowerCase().includes(horseName.toLowerCase())
+          );
+          imported.push({
+            id: "e_" + Date.now() + "_" + i,
+            horseId: horse ? horse.id : "",
+            horseName,
+            venue: row.venue || row.racecourse || row.course || "",
+            date: row.date || row.race_date || "",
+            raceTime: row.time || row.race_time || "",
+            raceName: row.race_name || row.race || "",
+            meetingNo: row.meeting_no || row.meeting || row.meeting_number || "",
+            raceRef: row.race_ref || row.race_reference || row.race_no || "",
+            ballotNo: row.ballot || row.ballot_no || "",
+          });
+        }
+        setEntries(prev => [...prev, ...imported]);
+        const matched = imported.filter(e => e.horseId).length;
+        setCsvStatus(imported.length + " entries imported — " + matched + " horses matched");
+        setTimeout(() => setCsvStatus(null), 5000);
+      } catch (err) {
+        setCsvStatus("Error reading CSV — check the file format");
+        setTimeout(() => setCsvStatus(null), 5000);
+      }
+    };
+    reader.readAsText(file);
   };
 
   const grouped = {};
@@ -904,13 +1050,22 @@ function RacedayPrint({ horses }) {
 
   return (
     <div>
-      <div style={{ display: "flex", justifyContent: "space-between", alignItems: "center", marginBottom: 16 }}>
+      <div style={{ display: "flex", justifyContent: "space-between", alignItems: "center", marginBottom: 16, flexWrap: "wrap", gap: 10 }}>
         <div>
           <div style={{ fontSize: 22, fontWeight: 800, color: C.text }}>Raceday Whiteboard</div>
-          <div style={{ fontSize: 13, color: C.textMid, marginTop: 3 }}>Print and stick on the whiteboard</div>
+          <div style={{ fontSize: 13, color: C.textMid, marginTop: 3 }}>Export pending engagements CSV from HRI RAS and upload here</div>
         </div>
-        <div style={{ display: "flex", gap: 8 }}>
-          <Btn onClick={() => setShowAdd(true)}>+ Add Entry</Btn>
+        <div style={{ display: "flex", gap: 8, flexWrap: "wrap", alignItems: "center" }}>
+          {csvStatus && (
+            <span style={{ fontSize: 12, fontWeight: 700, color: csvStatus.includes("Error") ? C.red : C.green }}>
+              {csvStatus}
+            </span>
+          )}
+          <label style={{ background: C.blue, color: "#fff", borderRadius: 9, padding: "9px 16px", fontSize: 13, fontWeight: 700, cursor: "pointer", display: "inline-flex", alignItems: "center", gap: 6 }}>
+            📥 Import HRI CSV
+            <input type="file" accept=".csv" onChange={handleCSV} style={{ display: "none" }} />
+          </label>
+          <Btn onClick={() => setShowAdd(true)}>+ Add Manual</Btn>
           <Btn variant="gold" onClick={() => window.print()}>🖨 Print</Btn>
         </div>
       </div>
