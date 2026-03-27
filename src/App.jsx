@@ -473,8 +473,7 @@ function ProvisionalEntries({ horses, setHorses }) {
         });
         const data = await res.json();
         const text = (data.content || []).filter(b => b.type === "text").map(b => b.text).join("").trim();
-        const arr = text.match(/\[(.|
-)*\]/);
+        const arr = text.match(/\[[\s\S]*\]/);
         if (!arr) throw new Error("No races");
         const parsed = JSON.parse(arr[0]);
         setProvisionalRaces(parsed);
