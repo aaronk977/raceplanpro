@@ -443,6 +443,43 @@ function ProvisionalEntries({ horses, setHorses }) {
   const [provisionalRaces, setProvisionalRaces] = useState([]);
   const [fetchStatus, setFetchStatus] = useState("idle");
   const [lastFetch, setLastFetch] = useState(null);
+  const [showProvPaste, setShowProvPaste] = useState(false);
+  const [provPasteText, setProvPasteText] = useState("");
+
+  const handleProvParseText = async () => {
+    if (!provPasteText.trim()) return;
+    setFetchStatus("fetching");
+    try {
+      const headers = {
+        "Content-Type": "application/json",
+        "x-api-key": ANTHROPIC_KEY,
+        "anthropic-version": "2023-06-01",
+        "anthropic-dangerous-direct-browser-access": "true",
+      };
+      const res = await fetch("https://api.anthropic.com/v1/messages", {
+        method: "POST",
+        headers,
+        body: JSON.stringify({
+          model: "claude-sonnet-4-20250514",
+          max_tokens: 5000,
+          messages: [{ role: "user", content: "Parse every race from this HRI provisional summary text into a JSON array. Return ONLY the raw JSON array with no markdown. Each race needs: id as ps_N, source as provisional, meetingRef like Limerick 55, raceRef like Race A, venue, date in YYYY-MM-DD format, raceName, discipline, grade, distanceFurlongs as number, prizeMoney as number, forecastGoing, entryDeadline in YYYY-MM-DDTHH:MM format.\n\nTEXT:\n" + provPasteText }],
+        }),
+      });
+      const data = await res.json();
+      const txt = (data.content || []).filter(b => b.type === "text").map(b => b.text).join("").trim();
+      const match = txt.match(/\[[\s\S]*\]/);
+      if (!match) throw new Error("No races found");
+      const parsed = JSON.parse(match[0]);
+      setProvisionalRaces(parsed);
+      setLastFetch(new Date().toISOString());
+      setFetchStatus("done");
+      setShowProvPaste(false);
+      setProvPasteText("");
+    } catch (err) {
+      console.error(err);
+      setFetchStatus("error");
+    }
+  };
 
   const handleProvPDFUpload = async (e) => {
     const file = e.target.files[0];
@@ -513,7 +550,7 @@ function ProvisionalEntries({ horses, setHorses }) {
 
   const addEntry = (horseId) => {
     if (!entry.venue || !entry.raceName) return;
-    setHorses(prev => prev.map(h => h.id === horseId ? { ...h, provisionalEntries: [...(h.provisionalEntries || []), { ...entry, id: `pe_${Date.now()}` }] } : h));
+    setHorses(prev => prev.map(h => h.id === horseId ? { ...h, provisionalEntries: [...(h.provisionalEntries || []), { ...entry, id: "pe_" + Date.now() }] } : h));
     setEntry({ venue: "", date: "", raceName: "", raceRef: "", note: "" });
     setShowAdd(null);
   };
@@ -547,11 +584,30 @@ function ProvisionalEntries({ horses, setHorses }) {
               {lastFetch ? `Last fetched: ${new Date(lastFetch).toLocaleString("en-IE", { weekday: "short", day: "numeric", month: "short", hour: "2-digit", minute: "2-digit" })}` : "hri-ras.ie/provisional-summaries — use these to plan medication courses in advance"}
             </div>
           </div>
-          <label style={{ background: fetchStatus === "fetching" ? C.cardOff : C.navy, color: fetchStatus === "fetching" ? C.textMid : "#fff", borderRadius: 9, padding: "8px 16px", fontSize: 12, fontWeight: 700, cursor: "pointer", display: "inline-flex", alignItems: "center", gap: 6 }}>
-            {fetchStatus === "fetching" ? "Reading PDF..." : "📄 Upload Provisional Summary PDF"}
-            <input type="file" accept=".pdf" onChange={handleProvPDFUpload} disabled={fetchStatus === "fetching"} style={{ display: "none" }} />
-          </label>
+          <Btn onClick={() => setShowProvPaste(!showProvPaste)} disabled={fetchStatus === "fetching"} style={{ fontSize: 12, padding: "8px 16px" }}>
+            {fetchStatus === "fetching" ? "Parsing..." : "📋 Paste Provisional Summary"}
+          </Btn>
         </div>
+        {showProvPaste && (
+          <div style={{ background: C.card, border: "1px solid " + C.border, borderRadius: 12, padding: "16px 18px", marginBottom: 12 }}>
+            <div style={{ fontSize: 13, fontWeight: 700, color: C.text, marginBottom: 8 }}>Paste Provisional Summary Text</div>
+            <div style={{ fontSize: 12, color: C.textMid, marginBottom: 10, lineHeight: 1.6 }}>Open the HRI provisional summary PDF, press Ctrl+A then Ctrl+C, then paste below.</div>
+            <textarea
+              value={provPasteText}
+              onChange={e => setProvPasteText(e.target.value)}
+              placeholder="Paste provisional summary text here..."
+              rows={6}
+              style={{ width: "100%", background: C.cardOff, border: "1px solid " + C.border, borderRadius: 9, padding: "10px 12px", color: C.text, fontSize: 12, fontFamily: "inherit", lineHeight: 1.6, resize: "vertical", outline: "none", marginBottom: 10 }}
+            />
+            <div style={{ display: "flex", gap: 8 }}>
+              <Btn onClick={handleProvParseText} disabled={!provPasteText.trim() || fetchStatus === "fetching"} style={{ flex: 1, justifyContent: "center" }}>
+                {fetchStatus === "fetching" ? "Parsing..." : "Parse Races"}
+              </Btn>
+              <Btn variant="ghost" onClick={() => { setShowProvPaste(false); setProvPasteText(""); }} style={{ fontSize: 12 }}>Cancel</Btn>
+            </div>
+          </div>
+        )}
+
         {provisionalRaces.length > 0 && (
           <div style={{ display: "flex", flexDirection: "column", gap: 6 }}>
             {provisionalRaces.slice(0, 8).map((r, i) => (
@@ -701,8 +757,17 @@ function RacePlanner({ horses, setHorses }) {
       const data = await res.json();
       const txt = (data.content || []).filter(b => b.type === "text").map(b => b.text).join("").trim();
       const match = txt.match(/\[([\s\S]*)\]/);
-      if (!match) throw new Error("No races found");
-      const parsed = JSON.parse(match[0]);
+      if (!match) {
+        console.log("API response:", txt.substring(0, 500));
+        throw new Error("No JSON array found in response");
+      }
+      let parsed;
+      try {
+        parsed = JSON.parse(match[0]);
+      } catch(parseErr) {
+        console.log("Parse error:", parseErr, "JSON:", match[0].substring(0, 200));
+        throw new Error("Invalid JSON returned");
+      }
       setRaces(parsed);
       setLastFetch(new Date().toISOString());
       setFetchStatus("done");
@@ -1150,14 +1215,14 @@ function YardView({ horses, setHorses }) {
           const row = {}; headers.forEach((h, idx) => { row[h] = cols[idx] || ""; });
           const name = row.horse_name || row.name || row.horse || cols[0];
           if (!name) continue;
-          imported.push({ id: `h_${Date.now()}_${i}`, name, dob: row.dob || row.date_of_birth || row.foaling_date || "", sex: row.sex || row.gender || "Gelding", colour: row.colour || row.color || "", nhRating: parseInt(row.nh_rating || row.rating || 0) || null, flatRating: parseInt(row.flat_rating || 0) || null, discipline: [row.discipline || "Hurdle"], surface: row.surface || "Turf", status: row.status || row.racing_status || "Active", activationDate: null, owner: row.owner || row.owner_name || "", ownerPhone: row.owner_phone || row.phone || "", ownerEmail: row.owner_email || row.email || "", trainer: row.trainer || "", jockey: row.jockey || "D.J. O'Keeffe", headgear: row.headgear || row.head_gear || "", nextRaceDate: "", goingPref: [], distanceMin: 16, distanceMax: 24, isEBF: false, isMaiden: false, isNovice: false, silk: SILKS[Math.floor(Math.random() * SILKS.length)], notes: row.notes || "", form: [], arrivedDate: todayStr, provisionalEntries: [] });
+          imported.push({ id: "h_" + Date.now() + "_" + i, name, dob: row.dob || row.date_of_birth || row.foaling_date || "", sex: row.sex || row.gender || "Gelding", colour: row.colour || row.color || "", nhRating: parseInt(row.nh_rating || row.rating || 0) || null, flatRating: parseInt(row.flat_rating || 0) || null, discipline: [row.discipline || "Hurdle"], surface: row.surface || "Turf", status: row.status || row.racing_status || "Active", activationDate: null, owner: row.owner || row.owner_name || "", ownerPhone: row.owner_phone || row.phone || "", ownerEmail: row.owner_email || row.email || "", trainer: row.trainer || "", jockey: row.jockey || "D.J. O'Keeffe", headgear: row.headgear || row.head_gear || "", nextRaceDate: "", goingPref: [], distanceMin: 16, distanceMax: 24, isEBF: false, isMaiden: false, isNovice: false, silk: SILKS[Math.floor(Math.random() * SILKS.length)], notes: row.notes || "", form: [], arrivedDate: todayStr, provisionalEntries: [] });
         }
         setHorses(prev => {
           const updated = [...prev];
           imported.forEach(imp => { const idx = updated.findIndex(h => h.name.toLowerCase() === imp.name.toLowerCase()); if (idx >= 0) { updated[idx] = { ...updated[idx], ...imp, id: updated[idx].id, silk: updated[idx].silk, form: updated[idx].form }; } else { updated.push(imp); } });
           return updated;
         });
-        setCsvStatus(`✓ ${imported.length} horses imported`);
+        setCsvStatus(imported.length + " horses imported");
         setTimeout(() => setCsvStatus(null), 4000);
       } catch (err) { setCsvStatus("✕ Error reading CSV"); setTimeout(() => setCsvStatus(null), 4000); }
     };
@@ -1166,7 +1231,7 @@ function YardView({ horses, setHorses }) {
 
   const addHorse = () => {
     if (!newHorse.name) return;
-    setHorses(prev => [...prev, { ...newHorse, id: `h_${Date.now()}`, silk: SILKS[Math.floor(Math.random() * SILKS.length)], nhRating: newHorse.nhRating ? parseInt(newHorse.nhRating) : null, flatRating: newHorse.flatRating ? parseInt(newHorse.flatRating) : null, discipline: [newHorse.discipline], isEBF: false, isMaiden: false, isNovice: false, distanceMin: 16, distanceMax: 24, goingPref: [], form: [], arrivedDate: todayStr, provisionalEntries: [] }]);
+    setHorses(prev => [...prev, { ...newHorse, id: "h_" + Date.now(), silk: SILKS[Math.floor(Math.random() * SILKS.length)], nhRating: newHorse.nhRating ? parseInt(newHorse.nhRating) : null, flatRating: newHorse.flatRating ? parseInt(newHorse.flatRating) : null, discipline: [newHorse.discipline], isEBF: false, isMaiden: false, isNovice: false, distanceMin: 16, distanceMax: 24, goingPref: [], form: [], arrivedDate: todayStr, provisionalEntries: [] }]);
     setNewHorse({ name: "", dob: "", sex: "Gelding", colour: "", nhRating: "", flatRating: "", discipline: "Hurdle", surface: "Turf", status: "Active", owner: "", ownerPhone: "", ownerEmail: "", headgear: "", nextRaceDate: "", notes: "" });
     setShowAdd(false);
   };
