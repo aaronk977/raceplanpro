@@ -472,9 +472,9 @@ function ProvisionalEntries({ horses, setHorses }) {
           }),
         });
         const data = await res.json();
-        const text = (data.content || []).filter(b => b.type === "text").map(b => b.text).join("").trim();
-        const arr = text.match(/\[[\s\S]*\]/);
-        if (!arr) throw new Error("No races");
+        const txt = (data.content || []).filter(b => b.type === "text").map(b => b.text).join("").trim();
+        const arr = txt.match(/\[([\s\S]*)\]/);
+        if (!arr) throw new Error("No races found");
         const parsed = JSON.parse(arr[0]);
         setProvisionalRaces(parsed);
         setLastFetch(new Date().toISOString());
@@ -676,63 +676,46 @@ function RacePlanner({ horses, setHorses }) {
 
   const showToast = (msg, color = C.green) => { setToast({ msg, color }); setTimeout(() => setToast(null), 4000); };
 
-  const handlePDFUpload = async (e) => {
-    const file = e.target.files[0];
-    if (!file) return;
+  const [pasteText, setPasteText] = useState("");
+  const [showPaste, setShowPaste] = useState(false);
+
+  const handleParseText = async () => {
+    if (!pasteText.trim()) return;
     setFetchStatus("fetching");
-    e.target.value = "";
     try {
-      const reader = new FileReader();
-      reader.onload = async (ev) => {
-        const base64 = ev.target.result.split(",")[1];
-        const headers = {
-          "Content-Type": "application/json",
-          "x-api-key": ANTHROPIC_KEY,
-          "anthropic-version": "2023-06-01",
-          "anthropic-dangerous-direct-browser-access": "true",
-        };
-        const res = await fetch("https://api.anthropic.com/v1/messages", {
-          method: "POST",
-          headers,
-          body: JSON.stringify({
-            model: "claude-sonnet-4-20250514",
-            max_tokens: 5000,
-            messages: [{
-              role: "user",
-              content: [
-                {
-                  type: "document",
-                  source: { type: "base64", media_type: "application/pdf", data: base64 }
-                },
-                {
-                  type: "text",
-                  text: "Parse every race from this HRI race conditions PDF into a JSON array. Return ONLY the raw JSON array with no markdown. Each race needs: id as r_N, venue, date in YYYY-MM-DD format, raceName, discipline as Flat or Hurdle or Chase or Bumper, raceType as Maiden or Novice or Handicap or Weight For Age or Beginners or Bumper, grade as Grade 1 or Grade 2 or Grade 3 or Listed or Ungraded, surface as Turf or AWT where Dundalk is AWT, distanceFurlongs as number, prizeMoney as number, ageMin as number, ageMax as number or null, sexRestriction as Open or Mares or Fillies or Colts and Geldings, ratingMax as number or null, isMaiden as boolean, isNovice as boolean, isEBF as boolean, entryDeadline in YYYY-MM-DDTHH:MM format, forecastGoing."
-                }
-              ]
-            }],
-          }),
-        });
-        const data = await res.json();
-        const text = (data.content || [])
-          .filter(b => b.type === "text")
-          .map(b => b.text)
-          .join("")
-          .trim();
-        const match = text.match(/\[[\s\S]*\]/);
-        if (!match) throw new Error("No races found in PDF");
-        const parsed = JSON.parse(match[0]);
-        setRaces(parsed);
-        setLastFetch(new Date().toISOString());
-        setFetchStatus("done");
-        showToast(parsed.length + " races loaded from PDF");
+      const headers = {
+        "Content-Type": "application/json",
+        "x-api-key": ANTHROPIC_KEY,
+        "anthropic-version": "2023-06-01",
+        "anthropic-dangerous-direct-browser-access": "true",
       };
-      reader.readAsDataURL(file);
-    } catch (e) {
-      console.error(e);
+      const res = await fetch("https://api.anthropic.com/v1/messages", {
+        method: "POST",
+        headers,
+        body: JSON.stringify({
+          model: "claude-sonnet-4-20250514",
+          max_tokens: 5000,
+          messages: [{ role: "user", content: "Parse every race from this HRI race conditions text into a JSON array. Return ONLY the raw JSON array with no markdown. Each race needs: id as r_N, venue, date in YYYY-MM-DD format, raceName, discipline as Flat or Hurdle or Chase or Bumper, raceType as Maiden or Novice or Handicap or Weight For Age or Beginners or Bumper, grade as Grade 1 or Grade 2 or Grade 3 or Listed or Ungraded, surface as Turf or AWT where Dundalk is AWT, distanceFurlongs as number, prizeMoney as winner prize number, ageMin as number, ageMax as number or null, sexRestriction as Open or Mares or Fillies or Colts and Geldings, ratingMax as number or null, isMaiden as boolean, isNovice as boolean, isEBF as boolean, entryDeadline in YYYY-MM-DDTHH:MM format using closing date at noon, forecastGoing as good or soft etc.\n\nTEXT:\n" + pasteText }],
+        }),
+      });
+      const data = await res.json();
+      const txt = (data.content || []).filter(b => b.type === "text").map(b => b.text).join("").trim();
+      const match = txt.match(/\[([\s\S]*)\]/);
+      if (!match) throw new Error("No races found");
+      const parsed = JSON.parse(match[0]);
+      setRaces(parsed);
+      setLastFetch(new Date().toISOString());
+      setFetchStatus("done");
+      setShowPaste(false);
+      setPasteText("");
+      showToast(parsed.length + " races loaded");
+    } catch (err) {
+      console.error(err);
       setFetchStatus("error");
-      showToast("Failed to read PDF — try again", C.red);
+      showToast("Failed to parse — try again", C.red);
     }
   };
+
 
   const eligible = races.filter(r => {
     const age = getAge(selHorse.dob);
@@ -812,27 +795,13 @@ function RacePlanner({ horses, setHorses }) {
             <div style={{ fontSize: 11, color: C.textMid, marginTop: 2 }}>{lastFetch ? `Updated ${new Date(lastFetch).toLocaleString("en-IE", { day: "numeric", month: "short", hour: "2-digit", minute: "2-digit" })}` : "Download PDF from hri-ras.ie/upcoming-race-conditions then upload here"}</div>
             {fetchStatus === "done" && <div style={{ fontSize: 11, color: C.green, fontWeight: 600, marginTop: 2 }}>✓ {races.length} races · {eligible.length} eligible for {selHorse.name}</div>}
           </div>
-          <label style={{
-            background: fetchStatus === "fetching" ? C.cardOff : C.navy,
-            color: fetchStatus === "fetching" ? C.textMid : "#fff",
-            borderRadius: 9,
-            padding: "8px 16px",
-            fontSize: 12,
-            fontWeight: 700,
-            cursor: fetchStatus === "fetching" ? "not-allowed" : "pointer",
-            display: "inline-flex",
-            alignItems: "center",
-            gap: 6,
-          }}>
-            {fetchStatus === "fetching" ? "Reading PDF..." : "📄 Upload Race Conditions PDF"}
-            <input
-              type="file"
-              accept=".pdf"
-              onChange={handlePDFUpload}
-              disabled={fetchStatus === "fetching"}
-              style={{ display: "none" }}
-            />
-          </label>
+          <Btn
+            onClick={() => setShowPaste(!showPaste)}
+            disabled={fetchStatus === "fetching"}
+            style={{ fontSize: 12, padding: "8px 16px" }}
+          >
+            {fetchStatus === "fetching" ? "Parsing..." : "📋 Paste Race Conditions"}
+          </Btn>
         </div>
 
         {/* Horse strip */}
@@ -856,6 +825,32 @@ function RacePlanner({ horses, setHorses }) {
         </div>
 
         {/* Races */}
+        {showPaste && (
+          <div style={{ background: C.card, border: "1px solid " + C.border, borderRadius: 12, padding: "16px 18px", marginBottom: 16 }}>
+            <div style={{ fontSize: 14, fontWeight: 700, color: C.text, marginBottom: 8 }}>
+              Paste Race Conditions Text
+            </div>
+            <div style={{ fontSize: 12, color: C.textMid, marginBottom: 12, lineHeight: 1.6 }}>
+              Open the HRI PDF, press Ctrl+A to select all text, Ctrl+C to copy, then paste below. Takes about 10 seconds.
+            </div>
+            <textarea
+              value={pasteText}
+              onChange={e => setPasteText(e.target.value)}
+              placeholder="Paste the race conditions text here..."
+              rows={8}
+              style={{ width: "100%", background: C.cardOff, border: "1px solid " + C.border, borderRadius: 9, padding: "10px 12px", color: C.text, fontSize: 12, fontFamily: "inherit", lineHeight: 1.6, resize: "vertical", outline: "none", marginBottom: 10 }}
+            />
+            <div style={{ display: "flex", gap: 8 }}>
+              <Btn onClick={handleParseText} disabled={!pasteText.trim() || fetchStatus === "fetching"} style={{ flex: 1, justifyContent: "center" }}>
+                {fetchStatus === "fetching" ? "Parsing races..." : "Parse Races"}
+              </Btn>
+              <Btn variant="ghost" onClick={() => { setShowPaste(false); setPasteText(""); }} style={{ fontSize: 12 }}>
+                Cancel
+              </Btn>
+            </div>
+          </div>
+        )}
+
         {races.length === 0 ? (
           <div style={{ padding: 40, textAlign: "center", border: `1.5px dashed ${C.border}`, borderRadius: 14, color: C.textMid }}>
             <div style={{ fontSize: 26, marginBottom: 10 }}>📄</div>
