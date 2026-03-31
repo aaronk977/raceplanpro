@@ -179,11 +179,8 @@ async function getAITake(horse, race) {
   const daysSince = lastRun ? Math.floor((TODAY - new Date(lastRun.date)) / 86400000) : null;
   const daysToRace = daysUntil(race.date);
 
-  const system = `You are a highly experienced Irish racehorse trainer and racing secretary with 30 years on the gallops and in the entry office. You speak directly to a fellow professional trainer — never describe their own horse's form back at them. Talk about the RACE OPPORTUNITY — field, tactics, timing, equipment, campaign.
+  const system = "You are an experienced Irish racing professional giving a trainer your honest read on a race. The trainer already knows their horse inside out — never tell them their own horse's form, stats, or history. They lived it. Focus ONLY on the race itself — who else is likely in it, how weak or strong the field looks, whether the timing suits a campaign, what the pace scenario might be, and whether this is a race worth targeting. Use web_search to find likely runners and recent form at this venue and trip. Speak like a racing professional — direct, specific, no waffle. Use phrases like: Not a great race, I would be going there to win it. Plenty of dead wood in here. The handicapper has left him alone. This sets Punchestown up perfectly. Ride cold and come through them late. Worth trying cheekpieces here. I would be very tempted at this trip. Do not say things the trainer already knows about their own horse. Never mention days since last run or the horse's rating as if the trainer does not know it. Your job is to give them information about the RACE not about their horse.";
 
-Your voice is authentic trainer language: "Not a great race — I'd be going there to win it", "Plenty of dead wood in here", "Could do with the run", "Hunt him around today", "Worth trying cheekpieces", "This sets the Punchestown run up perfectly", "The handicapper hasn't copped on yet", "I'd be very tempted", "Ride cold, get cover, come through them late".
-
-Use web_search to check likely runners and trainer record at the venue before writing.`;
 
   const prompt = "Give me your honest take trainer to trainer. Search first.\n\n"
     + "HORSE: " + horse.name + " | " + getAge(horse.dob) + "yo " + horse.sex
@@ -197,9 +194,9 @@ Use web_search to check likely runners and trainer record at the venue before wr
     + "\n\nSearch for recent runners in this race and trainer record at this venue."
     + "\n\nReturn ONLY a raw JSON object with these keys: scores (object with handicap_edge, class_fit, conditions_match, timing, cuteness each scored 1-10), overall (number 0-100), bullets (array of 6 objects each with category, icon, point), conclusion (string 3-4 sentences), recommendation (one of STRONG or CONSIDER or WAIT or PASS). No markdown.";
 
-  const res = await fetch("https://api.anthropic.com/v1/messages", {
+  const res = await fetch("/api/claude", {
     method: "POST",
-    headers: { "Content-Type": "application/json", "x-api-key": ANTHROPIC_KEY, "anthropic-version": "2023-06-01", "anthropic-dangerous-direct-browser-access": "true" },
+    headers: { "Content-Type": "application/json" },
     body: JSON.stringify({ model: "claude-sonnet-4-20250514", max_tokens: 2500, tools: [{ type: "web_search_20250305", name: "web_search" }], system, messages: [{ role: "user", content: prompt }] }),
   });
   const data = await res.json();
@@ -456,7 +453,7 @@ function ProvisionalEntries({ horses, setHorses }) {
         "anthropic-version": "2023-06-01",
         "anthropic-dangerous-direct-browser-access": "true",
       };
-      const res = await fetch("https://api.anthropic.com/v1/messages", {
+      const res = await fetch("/api/claude", {
         method: "POST",
         headers,
         body: JSON.stringify({
@@ -492,11 +489,8 @@ function ProvisionalEntries({ horses, setHorses }) {
         const base64 = ev.target.result.split(",")[1];
         const headers = {
           "Content-Type": "application/json",
-          "x-api-key": ANTHROPIC_KEY,
-          "anthropic-version": "2023-06-01",
-          "anthropic-dangerous-direct-browser-access": "true",
         };
-        const res = await fetch("https://api.anthropic.com/v1/messages", {
+        const res = await fetch("/api/claude", {
           method: "POST",
           headers,
           body: JSON.stringify({
@@ -527,9 +521,9 @@ function ProvisionalEntries({ horses, setHorses }) {
   const fetchProvisional = async () => {
     setFetchStatus("fetching");
     try {
-      const res = await fetch("https://api.anthropic.com/v1/messages", {
+      const res = await fetch("/api/claude", {
         method: "POST",
-        headers: { "Content-Type": "application/json", "x-api-key": ANTHROPIC_KEY, "anthropic-version": "2023-06-01", "anthropic-dangerous-direct-browser-access": "true" },
+        headers: { "Content-Type": "application/json" },
         body: JSON.stringify({
           model: "claude-sonnet-4-20250514",
           max_tokens: 5000,
@@ -745,7 +739,7 @@ function RacePlanner({ horses, setHorses }) {
         "anthropic-version": "2023-06-01",
         "anthropic-dangerous-direct-browser-access": "true",
       };
-      const res = await fetch("https://api.anthropic.com/v1/messages", {
+      const res = await fetch("/api/claude", {
         method: "POST",
         headers,
         body: JSON.stringify({
