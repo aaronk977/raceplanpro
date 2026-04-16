@@ -1244,7 +1244,6 @@ function RacedayPrint({ horses }) {
       )}
     </div>
   );
-}
 
 // ─── YARD VIEW ────────────────────────────────────────────────────────────────
 function YardView({ horses, setHorses }) {
