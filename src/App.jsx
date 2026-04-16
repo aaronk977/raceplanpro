@@ -1069,7 +1069,7 @@ function RacedayPrint({ horses }) {
           if (!cols[0]) continue;
           const row = {};
           headers.forEach((h, idx) => { row[h] = cols[idx] || ""; });
-          const horseName = row.horse_name || row.horse || row.name || row.horse_name_ || cols[0];
+          const horseName = row.horse || row.horse_name || row.name || cols[0];
           if (!horseName) continue;
           const matchHorse = (name) => {
             if (!name) return null;
@@ -1081,31 +1081,38 @@ function RacedayPrint({ horses }) {
             );
           };
           const horse = matchHorse(horseName);
-          const rawDate = row.date || row.race_date || row.meeting_date || row.racedate || "";
+          const rawDate = row.date || row.race_date || row.meeting_date || "";
           let parsedDate = "";
           if (rawDate) {
             const parts = rawDate.split(/[\/\-\.]/);
             if (parts.length === 3) {
-              if (parts[2].length === 4) {
+              if (parts[2] && parts[2].length === 4) {
                 parsedDate = parts[2] + "-" + parts[1].padStart(2,"0") + "-" + parts[0].padStart(2,"0");
-              } else if (parts[0].length === 4) {
+              } else if (parts[0] && parts[0].length === 4) {
                 parsedDate = rawDate;
               } else {
-                parsedDate = rawDate;
+                parsedDate = "20" + parts[2] + "-" + parts[1].padStart(2,"0") + "-" + parts[0].padStart(2,"0");
               }
             }
           }
+          const extras = row.extras || row.headgear || "";
+          const headgearMap = { "H": "Hood", "T": "Tongue Tie", "B": "Blinkers", "C": "Cheekpieces", "V": "Visor", "EM": "Ear Muffs", "P": "Pacifiers" };
+          const headgear = headgearMap[extras.trim().toUpperCase()] || extras || "";
+          const status = row.status || "";
+          const ballotNo = status.toLowerCase().includes("ballot") ? status : (row.ballot || row.ballot_no || "");
           imported.push({
             id: "e_" + Date.now() + "_" + i,
             horseId: horse ? horse.id : "",
             horseName,
-            venue: row.venue || row.racecourse || row.course || row.location || "",
+            venue: row.race || row.venue || row.racecourse || row.course || "",
             date: parsedDate || rawDate,
-            raceTime: row.time || row.race_time || row.racetime || "",
-            raceName: row.race_name || row.race || row.racename || row.race_description || "",
-            meetingNo: row.meeting_no || row.meeting || row.meeting_number || row.meetingno || "",
-            raceRef: row.race_ref || row.race_reference || row.race_no || row.raceref || "",
-            ballotNo: row.ballot || row.ballot_no || row.ballotno || "",
+            raceTime: row.time || row.race_time || "",
+            raceName: row.race_name || row.racename || "",
+            meetingNo: row.meeting || row.meeting_no || "",
+            raceRef: row.race_ref || row.raceref || "",
+            ballotNo,
+            headgear,
+            jockey: row.jockey || "",
           });
         }
         setEntries(prev => [...prev, ...imported]);
