@@ -1040,10 +1040,9 @@ function RacePlanner({ horses, setHorses }) {
 
 // ─── RACEDAY PRINT ────────────────────────────────────────────────────────────
 function RacedayPrint({ horses }) {
-  const [entries, setEntries] = useState([
-    { id: "e1", horseId: "h3", meetingNo: "47", raceRef: "Race C", venue: "Dundalk", date: "2026-03-25", raceTime: "5:45 PM", raceName: "EBF Median Auction Maiden 7f", ballotNo: "" },
-  ]);
+  const [entries, setEntries] = useState([]);
   const [showAdd, setShowAdd] = useState(false);
+  const [editHorse, setEditHorse] = useState(null);
   const [csvStatus, setCsvStatus] = useState(null);
   const [ne, setNe] = useState({ horseId: "", meetingNo: "", raceRef: "", venue: "", date: "", raceTime: "", raceName: "", ballotNo: "" });
 
@@ -1061,30 +1060,53 @@ function RacedayPrint({ horses }) {
     const reader = new FileReader();
     reader.onload = (ev) => {
       try {
-        const lines = ev.target.result.split("\n").filter(l => l.trim());
-        const headers = lines[0].split(",").map(h => h.trim().toLowerCase().replace(/[^a-z0-9]/g, "_"));
+        const text = ev.target.result;
+        const rawLines = text.split("\n").filter(l => l.trim());
+        const sep = rawLines[0].includes("\t") ? "\t" : ",";
+        const headers = rawLines[0].split(sep).map(h => h.trim().toLowerCase().replace(/\s+/g, "_").replace(/[^a-z0-9_]/g, ""));
         const imported = [];
-        for (let i = 1; i < lines.length; i++) {
-          const cols = lines[i].split(",").map(c => c.trim().replace(/^"|"$/g, ""));
+        for (let i = 1; i < rawLines.length; i++) {
+          const cols = rawLines[i].split(sep).map(c => c.trim().replace(/^"|"$/g, ""));
           if (!cols[0]) continue;
           const row = {};
           headers.forEach((h, idx) => { row[h] = cols[idx] || ""; });
-          const horseName = row.horse_name || row.horse || row.name || cols[0];
-          const horse = horses.find(h =>
-            h.name.toLowerCase() === horseName.toLowerCase() ||
-            h.name.toLowerCase().includes(horseName.toLowerCase())
-          );
+          const horseName = row.horse_name || row.horse || row.name || row.horse_name_ || cols[0];
+          if (!horseName) continue;
+          const matchHorse = (name) => {
+            if (!name) return null;
+            const nl = name.toLowerCase().trim();
+            return horses.find(h =>
+              h.name.toLowerCase().trim() === nl ||
+              h.name.toLowerCase().trim().includes(nl) ||
+              nl.includes(h.name.toLowerCase().trim())
+            );
+          };
+          const horse = matchHorse(horseName);
+          const rawDate = row.date || row.race_date || row.meeting_date || row.racedate || "";
+          let parsedDate = "";
+          if (rawDate) {
+            const parts = rawDate.split(/[\/\-\.]/);
+            if (parts.length === 3) {
+              if (parts[2].length === 4) {
+                parsedDate = parts[2] + "-" + parts[1].padStart(2,"0") + "-" + parts[0].padStart(2,"0");
+              } else if (parts[0].length === 4) {
+                parsedDate = rawDate;
+              } else {
+                parsedDate = rawDate;
+              }
+            }
+          }
           imported.push({
             id: "e_" + Date.now() + "_" + i,
             horseId: horse ? horse.id : "",
             horseName,
-            venue: row.venue || row.racecourse || row.course || "",
-            date: row.date || row.race_date || "",
-            raceTime: row.time || row.race_time || "",
-            raceName: row.race_name || row.race || "",
-            meetingNo: row.meeting_no || row.meeting || row.meeting_number || "",
-            raceRef: row.race_ref || row.race_reference || row.race_no || "",
-            ballotNo: row.ballot || row.ballot_no || "",
+            venue: row.venue || row.racecourse || row.course || row.location || "",
+            date: parsedDate || rawDate,
+            raceTime: row.time || row.race_time || row.racetime || "",
+            raceName: row.race_name || row.race || row.racename || row.race_description || "",
+            meetingNo: row.meeting_no || row.meeting || row.meeting_number || row.meetingno || "",
+            raceRef: row.race_ref || row.race_reference || row.race_no || row.raceref || "",
+            ballotNo: row.ballot || row.ballot_no || row.ballotno || "",
           });
         }
         setEntries(prev => [...prev, ...imported]);
@@ -1092,6 +1114,7 @@ function RacedayPrint({ horses }) {
         setCsvStatus(imported.length + " entries imported — " + matched + " horses matched");
         setTimeout(() => setCsvStatus(null), 5000);
       } catch (err) {
+        console.error(err);
         setCsvStatus("Error reading CSV — check the file format");
         setTimeout(() => setCsvStatus(null), 5000);
       }
@@ -1329,9 +1352,65 @@ function YardView({ horses, setHorses }) {
               </div>
               <div style={{ marginTop: 5, display: "flex", gap: 6, alignItems: "center" }}><FormDots form={h.form} />{h.notes && <span style={{ fontSize: 11, color: C.textMid, fontStyle: "italic" }}>💬 {h.notes}</span>}</div>
             </div>
+            <div style={{ display: "flex", gap: 6, marginTop: 8 }}>
+              <Btn variant="ghost" onClick={() => setEditHorse(h)} style={{ fontSize: 11, padding: "5px 12px" }}>✏️ Edit</Btn>
+              <Btn variant="red" onClick={() => { if (window.confirm("Remove " + h.name + " from the yard?")) { setHorses(prev => prev.filter(x => x.id !== h.id)); } }} style={{ fontSize: 11, padding: "5px 12px" }}>🗑 Remove</Btn>
+            </div>
           </div>
         </div>
       ))}
+
+      {editHorse && (
+        <div style={{ position: "fixed", inset: 0, background: "rgba(10,22,40,0.6)", zIndex: 500, display: "flex", alignItems: "center", justifyContent: "center", padding: 20 }}>
+          <div style={{ background: C.card, borderRadius: 16, width: "100%", maxWidth: 480, maxHeight: "90vh", overflowY: "auto" }}>
+            <div style={{ background: C.navy, padding: "16px 20px", display: "flex", justifyContent: "space-between", alignItems: "center", position: "sticky", top: 0 }}>
+              <div style={{ fontSize: 15, fontWeight: 700, color: "#fff" }}>Edit — {editHorse.name}</div>
+              <button onClick={() => setEditHorse(null)} style={{ background: "rgba(255,255,255,0.1)", border: "none", color: "#fff", width: 28, height: 28, borderRadius: 6, cursor: "pointer", fontSize: 14 }}>✕</button>
+            </div>
+            <div style={{ padding: 20, display: "flex", flexDirection: "column", gap: 11 }}>
+              {[
+                { key: "status", label: "Status", type: "select", options: ["Active", "CoolingOff", "Inactive"] },
+                { key: "sex", label: "Sex", type: "select", options: ["Gelding", "Mare", "Filly", "Colt", "Horse"] },
+                { key: "discipline", label: "Discipline", type: "select", options: ["Hurdle", "Chase", "Flat", "Bumper"] },
+                { key: "headgear", label: "Headgear", placeholder: "e.g. Cheekpieces" },
+                { key: "nhRating", label: "NH Rating", type: "number", placeholder: "e.g. 98" },
+                { key: "flatRating", label: "Flat Rating", type: "number", placeholder: "e.g. 74" },
+                { key: "ownerPhone", label: "Owner WhatsApp", type: "tel", placeholder: "+353 86 000 0000" },
+                { key: "ownerEmail", label: "Owner Email", type: "email", placeholder: "owner@email.com" },
+                { key: "jockey", label: "Jockey", placeholder: "e.g. D.J. O'Keeffe" },
+                { key: "notes", label: "Trainer Notes", placeholder: "Any notes" },
+                { key: "nextRaceDate", label: "Next Target Date", type: "date" },
+              ].map(({ key, label, placeholder, type, options }) => (
+                <div key={key}>
+                  <div style={{ fontSize: 10, fontWeight: 700, color: C.textMid, marginBottom: 3, textTransform: "uppercase", letterSpacing: 0.5 }}>{label}</div>
+                  {type === "select" ? (
+                    <select
+                      value={key === "discipline" ? (editHorse.discipline && editHorse.discipline[0]) || "" : editHorse[key] || ""}
+                      onChange={e => setEditHorse(prev => ({ ...prev, [key]: key === "discipline" ? [e.target.value] : e.target.value }))}
+                      style={{ width: "100%", background: C.cardOff, border: "1px solid " + C.border, borderRadius: 8, padding: "8px 12px", color: C.text, fontSize: 13, outline: "none" }}
+                    >
+                      {(options || []).map(o => <option key={o} value={o}>{o}</option>)}
+                    </select>
+                  ) : (
+                    <input
+                      type={type || "text"}
+                      placeholder={placeholder}
+                      value={editHorse[key] || ""}
+                      onChange={e => setEditHorse(prev => ({ ...prev, [key]: e.target.value }))}
+                      style={{ width: "100%", background: C.cardOff, border: "1px solid " + C.border, borderRadius: 8, padding: "8px 12px", color: C.text, fontSize: 13, outline: "none" }}
+                    />
+                  )}
+                </div>
+              ))}
+              <Btn onClick={() => {
+                setHorses(prev => prev.map(h => h.id === editHorse.id ? { ...editHorse, nhRating: editHorse.nhRating ? parseInt(editHorse.nhRating) : null, flatRating: editHorse.flatRating ? parseInt(editHorse.flatRating) : null } : h));
+                setEditHorse(null);
+              }} style={{ width: "100%", justifyContent: "center", marginTop: 4 }}>Save Changes</Btn>
+              <Btn variant="red" onClick={() => { if (window.confirm("Remove " + editHorse.name + " from the yard?")) { setHorses(prev => prev.filter(h => h.id !== editHorse.id)); setEditHorse(null); } }} style={{ width: "100%", justifyContent: "center" }}>Remove Horse from Yard</Btn>
+            </div>
+          </div>
+        </div>
+      )}
 
       {showAdd && (
         <div style={{ position: "fixed", inset: 0, background: "rgba(10,22,40,0.6)", zIndex: 500, display: "flex", alignItems: "center", justifyContent: "center", padding: 20, backdropFilter: "blur(4px)" }}>
