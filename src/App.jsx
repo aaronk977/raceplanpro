@@ -787,8 +787,16 @@ function RacePlanner({ horses, setHorses }) {
     if (r.sexRestriction !== "Open" && !(sexMap[r.sexRestriction] || []).includes(selHorse.sex)) return false;
     if (!selHorse.discipline.includes(r.discipline)) return false;
     if (selHorse.surface !== r.surface) return false;
-    const rtg = r.discipline === "Flat" ? selHorse.flatRating : selHorse.nhRating;
+    const getRating = () => {
+      if (r.discipline === "Flat" && r.surface === "AWT") return selHorse.awtRating || selHorse.flatRating;
+      if (r.discipline === "Flat") return selHorse.flatRating || selHorse.awtRating;
+      if (r.discipline === "Chase") return selHorse.chaseRating || selHorse.nhRating;
+      if (r.discipline === "Hurdle") return selHorse.hurdleRating || selHorse.nhRating;
+      return selHorse.nhRating || selHorse.flatRating;
+    };
+    const rtg = getRating();
     if (r.ratingMax && rtg && rtg > r.ratingMax) return false;
+    if (r.ratingMin && rtg && rtg < r.ratingMin) return false;
     if (r.isMaiden && !selHorse.isMaiden) return false;
     if (r.isNovice && !selHorse.isNovice) return false;
     if (r.isEBF && !selHorse.isEBF) return false;
@@ -1308,6 +1316,67 @@ function YardView({ horses, setHorses }) {
     reader.readAsText(file);
   };
 
+  const handleRatingsCSV = (e) => {
+    const file = e.target.files[0];
+    if (!file) return;
+    e.target.value = "";
+    const reader = new FileReader();
+    reader.onload = (ev) => {
+      try {
+        const text = ev.target.result;
+        const rawLines = text.split("\n").filter(l => l.trim());
+        const sep = rawLines[0].includes("\t") ? "\t" : ",";
+        const headers = rawLines[0].split(sep).map(h => h.trim().toLowerCase().replace(/\s+/g, "_").replace(/[^a-z0-9_]/g, ""));
+        let updated = 0;
+        const ratingLines = rawLines.slice(1);
+        setHorses(prev => {
+          const horses = [...prev];
+          ratingLines.forEach(line => {
+            const cols = line.split(sep).map(c => c.trim().replace(/^"|"$/g, ""));
+            if (!cols[0]) return;
+            const row = {};
+            headers.forEach((h, idx) => { row[h] = cols[idx] || ""; });
+            const name = row.horse_name || row.horse || cols[0];
+            if (!name) return;
+            const flatRating = parseInt(row.flat) || null;
+            const awtRating = parseInt(row.all_weather) || null;
+            const hurdleRating = parseInt(row.hurdle) || null;
+            const chaseRating = parseInt(row.chase) || null;
+            const idx = horses.findIndex(h => h.name.toLowerCase().trim() === name.toLowerCase().trim());
+            if (idx >= 0) {
+              horses[idx] = {
+                ...horses[idx],
+                flatRating: flatRating || awtRating || horses[idx].flatRating,
+                awtRating: awtRating || horses[idx].awtRating,
+                nhRating: hurdleRating || chaseRating || horses[idx].nhRating,
+                hurdleRating: hurdleRating || horses[idx].hurdleRating,
+                chaseRating: chaseRating || horses[idx].chaseRating,
+                isMaiden: !flatRating && !awtRating && !hurdleRating && !chaseRating,
+                discipline: horses[idx].discipline && horses[idx].discipline.length > 0
+                  ? horses[idx].discipline
+                  : hurdleRating && chaseRating ? ["Hurdle", "Chase"]
+                  : hurdleRating ? ["Hurdle"]
+                  : chaseRating ? ["Chase"]
+                  : flatRating || awtRating ? ["Flat"]
+                  : horses[idx].discipline,
+                surface: horses[idx].surface || (awtRating && !flatRating ? "AWT" : "Turf"),
+              };
+              updated++;
+            }
+          });
+          return horses;
+        });
+        setCsvStatus(updated + " horses updated with ratings");
+        setTimeout(() => setCsvStatus(null), 5000);
+      } catch (err) {
+        console.error(err);
+        setCsvStatus("Error reading ratings file");
+        setTimeout(() => setCsvStatus(null), 5000);
+      }
+    };
+    reader.readAsText(file);
+  };
+
   const addHorse = () => {
     if (!newHorse.name) return;
     setHorses(prev => [...prev, { ...newHorse, id: "h_" + Date.now(), silk: SILKS[Math.floor(Math.random() * SILKS.length)], nhRating: newHorse.nhRating ? parseInt(newHorse.nhRating) : null, flatRating: newHorse.flatRating ? parseInt(newHorse.flatRating) : null, discipline: [newHorse.discipline], isEBF: false, isMaiden: false, isNovice: false, distanceMin: 16, distanceMax: 24, goingPref: [], form: [], arrivedDate: todayStr, provisionalEntries: [] }]);
@@ -1325,7 +1394,10 @@ function YardView({ horses, setHorses }) {
         <div style={{ display: "flex", gap: 8, alignItems: "center" }}>
           {csvStatus && <span style={{ fontSize: 12, fontWeight: 700, color: csvStatus.startsWith("✓") ? C.green : C.red }}>{csvStatus}</span>}
           <label style={{ background: C.cardOff, border: "1.5px solid " + C.border, color: C.textMid, borderRadius: 9, padding: "9px 16px", fontSize: 13, fontWeight: 700, cursor: "pointer", display: "inline-flex", alignItems: "center", gap: 6 }}>
-            Import HRI CSV <input type="file" accept=".csv,.tsv,.txt" onChange={handleCSV} style={{ display: "none" }} />
+            📥 Import Horses CSV <input type="file" accept=".csv,.tsv,.txt" onChange={handleCSV} style={{ display: "none" }} />
+          </label>
+          <label style={{ background: C.cardOff, border: "1.5px solid " + C.border, color: C.textMid, borderRadius: 9, padding: "9px 16px", fontSize: 13, fontWeight: 700, cursor: "pointer", display: "inline-flex", alignItems: "center", gap: 6 }}>
+            📊 Import Ratings CSV <input type="file" accept=".csv,.tsv,.txt" onChange={handleRatingsCSV} style={{ display: "none" }} />
           </label>
           <Btn variant="ghost" onClick={() => { if (window.confirm("Remove all horses from the yard? This cannot be undone.")) { setHorses([]); } }} style={{ fontSize: 12, color: C.red, borderColor: C.red }}>Clear Yard</Btn>
           <Btn onClick={() => setShowAdd(true)}>+ Add Horse</Btn>
@@ -1353,7 +1425,11 @@ function YardView({ horses, setHorses }) {
               </div>
               <div style={{ display: "flex", gap: 10, flexWrap: "wrap", fontSize: 12, color: C.textMid }}>
                 <span>{getAge(h.dob)}yo {h.sex} · {h.colour}</span>
-                <span>Rtg: {h.nhRating || h.flatRating || "—"}</span>
+                {h.flatRating && <span>Flat: {h.flatRating}</span>}
+                {h.awtRating && <span>AWT: {h.awtRating}</span>}
+                {h.hurdleRating && <span>Hrd: {h.hurdleRating}</span>}
+                {h.chaseRating && <span>Chs: {h.chaseRating}</span>}
+                {!h.flatRating && !h.awtRating && !h.hurdleRating && !h.chaseRating && <span style={{ color: C.amber }}>Unrated</span>}
                 <span>Owner: {h.owner}</span>
                 {h.ownerPhone && <a href={`https://wa.me/${h.ownerPhone.replace(/\D/g, "")}`} target="_blank" rel="noopener noreferrer" style={{ color: C.green, fontWeight: 600, textDecoration: "none" }}>💬 WhatsApp</a>}
               </div>
