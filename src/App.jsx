@@ -1042,7 +1042,6 @@ function RacePlanner({ horses, setHorses }) {
 function RacedayPrint({ horses }) {
   const [entries, setEntries] = useState([]);
   const [showAdd, setShowAdd] = useState(false);
-  const [editHorse, setEditHorse] = useState(null);
   const [csvStatus, setCsvStatus] = useState(null);
   const [ne, setNe] = useState({ horseId: "", meetingNo: "", raceRef: "", venue: "", date: "", raceTime: "", raceName: "", ballotNo: "" });
 
@@ -1218,6 +1217,7 @@ function RacedayPrint({ horses }) {
 // ─── YARD VIEW ────────────────────────────────────────────────────────────────
 function YardView({ horses, setHorses }) {
   const [showAdd, setShowAdd] = useState(false);
+  const [editHorse, setEditHorse] = useState(null);
   const [csvStatus, setCsvStatus] = useState(null);
   const [newHorse, setNewHorse] = useState({ name: "", dob: "", sex: "Gelding", colour: "", nhRating: "", flatRating: "", discipline: "Hurdle", surface: "Turf", status: "Active", owner: "", ownerPhone: "", ownerEmail: "", headgear: "", nextRaceDate: "", notes: "" });
 
@@ -1377,7 +1377,7 @@ function YardView({ horses, setHorses }) {
                 { key: "flatRating", label: "Flat Rating", type: "number", placeholder: "e.g. 74" },
                 { key: "ownerPhone", label: "Owner WhatsApp", type: "tel", placeholder: "+353 86 000 0000" },
                 { key: "ownerEmail", label: "Owner Email", type: "email", placeholder: "owner@email.com" },
-                { key: "jockey", label: "Jockey", placeholder: "e.g. D.J. O'Keeffe" },
+                { key: "jockey", label: "Jockey", placeholder: "e.g. D.J. OKeeffe" },
                 { key: "notes", label: "Trainer Notes", placeholder: "Any notes" },
                 { key: "nextRaceDate", label: "Next Target Date", type: "date" },
               ].map(({ key, label, placeholder, type, options }) => (
