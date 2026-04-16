@@ -911,7 +911,7 @@ function RacePlanner({ horses, setHorses }) {
           })}
         </div>
       )}
-    <div style={{ display: "grid", gridTemplateColumns: "240px 1fr", gap: 16 }}>
+      <div style={{ display: "grid", gridTemplateColumns: "240px 1fr", gap: 16 }}>
       {toast && <div style={{ position: "fixed", bottom: 24, left: "50%", transform: "translateX(-50%)", background: C.navy, color: "#fff", borderRadius: 12, padding: "12px 22px", fontSize: 13, fontWeight: 600, zIndex: 600, boxShadow: C.shadowMd, border: `1px solid ${toast.color}50`, whiteSpace: "nowrap", animation: "slideUp 0.3s ease" }}><span style={{ color: toast.color }}>{toast.msg}</span></div>}
 
       {/* Horse sidebar */}
@@ -1128,6 +1128,8 @@ function RacePlanner({ horses, setHorses }) {
           </>
         )}
       </div>
+    </div>
+    </div>
     </div>
   );
 }
