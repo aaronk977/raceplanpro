@@ -407,9 +407,9 @@ function MedicationTracker({ horses }) {
               <div style={{ padding: 22 }}>
                 <div style={{ fontSize: 12, fontWeight: 700, color: C.textMid, textTransform: "uppercase", letterSpacing: 1, marginBottom: 14 }}>For Yardman — {billHorse.owner}</div>
                 {[
-                  costs.peptizoleDays > 0 && { label: `Peptizole — ${costs.peptizoleDays} days × €18`, amount: costs.peptizole },
-                  costs.antepsinTicks > 0 && { label: `Antepsin — ${costs.antepsinBottles} bottle${costs.antepsinBottles !== 1 ? "s" : ""} × €25 (${costs.antepsinTicks} days)`, amount: costs.antepsin },
-                  costs.antibioticDoses > 0 && { label: `Antibiotics — ${costs.antibioticDoses} dose${costs.antibioticDoses !== 1 ? "s" : ""} × €15`, amount: costs.antibiotics },
+                  costs.peptizoleDays > 0 && { label: "Peptizole — " + costs.peptizoleDays + " days × €18", amount: costs.peptizole },
+                  costs.antepsinTicks > 0 && { label: "Antepsin — " + costs.antepsinBottles + " bottle" + (costs.antepsinBottles !== 1 ? "s" : "") + " × €25 (" + costs.antepsinTicks + " days)", amount: costs.antepsin },
+                  costs.antibioticDoses > 0 && { label: "Antibiotics — " + costs.antibioticDoses + " dose" + (costs.antibioticDoses !== 1 ? "s" : "") + " × €15", amount: costs.antibiotics },
                 ].filter(Boolean).map((item, i) => (
                   <div key={i} style={{ display: "flex", justifyContent: "space-between", padding: "10px 0", borderBottom: `1px solid ${C.border}` }}>
                     <span style={{ fontSize: 14, color: C.text }}>{item.label}</span>
@@ -429,7 +429,6 @@ function MedicationTracker({ horses }) {
           </div>
         );
       })()}
-    </div>
     </div>
   );
 }
