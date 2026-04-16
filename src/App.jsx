@@ -875,7 +875,7 @@ function RacePlanner({ horses, setHorses }) {
                     </div>
                     <div style={{ fontSize: 12, color: C.textMid }}>
                       {item.race.venue} — {item.race.date ? new Date(item.race.date).toLocaleDateString("en-IE", { weekday: "short", day: "numeric", month: "short" }) : ""}
-                      {item.race.prizeMoney ? " — €" + (item.race.prizeMoney >= 1000 ? (item.race.prizeMoney/1000) + "k" : item.race.prizeMoney) : ""}
+                      {item.race.prizeMoney ? " — €" + (item.race.prizeMoney >= 1000 ? Math.round(item.race.prizeMoney / 1000) + "k" : item.race.prizeMoney) : ""}
                     </div>
                   </div>
                   <button onClick={() => setShortlisted(s => ({ ...s, [k(item.horse.id, item.race.id)]: null }))} style={{ background: "none", border: "none", color: C.textDim, cursor: "pointer", fontSize: 16 }}>✕</button>
