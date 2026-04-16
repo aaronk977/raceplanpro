@@ -1054,98 +1054,44 @@ function RacedayPrint({ horses }) {
     setShowAdd(false);
   };
 
-<Btn variant="red" onClick={() => {
-  if (window.confirm("Remove all horses from the yard? This cannot be undone.")) {
-    setHorses([]);
-  }
-}} style={{ fontSize: 12 }}>
-  Clear Yard
-</Btn>
+  const handleCSV = (e) => {
     const file = e.target.files[0];
     if (!file) return;
     e.target.value = "";
     const reader = new FileReader();
-    reader.onload = async (ev) => {
+    reader.onload = (ev) => {
       try {
         const lines = ev.target.result.split("\n").filter(l => l.trim());
-        const headers = lines[0].split("\t").map(h => h.trim().toLowerCase()
-          .replace(/\s+/g, "_").replace(/[^a-z0-9_]/g, ""));
+        const headers = lines[0].split(",").map(h => h.trim().toLowerCase().replace(/[^a-z0-9]/g, "_"));
         const imported = [];
         for (let i = 1; i < lines.length; i++) {
-          const cols = lines[i].split("\t").map(c => c.trim().replace(/^"|"$/g, ""));
+          const cols = lines[i].split(",").map(c => c.trim().replace(/^"|"$/g, ""));
           if (!cols[0]) continue;
           const row = {};
           headers.forEach((h, idx) => { row[h] = cols[idx] || ""; });
-          const name = row.horse_name || row.horse || cols[0];
-          if (!name) continue;
-          const yof = parseInt(row.yof) || null;
-          const currentYear = new Date().getFullYear();
-          const dob = yof ? (currentYear - yof) + "yo" : "";
-          const sex = row.sex || "Unknown";
-          const colour = row.colour || row.color || "";
-          const owner = row.owner || "";
-          const status = row.return_status === "Active" ? "Active" : "Active";
+          const horseName = row.horse_name || row.horse || row.name || cols[0];
+          const horse = horses.find(h =>
+            h.name.toLowerCase() === horseName.toLowerCase() ||
+            h.name.toLowerCase().includes(horseName.toLowerCase())
+          );
           imported.push({
-            id: "h_" + Date.now() + "_" + i,
-            name,
-            dob: yof ? yof + "-01-01" : "",
-            yof,
-            sex,
-            colour,
-            owner,
-            ownerPhone: "",
-            ownerEmail: "",
-            status,
-            activationDate: null,
-            nhRating: null,
-            flatRating: null,
-            chaseRating: null,
-            discipline: [],
-            surface: "Turf",
-            headgear: "",
-            jockey: "",
-            trainer: "",
-            nextRaceDate: "",
-            notes: "",
-            isEBF: false,
-            isMaiden: true,
-            isNovice: false,
-            goingPref: [],
-            distanceMin: 16,
-            distanceMax: 24,
-            silk: SILKS[Math.floor(Math.random() * SILKS.length)],
-            form: [],
-            arrivedDate: todayStr,
-            provisionalEntries: [],
-            hcert: row.hcert || "",
-            stalls: row.stalls || "",
-            partnership: row.partnership || "",
+            id: "e_" + Date.now() + "_" + i,
+            horseId: horse ? horse.id : "",
+            horseName,
+            venue: row.venue || row.racecourse || row.course || "",
+            date: row.date || row.race_date || "",
+            raceTime: row.time || row.race_time || "",
+            raceName: row.race_name || row.race || "",
+            meetingNo: row.meeting_no || row.meeting || row.meeting_number || "",
+            raceRef: row.race_ref || row.race_reference || row.race_no || "",
+            ballotNo: row.ballot || row.ballot_no || "",
           });
         }
-        setHorses(prev => {
-          const updated = [...prev];
-          imported.forEach(imp => {
-            const idx = updated.findIndex(h =>
-              h.name.toLowerCase() === imp.name.toLowerCase()
-            );
-            if (idx >= 0) {
-              updated[idx] = {
-                ...updated[idx],
-                ...imp,
-                id: updated[idx].id,
-                silk: updated[idx].silk,
-                form: updated[idx].form,
-              };
-            } else {
-              updated.push(imp);
-            }
-          });
-          return updated;
-        });
-        setCsvStatus(imported.length + " horses imported from HRI");
+        setEntries(prev => [...prev, ...imported]);
+        const matched = imported.filter(e => e.horseId).length;
+        setCsvStatus(imported.length + " entries imported — " + matched + " horses matched");
         setTimeout(() => setCsvStatus(null), 5000);
       } catch (err) {
-        console.error(err);
         setCsvStatus("Error reading CSV — check the file format");
         setTimeout(() => setCsvStatus(null), 5000);
       }
@@ -1244,6 +1190,7 @@ function RacedayPrint({ horses }) {
       )}
     </div>
   );
+}
 
 // ─── YARD VIEW ────────────────────────────────────────────────────────────────
 function YardView({ horses, setHorses }) {
@@ -1252,31 +1199,83 @@ function YardView({ horses, setHorses }) {
   const [newHorse, setNewHorse] = useState({ name: "", dob: "", sex: "Gelding", colour: "", nhRating: "", flatRating: "", discipline: "Hurdle", surface: "Turf", status: "Active", owner: "", ownerPhone: "", ownerEmail: "", headgear: "", nextRaceDate: "", notes: "" });
 
   const handleCSV = (e) => {
-    const file = e.target.files[0]; if (!file) return;
+    const file = e.target.files[0];
+    if (!file) return;
+    e.target.value = "";
     const reader = new FileReader();
     reader.onload = (ev) => {
       try {
-        const lines = ev.target.result.split("\n").filter(l => l.trim());
-        const headers = lines[0].split(",").map(h => h.trim().toLowerCase().replace(/[^a-z0-9]/g, "_"));
+        const text = ev.target.result;
+        const lines = text.split("\n").filter(l => l.trim());
+        const sep = lines[0].includes("\t") ? "\t" : ",";
+        const headers = lines[0].split(sep).map(h => h.trim().toLowerCase().replace(/\s+/g, "_").replace(/[^a-z0-9_]/g, ""));
         const imported = [];
         for (let i = 1; i < lines.length; i++) {
-          const cols = lines[i].split(",").map(c => c.trim().replace(/^"|"$/g, ""));
+          const cols = lines[i].split(sep).map(c => c.trim().replace(/^"|"$/g, ""));
           if (!cols[0]) continue;
-          const row = {}; headers.forEach((h, idx) => { row[h] = cols[idx] || ""; });
-          const name = row.horse_name || row.name || row.horse || cols[0];
+          const row = {};
+          headers.forEach((h, idx) => { row[h] = cols[idx] || ""; });
+          const name = row.horse_name || row.horse || cols[0];
           if (!name) continue;
-          imported.push({ id: "h_" + Date.now() + "_" + i, name, dob: row.dob || row.date_of_birth || row.foaling_date || "", sex: row.sex || row.gender || "Gelding", colour: row.colour || row.color || "", nhRating: parseInt(row.nh_rating || row.rating || 0) || null, flatRating: parseInt(row.flat_rating || 0) || null, discipline: [row.discipline || "Hurdle"], surface: row.surface || "Turf", status: row.status || row.racing_status || "Active", activationDate: null, owner: row.owner || row.owner_name || "", ownerPhone: row.owner_phone || row.phone || "", ownerEmail: row.owner_email || row.email || "", trainer: row.trainer || "", jockey: row.jockey || "D.J. O'Keeffe", headgear: row.headgear || row.head_gear || "", nextRaceDate: "", goingPref: [], distanceMin: 16, distanceMax: 24, isEBF: false, isMaiden: false, isNovice: false, silk: SILKS[Math.floor(Math.random() * SILKS.length)], notes: row.notes || "", form: [], arrivedDate: todayStr, provisionalEntries: [] });
+          const yof = parseInt(row.yof) || null;
+          const currentYear = new Date().getFullYear();
+          imported.push({
+            id: "h_" + Date.now() + "_" + i,
+            name,
+            dob: yof ? yof + "-01-01" : "",
+            yof,
+            sex: row.sex || "Unknown",
+            colour: row.colour || row.color || "",
+            owner: row.owner || "",
+            ownerPhone: "",
+            ownerEmail: "",
+            status: "Active",
+            activationDate: null,
+            nhRating: null,
+            flatRating: null,
+            discipline: [],
+            surface: "Turf",
+            headgear: "",
+            jockey: "",
+            trainer: "",
+            nextRaceDate: "",
+            notes: "",
+            isEBF: false,
+            isMaiden: true,
+            isNovice: false,
+            goingPref: [],
+            distanceMin: 16,
+            distanceMax: 24,
+            silk: SILKS[Math.floor(Math.random() * SILKS.length)],
+            form: [],
+            arrivedDate: todayStr,
+            provisionalEntries: [],
+            hcert: row.hcert || "",
+            stalls: row.stalls || "",
+            partnership: row.partnership || "",
+          });
         }
         setHorses(prev => {
           const updated = [...prev];
-          imported.forEach(imp => { const idx = updated.findIndex(h => h.name.toLowerCase() === imp.name.toLowerCase()); if (idx >= 0) { updated[idx] = { ...updated[idx], ...imp, id: updated[idx].id, silk: updated[idx].silk, form: updated[idx].form }; } else { updated.push(imp); } });
+          imported.forEach(imp => {
+            const idx = updated.findIndex(h => h.name.toLowerCase() === imp.name.toLowerCase());
+            if (idx >= 0) {
+              updated[idx] = { ...updated[idx], ...imp, id: updated[idx].id, silk: updated[idx].silk, form: updated[idx].form };
+            } else {
+              updated.push(imp);
+            }
+          });
           return updated;
         });
-        setCsvStatus(imported.length + " horses imported");
-        setTimeout(() => setCsvStatus(null), 4000);
-      } catch (err) { setCsvStatus("✕ Error reading CSV"); setTimeout(() => setCsvStatus(null), 4000); }
+        setCsvStatus(imported.length + " horses imported from HRI");
+        setTimeout(() => setCsvStatus(null), 5000);
+      } catch (err) {
+        console.error(err);
+        setCsvStatus("Error reading file — check format");
+        setTimeout(() => setCsvStatus(null), 5000);
+      }
     };
-    reader.readAsText(file); e.target.value = "";
+    reader.readAsText(file);
   };
 
   const addHorse = () => {
@@ -1294,17 +1293,11 @@ function YardView({ horses, setHorses }) {
           <div style={{ fontSize: 13, color: C.textMid, marginTop: 3 }}>{horses.length} horses · {horses.filter(h => h.status === "Active").length} active</div>
         </div>
         <div style={{ display: "flex", gap: 8, alignItems: "center" }}>
-        {csvStatus && <span style={{ fontSize: 12, fontWeight: 700, color: csvStatus.includes("Error") ? C.red : C.green }}>{csvStatus}</span>}
-          <label style={{ background: C.cardOff, border: `1.5px solid ${C.border}`, color: C.textMid, borderRadius: 9, padding: "9px 16px", fontSize: 13, fontWeight: 700, cursor: "pointer", display: "inline-flex", alignItems: "center", gap: 6 }}>
-            📥 Import HRI CSV <input type="file" accept=".csv,.tsv,.txt" onChange={handleCSV} style={{ display: "none" }} />
+          {csvStatus && <span style={{ fontSize: 12, fontWeight: 700, color: csvStatus.startsWith("✓") ? C.green : C.red }}>{csvStatus}</span>}
+          <label style={{ background: C.cardOff, border: "1.5px solid " + C.border, color: C.textMid, borderRadius: 9, padding: "9px 16px", fontSize: 13, fontWeight: 700, cursor: "pointer", display: "inline-flex", alignItems: "center", gap: 6 }}>
+            Import HRI CSV <input type="file" accept=".csv,.tsv,.txt" onChange={handleCSV} style={{ display: "none" }} />
           </label>
-          <Btn variant="ghost" onClick={() => {
-            if (window.confirm("Remove all horses from the yard? This cannot be undone.")) {
-              setHorses([]);
-            }
-          }} style={{ fontSize: 12, color: C.red, borderColor: C.red }}>
-            🗑 Clear Yard
-          </Btn>
+          <Btn variant="ghost" onClick={() => { if (window.confirm("Remove all horses from the yard? This cannot be undone.")) { setHorses([]); } }} style={{ fontSize: 12, color: C.red, borderColor: C.red }}>Clear Yard</Btn>
           <Btn onClick={() => setShowAdd(true)}>+ Add Horse</Btn>
         </div>
       </div>
