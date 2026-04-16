@@ -1,4 +1,4 @@
-import { useState, useCallback } from “react”;
+import { useState, useCallback } from "react";
 
 const ANTHROPIC_KEY = import.meta.env.VITE_ANTHROPIC_API_KEY || “”;
 
