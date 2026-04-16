@@ -430,6 +430,7 @@ function MedicationTracker({ horses }) {
         );
       })()}
     </div>
+    </div>
   );
 }
 
@@ -723,6 +724,7 @@ function RacePlanner({ horses, setHorses }) {
   const [loading, setLoading] = useState({});
   const [loadStage, setLoadStage] = useState({});
   const [shortlisted, setShortlisted] = useState({});
+  const [showShortlist, setShowShortlist] = useState(false);
   const [toast, setToast] = useState(null);
 
   const k = (hId, rId) => `${hId}_${rId}`;
@@ -829,7 +831,87 @@ function RacePlanner({ horses, setHorses }) {
 
   const sorted = [...eligible].sort((a, b) => (analyses[k(selHorse.id, b.id)]?.overall ?? -1) - (analyses[k(selHorse.id, a.id)]?.overall ?? -1));
 
+  // Calculate medication dates for shortlisted races
+  const shortlistItems = Object.values(shortlisted).filter(Boolean);
+
+  const getMedDates = (raceDate, withdrawalDays, courseDays) => {
+    if (!raceDate) return null;
+    const race = new Date(raceDate);
+    const lastDay = new Date(race);
+    lastDay.setDate(lastDay.getDate() - withdrawalDays);
+    const startDay = new Date(lastDay);
+    startDay.setDate(startDay.getDate() - (courseDays - 1));
+    return {
+      start: startDay.toLocaleDateString("en-IE", { day: "numeric", month: "short" }),
+      stop: lastDay.toLocaleDateString("en-IE", { day: "numeric", month: "short" }),
+      startDate: startDay,
+    };
+  };
+
   return (
+    <div>
+      {shortlistItems.length > 0 && (
+        <div style={{ background: C.card, border: "1px solid " + C.border, borderRadius: 14, padding: "16px 18px", marginBottom: 16, boxShadow: C.shadow }}>
+          <div style={{ display: "flex", justifyContent: "space-between", alignItems: "center", marginBottom: 12 }}>
+            <div>
+              <div style={{ fontSize: 16, fontWeight: 800, color: C.navy }}>★ Shortlist — {shortlistItems.length} race{shortlistItems.length !== 1 ? "s" : ""}</div>
+              <div style={{ fontSize: 12, color: C.textMid, marginTop: 2 }}>Medication start and stop dates calculated automatically</div>
+            </div>
+            <Btn variant="ghost" onClick={() => setShortlisted({})} style={{ fontSize: 12 }}>Clear All</Btn>
+          </div>
+          {shortlistItems.map((item, i) => {
+            const peptDates = getMedDates(item.race.date, 4, 12);
+            const antepsinDates = getMedDates(item.race.date, 1, 12);
+            const today = new Date();
+            const peptWarning = peptDates && peptDates.startDate < today;
+            return (
+              <div key={i} style={{ background: C.cardOff, border: "1px solid " + C.border, borderRadius: 10, padding: "12px 14px", marginBottom: 10 }}>
+                <div style={{ display: "flex", justifyContent: "space-between", alignItems: "flex-start", marginBottom: 8 }}>
+                  <div>
+                    <div style={{ display: "flex", alignItems: "center", gap: 8, marginBottom: 4 }}>
+                      <Silk silk={item.horse.silk} size={24} />
+                      <span style={{ fontSize: 15, fontWeight: 800, color: C.navy }}>{item.horse.name}</span>
+                      <span style={{ fontSize: 12, color: C.textMid }}>—</span>
+                      <span style={{ fontSize: 14, fontWeight: 700, color: C.text }}>{item.race.raceName}</span>
+                    </div>
+                    <div style={{ fontSize: 12, color: C.textMid }}>
+                      {item.race.venue} — {item.race.date ? new Date(item.race.date).toLocaleDateString("en-IE", { weekday: "short", day: "numeric", month: "short" }) : ""}
+                      {item.race.prizeMoney ? " — €" + (item.race.prizeMoney >= 1000 ? (item.race.prizeMoney/1000) + "k" : item.race.prizeMoney) : ""}
+                    </div>
+                  </div>
+                  <button onClick={() => setShortlisted(s => ({ ...s, [k(item.horse.id, item.race.id)]: null }))} style={{ background: "none", border: "none", color: C.textDim, cursor: "pointer", fontSize: 16 }}>✕</button>
+                </div>
+                <div style={{ display: "grid", gridTemplateColumns: "1fr 1fr", gap: 8 }}>
+                  {peptDates && (
+                    <div style={{ background: peptWarning ? "rgba(192,57,43,0.08)" : "rgba(30,111,181,0.08)", border: "1px solid " + (peptWarning ? C.red : C.blue) + "40", borderRadius: 8, padding: "8px 12px" }}>
+                      <div style={{ fontSize: 11, fontWeight: 700, color: peptWarning ? C.red : C.blue, textTransform: "uppercase", letterSpacing: 0.5, marginBottom: 4 }}>
+                        {peptWarning ? "⚠️ Peptizole — START IMMEDIATELY" : "Peptizole"}
+                      </div>
+                      <div style={{ fontSize: 12, color: C.text }}>Start: <strong>{peptDates.start}</strong></div>
+                      <div style={{ fontSize: 12, color: C.text }}>Stop: <strong>{peptDates.stop}</strong></div>
+                    </div>
+                  )}
+                  {antepsinDates && (
+                    <div style={{ background: "rgba(109,63,192,0.08)", border: "1px solid " + C.purple + "40", borderRadius: 8, padding: "8px 12px" }}>
+                      <div style={{ fontSize: 11, fontWeight: 700, color: C.purple, textTransform: "uppercase", letterSpacing: 0.5, marginBottom: 4 }}>Antepsin</div>
+                      <div style={{ fontSize: 12, color: C.text }}>Start: <strong>{antepsinDates.start}</strong></div>
+                      <div style={{ fontSize: 12, color: C.text }}>Stop: <strong>{antepsinDates.stop}</strong></div>
+                    </div>
+                  )}
+                </div>
+                <div style={{ display: "grid", gridTemplateColumns: "1fr 1fr", gap: 7, marginTop: 8 }}>
+                  <Btn variant="green" onClick={() => handleEntry(item.horse, item.race)} style={{ justifyContent: "center" }}>
+                    ✓ Confirm Entry
+                  </Btn>
+                  <button onClick={() => handleDeclaration(item.horse, item.race)} style={{ padding: "9px", background: C.blueBg, border: "2px solid " + C.blue + "50", borderRadius: 9, color: C.blue, fontSize: 12, fontWeight: 700, cursor: "pointer" }}>
+                    📋 Declare to Run
+                  </button>
+                </div>
+              </div>
+            );
+          })}
+        </div>
+      )}
     <div style={{ display: "grid", gridTemplateColumns: "240px 1fr", gap: 16 }}>
       {toast && <div style={{ position: "fixed", bottom: 24, left: "50%", transform: "translateX(-50%)", background: C.navy, color: "#fff", borderRadius: 12, padding: "12px 22px", fontSize: 13, fontWeight: 600, zIndex: 600, boxShadow: C.shadowMd, border: `1px solid ${toast.color}50`, whiteSpace: "nowrap", animation: "slideUp 0.3s ease" }}><span style={{ color: toast.color }}>{toast.msg}</span></div>}
 
@@ -1018,7 +1100,12 @@ function RacePlanner({ horses, setHorses }) {
                       </div>
                     ) : (
                       <div style={{ display: "flex", flexDirection: "column", gap: 7 }}>
-                        <Btn variant="gold" onClick={() => setShortlisted(s => ({ ...s, [key]: !s[key] }))} style={{ width: "100%", justifyContent: "center" }}>
+                        <Btn variant="gold" onClick={() => {
+                          setShortlisted(s => ({
+                            ...s,
+                            [key]: s[key] ? null : { horse: selHorse, race }
+                          }));
+                        }} style={{ width: "100%", justifyContent: "center" }}>
                           {isSl ? "★ On Shortlist" : "☆ Add to Shortlist"}
                         </Btn>
                         {isSl && (
