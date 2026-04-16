@@ -1152,7 +1152,6 @@ function RacedayPrint({ horses }) {
     };
     reader.readAsText(file);
   };
-  };
 
   const grouped = {};
   entries.forEach(e => { if (!grouped[e.date]) grouped[e.date] = []; grouped[e.date].push(e); });
