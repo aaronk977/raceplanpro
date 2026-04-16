@@ -1,6 +1,8 @@
 import { useState, useCallback } from "react";
-
-const C = {
+ (blank)
+ const ANTHROPIC_KEY = import.meta.env.VITE_ANTHROPIC_API_KEY || "";
+ (blank)
+ const C = {
   bg: "#f0f4f8", navy: "#0a1628", navyMid: "#112240", navyLight: "#1a3360",
   card: "#ffffff", cardOff: "#f8fafc",
   gold: "#c9952a", goldLight: "#f5c842", goldBg: "rgba(201,149,42,0.10)",
@@ -642,7 +644,7 @@ function RacePlanner({ horses, setHorses }) {
         body: JSON.stringify({
           model: "claude-sonnet-4-20250514", max_tokens: 5000,
           tools: [{ type: "web_search_20250305", name: "web_search" }],
-          system: `Parse HRI race conditions PDF into JSON array. Return ONLY raw JSON array, no markdown. Each race: {"id":"r_venue_N","venue":string,"date":"YYYY-MM-DD","raceName":string,"discipline":"Flat|Hurdle|Chase|Bumper|NH Flat","raceType":"Maiden|Novice|Handicap|Novice Handicap|Weight For Age|Beginners|Bumper","grade":"Grade 1|Grade 2|Grade 3|Listed|Ungraded","surface":"Turf|AWT","distanceFurlongs":number,"prizeMoney":number,"ageMin":number,"ageMax":number|null,"sexRestriction":"Open|Mares|Fillies|Colts & Geldings","ratingMax":number|null,"isMaiden":boolean,"isNovice":boolean,"isEBF":boolean,"isSeries":boolean,"entryDeadline":"YYYY-MM-DDTHH:MM","declarationDeadline":"YYYY-MM-DDTHH:MM","forecastGoing":string} Dundalk=AWT, others=Turf.`,
+          system: "Parse HRI race conditions PDF into JSON array. Return ONLY raw JSON array, no markdown. Each race needs: id, venue, date in YYYY-MM-DD format, raceName, discipline as Flat or Hurdle or Chase or Bumper, raceType as Maiden or Novice or Handicap or Weight For Age or Beginners or Bumper, grade as Grade 1 or Grade 2 or Grade 3 or Listed or Ungraded, surface as Turf or AWT where Dundalk is AWT, distanceFurlongs as number, prizeMoney as number, ageMin as number, ageMax as number or null, sexRestriction as Open or Mares or Fillies or Colts and Geldings, ratingMax as number or null, isMaiden as boolean, isNovice as boolean, isEBF as boolean, entryDeadline in YYYY-MM-DDTHH:MM format, forecastGoing.",
           messages: [{ role: "user", content: "Fetch https://www.hri-ras.ie/upcoming-race-conditions, find latest PDF, parse all races, return JSON array only." }]
         })
       });
@@ -808,7 +810,7 @@ function RacePlanner({ horses, setHorses }) {
             {fetchStatus === "done" && <div style={{ fontSize: 11, color: C.green, fontWeight: 600, marginTop: 2 }}>✓ {races.length} races · {eligible.length} eligible for {selHorse.name}</div>}
           </div>
           <Btn onClick={fetchRaces} disabled={fetchStatus === "fetching"} style={{ fontSize: 12, padding: "8px 16px" }}>
-            {fetchStatus === "fetching" ? "⟳ Fetching…" : `⟳ ${lastFetch ? "Refresh" : "Fetch Now"}`}
+            {fetchStatus === "fetching" ? "⟳ Fetching…" : (lastFetch ? "⟳ Refresh" : "⟳ Fetch Now")}
           </Btn>
         </div>
 
