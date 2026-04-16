@@ -214,7 +214,7 @@ function MedicationTracker({ horses }) {
   const [openHorse, setOpenHorse] = useState(null);
   const [showBill, setShowBill] = useState(false);
   const [billHorse, setBillHorse] = useState(null);
-  const [trackedIds, setTrackedIds] = useState(["h1", "h2"]);
+  const [trackedIds, setTrackedIds] = useState([]);
   const [showAdd, setShowAdd] = useState(false);
 
   const daysInMonth = getDaysInMonth(selYear, selMonth);
@@ -1095,8 +1095,8 @@ function RacedayPrint({ horses }) {
               }
             }
           }
-          const extras = row.extras || row.headgear || "";
-          const headgearMap = { "H": "Hood", "T": "Tongue Tie", "B": "Blinkers", "C": "Cheekpieces", "V": "Visor", "EM": "Ear Muffs", "P": "Pacifiers" };
+          const extras = row.extras || row.extra || row.headgear || row.equipment || "";
+          const headgearMap = { "H": "Hood", "T": "Tongue Strap", "B": "Blinkers", "C": "Cheekpieces", "V": "Visor", "EM": "Ear Muffs", "P": "Pacifiers", "TT": "Tongue Tie", "CP": "Cheekpieces", "BL": "Blinkers" };
           const headgear = headgearMap[extras.trim().toUpperCase()] || extras || "";
           const status = row.status || "";
           const ballotNo = status.toLowerCase().includes("ballot") ? status : (row.ballot || row.ballot_no || "");
