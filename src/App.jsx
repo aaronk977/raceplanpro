@@ -812,7 +812,7 @@ function RacePlanner({ horses, setHorses }) {
 
                     {!analysis && !isLoading && (
                       <Btn onClick={() => analyse(selHorse, race)} style={{ width: "100%", justifyContent: "center", marginBottom: 10 }}>
-                        🧠 Get My Take on This Race <span style={{ fontSize: 11, opacity: 0.5, fontWeight: 400 }}>· searches live form & opposition</span>
+                        {"🧠 Get My Take on This Race"}
                       </Btn>
                     )}
 
@@ -855,7 +855,7 @@ function RacePlanner({ horses, setHorses }) {
 
                     {!canRace(selHorse) ? (
                       <div style={{ padding: "9px 12px", background: C.amberBg, border: "1px solid " + C.amber + "40", borderRadius: 9, fontSize: 12, color: C.amber, fontWeight: 600, textAlign: "center" }}>
-                        ⏳ Cool-off active · eligible {coolingDate(selHorse.activationDate)?.toLocaleDateString("en-IE", { day: "numeric", month: "short" })} · Do not contact owner yet
+                        {"⏳ Cool-off active · eligible " + (coolingDate(selHorse.activationDate)?.toLocaleDateString("en-IE", { day: "numeric", month: "short" }) || "") + " · Do not contact owner yet"}
                       </div>
                     ) : (
                       <div style={{ display: "flex", flexDirection: "column", gap: 7 }}>
