@@ -1339,7 +1339,7 @@ export default function App() {
   return (
     <div style={{ minHeight: "100vh", background: C.bg, fontFamily: "'Inter','Helvetica Neue',sans-serif", display: "flex", flexDirection: "column" }}>
       <style>{`
-        @import url('https://fonts.googleapis.com/css2?family=Inter:wght@400;500;600;700;800&display=swap');
+        /* Font loaded via index.html */
         * { box-sizing: border-box; margin: 0; padding: 0; }
         p { margin: 0; }
         button:hover { opacity: 0.88; }
