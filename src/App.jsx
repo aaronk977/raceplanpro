@@ -175,7 +175,7 @@ function StatusPill({ status, activationDate }) {
 
 // ─── AI RACE PLANNER ──────────────────────────────────────────────────────────
 async function getAITake(horse, race) {
-  const lastRun = horse.form?.[0];
+  const lastRun = (horse.form && horse.form[0]);
   const daysSince = lastRun ? Math.floor((TODAY - new Date(lastRun.date)) / 86400000) : null;
   const daysToRace = daysUntil(race.date);
 
@@ -187,12 +187,12 @@ Use web_search to check likely runners and trainer record at the venue before wr
 
   const prompt = `Give me your honest take — trainer to trainer. Search first.
 
-HORSE: ${horse.name} | ${getAge(horse.dob)}yo ${horse.sex} | ${horse.trainer} | Rating: ${horse.nhRating ?? horse.flatRating ?? "—"}
-Headgear: ${horse.headgear || "None"} | ${daysSince ?? "?"} days since last run
+HORSE: ${horse.name} | ${getAge(horse.dob)}yo ${horse.sex} | ${horse.trainer} | Rating: ${horse.nhRating || horse.flatRating || "unknown"}
+Headgear: ${horse.headgear || "None"} | ${daysSince || "?"} days since last run
 Notes: "${horse.notes}"
 
 RACE: ${race.raceName} | ${race.venue} | ${race.date}
-${race.grade} ${race.discipline} ${race.raceType} | ${race.distanceFurlongs}f | €${race.prizeMoney?.toLocaleString()} | ${race.forecastGoing} | ${daysToRace} days away
+${race.grade} ${race.discipline} ${race.raceType} | ${race.distanceFurlongs}f | €${(race.prizeMoney ? race.prizeMoney.toLocaleString() : "0")} | ${race.forecastGoing} | ${daysToRace} days away
 
 Search: "${race.raceName} ${race.venue} 2026 runners" and "${horse.trainer} ${race.venue} record"
 
@@ -206,7 +206,7 @@ Replace all template text with real analysis. recommendation = STRONG, CONSIDER,
     body: JSON.stringify({ model: "claude-sonnet-4-20250514", max_tokens: 2500, tools: [{ type: "web_search_20250305", name: "web_search" }], system, messages: [{ role: "user", content: prompt }] }),
   });
   const data = await res.json();
-  const text = data.content?.filter(b => b.type === "text").map(b => b.text).join("").trim();
+  const text = (data.content || []).filter(b => b.type === "text").map(b => b.text).join("").trim();
   const match = text.match(/\{[\s\S]*\}/);
   if (!match) throw new Error("No JSON");
   return JSON.parse(match[0]);
@@ -462,7 +462,7 @@ function ProvisionalEntries({ horses, setHorses }) {
         })
       });
       const data = await res.json();
-      const text = data.content?.filter(b => b.type === "text").map(b => b.text).join("").trim();
+      const text = (data.content || []).filter(b => b.type === "text").map(b => b.text).join("").trim();
       const match = text.match(/\[[\s\S]*\]/);
       if (!match) throw new Error("No races");
       setProvisionalRaces(JSON.parse(match[0]));
@@ -508,7 +508,7 @@ function ProvisionalEntries({ horses, setHorses }) {
             </div>
           </div>
           <Btn onClick={fetchProvisional} disabled={fetchStatus === "fetching"} style={{ fontSize: 12, padding: "8px 16px" }}>
-            {fetchStatus === "fetching" ? <>⟳ Fetching…</> : <>⟳ {lastFetch ? "Refresh" : "Fetch Now"}</>}
+            {fetchStatus === "fetching" ? "⟳ Fetching..." : (lastFetch ? "⟳ Refresh" : "⟳ Fetch Now")}
           </Btn>
         </div>
         {provisionalRaces.length > 0 && (
@@ -640,7 +640,7 @@ function RacePlanner({ horses, setHorses }) {
     try {
       const res = await fetch("https://api.anthropic.com/v1/messages", {
         method: "POST",
-        headers: { "Content-Type": "application/json" },
+        headers: { "Content-Type": "application/json", "x-api-key": ANTHROPIC_KEY, "anthropic-version": "2023-06-01", "anthropic-dangerous-direct-browser-access": "true" },
         body: JSON.stringify({
           model: "claude-sonnet-4-20250514", max_tokens: 5000,
           tools: [{ type: "web_search_20250305", name: "web_search" }],
@@ -649,7 +649,7 @@ function RacePlanner({ horses, setHorses }) {
         })
       });
       const data = await res.json();
-      const text = data.content?.filter(b => b.type === "text").map(b => b.text).join("").trim();
+      const text = (data.content || []).filter(b => b.type === "text").map(b => b.text).join("").trim();
       const match = text.match(/\[[\s\S]*\]/);
       if (!match) throw new Error("No races");
       const parsed = JSON.parse(match[0]);
@@ -677,15 +677,15 @@ function RacePlanner({ horses, setHorses }) {
   const analyse = async (horse, race) => {
     const key = k(horse.id, race.id);
     setLoading(l => ({ ...l, [key]: true })); setLoadStage(s => ({ ...s, [key]: 0 }));
-    const timer = setInterval(() => setLoadStage(s => { const c = s[key] ?? 0; if (c < 3) return { ...s, [key]: c + 1 }; clearInterval(timer); return s; }), 2800);
+    const timer = setInterval(() => setLoadStage(s => { const c = s[key] || 0; if (c < 3) return { ...s, [key]: c + 1 }; clearInterval(timer); return s; }), 2800);
     try { const r = await getAITake(horse, race); clearInterval(timer); setAnalyses(a => ({ ...a, [key]: r })); }
     catch (e) { console.error(e); clearInterval(timer); }
     setLoading(l => ({ ...l, [key]: false }));
   };
 
   const handleEntry = (horse, race) => {
-    const msg = encodeURIComponent(`🏇 RacePlan Pro — ${horse.trainer}\n\n${horse.name} has been entered in the ${race.raceName} at ${race.venue} on ${new Date(race.date).toLocaleDateString("en-IE", { weekday: "long", day: "numeric", month: "long" })}.\n\nPrize fund: €${race.prizeMoney?.toLocaleString()}\nForecast going: ${race.forecastGoing}\n\nWe'll be in touch closer to declaration day.`);
-    const phone = horse.ownerPhone?.replace(/\D/g, "");
+    const msg = encodeURIComponent(`🏇 RacePlan Pro — ${horse.trainer}\n\n${horse.name} has been entered in the ${race.raceName} at ${race.venue} on ${new Date(race.date).toLocaleDateString("en-IE", { weekday: "long", day: "numeric", month: "long" })}.\n\nPrize fund: €${(race.prizeMoney ? race.prizeMoney.toLocaleString() : "")}\nForecast going: ${race.forecastGoing}\n\nWe'll be in touch closer to declaration day.`);
+    const phone = horse.ownerPhone ? horse.ownerPhone.replace(/\D/g, "") : "";
     if (phone) window.open(`https://wa.me/${phone}?text=${msg}`, "_blank");
     showToast(`✓ Entry confirmed — WhatsApp opened for ${horse.owner}`);
   };
@@ -693,12 +693,12 @@ function RacePlanner({ horses, setHorses }) {
   const handleDeclaration = (horse, race) => {
     const jockey = horse.jockey || "D.J. O'Keeffe";
     const msg = encodeURIComponent(`✅ RacePlan Pro — ${horse.trainer}\n\n${horse.name} is declared to run in the ${race.raceName} at ${race.venue}.\n\nJockey: ${jockey}\nForecast going: ${race.forecastGoing}\n\nWe'll keep you updated on race day.`);
-    const phone = horse.ownerPhone?.replace(/\D/g, "");
+    const phone = horse.ownerPhone ? horse.ownerPhone.replace(/\D/g, "") : "";
     if (phone) window.open(`https://wa.me/${phone}?text=${msg}`, "_blank");
     showToast(`📋 Declaration confirmed — WhatsApp opened for ${horse.owner}`, C.blue);
   };
 
-  const sorted = [...eligible].sort((a, b) => (analyses[k(selHorse.id, b.id)]?.overall ?? -1) - (analyses[k(selHorse.id, a.id)]?.overall ?? -1));
+  const sorted = [...eligible].sort((a, b) => ((analyses[k(selHorse.id, b.id)] || {}).overall || -1) - ((analyses[k(selHorse.id, a.id)] || {}).overall || -1));
 
   return (
     <div style={{ display: "grid", gridTemplateColumns: "240px 1fr", gap: 16 }}>
@@ -1215,8 +1215,8 @@ function OwnerPortal({ horses }) {
 
   const owners = [...new Set(horses.map(h => h.owner))].map(name => ({
     name, horses: horses.filter(h => h.owner === name),
-    phone: horses.find(h => h.owner === name)?.ownerPhone,
-    email: horses.find(h => h.owner === name)?.ownerEmail,
+    phone: (horses.find(h => h.owner === name) || {}).ownerPhone,
+    email: (horses.find(h => h.owner === name) || {}).ownerEmail,
   }));
 
   if (!selOwner) return (
@@ -1368,7 +1368,7 @@ export default function App() {
 
         {/* Active tab label */}
         <div style={{ marginLeft: 8, padding: "4px 12px", background: "rgba(255,255,255,0.08)", borderRadius: 20, fontSize: 12, fontWeight: 600, color: "rgba(255,255,255,0.7)" }}>
-          {NAV.find(n => n.id === tab)?.icon} {NAV.find(n => n.id === tab)?.label}
+          {(NAV.find(n => n.id === tab) || {}).icon} {(NAV.find(n => n.id === tab) || {}).label}
         </div>
 
         <div style={{ marginLeft: "auto", display: "flex", alignItems: "center", gap: 10 }}>
