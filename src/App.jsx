@@ -631,9 +631,12 @@ function RacePlanner({ horses, setHorses }) {
   const [shortlisted, setShortlisted] = useState({});
   const [toast, setToast] = useState(null);
 
-  const k = (hId, rId) => "" + hId + "_" + rId + "";
+  const raceKey = (hId, rId) => hId + "_" + rId;
 
-  const showToast = (msg, color = C.green) => { setToast({ msg, color }); setTimeout(() => setToast(null), 4000); };
+  const showToast = (msg, color) => {
+    setToast({ msg, color: color || C.green });
+    setTimeout(() => setToast(null), 3000);
+  };
 
   const fetchRaces = async () => {
     setFetchStatus("fetching");
@@ -644,100 +647,222 @@ function RacePlanner({ horses, setHorses }) {
         body: JSON.stringify({
           model: "claude-sonnet-4-20250514", max_tokens: 5000,
           tools: [{ type: "web_search_20250305", name: "web_search" }],
-          system: "Parse HRI race conditions PDF into JSON array. Return ONLY raw JSON array, no markdown. Each race needs: id as r_venue_N, venue, date as YYYY-MM-DD, raceName, discipline as Flat or Hurdle or Chase or Bumper, raceType as Maiden or Novice or Handicap or Weight For Age, grade as Grade 1 or Grade 2 or Grade 3 or Listed or Ungraded, surface as Turf or AWT where Dundalk is AWT, distanceFurlongs as number, prizeMoney as number, ageMin as number, ageMax as number, ratingMax as number, isMaiden as boolean, isNovice as boolean, isEBF as boolean, entryDeadline as YYYY-MM-DDTHH:MM, forecastGoing.",
-          messages: [{ role: "user", content: "Fetch https://www.hri-ras.ie/upcoming-race-conditions, find latest PDF, parse all races, return JSON array only." }]
+          system: "Parse HRI race conditions into JSON array. Return ONLY raw JSON, no markdown. Each race: id, venue, date as YYYY-MM-DD, raceName, discipline, raceType, grade, distanceFurlongs, prizeMoney, ageMin, ageMax, ratingMax, isMaiden, isNovice, isEBF, entryDeadline, forecastGoing.",
+          messages: [{ role: "user", content: "Fetch https://www.hri-ras.ie/upcoming-race-conditions and parse all races into JSON." }]
         })
       });
       const data = await res.json();
-      const text = (data.content || []).filter(b => b.type === "text").map(b => b.text).join("").trim();
+      const text = (data.content || []).filter(function(b) { return b.type === "text"; }).map(function(b) { return b.text; }).join("").trim();
       const match = text.match(new RegExp("\\[[\\s\\S]*\\]"));
-      if (!match) throw new Error("No races");
-      const parsed = JSON.parse(match[0]);
-      setRaces(parsed); setLastFetch(new Date().toISOString()); setFetchStatus("done");
-      showToast("✓ " + parsed.length + " races loaded from HRI");
-    } catch (e) { console.error(e); setFetchStatus("error"); showToast("Failed to fetch — try again", C.red); }
+      if (match) {
+        const parsed = JSON.parse(match[0]);
+        setRaces(parsed);
+        setLastFetch(Date.now());
+        setFetchStatus("done");
+        showToast("Loaded " + parsed.length + " races from HRI");
+      } else {
+        setFetchStatus("idle");
+        showToast("Could not parse races", C.red);
+      }
+    } catch (e) {
+      setFetchStatus("idle");
+      showToast("Fetch failed: " + e.message, C.red);
+    }
   };
 
-  const eligible = races.filter(r => {
+  const analyse = async (horse, race) => {
+    const key = raceKey(horse.id, race.id);
+    setLoading(function(l) { return Object.assign({}, l, { [key]: true }); });
+    setLoadStage(function(s) { return Object.assign({}, s, { [key]: 0 }); });
+    const timer = setInterval(function() {
+      setLoadStage(function(s) {
+        const c = s[key] || 0;
+        if (c < 3) return Object.assign({}, s, { [key]: c + 1 });
+        clearInterval(timer);
+        return s;
+      });
+    }, 1200);
+    try {
+      const res = await fetch("https://api.anthropic.com/v1/messages", {
+        method: "POST",
+        headers: { "Content-Type": "application/json", "x-api-key": ANTHROPIC_KEY, "anthropic-version": "2023-06-01", "anthropic-dangerous-direct-browser-access": "true" },
+        body: JSON.stringify({
+          model: "claude-sonnet-4-20250514", max_tokens: 2000,
+          tools: [{ type: "web_search_20250305", name: "web_search" }],
+          system: "You are an Irish racing expert. Return ONLY raw JSON: { overall: 0-100, recommendation: STRONG|CONSIDER|WAIT|PASS, scores: { handicap_edge, class_fit, conditions_match, timing, cuteness }, bullets: [{ icon, category, point }], conclusion }",
+          messages: [{ role: "user", content: "Analyse " + horse.name + " for " + race.raceName + " at " + race.venue + ". Rating: " + (horse.nhRating || horse.flatRating || "unknown") + ". Going: " + race.forecastGoing + ". Distance: " + race.distanceFurlongs + "f. Search for recent form." }]
+        })
+      });
+      const data = await res.json();
+      const text = (data.content || []).filter(function(b) { return b.type === "text"; }).map(function(b) { return b.text; }).join("").trim();
+      const match = text.match(new RegExp("\\{[\\s\\S]*\\}"));
+      if (match) {
+        const parsed = JSON.parse(match[0]);
+        setAnalyses(function(a) { return Object.assign({}, a, { [key]: parsed }); });
+      }
+    } catch (e) {
+      showToast("Analysis failed", C.red);
+    } finally {
+      clearInterval(timer);
+      setLoading(function(l) { return Object.assign({}, l, { [key]: false }); });
+    }
+  };
+
+  const handleEntry = function(horse, race) {
+    const phone = horse.ownerPhone ? horse.ownerPhone.split("").filter(function(c) { return c >= "0" && c <= "9"; }).join("") : "";
+    if (phone) window.open("https://wa.me/" + phone + "?text=" + encodeURIComponent("RacePlan Pro - " + horse.name + " entered in " + race.raceName + " at " + race.venue), "_blank");
+    showToast("Entry confirmed for " + horse.name);
+  };
+
+  const handleDeclaration = function(horse, race) {
+    const phone = horse.ownerPhone ? horse.ownerPhone.split("").filter(function(c) { return c >= "0" && c <= "9"; }).join("") : "";
+    if (phone) window.open("https://wa.me/" + phone + "?text=" + encodeURIComponent("RacePlan Pro - " + horse.name + " declared for " + race.raceName + " at " + race.venue), "_blank");
+    showToast("Declaration confirmed for " + horse.name);
+  };
+
+  const eligible = races.filter(function(r) {
+    if (!selHorse) return false;
     const age = getAge(selHorse.dob);
-    if (age < r.ageMin) return false;
+    if (r.ageMin && age < r.ageMin) return false;
     if (r.ageMax && age > r.ageMax) return false;
-    const sexMap = { "Mares": ["Mare", "Filly"], "Fillies": ["Filly"], "Colts & Geldings": ["Colt", "Gelding"] };
-    if (r.sexRestriction !== "Open" && !(sexMap[r.sexRestriction] || []).includes(selHorse.sex)) return false;
-    if (!selHorse.discipline.includes(r.discipline)) return false;
-    if (selHorse.surface !== r.surface) return false;
-    const rtg = r.discipline === "Flat" ? selHorse.flatRating : selHorse.nhRating;
-    if (r.ratingMax && rtg && rtg > r.ratingMax) return false;
-    if (r.isMaiden && !selHorse.isMaiden) return false;
-    if (r.isNovice && !selHorse.isNovice) return false;
-    if (r.isEBF && !selHorse.isEBF) return false;
+    if (r.ratingMax && (selHorse.nhRating || selHorse.flatRating || 0) > r.ratingMax) return false;
     return true;
   });
 
-  const analyse = async (horse, race) => {
-    const key = k(horse.id, race.id);
-    setLoading(l => ({ ...l, [key]: true })); setLoadStage(s => ({ ...s, [key]: 0 }));
-    const timer = setInterval(() => setLoadStage(s => { const c = s[key] || 0; if (c < 3) return { ...s, [key]: c + 1 }; clearInterval(timer); return s; }), 2800);
-    try { const r = await getAITake(horse, race); clearInterval(timer); setAnalyses(a => ({ ...a, [key]: r })); }
-    catch (e) { console.error(e); clearInterval(timer); }
-    setLoading(l => ({ ...l, [key]: false }));
-  };
+  const sorted = eligible.slice().sort(function(a, b) {
+    const ka = raceKey(selHorse.id, a.id);
+    const kb = raceKey(selHorse.id, b.id);
+    return ((analyses[kb] || {}).overall || -1) - ((analyses[ka] || {}).overall || -1);
+  });
 
-  const handleEntry = (horse, race) => {
-    const msg = encodeURIComponent("RacePlan Pro - " + horse.name + " has been entered in " + race.raceName + " at " + race.venue + ". Prize fund: " + (race.prizeMoney || "") + ". Forecast going: " + race.forecastGoing + ". We will be in touch closer to declaration day.");
-    const phone = horse.ownerPhone ? horse.ownerPhone.split("").filter(c => c >= "0" && c <= "9").join("") : "";
-    if (phone) window.open("https://wa.me/" + phone + "?text=" + msg + "", "_blank");
-    showToast("✓ Entry confirmed — WhatsApp opened for " + horse.owner + "");
-  };
-
-  const handleDeclaration = (horse, race) => {
-    const jockey = horse.jockey || "D.J. O'Keeffe";
-    const msg = encodeURIComponent("RacePlan Pro - " + horse.name + " is declared to run in " + race.raceName + " at " + race.venue + ". Jockey: " + (horse.jockey || "TBC") + ". We will be in touch with further details.");
-    const phone = horse.ownerPhone ? horse.ownerPhone.split("").filter(c => c >= "0" && c <= "9").join("") : "";
-    if (phone) window.open("https://wa.me/" + phone + "?text=" + msg + "", "_blank");
-    showToast("📋 Declaration confirmed — WhatsApp opened for " + horse.owner + "", C.blue);
-  };
-
-  const sorted = [...eligible].sort((a, b) => ((analyses[k(selHorse.id, b.id)] || {}).overall || -1) - ((analyses[k(selHorse.id, a.id)] || {}).overall || -1));
-
-  const renderRaceCard = (race) => {
-              const key = k(selHorse.id, race.id);
-              const analysis = analyses[key];
-              const isLoading = loading[key];
-              const stage = loadStage[key] || 0;
-              const isSl = !!shortlisted[key];
-              const accent = analysis ? (analysis.overall >= 75 ? C.green : analysis.overall >= 55 ? C.amber : C.red) : C.border;
-
-  const renderHorseCard = (h) => {
-          const stCol = h.status === "Active" ? C.green : h.status === "CoolingOff" ? C.amber : C.red;
   return (
-    <div style={{ display: "grid", gridTemplateColumns: "240px 1fr", gap: 16 }}>
-      <div>
-        <div style={{ fontSize: 10, fontWeight: 700, color: C.textDim, letterSpacing: 1.5, marginBottom: 10, textTransform: "uppercase" }}>Horses</div>
-        {horses.map(h => renderHorseCard(h))}
-      </div>
-      <div>
-        <div style={{ background: C.card, border: "1px solid " + C.border, borderRadius: 12, padding: "12px 16px", marginBottom: 12, display: "flex", justifyContent: "space-between", alignItems: "center" }}>
-          <div>
-            <div style={{ fontSize: 13, fontWeight: 700, color: C.text }}>HRI Race Conditions</div>
-            <div style={{ fontSize: 11, color: C.textMid, marginTop: 2 }}>{lastFetch ? "Updated " + new Date(lastFetch).toLocaleString("en-IE") : "Paste conditions below"}</div>
-          </div>
-          <Btn onClick={fetchRaces} disabled={fetchStatus === "fetching"} style={{ fontSize: 12, padding: "8px 16px" }}>
-            {fetchStatus === "fetching" ? "Fetching..." : "Fetch Now"}
-          </Btn>
+    <div style={{ padding: 20 }}>
+      {toast && (
+        <div style={{ position: "fixed", bottom: 24, left: "50%", transform: "translateX(-50%)", background: toast.color, color: "#fff", padding: "10px 20px", borderRadius: 10, fontWeight: 700, zIndex: 999 }}>
+          {toast.msg}
         </div>
-        <div style={{ background: C.card, border: "1px solid " + C.border, borderRadius: 12, padding: "12px 16px", marginBottom: 12, display: "flex", alignItems: "center", gap: 12 }}>
-          <Silk silk={selHorse.silk} size={44} />
-          <div>
-            <div style={{ fontSize: 19, fontWeight: 800, color: C.text }}>{selHorse.name}</div>
-            <div style={{ fontSize: 12, color: C.textMid }}>{"Rtg " + (selHorse.nhRating || selHorse.flatRating || "unrated")}</div>
-          </div>
+      )}
+      <div style={{ display: "grid", gridTemplateColumns: "220px 1fr", gap: 16 }}>
+        <div>
+          <div style={{ fontSize: 10, fontWeight: 700, color: C.textDim, letterSpacing: 1.5, marginBottom: 8, textTransform: "uppercase" }}>Horses</div>
+          {horses.map(function(h) {
+            const sel = selHorse && selHorse.id === h.id;
+            return (
+              <div key={h.id} onClick={function() { setSelHorse(h); }} style={{ background: sel ? C.navy : C.card, border: "1.5px solid " + (sel ? C.navyLight : C.border), borderRadius: 10, padding: "10px 12px", marginBottom: 6, cursor: "pointer" }}>
+                <div style={{ fontSize: 13, fontWeight: 700, color: sel ? "#fff" : C.text }}>{h.name}</div>
+                <div style={{ fontSize: 10, color: sel ? "rgba(255,255,255,0.6)" : C.textMid }}>{h.sex}{h.nhRating || h.flatRating ? " · Rtg " + (h.nhRating || h.flatRating) : ""}</div>
+                {h.status === "CoolingOff" && <div style={{ marginTop: 4, fontSize: 10, color: C.amber }}>{"Cooling off"}</div>}
+                {h.status === "Inactive" && <div style={{ marginTop: 4, fontSize: 10, color: C.red }}>{"Inactive"}</div>}
+              </div>
+            );
+          })}
         </div>
-        <div style={{ fontSize: 11, color: C.textMid, marginBottom: 8 }}>{eligible.length} eligible races</div>
-        {sorted.map(race => renderRaceCard(race))}
+        <div>
+          <div style={{ background: C.card, border: "1px solid " + C.border, borderRadius: 12, padding: "12px 16px", marginBottom: 12, display: "flex", justifyContent: "space-between", alignItems: "center" }}>
+            <div>
+              <div style={{ fontSize: 13, fontWeight: 700, color: C.text }}>HRI Race Conditions</div>
+              <div style={{ fontSize: 11, color: C.textMid }}>{lastFetch ? "Updated " + new Date(lastFetch).toLocaleString("en-IE") : "Tap to load"}</div>
+            </div>
+            <Btn onClick={fetchRaces} disabled={fetchStatus === "fetching"}>{fetchStatus === "fetching" ? "Fetching..." : "Fetch Now"}</Btn>
+          </div>
+          {selHorse && (
+            <div style={{ background: C.card, border: "1px solid " + C.border, borderRadius: 12, padding: "12px 16px", marginBottom: 12, display: "flex", alignItems: "center", gap: 12 }}>
+              <Silk silk={selHorse.silk} size={44} />
+              <div>
+                <div style={{ fontSize: 18, fontWeight: 800, color: C.text }}>{selHorse.name}</div>
+                <div style={{ fontSize: 12, color: C.textMid }}>{selHorse.sex + " · Rtg " + (selHorse.nhRating || selHorse.flatRating || "—")}</div>
+              </div>
+            </div>
+          )}
+          {races.length === 0 && (
+            <div style={{ padding: 40, textAlign: "center", color: C.textMid, border: "1.5px dashed " + C.border, borderRadius: 12 }}>
+              <div style={{ fontSize: 24, marginBottom: 8 }}>{"📄"}</div>
+              <div style={{ fontWeight: 700, marginBottom: 4 }}>No race conditions loaded</div>
+              <div style={{ fontSize: 13 }}>Tap Fetch Now above</div>
+            </div>
+          )}
+          {races.length > 0 && eligible.length === 0 && (
+            <div style={{ padding: 32, textAlign: "center", color: C.textMid, border: "1.5px dashed " + C.border, borderRadius: 12 }}>
+              {"No eligible races for " + (selHorse ? selHorse.name : "this horse")}
+            </div>
+          )}
+          {races.length > 0 && eligible.length > 0 && (
+            <div>
+              <div style={{ fontSize: 10, fontWeight: 700, color: C.textDim, letterSpacing: 1.5, marginBottom: 10, textTransform: "uppercase" }}>{eligible.length + " eligible races"}</div>
+              {sorted.map(function(race) {
+                const key = raceKey(selHorse.id, race.id);
+                const analysis = analyses[key];
+                const isLoading = loading[key];
+                const stage = loadStage[key] || 0;
+                const isSl = !!shortlisted[key];
+                const accent = analysis ? (analysis.overall >= 75 ? C.green : analysis.overall >= 55 ? C.amber : C.red) : C.border;
+                return (
+                  <div key={race.id} style={{ background: C.card, borderRadius: 12, border: "1px solid " + (isSl ? C.gold : C.border), marginBottom: 12, overflow: "hidden" }}>
+                    <div style={{ height: 3, background: analysis ? accent : (isSl ? C.gold : C.border) }} />
+                    <div style={{ padding: "14px 16px" }}>
+                      <div style={{ display: "flex", justifyContent: "space-between", marginBottom: 8 }}>
+                        <div>
+                          <div style={{ fontSize: 15, fontWeight: 700, color: C.text, marginBottom: 4 }}>{race.raceName}</div>
+                          <div style={{ fontSize: 12, color: C.textMid }}>{race.venue + " · " + race.distanceFurlongs + "f · " + race.forecastGoing}</div>
+                        </div>
+                        <div style={{ fontSize: 17, fontWeight: 800, color: C.gold }}>{"€" + (race.prizeMoney >= 1000 ? Math.round(race.prizeMoney / 1000) + "k" : race.prizeMoney)}</div>
+                      </div>
+                      {!analysis && !isLoading && (
+                        <Btn onClick={function() { analyse(selHorse, race); }} style={{ width: "100%", justifyContent: "center", marginBottom: 8 }}>{"Get My Take on This Race"}</Btn>
+                      )}
+                      {isLoading && (
+                        <div style={{ padding: "10px 14px", background: C.cardOff, borderRadius: 9, marginBottom: 8 }}>
+                          <div style={{ fontSize: 12, fontWeight: 700, color: C.navy }}>{"Analysing..."}</div>
+                          {["Checking field...", "Reviewing form...", "Checking going...", "Building analysis..."].map(function(s, i) {
+                            return (
+                              <div key={i} style={{ fontSize: 12, color: i <= stage ? C.text : C.textDim, marginTop: 4, opacity: i <= stage ? 1 : 0.4 }}>{(i < stage ? "✓ " : i === stage ? "⟳ " : "○ ") + s}</div>
+                            );
+                          })}
+                        </div>
+                      )}
+                      {analysis && (
+                        <div style={{ marginBottom: 8 }}>
+                          <div style={{ display: "flex", gap: 8, marginBottom: 8, alignItems: "center" }}>
+                            <div style={{ flex: 1, fontSize: 13, fontWeight: 700, color: accent }}>{analysis.recommendation}</div>
+                            <div style={{ fontSize: 22, fontWeight: 800, color: accent }}>{analysis.overall}</div>
+                            <div style={{ fontSize: 10, color: C.textMid }}>{" /100"}</div>
+                          </div>
+                          {(analysis.bullets || []).map(function(b, i) {
+                            return (
+                              <div key={i} style={{ background: C.cardOff, borderRadius: 8, padding: "8px 12px", marginBottom: 6 }}>
+                                <div style={{ fontSize: 11, fontWeight: 700, color: C.navy, marginBottom: 3 }}>{b.icon + " " + b.category}</div>
+                                <div style={{ fontSize: 13, color: C.text }}>{b.point}</div>
+                              </div>
+                            );
+                          })}
+                          <div style={{ background: C.navy, borderRadius: 8, padding: "12px 14px" }}>
+                            <div style={{ fontSize: 11, fontWeight: 700, color: "rgba(255,255,255,0.5)", marginBottom: 6, textTransform: "uppercase" }}>{"Bottom Line"}</div>
+                            <div style={{ fontSize: 13, color: "#e8edf5", fontStyle: "italic" }}>{analysis.conclusion}</div>
+                          </div>
+                        </div>
+                      )}
+                      <div style={{ display: "flex", flexDirection: "column", gap: 6, marginTop: 8 }}>
+                        <Btn variant="gold" onClick={function() { setShortlisted(function(s) { return Object.assign({}, s, { [key]: !s[key] }); }); }} style={{ width: "100%", justifyContent: "center" }}>
+                          {isSl ? "★ On Shortlist" : "☆ Add to Shortlist"}
+                        </Btn>
+                        {isSl && (
+                          <div style={{ display: "grid", gridTemplateColumns: "1fr 1fr", gap: 6 }}>
+                            <Btn variant="green" onClick={function() { handleEntry(selHorse, race); }} style={{ justifyContent: "center" }}>{"Confirm Entry"}</Btn>
+                            <Btn onClick={function() { handleDeclaration(selHorse, race); }} style={{ justifyContent: "center" }}>{"Declare to Run"}</Btn>
+                          </div>
+                        )}
+                      </div>
+                    </div>
+                  </div>
+                );
+              })}
+            </div>
+          )}
+        </div>
       </div>
     </div>
   );
+}
 
 function RacedayPrint({ horses }) {
   const [entries, setEntries] = useState([
