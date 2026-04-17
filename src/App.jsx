@@ -708,6 +708,24 @@ function RacePlanner({ horses, setHorses }) {
               const isSl = !!shortlisted[key];
               const accent = analysis ? (analysis.overall >= 75 ? C.green : analysis.overall >= 55 ? C.amber : C.red) : C.border;
 
+  const renderHorseCard = (h) => {
+          const stCol = h.status === "Active" ? C.green : h.status === "CoolingOff" ? C.amber : C.red;
+          return (
+            <div key={h.id} onClick={() => setSelHorse(h)} style={{ background: sel ? C.navy : C.card, border: "1.5px solid " + sel ? C.navyLight : C.border + "", borderLeft: "4px solid " + stCol + "", borderRadius: 11, padding: "10px 12px", marginBottom: 7, cursor: "pointer", boxShadow: sel ? C.shadowMd : C.shadow, transition: "all 0.15s" }}>
+              <div style={{ display: "flex", alignItems: "center", gap: 9 }}>
+                <Silk silk={h.silk} size={32} />
+                <div style={{ flex: 1, minWidth: 0 }}>
+                  <div style={{ fontSize: 13, fontWeight: 700, color: sel ? "#fff" : C.text, whiteSpace: "nowrap", overflow: "hidden", textOverflow: "ellipsis" }}>{h.name}</div>
+                  <div style={{ fontSize: 10, color: sel ? "rgba(255,255,255,0.5)" : C.textMid, marginTop: 1 }}>{getAge(h.dob) + "yo"}{h.nhRating || h.flatRating ? " · Rtg " + (h.nhRating || h.flatRating) : ""}{h.headgear ? " · " + h.headgear : ""}</div>
+                  <div style={{ marginTop: 4 }}><FormDots form={h.form} /></div>
+                </div>
+              </div>
+              {h.status === "CoolingOff" && <div style={{ marginTop: 5, padding: "2px 7px", background: "rgba(217,119,6,0.12)", borderRadius: 5, fontSize: 10, color: C.amber, fontWeight: 600 }}>⏳ {(coolingDate(h.activationDate) ? coolingDate(h.activationDate).toLocaleDateString("en-IE", { day: "numeric", month: "short" }) : "")}</div>}
+              {h.status === "Inactive" && <div style={{ marginTop: 5, padding: "2px 7px", background: "rgba(192,57,43,0.10)", borderRadius: 5, fontSize: 10, color: C.red, fontWeight: 600 }}>✕ Inactive</div>}
+            </div>
+          );
+  };
+
               return (
                 <div key={race.id} style={{ background: C.card, borderRadius: 13, border: "1px solid " + (isSl ? C.gold + "60" : C.border), marginBottom: 12, overflow: "hidden", boxShadow: isSl ? "0 2px 12px " + C.gold + "15" : C.shadow }}>
                   <div style={{ height: 3, background: analysis ? "linear-gradient(90deg," + accent + "," + accent + "30)" : isSl ? C.gold : C.border }} />
@@ -817,24 +835,7 @@ function RacePlanner({ horses, setHorses }) {
       {/* Horse sidebar */}
       <div>
         <div style={{ fontSize: 10, fontWeight: 700, color: C.textDim, letterSpacing: 1.5, marginBottom: 10, textTransform: "uppercase" }}>Horses</div>
-        {horses.map(h => {
-          const sel = selHorse.id === h.id;
-          const stCol = h.status === "Active" ? C.green : h.status === "CoolingOff" ? C.amber : C.red;
-          return (
-            <div key={h.id} onClick={() => setSelHorse(h)} style={{ background: sel ? C.navy : C.card, border: "1.5px solid " + sel ? C.navyLight : C.border + "", borderLeft: "4px solid " + stCol + "", borderRadius: 11, padding: "10px 12px", marginBottom: 7, cursor: "pointer", boxShadow: sel ? C.shadowMd : C.shadow, transition: "all 0.15s" }}>
-              <div style={{ display: "flex", alignItems: "center", gap: 9 }}>
-                <Silk silk={h.silk} size={32} />
-                <div style={{ flex: 1, minWidth: 0 }}>
-                  <div style={{ fontSize: 13, fontWeight: 700, color: sel ? "#fff" : C.text, whiteSpace: "nowrap", overflow: "hidden", textOverflow: "ellipsis" }}>{h.name}</div>
-                  <div style={{ fontSize: 10, color: sel ? "rgba(255,255,255,0.5)" : C.textMid, marginTop: 1 }}>{getAge(h.dob) + "yo"}{h.nhRating || h.flatRating ? " · Rtg " + (h.nhRating || h.flatRating) : ""}{h.headgear ? " · " + h.headgear : ""}</div>
-                  <div style={{ marginTop: 4 }}><FormDots form={h.form} /></div>
-                </div>
-              </div>
-              {h.status === "CoolingOff" && <div style={{ marginTop: 5, padding: "2px 7px", background: "rgba(217,119,6,0.12)", borderRadius: 5, fontSize: 10, color: C.amber, fontWeight: 600 }}>⏳ {(coolingDate(h.activationDate) ? coolingDate(h.activationDate).toLocaleDateString("en-IE", { day: "numeric", month: "short" }) : "")}</div>}
-              {h.status === "Inactive" && <div style={{ marginTop: 5, padding: "2px 7px", background: "rgba(192,57,43,0.10)", borderRadius: 5, fontSize: 10, color: C.red, fontWeight: 600 }}>✕ Inactive</div>}
-            </div>
-          );
-        })}
+          {horses.map(h => renderHorseCard(h))}
       </div>
 
       {/* Main area */}
