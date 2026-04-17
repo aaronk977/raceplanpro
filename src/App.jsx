@@ -861,7 +861,6 @@ function RacePlanner({ horses, setHorses }) {
         </div>
       </div>
     </div>
-    </div>
   );
 }
 
