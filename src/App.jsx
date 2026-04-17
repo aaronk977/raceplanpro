@@ -684,7 +684,7 @@ function RacePlanner({ horses, setHorses }) {
   };
 
   const handleEntry = (horse, race) => {
-    const msg = encodeURIComponent("🏇 RacePlan Pro — " + horse.trainer + "\n\n" + horse.name + " has been entered in the " + race.raceName + " at " + race.venue + " on " + new Date(race.date).toLocaleDateString("en-IE", { weekday: "long", day: "numeric", month: "long"  + ")}.\n\nPrize fund: €" + (race.prizeMoney ? race.prizeMoney.toLocaleString() : "") + "\nForecast going: " + race.forecastGoing + "\n\nWe'll be in touch closer to declaration day.");
+    const msg = encodeURIComponent("RacePlan Pro - " + horse.name + " has been entered in " + race.raceName + " at " + race.venue + ". Prize fund: " + (race.prizeMoney || "") + ". Forecast going: " + race.forecastGoing + ". We will be in touch closer to declaration day.");
     const phone = horse.ownerPhone ? horse.ownerPhone.split("").filter(c => c >= "0" && c <= "9").join("") : "";
     if (phone) window.open("https://wa.me/" + phone + "?text=" + msg + "", "_blank");
     showToast("✓ Entry confirmed — WhatsApp opened for " + horse.owner + "");
@@ -692,7 +692,7 @@ function RacePlanner({ horses, setHorses }) {
 
   const handleDeclaration = (horse, race) => {
     const jockey = horse.jockey || "D.J. O'Keeffe";
-    const msg = encodeURIComponent("✅ RacePlan Pro — " + horse.trainer + "\n\n" + horse.name + " is declared to run in the " + race.raceName + " at " + race.venue + ".\n\nJockey: " + jockey + "\nForecast going: " + race.forecastGoing + "\n\nWe'll keep you updated on race day.");
+    const msg = encodeURIComponent("RacePlan Pro - " + horse.name + " is declared to run in " + race.raceName + " at " + race.venue + ". Jockey: " + (horse.jockey || "TBC") + ". We will be in touch with further details.");
     const phone = horse.ownerPhone ? horse.ownerPhone.split("").filter(c => c >= "0" && c <= "9").join("") : "";
     if (phone) window.open("https://wa.me/" + phone + "?text=" + msg + "", "_blank");
     showToast("📋 Declaration confirmed — WhatsApp opened for " + horse.owner + "", C.blue);
