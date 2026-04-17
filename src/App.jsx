@@ -508,7 +508,7 @@ function ProvisionalEntries({ horses, setHorses }) {
             </div>
           </div>
           <Btn onClick={fetchProvisional} disabled={fetchStatus === "fetching"} style={{ fontSize: 12, padding: "8px 16px" }}>
-            {fetchStatus === "fetching" ? <>⟳ Fetching…</> : <>⟳ {lastFetch ? "Refresh" : "Fetch Now"}</>}
+            {fetchStatus === "fetching" ? "⟳ Fetching..." : (lastFetch ? "⟳ Refresh" : "⟳ Fetch Now")}
           </Btn>
         </div>
         {provisionalRaces.length > 0 && (
@@ -716,12 +716,12 @@ function RacePlanner({ horses, setHorses }) {
                 <Silk silk={h.silk} size={32} />
                 <div style={{ flex: 1, minWidth: 0 }}>
                   <div style={{ fontSize: 13, fontWeight: 700, color: sel ? "#fff" : C.text, whiteSpace: "nowrap", overflow: "hidden", textOverflow: "ellipsis" }}>{h.name}</div>
-                  <div style={{ fontSize: 10, color: sel ? "rgba(255,255,255,0.5)" : C.textMid, marginTop: 1 }}>{getAge(h.dob)}yo · Rtg {h.nhRating || h.flatRating || "—"}{h.headgear ? " · " + h.headgear : ""}</div>
+                  <div style={{ fontSize: 10, color: sel ? "rgba(255,255,255,0.5)" : C.textMid, marginTop: 1 }}>{getAge(h.dob) + "yo · Rtg " + (h.nhRating || h.flatRating || "—") + (h.headgear ? " · " + h.headgear : "")}</div>
                   <div style={{ marginTop: 4 }}><FormDots form={h.form} /></div>
                 </div>
               </div>
-              {h.status === "CoolingOff" && <div style={{ marginTop: 5, padding: "2px 7px", background: "rgba(217,119,6,0.12)", borderRadius: 5, fontSize: 10, color: C.amber, fontWeight: 600 }}>⏳ {(coolingDate(h.activationDate) ? coolingDate(h.activationDate).toLocaleDateString("en-IE", { day: "numeric", month: "short" }) : "")}</div>}
-              {h.status === "Inactive" && <div style={{ marginTop: 5, padding: "2px 7px", background: "rgba(192,57,43,0.10)", borderRadius: 5, fontSize: 10, color: C.red, fontWeight: 600 }}>✕ Inactive</div>}
+              {h.status === "CoolingOff" && <div style={{ marginTop: 5, padding: "2px 7px", background: "rgba(217,119,6,0.12)", borderRadius: 5, fontSize: 10, color: C.amber, fontWeight: 600 }}>{"⏳ Cooling off"}</div>}
+              {h.status === "Inactive" && <div style={{ marginTop: 5, padding: "2px 7px", background: "rgba(192,57,43,0.10)", borderRadius: 5, fontSize: 10, color: C.red, fontWeight: 600 }}>{"Inactive"}</div>}
             </div>
           );
         })}
@@ -734,7 +734,7 @@ function RacePlanner({ horses, setHorses }) {
           <div>
             <div style={{ fontSize: 13, fontWeight: 700, color: C.text }}>HRI Race Conditions</div>
             <div style={{ fontSize: 11, color: C.textMid, marginTop: 2 }}>{lastFetch ? "Updated " + new Date(lastFetch).toLocaleString("en-IE", { day: "numeric", month: "short", hour: "2-digit", minute: "2-digit" }) : "hri-ras.ie/upcoming-race-conditions"}</div>
-            {fetchStatus === "done" && <div style={{ fontSize: 11, color: C.green, fontWeight: 600, marginTop: 2 }}>✓ {races.length} races · {eligible.length} eligible for {selHorse.name}</div>}
+            {fetchStatus === "done" && <div style={{ fontSize: 11, color: C.green, fontWeight: 600, marginTop: 2 }}>{"✓ " + races.length + " races · " + eligible.length + " eligible for " + selHorse.name}</div>}
           </div>
           <Btn onClick={fetchRaces} disabled={fetchStatus === "fetching"} style={{ fontSize: 12, padding: "8px 16px" }}>
             {fetchStatus === "fetching" ? "⟳ Fetching…" : (lastFetch ? "⟳ Refresh" : "⟳ Fetch Now")}
@@ -756,7 +756,7 @@ function RacePlanner({ horses, setHorses }) {
               <span>{selHorse.trainer}</span>
               <span>Owner: {selHorse.owner}</span>
             </div>
-            {selHorse.notes && <div style={{ fontSize: 11, color: C.textMid, fontStyle: "italic", marginTop: 4, padding: "4px 8px", background: C.cardOff, borderRadius: 6, borderLeft: "2px solid " + C.borderMid }}>💬 {selHorse.notes}</div>}
+            {selHorse.notes && <div style={{ fontSize: 11, color: C.textMid, fontStyle: "italic", marginTop: 4, padding: "4px 8px", background: C.cardOff, borderRadius: 6, borderLeft: "2px solid " + C.borderMid }}>{"💬 " + selHorse.notes}</div>}
           </div>
           <FormDots form={selHorse.form} />
         </div>
@@ -764,14 +764,14 @@ function RacePlanner({ horses, setHorses }) {
         {/* Races */}
         {races.length === 0 ? (
           <div style={{ padding: 40, textAlign: "center", border: "1.5px dashed " + C.border, borderRadius: 14, color: C.textMid }}>
-            <div style={{ fontSize: 26, marginBottom: 10 }}>📄</div>
+            <div style={{ fontSize: 26, marginBottom: 10 }}>{"📄"}</div>
             <div style={{ fontSize: 14, fontWeight: 700, color: C.text, marginBottom: 6 }}>No race conditions loaded</div>
             <div style={{ fontSize: 13 }}>Tap <strong>Fetch Now</strong> above to pull this week's HRI conditions</div>
           </div>
         ) : eligible.length === 0 ? (
           <div style={{ padding: 32, textAlign: "center", border: "1.5px dashed " + C.border, borderRadius: 14, color: C.textMid }}>No eligible races for {selHorse.name} in current conditions</div>
         ) : (
-          <>
+          <div>
             <div style={{ fontSize: 10, fontWeight: 700, color: C.textDim, letterSpacing: 1.5, marginBottom: 10, textTransform: "uppercase" }}>{eligible.length} eligible races</div>
             {sorted.map(race => {
               const key = k(selHorse.id, race.id);
@@ -790,23 +790,23 @@ function RacePlanner({ horses, setHorses }) {
                         <div style={{ display: "flex", gap: 5, flexWrap: "wrap", marginBottom: 5 }}>
                           {race.grade !== "Ungraded" && <Tag color={C.gold}>{race.grade}</Tag>}
                           {race.isEBF && <Tag color={C.purple}>EBF</Tag>}
-                          <Tag color={C.textMid} bg="#f0f4f8">{race.discipline} · {race.raceType}</Tag>
+                          <Tag color={C.textMid} bg="#f0f4f8">{race.discipline + " · " + race.raceType}</Tag>
                         </div>
                         <div style={{ fontSize: 16, fontWeight: 700, color: C.text, lineHeight: 1.3, marginBottom: 5 }}>{race.raceName}</div>
                         <div style={{ display: "flex", gap: 10, flexWrap: "wrap", fontSize: 12, color: C.textMid }}>
-                          <span>📍 {race.venue}</span>
-                          <span>📅 {new Date(race.date).toLocaleDateString("en-IE", { weekday: "short", day: "numeric", month: "short" })}</span>
-                          <span>📏 {race.distanceFurlongs}f</span>
-                          <span>🌤 {race.forecastGoing}</span>
+                          <span>{"📍 " + race.venue}</span>
+                          <span>{"📅 " + new Date(race.date).toLocaleDateString("en-IE", { weekday: "short", day: "numeric", month: "short" })}</span>
+                          <span>{"📏 " + race.distanceFurlongs + "f"}</span>
+                          <span>{"🌤 " + race.forecastGoing}</span>
                         </div>
                       </div>
-                      <span style={{ fontSize: 18, fontWeight: 800, color: C.gold, flexShrink: 0 }}>€{race.prizeMoney >= 1000 ? (race.prizeMoney / 1000) + "k" : race.prizeMoney}</span>
+                      <span style={{ fontSize: 18, fontWeight: 800, color: C.gold, flexShrink: 0 }}>{"€" + (race.prizeMoney >= 1000 ? Math.round(race.prizeMoney / 1000) + "k" : race.prizeMoney)}</span>
                     </div>
 
                     {race.entryDeadline && (
                       <div style={{ display: "flex", alignItems: "center", gap: 8, padding: "7px 10px", background: C.cardOff, borderRadius: 8, border: "1px solid " + C.border, marginBottom: 10, fontSize: 12 }}>
                         <span style={{ color: C.textMid, fontWeight: 600 }}>Entry closes</span>
-                        <span style={{ fontWeight: 700, color: C.amber }}>{new Date(race.entryDeadline).toLocaleDateString("en-IE", { weekday: "short", day: "numeric", month: "short" })} · {new Date(race.entryDeadline).toLocaleTimeString("en-IE", { hour: "2-digit", minute: "2-digit" })}</span>
+                        <span style={{ fontWeight: 700, color: C.amber }}>{new Date(race.entryDeadline).toLocaleDateString("en-IE", { weekday: "short", day: "numeric", month: "short" }) + " · " + new Date(race.entryDeadline).toLocaleTimeString("en-IE", { hour: "2-digit", minute: "2-digit" })}</span>
                       </div>
                     )}
 
@@ -818,7 +818,7 @@ function RacePlanner({ horses, setHorses }) {
 
                     {isLoading && (
                       <div style={{ padding: "12px 14px", background: C.cardOff, border: "1px solid " + C.border, borderRadius: 9, marginBottom: 10 }}>
-                        <div style={{ fontSize: 12, fontWeight: 700, color: C.navy, marginBottom: 8 }}>🧠 Racing brain at work…</div>
+                        <div style={{ fontSize: 12, fontWeight: 700, color: C.navy, marginBottom: 8 }}>{"🧠 Racing brain at work..."}</div>
                         {["Checking who's in this race…", "Looking at the field…", "Checking trainer record here…", "Building your analysis…"].map((s, i) => (
                           <div key={i} style={{ display: "flex", alignItems: "center", gap: 8, marginBottom: 5, opacity: i <= stage ? 1 : 0.25 }}>
                             <span style={{ fontSize: 12 }}>{i < stage ? "✓" : i === stage ? "⟳" : "○"}</span>
@@ -865,11 +865,11 @@ function RacePlanner({ horses, setHorses }) {
                         {isSl && (
                           <div style={{ display: "grid", gridTemplateColumns: "1fr 1fr", gap: 7 }}>
                             <Btn variant="green" onClick={() => handleEntry(selHorse, race)} style={{ justifyContent: "center", flexDirection: "column", gap: 2 }}>
-                              <span>✓ Confirm Entry</span>
+                              <span>{"✓ Confirm Entry"}</span>
                               <span style={{ fontSize: 10, opacity: 0.7, fontWeight: 400 }}>WhatsApp owner</span>
                             </Btn>
                             <button onClick={() => handleDeclaration(selHorse, race)} style={{ padding: "9px", background: C.blueBg, border: "2px solid " + C.blue + "50", borderRadius: 9, color: C.blue, fontSize: 12, fontWeight: 700, cursor: "pointer", display: "flex", flexDirection: "column", alignItems: "center", gap: 2 }}>
-                              <span>📋 Declare to Run</span>
+                              <span>{"📋 Declare to Run"}</span>
                               <span style={{ fontSize: 10, opacity: 0.7, fontWeight: 400 }}>WhatsApp owner + jockey</span>
                             </button>
                           </div>
@@ -880,7 +880,7 @@ function RacePlanner({ horses, setHorses }) {
                 </div>
               );
             })}
-          </>
+          </div>
         )}
       </div>
     </div>
