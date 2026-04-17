@@ -716,7 +716,7 @@ function RacePlanner({ horses, setHorses }) {
                 <Silk silk={h.silk} size={32} />
                 <div style={{ flex: 1, minWidth: 0 }}>
                   <div style={{ fontSize: 13, fontWeight: 700, color: sel ? "#fff" : C.text, whiteSpace: "nowrap", overflow: "hidden", textOverflow: "ellipsis" }}>{h.name}</div>
-                  <div style={{ fontSize: 10, color: sel ? "rgba(255,255,255,0.5)" : C.textMid, marginTop: 1 }}>{getAge(h.dob)}yo · Rtg {h.nhRating || h.flatRating || "—"}{h.headgear ? " · " + h.headgear + "" : ""}</div>
+                  <div style={{ fontSize: 10, color: sel ? "rgba(255,255,255,0.5)" : C.textMid, marginTop: 1 }}>{getAge(h.dob) + "yo"}{h.nhRating || h.flatRating ? " · Rtg " + (h.nhRating || h.flatRating) : ""}{h.headgear ? " · " + h.headgear : ""}</div>
                   <div style={{ marginTop: 4 }}><FormDots form={h.form} /></div>
                 </div>
               </div>
@@ -734,7 +734,7 @@ function RacePlanner({ horses, setHorses }) {
           <div>
             <div style={{ fontSize: 13, fontWeight: 700, color: C.text }}>HRI Race Conditions</div>
             <div style={{ fontSize: 11, color: C.textMid, marginTop: 2 }}>{lastFetch ? "Updated " + new Date(lastFetch).toLocaleString("en-IE", { day: "numeric", month: "short", hour: "2-digit", minute: "2-digit" }) : "Paste from HRI PDF below"}</div>
-            {fetchStatus === "done" && <div style={{ fontSize: 11, color: C.green, fontWeight: 600, marginTop: 2 }}>✓ {races.length} races · {eligible.length} eligible for {selHorse.name}</div>}
+            {fetchStatus === "done" && <div style={{ fontSize: 11, color: C.green, fontWeight: 600, marginTop: 2 }}>{"✓ " + races.length + " races · " + eligible.length + " eligible for " + selHorse.name}</div>}
           </div>
           <Btn onClick={fetchRaces} disabled={fetchStatus === "fetching"} style={{ fontSize: 12, padding: "8px 16px" }}>
             {fetchStatus === "fetching" ? "⟳ Fetching…" : "⟳ " + lastFetch ? "Refresh" : "Fetch Now" + ""}
@@ -790,7 +790,7 @@ function RacePlanner({ horses, setHorses }) {
                         <div style={{ display: "flex", gap: 5, flexWrap: "wrap", marginBottom: 5 }}>
                           {race.grade !== "Ungraded" && <Tag color={C.gold}>{race.grade}</Tag>}
                           {race.isEBF && <Tag color={C.purple}>EBF</Tag>}
-                          <Tag color={C.textMid} bg="#f0f4f8">{race.discipline} · {race.raceType}</Tag>
+                          <Tag color={C.textMid} bg="#f0f4f8">{race.discipline + " - " + race.raceType}</Tag>
                         </div>
                         <div style={{ fontSize: 16, fontWeight: 700, color: C.text, lineHeight: 1.3, marginBottom: 5 }}>{race.raceName}</div>
                         <div style={{ display: "flex", gap: 10, flexWrap: "wrap", fontSize: 12, color: C.textMid }}>
@@ -806,13 +806,13 @@ function RacePlanner({ horses, setHorses }) {
                     {race.entryDeadline && (
                       <div style={{ display: "flex", alignItems: "center", gap: 8, padding: "7px 10px", background: C.cardOff, borderRadius: 8, border: "1px solid " + C.border + "", marginBottom: 10, fontSize: 12 }}>
                         <span style={{ color: C.textMid, fontWeight: 600 }}>Entry closes</span>
-                        <span style={{ fontWeight: 700, color: C.amber }}>{new Date(race.entryDeadline).toLocaleDateString("en-IE", { weekday: "short", day: "numeric", month: "short" })} · {new Date(race.entryDeadline).toLocaleTimeString("en-IE", { hour: "2-digit", minute: "2-digit" })}</span>
+                        <span style={{ fontWeight: 700, color: C.amber }}>{new Date(race.entryDeadline).toLocaleDateString("en-IE", { weekday: "short", day: "numeric", month: "short" }) + " " + new Date(race.entryDeadline).toLocaleTimeString("en-IE", { hour: "2-digit", minute: "2-digit" })}</span>
                       </div>
                     )}
 
                     {!analysis && !isLoading && (
                       <Btn onClick={() => analyse(selHorse, race)} style={{ width: "100%", justifyContent: "center", marginBottom: 10 }}>
-                        🧠 Get My Take on This Race <span style={{ fontSize: 11, opacity: 0.5, fontWeight: 400 }}>· searches live form & opposition</span>
+                        {"🧠 Get My Take on This Race"}
                       </Btn>
                     )}
 
