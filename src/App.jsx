@@ -136,17 +136,17 @@ const MED_TYPES = {
 
 // ─── SHARED UI ────────────────────────────────────────────────────────────────
 function Tag({ children, color, bg }) {
-  return <span style={{ background: bg || color + "12", color, border: "1px solid " + color + "30", borderRadius: 20, padding: "2px 9px", fontSize: 11, fontWeight: 600 }}>{children}</span>;
+  return <span style={{ background: bg || `${color}12`, color, border: `1px solid ${color}30`, borderRadius: 20, padding: "2px 9px", fontSize: 11, fontWeight: 600 }}>{children}</span>;
 }
 
 function Btn({ onClick, children, variant = "primary", style: s = {}, disabled = false }) {
   const base = { border: "none", borderRadius: 9, padding: "9px 18px", fontSize: 13, fontWeight: 700, cursor: disabled ? "not-allowed" : "pointer", opacity: disabled ? 0.5 : 1, display: "inline-flex", alignItems: "center", gap: 6 };
   const variants = {
     primary: { background: C.navy, color: "#fff" },
-    gold: { background: C.goldBg, color: C.gold, border: "1.5px solid " + C.gold + "50" },
-    green: { background: C.greenBg, color: C.green, border: "1.5px solid " + C.green + "40" },
-    ghost: { background: "none", color: C.textMid, border: "1px solid " + C.border },
-    red: { background: C.redBg, color: C.red, border: "1px solid " + C.red + "30" },
+    gold: { background: C.goldBg, color: C.gold, border: `1.5px solid ${C.gold}50` },
+    green: { background: C.greenBg, color: C.green, border: `1.5px solid ${C.green}40` },
+    ghost: { background: "none", color: C.textMid, border: `1px solid ${C.border}` },
+    red: { background: C.redBg, color: C.red, border: `1px solid ${C.red}30` },
   };
   return <button onClick={onClick} disabled={disabled} style={{ ...base, ...variants[variant], ...s }}>{children}</button>;
 }
@@ -170,7 +170,7 @@ function StatusPill({ status, activationDate }) {
     CoolingOff: { bg: C.amberBg, color: C.amber, label: `⏳ Cool-off · ${days}d` },
     Inactive: { bg: C.redBg, color: C.red, label: "✕ Inactive" },
   }[status];
-  return <span style={{ ...cfg, border: "1px solid " + cfg.color + "40", borderRadius: 20, padding: "3px 10px", fontSize: 11, fontWeight: 700 }}>{cfg.label}</span>;
+  return <span style={{ ...cfg, border: `1px solid ${cfg.color}40`, borderRadius: 20, padding: "3px 10px", fontSize: 11, fontWeight: 700 }}>{cfg.label}</span>;
 }
 
 // ─── AI RACE PLANNER ──────────────────────────────────────────────────────────
@@ -220,7 +220,7 @@ function MedicationTracker({ horses }) {
   const [openHorse, setOpenHorse] = useState(null);
   const [showBill, setShowBill] = useState(false);
   const [billHorse, setBillHorse] = useState(null);
-  const [trackedIds, setTrackedIds] = useState([]);
+  const [trackedIds, setTrackedIds] = useState(["h1", "h2"]);
   const [showAdd, setShowAdd] = useState(false);
 
   const daysInMonth = getDaysInMonth(selYear, selMonth);
@@ -270,7 +270,7 @@ function MedicationTracker({ horses }) {
 
       {/* Race timing alerts */}
       {horses.filter(h => { const d = daysUntil(h.nextRaceDate); return d && d >= 12 && d <= 16; }).map(h => (
-        <div key={h.id} style={{ background: C.amberBg, border: "1px solid " + C.amber + "40", borderLeft: `3px solid ${C.amber}`, borderRadius: 10, padding: "10px 14px", marginBottom: 10, display: "flex", alignItems: "center", gap: 12 }}>
+        <div key={h.id} style={{ background: C.amberBg, border: `1px solid ${C.amber}40`, borderLeft: `3px solid ${C.amber}`, borderRadius: 10, padding: "10px 14px", marginBottom: 10, display: "flex", alignItems: "center", gap: 12 }}>
           <Silk silk={h.silk} size={30} />
           <div>
             <div style={{ fontSize: 13, fontWeight: 700, color: C.text }}>{h.name} — race in {daysUntil(h.nextRaceDate)} days</div>
@@ -279,7 +279,7 @@ function MedicationTracker({ horses }) {
         </div>
       ))}
       {horses.filter(h => { const d = daysUntil(h.nextRaceDate); return d && d > 0 && d < 12; }).map(h => (
-        <div key={h.id} style={{ background: C.redBg, border: "1px solid " + C.red + "30", borderLeft: `3px solid ${C.red}`, borderRadius: 10, padding: "10px 14px", marginBottom: 10, display: "flex", alignItems: "center", gap: 12 }}>
+        <div key={h.id} style={{ background: C.redBg, border: `1px solid ${C.red}30`, borderLeft: `3px solid ${C.red}`, borderRadius: 10, padding: "10px 14px", marginBottom: 10, display: "flex", alignItems: "center", gap: 12 }}>
           <Silk silk={h.silk} size={30} />
           <div>
             <div style={{ fontSize: 13, fontWeight: 700, color: C.text }}>{h.name} — race in {daysUntil(h.nextRaceDate)} days</div>
@@ -290,10 +290,10 @@ function MedicationTracker({ horses }) {
 
       {/* Add horse panel */}
       {showAdd && (
-        <div style={{ background: C.card, border: "1px solid " + C.border, borderRadius: 12, padding: "16px 18px", marginBottom: 16, boxShadow: C.shadow }}>
+        <div style={{ background: C.card, border: `1px solid ${C.border}`, borderRadius: 12, padding: "16px 18px", marginBottom: 16, boxShadow: C.shadow }}>
           <div style={{ fontSize: 14, fontWeight: 700, color: C.text, marginBottom: 12 }}>Add horse to {monthName} tracker:</div>
           {untrackedHorses.map(h => (
-            <div key={h.id} style={{ display: "flex", alignItems: "center", gap: 12, padding: "10px 12px", background: C.cardOff, borderRadius: 10, border: "1px solid " + C.border, marginBottom: 8 }}>
+            <div key={h.id} style={{ display: "flex", alignItems: "center", gap: 12, padding: "10px 12px", background: C.cardOff, borderRadius: 10, border: `1px solid ${C.border}`, marginBottom: 8 }}>
               <Silk silk={h.silk} size={30} />
               <div style={{ flex: 1 }}>
                 <div style={{ fontSize: 14, fontWeight: 700, color: C.text }}>{h.name}</div>
@@ -307,7 +307,7 @@ function MedicationTracker({ horses }) {
       )}
 
       {trackedHorses.length === 0 && (
-        <div style={{ padding: 48, textAlign: "center", border: "1.5px dashed " + C.border, borderRadius: 14, color: C.textMid }}>
+        <div style={{ padding: 48, textAlign: "center", border: `1.5px dashed ${C.border}`, borderRadius: 14, color: C.textMid }}>
           <div style={{ fontSize: 32, marginBottom: 12 }}>🏥</div>
           <div style={{ fontSize: 15, fontWeight: 700, color: C.text, marginBottom: 6 }}>No horses on the tracker</div>
           <div style={{ fontSize: 13, marginBottom: 16 }}>Tap <strong>+ Add Horse</strong> to start logging medication for this month</div>
@@ -319,7 +319,7 @@ function MedicationTracker({ horses }) {
         const isOpen = openHorse === horse.id;
         const costs = calcCost(horse.id);
         return (
-          <div key={horse.id} style={{ background: C.card, border: "1px solid " + C.border, borderRadius: 12, marginBottom: 12, overflow: "hidden", boxShadow: C.shadow }}>
+          <div key={horse.id} style={{ background: C.card, border: `1px solid ${C.border}`, borderRadius: 12, marginBottom: 12, overflow: "hidden", boxShadow: C.shadow }}>
             <div onClick={() => setOpenHorse(isOpen ? null : horse.id)} style={{ padding: "14px 16px", cursor: "pointer", display: "flex", alignItems: "center", gap: 12 }}>
               <Silk silk={horse.silk} size={36} />
               <div style={{ flex: 1 }}>
@@ -339,7 +339,7 @@ function MedicationTracker({ horses }) {
             </div>
 
             {isOpen && (
-              <div style={{ padding: "0 16px 16px", borderTop: "1px solid " + C.border }}>
+              <div style={{ padding: "0 16px 16px", borderTop: `1px solid ${C.border}` }}>
                 {/* Legend */}
                 <div style={{ display: "flex", gap: 16, padding: "10px 0", marginBottom: 8, flexWrap: "wrap" }}>
                   <div style={{ fontSize: 11, color: C.textMid }}><strong style={{ color: C.blue }}>Peptizole</strong> {"— €18/day"}</div>
@@ -386,7 +386,7 @@ function MedicationTracker({ horses }) {
                 </div>
                 {/* Withdrawal deadlines */}
                 {horse.nextRaceDate && (
-                  <div style={{ marginTop: 10, padding: "10px 12px", background: C.cardOff, borderRadius: 8, border: "1px solid " + C.border, display: "flex", gap: 20, flexWrap: "wrap" }}>
+                  <div style={{ marginTop: 10, padding: "10px 12px", background: C.cardOff, borderRadius: 8, border: `1px solid ${C.border}`, display: "flex", gap: 20, flexWrap: "wrap" }}>
                     <div style={{ fontSize: 12, fontWeight: 700, color: C.text }}>⏱ Withdrawal for {new Date(horse.nextRaceDate).toLocaleDateString("en-IE", { day: "numeric", month: "short" })}:</div>
                     {[{ label: "Stop Peptizole", wd: 4 }, { label: "Stop Antepsin", wd: 1 }].map(({ label, wd }) => {
                       const stop = new Date(horse.nextRaceDate); stop.setDate(stop.getDate() - wd);
@@ -499,7 +499,7 @@ function ProvisionalEntries({ horses, setHorses }) {
       </div>
 
       {/* HRI Provisional Summaries */}
-      <div style={{ background: C.card, border: "1px solid " + C.border, borderRadius: 14, padding: "14px 18px", marginBottom: 16, boxShadow: C.shadow }}>
+      <div style={{ background: C.card, border: `1px solid ${C.border}`, borderRadius: 14, padding: "14px 18px", marginBottom: 16, boxShadow: C.shadow }}>
         <div style={{ display: "flex", justifyContent: "space-between", alignItems: "center", marginBottom: lastFetch || provisionalRaces.length > 0 ? 12 : 0 }}>
           <div>
             <div style={{ fontSize: 14, fontWeight: 700, color: C.text, marginBottom: 2 }}>HRI Provisional Summaries</div>
@@ -508,13 +508,13 @@ function ProvisionalEntries({ horses, setHorses }) {
             </div>
           </div>
           <Btn onClick={fetchProvisional} disabled={fetchStatus === "fetching"} style={{ fontSize: 12, padding: "8px 16px" }}>
-            {fetchStatus === "fetching" ? "⟳ Fetching..." : (lastFetch ? "⟳ Refresh" : "⟳ Fetch Now")}
+            {fetchStatus === "fetching" ? <>⟳ Fetching…</> : <>⟳ {lastFetch ? "Refresh" : "Fetch Now"}</>}
           </Btn>
         </div>
         {provisionalRaces.length > 0 && (
           <div style={{ display: "flex", flexDirection: "column", gap: 6 }}>
             {provisionalRaces.slice(0, 8).map((r, i) => (
-              <div key={i} style={{ display: "flex", gap: 12, padding: "8px 10px", background: C.cardOff, borderRadius: 8, border: "1px solid " + C.border, fontSize: 12, alignItems: "center" }}>
+              <div key={i} style={{ display: "flex", gap: 12, padding: "8px 10px", background: C.cardOff, borderRadius: 8, border: `1px solid ${C.border}`, fontSize: 12, alignItems: "center" }}>
                 <span style={{ fontWeight: 700, color: C.navy, minWidth: 80 }}>{r.meetingRef}</span>
                 <span style={{ color: C.textMid, minWidth: 60 }}>{r.raceRef}</span>
                 <span style={{ fontWeight: 600, color: C.text, flex: 1 }}>{r.raceName}</span>
@@ -535,7 +535,7 @@ function ProvisionalEntries({ horses, setHorses }) {
         const entries = horse.provisionalEntries || [];
         const isAdding = showAdd === horse.id;
         return (
-          <div key={horse.id} style={{ background: C.card, border: "1px solid " + C.border, borderRadius: 12, padding: "14px 16px", marginBottom: 12, boxShadow: C.shadow }}>
+          <div key={horse.id} style={{ background: C.card, border: `1px solid ${C.border}`, borderRadius: 12, padding: "14px 16px", marginBottom: 12, boxShadow: C.shadow }}>
             <div style={{ display: "flex", alignItems: "center", gap: 12, marginBottom: entries.length > 0 || isAdding ? 12 : 0 }}>
               <Silk silk={horse.silk} size={36} />
               <div style={{ flex: 1 }}>
@@ -549,7 +549,7 @@ function ProvisionalEntries({ horses, setHorses }) {
 
             {/* Existing provisional entries */}
             {entries.map(e => (
-              <div key={e.id} style={{ display: "flex", alignItems: "center", gap: 10, padding: "10px 12px", background: C.goldBg, border: "1px solid " + C.gold + "30", borderLeft: `3px solid ${C.gold}`, borderRadius: 10, marginBottom: 8 }}>
+              <div key={e.id} style={{ display: "flex", alignItems: "center", gap: 10, padding: "10px 12px", background: C.goldBg, border: `1px solid ${C.gold}30`, borderLeft: `3px solid ${C.gold}`, borderRadius: 10, marginBottom: 8 }}>
                 <div style={{ flex: 1 }}>
                   <div style={{ display: "flex", gap: 8, alignItems: "center", flexWrap: "wrap", marginBottom: 4 }}>
                     <span style={{ fontSize: 14, fontWeight: 700, color: C.text }}>{e.raceName}</span>
@@ -569,7 +569,7 @@ function ProvisionalEntries({ horses, setHorses }) {
 
             {/* Add entry form */}
             {isAdding && (
-              <div style={{ background: C.cardOff, border: "1px solid " + C.border, borderRadius: 10, padding: "14px 16px", marginTop: 8 }}>
+              <div style={{ background: C.cardOff, border: `1px solid ${C.border}`, borderRadius: 10, padding: "14px 16px", marginTop: 8 }}>
                 <div style={{ fontSize: 13, fontWeight: 700, color: C.text, marginBottom: 12 }}>Add Provisional Target for {horse.name}</div>
                 <div style={{ display: "grid", gridTemplateColumns: "1fr 1fr", gap: 10, marginBottom: 10 }}>
                   {[
@@ -580,13 +580,13 @@ function ProvisionalEntries({ horses, setHorses }) {
                   ].map(({ key, label, placeholder, type, full }) => (
                     <div key={key} style={{ gridColumn: full ? "1 / -1" : "auto" }}>
                       <div style={{ fontSize: 10, fontWeight: 700, color: C.textMid, marginBottom: 4, textTransform: "uppercase", letterSpacing: 0.5 }}>{label}</div>
-                      <input type={type || "text"} placeholder={placeholder} value={entry[key]} onChange={e => setEntry(p => ({ ...p, [key]: e.target.value }))} style={{ width: "100%", background: C.card, border: "1px solid " + C.border, borderRadius: 8, padding: "8px 12px", color: C.text, fontSize: 13, outline: "none" }} />
+                      <input type={type || "text"} placeholder={placeholder} value={entry[key]} onChange={e => setEntry(p => ({ ...p, [key]: e.target.value }))} style={{ width: "100%", background: C.card, border: `1px solid ${C.border}`, borderRadius: 8, padding: "8px 12px", color: C.text, fontSize: 13, outline: "none" }} />
                     </div>
                   ))}
                 </div>
                 <div style={{ marginBottom: 10 }}>
                   <div style={{ fontSize: 10, fontWeight: 700, color: C.textMid, marginBottom: 4, textTransform: "uppercase", letterSpacing: 0.5 }}>Trainer Note (visible to owner)</div>
-                  <input type="text" placeholder="e.g. If ground stays soft" value={entry.note} onChange={e => setEntry(p => ({ ...p, note: e.target.value }))} style={{ width: "100%", background: C.card, border: "1px solid " + C.border, borderRadius: 8, padding: "8px 12px", color: C.text, fontSize: 13, outline: "none" }} />
+                  <input type="text" placeholder="e.g. If ground stays soft" value={entry.note} onChange={e => setEntry(p => ({ ...p, note: e.target.value }))} style={{ width: "100%", background: C.card, border: `1px solid ${C.border}`, borderRadius: 8, padding: "8px 12px", color: C.text, fontSize: 13, outline: "none" }} />
                 </div>
                 <div style={{ display: "flex", gap: 8 }}>
                   <Btn onClick={() => addEntry(horse.id)}>Save Target</Btn>
@@ -599,7 +599,7 @@ function ProvisionalEntries({ horses, setHorses }) {
       })}
 
       {allProvisional.length > 0 && (
-        <div style={{ background: C.card, border: "1px solid " + C.border, borderRadius: 12, padding: "14px 18px", marginTop: 8, boxShadow: C.shadow }}>
+        <div style={{ background: C.card, border: `1px solid ${C.border}`, borderRadius: 12, padding: "14px 18px", marginTop: 8, boxShadow: C.shadow }}>
           <div style={{ fontSize: 13, fontWeight: 700, color: C.text, marginBottom: 12 }}>All Provisional Targets — by date</div>
           {[...allProvisional].filter(e => e.date).sort((a, b) => new Date(a.date) - new Date(b.date)).map((e, i) => (
             <div key={i} style={{ display: "flex", alignItems: "center", gap: 12, padding: "8px 0", borderBottom: `1px solid ${C.border}` }}>
@@ -702,7 +702,7 @@ function RacePlanner({ horses, setHorses }) {
 
   return (
     <div style={{ display: "grid", gridTemplateColumns: "240px 1fr", gap: 16 }}>
-      {toast && <div style={{ position: "fixed", bottom: 24, left: "50%", transform: "translateX(-50%)", background: C.navy, color: "#fff", borderRadius: 12, padding: "12px 22px", fontSize: 13, fontWeight: 600, zIndex: 600, boxShadow: C.shadowMd, border: "1px solid " + toast.color + "50", whiteSpace: "nowrap", animation: "slideUp 0.3s ease" }}><span style={{ color: toast.color }}>{toast.msg}</span></div>}
+      {toast && <div style={{ position: "fixed", bottom: 24, left: "50%", transform: "translateX(-50%)", background: C.navy, color: "#fff", borderRadius: 12, padding: "12px 22px", fontSize: 13, fontWeight: 600, zIndex: 600, boxShadow: C.shadowMd, border: `1px solid ${toast.color}50`, whiteSpace: "nowrap", animation: "slideUp 0.3s ease" }}><span style={{ color: toast.color }}>{toast.msg}</span></div>}
 
       {/* Horse sidebar */}
       <div>
@@ -711,17 +711,17 @@ function RacePlanner({ horses, setHorses }) {
           const sel = selHorse.id === h.id;
           const stCol = h.status === "Active" ? C.green : h.status === "CoolingOff" ? C.amber : C.red;
           return (
-            <div key={h.id} onClick={() => setSelHorse(h)} style={{ background: sel ? C.navy : C.card, border: "1.5px solid " + (sel ? C.navyLight : C.border), borderLeft: "4px solid " + stCol, borderRadius: 11, padding: "10px 12px", marginBottom: 7, cursor: "pointer", boxShadow: sel ? C.shadowMd : C.shadow, transition: "all 0.15s" }}>
+            <div key={h.id} onClick={() => setSelHorse(h)} style={{ background: sel ? C.navy : C.card, border: `1.5px solid ${sel ? C.navyLight : C.border}`, borderLeft: `4px solid ${stCol}`, borderRadius: 11, padding: "10px 12px", marginBottom: 7, cursor: "pointer", boxShadow: sel ? C.shadowMd : C.shadow, transition: "all 0.15s" }}>
               <div style={{ display: "flex", alignItems: "center", gap: 9 }}>
                 <Silk silk={h.silk} size={32} />
                 <div style={{ flex: 1, minWidth: 0 }}>
                   <div style={{ fontSize: 13, fontWeight: 700, color: sel ? "#fff" : C.text, whiteSpace: "nowrap", overflow: "hidden", textOverflow: "ellipsis" }}>{h.name}</div>
-                  <div style={{ fontSize: 10, color: sel ? "rgba(255,255,255,0.5)" : C.textMid, marginTop: 1 }}>{getAge(h.dob) + "yo · Rtg " + (h.nhRating || h.flatRating || "—") + (h.headgear ? " · " + h.headgear : "")}</div>
+                  <div style={{ fontSize: 10, color: sel ? "rgba(255,255,255,0.5)" : C.textMid, marginTop: 1 }}>{getAge(h.dob)}yo · Rtg {h.nhRating || h.flatRating || "—"}{h.headgear ? ` · ${h.headgear}` : ""}</div>
                   <div style={{ marginTop: 4 }}><FormDots form={h.form} /></div>
                 </div>
               </div>
-              {h.status === "CoolingOff" && <div style={{ marginTop: 5, padding: "2px 7px", background: "rgba(217,119,6,0.12)", borderRadius: 5, fontSize: 10, color: C.amber, fontWeight: 600 }}>{"⏳ Cooling off"}</div>}
-              {h.status === "Inactive" && <div style={{ marginTop: 5, padding: "2px 7px", background: "rgba(192,57,43,0.10)", borderRadius: 5, fontSize: 10, color: C.red, fontWeight: 600 }}>{"Inactive"}</div>}
+              {h.status === "CoolingOff" && <div style={{ marginTop: 5, padding: "2px 7px", background: "rgba(217,119,6,0.12)", borderRadius: 5, fontSize: 10, color: C.amber, fontWeight: 600 }}>⏳ {coolingDate(h.activationDate)?.toLocaleDateString("en-IE", { day: "numeric", month: "short" })}</div>}
+              {h.status === "Inactive" && <div style={{ marginTop: 5, padding: "2px 7px", background: "rgba(192,57,43,0.10)", borderRadius: 5, fontSize: 10, color: C.red, fontWeight: 600 }}>✕ Inactive</div>}
             </div>
           );
         })}
@@ -730,19 +730,19 @@ function RacePlanner({ horses, setHorses }) {
       {/* Main area */}
       <div>
         {/* HRI Fetch */}
-        <div style={{ background: C.card, border: "1px solid " + C.border, borderRadius: 12, padding: "12px 16px", marginBottom: 12, boxShadow: C.shadow, display: "flex", justifyContent: "space-between", alignItems: "center" }}>
+        <div style={{ background: C.card, border: `1px solid ${C.border}`, borderRadius: 12, padding: "12px 16px", marginBottom: 12, boxShadow: C.shadow, display: "flex", justifyContent: "space-between", alignItems: "center" }}>
           <div>
             <div style={{ fontSize: 13, fontWeight: 700, color: C.text }}>HRI Race Conditions</div>
-            <div style={{ fontSize: 11, color: C.textMid, marginTop: 2 }}>{lastFetch ? "Updated " + new Date(lastFetch).toLocaleString("en-IE", { day: "numeric", month: "short", hour: "2-digit", minute: "2-digit" }) : "hri-ras.ie/upcoming-race-conditions"}</div>
-            {fetchStatus === "done" && <div style={{ fontSize: 11, color: C.green, fontWeight: 600, marginTop: 2 }}>{"✓ " + races.length + " races · " + eligible.length + " eligible for " + selHorse.name}</div>}
+            <div style={{ fontSize: 11, color: C.textMid, marginTop: 2 }}>{lastFetch ? `Updated ${new Date(lastFetch).toLocaleString("en-IE", { day: "numeric", month: "short", hour: "2-digit", minute: "2-digit" })}` : "hri-ras.ie/upcoming-race-conditions"}</div>
+            {fetchStatus === "done" && <div style={{ fontSize: 11, color: C.green, fontWeight: 600, marginTop: 2 }}>✓ {races.length} races · {eligible.length} eligible for {selHorse.name}</div>}
           </div>
           <Btn onClick={fetchRaces} disabled={fetchStatus === "fetching"} style={{ fontSize: 12, padding: "8px 16px" }}>
-            {fetchStatus === "fetching" ? "⟳ Fetching…" : (lastFetch ? "⟳ Refresh" : "⟳ Fetch Now")}
+            {fetchStatus === "fetching" ? "⟳ Fetching…" : `⟳ ${lastFetch ? "Refresh" : "Fetch Now"}`}
           </Btn>
         </div>
 
         {/* Horse strip */}
-        <div style={{ background: C.card, border: "1px solid " + C.border, borderRadius: 12, padding: "12px 16px", marginBottom: 12, boxShadow: C.shadow, display: "flex", alignItems: "center", gap: 12 }}>
+        <div style={{ background: C.card, border: `1px solid ${C.border}`, borderRadius: 12, padding: "12px 16px", marginBottom: 12, boxShadow: C.shadow, display: "flex", alignItems: "center", gap: 12 }}>
           <Silk silk={selHorse.silk} size={44} />
           <div style={{ flex: 1 }}>
             <div style={{ display: "flex", alignItems: "center", gap: 8, marginBottom: 4, flexWrap: "wrap" }}>
@@ -752,73 +752,73 @@ function RacePlanner({ horses, setHorses }) {
             </div>
             <div style={{ display: "flex", gap: 10, flexWrap: "wrap", fontSize: 12, color: C.textMid }}>
               <span>{getAge(selHorse.dob)}yo {selHorse.sex}</span>
-              <span>{"Rtg " + (selHorse.nhRating || selHorse.flatRating || "—")}</span>
+              <span>Rtg {selHorse.nhRating ?? selHorse.flatRating ?? "—"}</span>
               <span>{selHorse.trainer}</span>
               <span>Owner: {selHorse.owner}</span>
             </div>
-            {selHorse.notes && <div style={{ fontSize: 11, color: C.textMid, fontStyle: "italic", marginTop: 4, padding: "4px 8px", background: C.cardOff, borderRadius: 6, borderLeft: "2px solid " + C.borderMid }}>{"💬 " + selHorse.notes}</div>}
+            {selHorse.notes && <div style={{ fontSize: 11, color: C.textMid, fontStyle: "italic", marginTop: 4, padding: "4px 8px", background: C.cardOff, borderRadius: 6, borderLeft: `2px solid ${C.borderMid}` }}>💬 {selHorse.notes}</div>}
           </div>
           <FormDots form={selHorse.form} />
         </div>
 
         {/* Races */}
         {races.length === 0 ? (
-          <div style={{ padding: 40, textAlign: "center", border: "1.5px dashed " + C.border, borderRadius: 14, color: C.textMid }}>
-            <div style={{ fontSize: 26, marginBottom: 10 }}>{"📄"}</div>
+          <div style={{ padding: 40, textAlign: "center", border: `1.5px dashed ${C.border}`, borderRadius: 14, color: C.textMid }}>
+            <div style={{ fontSize: 26, marginBottom: 10 }}>📄</div>
             <div style={{ fontSize: 14, fontWeight: 700, color: C.text, marginBottom: 6 }}>No race conditions loaded</div>
             <div style={{ fontSize: 13 }}>Tap <strong>Fetch Now</strong> above to pull this week's HRI conditions</div>
           </div>
         ) : eligible.length === 0 ? (
-          <div style={{ padding: 32, textAlign: "center", border: "1.5px dashed " + C.border, borderRadius: 14, color: C.textMid }}>No eligible races for {selHorse.name} in current conditions</div>
+          <div style={{ padding: 32, textAlign: "center", border: `1.5px dashed ${C.border}`, borderRadius: 14, color: C.textMid }}>No eligible races for {selHorse.name} in current conditions</div>
         ) : (
-          <div>
+          <>
             <div style={{ fontSize: 10, fontWeight: 700, color: C.textDim, letterSpacing: 1.5, marginBottom: 10, textTransform: "uppercase" }}>{eligible.length} eligible races</div>
             {sorted.map(race => {
               const key = k(selHorse.id, race.id);
               const analysis = analyses[key];
               const isLoading = loading[key];
-              const stage = loadStage[key] || 0;
+              const stage = loadStage[key] ?? 0;
               const isSl = !!shortlisted[key];
               const accent = analysis ? (analysis.overall >= 75 ? C.green : analysis.overall >= 55 ? C.amber : C.red) : C.border;
 
               return (
-                <div key={race.id} style={{ background: C.card, borderRadius: 13, border: "1px solid " + (isSl ? C.gold + "60" : C.border), marginBottom: 12, overflow: "hidden", boxShadow: isSl ? "0 2px 12px " + C.gold + "15" : C.shadow }}>
-                  <div style={{ height: 3, background: analysis ? "linear-gradient(90deg," + accent + "," + accent + "30)" : isSl ? C.gold : C.border }} />
+                <div key={race.id} style={{ background: C.card, borderRadius: 13, border: `1px solid ${isSl ? C.gold + "60" : C.border}`, marginBottom: 12, overflow: "hidden", boxShadow: isSl ? `0 2px 12px ${C.gold}15` : C.shadow }}>
+                  <div style={{ height: 3, background: analysis ? `linear-gradient(90deg,${accent},${accent}30)` : isSl ? C.gold : C.border }} />
                   <div style={{ padding: "14px 16px" }}>
                     <div style={{ display: "flex", justifyContent: "space-between", alignItems: "flex-start", marginBottom: 8 }}>
                       <div style={{ flex: 1, marginRight: 12 }}>
                         <div style={{ display: "flex", gap: 5, flexWrap: "wrap", marginBottom: 5 }}>
                           {race.grade !== "Ungraded" && <Tag color={C.gold}>{race.grade}</Tag>}
                           {race.isEBF && <Tag color={C.purple}>EBF</Tag>}
-                          <Tag color={C.textMid} bg="#f0f4f8">{race.discipline + " · " + race.raceType}</Tag>
+                          <Tag color={C.textMid} bg="#f0f4f8">{race.discipline} · {race.raceType}</Tag>
                         </div>
                         <div style={{ fontSize: 16, fontWeight: 700, color: C.text, lineHeight: 1.3, marginBottom: 5 }}>{race.raceName}</div>
                         <div style={{ display: "flex", gap: 10, flexWrap: "wrap", fontSize: 12, color: C.textMid }}>
-                          <span>{"📍 " + race.venue}</span>
-                          <span>{"📅 " + new Date(race.date).toLocaleDateString("en-IE", { weekday: "short", day: "numeric", month: "short" })}</span>
-                          <span>{"📏 " + race.distanceFurlongs + "f"}</span>
-                          <span>{"🌤 " + race.forecastGoing}</span>
+                          <span>📍 {race.venue}</span>
+                          <span>📅 {new Date(race.date).toLocaleDateString("en-IE", { weekday: "short", day: "numeric", month: "short" })}</span>
+                          <span>📏 {race.distanceFurlongs}f</span>
+                          <span>🌤 {race.forecastGoing}</span>
                         </div>
                       </div>
-                      <span style={{ fontSize: 18, fontWeight: 800, color: C.gold, flexShrink: 0 }}>{"€" + (race.prizeMoney >= 1000 ? Math.round(race.prizeMoney / 1000) + "k" : race.prizeMoney)}</span>
+                      <span style={{ fontSize: 18, fontWeight: 800, color: C.gold, flexShrink: 0 }}>€{race.prizeMoney >= 1000 ? (race.prizeMoney / 1000) + "k" : race.prizeMoney}</span>
                     </div>
 
                     {race.entryDeadline && (
-                      <div style={{ display: "flex", alignItems: "center", gap: 8, padding: "7px 10px", background: C.cardOff, borderRadius: 8, border: "1px solid " + C.border, marginBottom: 10, fontSize: 12 }}>
+                      <div style={{ display: "flex", alignItems: "center", gap: 8, padding: "7px 10px", background: C.cardOff, borderRadius: 8, border: `1px solid ${C.border}`, marginBottom: 10, fontSize: 12 }}>
                         <span style={{ color: C.textMid, fontWeight: 600 }}>Entry closes</span>
-                        <span style={{ fontWeight: 700, color: C.amber }}>{new Date(race.entryDeadline).toLocaleDateString("en-IE", { weekday: "short", day: "numeric", month: "short" }) + " · " + new Date(race.entryDeadline).toLocaleTimeString("en-IE", { hour: "2-digit", minute: "2-digit" })}</span>
+                        <span style={{ fontWeight: 700, color: C.amber }}>{new Date(race.entryDeadline).toLocaleDateString("en-IE", { weekday: "short", day: "numeric", month: "short" })} · {new Date(race.entryDeadline).toLocaleTimeString("en-IE", { hour: "2-digit", minute: "2-digit" })}</span>
                       </div>
                     )}
 
                     {!analysis && !isLoading && (
                       <Btn onClick={() => analyse(selHorse, race)} style={{ width: "100%", justifyContent: "center", marginBottom: 10 }}>
-                        {"🧠 Get My Take on This Race"}
+                        🧠 Get My Take on This Race <span style={{ fontSize: 11, opacity: 0.5, fontWeight: 400 }}>· searches live form & opposition</span>
                       </Btn>
                     )}
 
                     {isLoading && (
-                      <div style={{ padding: "12px 14px", background: C.cardOff, border: "1px solid " + C.border, borderRadius: 9, marginBottom: 10 }}>
-                        <div style={{ fontSize: 12, fontWeight: 700, color: C.navy, marginBottom: 8 }}>{"🧠 Racing brain at work..."}</div>
+                      <div style={{ padding: "12px 14px", background: C.cardOff, border: `1px solid ${C.border}`, borderRadius: 9, marginBottom: 10 }}>
+                        <div style={{ fontSize: 12, fontWeight: 700, color: C.navy, marginBottom: 8 }}>🧠 Racing brain at work…</div>
                         {["Checking who's in this race…", "Looking at the field…", "Checking trainer record here…", "Building your analysis…"].map((s, i) => (
                           <div key={i} style={{ display: "flex", alignItems: "center", gap: 8, marginBottom: 5, opacity: i <= stage ? 1 : 0.25 }}>
                             <span style={{ fontSize: 12 }}>{i < stage ? "✓" : i === stage ? "⟳" : "○"}</span>
@@ -833,15 +833,15 @@ function RacePlanner({ horses, setHorses }) {
                         <div style={{ display: "flex", gap: 5, marginBottom: 10 }}>
                           {[["HCP", "handicap_edge"], ["Class", "class_fit"], ["Going", "conditions_match"], ["Timing", "timing"], ["Angle", "cuteness"]].map(([label, k2]) => {
                             const v = analysis.scores[k2]; const c = v >= 7 ? C.green : v >= 5 ? C.amber : C.red;
-                            return <div key={k2} style={{ flex: 1, textAlign: "center", padding: "6px 2px", background: c + "10", borderRadius: 7, border: "1px solid " + c + "25" }}><div style={{ fontSize: 15, fontWeight: 800, color: c }}>{v}</div><div style={{ fontSize: 8, color: C.textMid, fontWeight: 600 }}>{label}</div></div>;
+                            return <div key={k2} style={{ flex: 1, textAlign: "center", padding: "6px 2px", background: `${c}10`, borderRadius: 7, border: `1px solid ${c}25` }}><div style={{ fontSize: 15, fontWeight: 800, color: c }}>{v}</div><div style={{ fontSize: 8, color: C.textMid, fontWeight: 600 }}>{label}</div></div>;
                           })}
-                          <div style={{ width: 44, height: 44, borderRadius: "50%", background: accent + "12", border: "3px solid " + accent, display: "flex", flexDirection: "column", alignItems: "center", justifyContent: "center", flexShrink: 0, marginLeft: 4 }}>
+                          <div style={{ width: 44, height: 44, borderRadius: "50%", background: `${accent}12`, border: `3px solid ${accent}`, display: "flex", flexDirection: "column", alignItems: "center", justifyContent: "center", flexShrink: 0, marginLeft: 4 }}>
                             <span style={{ fontSize: 15, fontWeight: 800, color: accent, lineHeight: 1 }}>{analysis.overall}</span>
                             <span style={{ fontSize: 7, color: C.textMid }}>{"/ 100"}</span>
                           </div>
                         </div>
                         {analysis.bullets.map((b, i) => (
-                          <div key={i} style={{ background: C.cardOff, border: "1px solid " + C.border, borderLeft: "3px solid " + C.navy, borderRadius: 9, padding: "11px 13px", marginBottom: 8 }}>
+                          <div key={i} style={{ background: C.cardOff, border: `1px solid ${C.border}`, borderLeft: `3px solid ${C.navy}`, borderRadius: 9, padding: "11px 13px", marginBottom: 8 }}>
                             <div style={{ display: "flex", alignItems: "center", gap: 6, marginBottom: 5 }}><span style={{ fontSize: 14 }}>{b.icon}</span><span style={{ fontSize: 10, fontWeight: 700, color: C.navy, textTransform: "uppercase", letterSpacing: 0.8 }}>{b.category}</span></div>
                             <p style={{ fontSize: 13, color: C.text, lineHeight: 1.75, margin: 0 }}>{b.point}</p>
                           </div>
@@ -854,8 +854,8 @@ function RacePlanner({ horses, setHorses }) {
                     )}
 
                     {!canRace(selHorse) ? (
-                      <div style={{ padding: "9px 12px", background: C.amberBg, border: "1px solid " + C.amber + "40", borderRadius: 9, fontSize: 12, color: C.amber, fontWeight: 600, textAlign: "center" }}>
-                        {"⏳ Cool-off active · Do not contact owner yet"}
+                      <div style={{ padding: "9px 12px", background: C.amberBg, border: `1px solid ${C.amber}40`, borderRadius: 9, fontSize: 12, color: C.amber, fontWeight: 600, textAlign: "center" }}>
+                        ⏳ Cool-off active · eligible {coolingDate(selHorse.activationDate)?.toLocaleDateString("en-IE", { day: "numeric", month: "short" })} · Do not contact owner yet
                       </div>
                     ) : (
                       <div style={{ display: "flex", flexDirection: "column", gap: 7 }}>
@@ -865,11 +865,11 @@ function RacePlanner({ horses, setHorses }) {
                         {isSl && (
                           <div style={{ display: "grid", gridTemplateColumns: "1fr 1fr", gap: 7 }}>
                             <Btn variant="green" onClick={() => handleEntry(selHorse, race)} style={{ justifyContent: "center", flexDirection: "column", gap: 2 }}>
-                              <span>{"✓ Confirm Entry"}</span>
+                              <span>✓ Confirm Entry</span>
                               <span style={{ fontSize: 10, opacity: 0.7, fontWeight: 400 }}>WhatsApp owner</span>
                             </Btn>
-                            <button onClick={() => handleDeclaration(selHorse, race)} style={{ padding: "9px", background: C.blueBg, border: "2px solid " + C.blue + "50", borderRadius: 9, color: C.blue, fontSize: 12, fontWeight: 700, cursor: "pointer", display: "flex", flexDirection: "column", alignItems: "center", gap: 2 }}>
-                              <span>{"📋 Declare to Run"}</span>
+                            <button onClick={() => handleDeclaration(selHorse, race)} style={{ padding: "9px", background: C.blueBg, border: `2px solid ${C.blue}50`, borderRadius: 9, color: C.blue, fontSize: 12, fontWeight: 700, cursor: "pointer", display: "flex", flexDirection: "column", alignItems: "center", gap: 2 }}>
+                              <span>📋 Declare to Run</span>
                               <span style={{ fontSize: 10, opacity: 0.7, fontWeight: 400 }}>WhatsApp owner + jockey</span>
                             </button>
                           </div>
@@ -880,7 +880,7 @@ function RacePlanner({ horses, setHorses }) {
                 </div>
               );
             })}
-          </div>
+          </>
         )}
       </div>
     </div>
@@ -890,7 +890,9 @@ function RacePlanner({ horses, setHorses }) {
 
 // ─── RACEDAY PRINT ────────────────────────────────────────────────────────────
 function RacedayPrint({ horses }) {
-  const [entries, setEntries] = useState([]);
+  const [entries, setEntries] = useState([
+    { id: "e1", horseId: "h3", meetingNo: "47", raceRef: "Race C", venue: "Dundalk", date: "2026-03-25", raceTime: "5:45 PM", raceName: "EBF Median Auction Maiden 7f", ballotNo: "" },
+  ]);
   const [showAdd, setShowAdd] = useState(false);
   const [ne, setNe] = useState({ horseId: "", meetingNo: "", raceRef: "", venue: "", date: "", raceTime: "", raceName: "", ballotNo: "" });
 
@@ -919,7 +921,7 @@ function RacedayPrint({ horses }) {
 
       <div id="print-area">
         {Object.entries(grouped).sort(([a], [b]) => new Date(a) - new Date(b)).map(([date, dayEntries]) => (
-          <div key={date} style={{ background: C.card, border: "1px solid " + C.border, borderRadius: 12, padding: "18px 20px", marginBottom: 14, boxShadow: C.shadow }}>
+          <div key={date} style={{ background: C.card, border: `1px solid ${C.border}`, borderRadius: 12, padding: "18px 20px", marginBottom: 14, boxShadow: C.shadow }}>
             <div style={{ fontSize: 16, fontWeight: 800, color: C.navy, marginBottom: 12, paddingBottom: 10, borderBottom: `2px solid ${C.navy}` }}>
               {new Date(date).toLocaleDateString("en-IE", { weekday: "long", day: "numeric", month: "long", year: "numeric" })}
             </div>
@@ -943,7 +945,7 @@ function RacedayPrint({ horses }) {
             })}
           </div>
         ))}
-        {entries.length === 0 && <div style={{ padding: 40, textAlign: "center", border: "1.5px dashed " + C.border, borderRadius: 14, color: C.textMid }}>No entries added yet — tap + Add Entry</div>}
+        {entries.length === 0 && <div style={{ padding: 40, textAlign: "center", border: `1.5px dashed ${C.border}`, borderRadius: 14, color: C.textMid }}>No entries added yet — tap + Add Entry</div>}
       </div>
 
       {showAdd && (
@@ -967,12 +969,12 @@ function RacedayPrint({ horses }) {
                 <div key={key}>
                   <div style={{ fontSize: 10, fontWeight: 700, color: C.textMid, marginBottom: 4, textTransform: "uppercase", letterSpacing: 0.5 }}>{label}</div>
                   {type === "select" ? (
-                    <select value={ne[key]} onChange={e => setNe(p => ({ ...p, [key]: e.target.value }))} style={{ width: "100%", background: C.cardOff, border: "1px solid " + C.border, borderRadius: 8, padding: "8px 12px", color: C.text, fontSize: 13, outline: "none" }}>
+                    <select value={ne[key]} onChange={e => setNe(p => ({ ...p, [key]: e.target.value }))} style={{ width: "100%", background: C.cardOff, border: `1px solid ${C.border}`, borderRadius: 8, padding: "8px 12px", color: C.text, fontSize: 13, outline: "none" }}>
                       <option value="">Select horse</option>
                       {horses.map(h => <option key={h.id} value={h.id}>{h.name}</option>)}
                     </select>
                   ) : (
-                    <input type={type || "text"} placeholder={placeholder} value={ne[key]} onChange={e => setNe(p => ({ ...p, [key]: e.target.value }))} style={{ width: "100%", background: C.cardOff, border: "1px solid " + C.border, borderRadius: 8, padding: "8px 12px", color: C.text, fontSize: 13, outline: "none" }} />
+                    <input type={type || "text"} placeholder={placeholder} value={ne[key]} onChange={e => setNe(p => ({ ...p, [key]: e.target.value }))} style={{ width: "100%", background: C.cardOff, border: `1px solid ${C.border}`, borderRadius: 8, padding: "8px 12px", color: C.text, fontSize: 13, outline: "none" }} />
                   )}
                 </div>
               ))}
@@ -988,99 +990,34 @@ function RacedayPrint({ horses }) {
 // ─── YARD VIEW ────────────────────────────────────────────────────────────────
 function YardView({ horses, setHorses }) {
   const [showAdd, setShowAdd] = useState(false);
-  const [editHorse, setEditHorse] = useState(null);
   const [csvStatus, setCsvStatus] = useState(null);
   const [newHorse, setNewHorse] = useState({ name: "", dob: "", sex: "Gelding", colour: "", nhRating: "", flatRating: "", discipline: "Hurdle", surface: "Turf", status: "Active", owner: "", ownerPhone: "", ownerEmail: "", headgear: "", nextRaceDate: "", notes: "" });
 
   const handleCSV = (e) => {
-    const file = e.target.files[0];
-    if (!file) return;
-    e.target.value = "";
+    const file = e.target.files[0]; if (!file) return;
     const reader = new FileReader();
     reader.onload = (ev) => {
       try {
-        const text = ev.target.result;
-        const rawLines = text.split("\n").filter(l => l.trim());
-        const sep = rawLines[0].includes("\t") ? "\t" : ",";
-        const headers = rawLines[0].split(sep).map(h => h.trim().toLowerCase().replace(/\s+/g, "_").replace(/[^a-z0-9_]/g, ""));
+        const lines = ev.target.result.split("\n").filter(l => l.trim());
+        const headers = lines[0].split(",").map(h => h.trim().toLowerCase().replace(/[^a-z0-9]/g, "_"));
         const imported = [];
-        for (let i = 1; i < rawLines.length; i++) {
-          const cols = rawLines[i].split(sep).map(c => c.trim().replace(/^"|"$/g, ""));
+        for (let i = 1; i < lines.length; i++) {
+          const cols = lines[i].split(",").map(c => c.trim().replace(/^"|"$/g, ""));
           if (!cols[0]) continue;
-          const row = {};
-          headers.forEach((h, idx) => { row[h] = cols[idx] || ""; });
-          const name = row.horse_name || row.horse || cols[0];
+          const row = {}; headers.forEach((h, idx) => { row[h] = cols[idx] || ""; });
+          const name = row.horse_name || row.name || row.horse || cols[0];
           if (!name) continue;
-          const yof = parseInt(row.yof) || null;
-          imported.push({
-            id: "h_" + Date.now() + "_" + i,
-            name, dob: yof ? yof + "-01-01" : "", yof,
-            sex: row.sex || "Unknown", colour: row.colour || row.color || "",
-            owner: row.owner || "", ownerPhone: "", ownerEmail: "",
-            status: "Active", activationDate: null,
-            nhRating: null, flatRating: null, hurdleRating: null, chaseRating: null,
-            discipline: [], surface: "Turf", headgear: "", jockey: "", trainer: "",
-            nextRaceDate: "", notes: "", isEBF: false, isMaiden: true, isNovice: false,
-            goingPref: [], distanceMin: 16, distanceMax: 24,
-            silk: SILKS[Math.floor(Math.random() * SILKS.length)],
-            form: [], arrivedDate: todayStr, provisionalEntries: [],
-          });
+          imported.push({ id: `h_${Date.now()}_${i}`, name, dob: row.dob || row.date_of_birth || row.foaling_date || "", sex: row.sex || row.gender || "Gelding", colour: row.colour || row.color || "", nhRating: parseInt(row.nh_rating || row.rating || 0) || null, flatRating: parseInt(row.flat_rating || 0) || null, discipline: [row.discipline || "Hurdle"], surface: row.surface || "Turf", status: row.status || row.racing_status || "Active", activationDate: null, owner: row.owner || row.owner_name || "", ownerPhone: row.owner_phone || row.phone || "", ownerEmail: row.owner_email || row.email || "", trainer: row.trainer || "", jockey: row.jockey || "D.J. O'Keeffe", headgear: row.headgear || row.head_gear || "", nextRaceDate: "", goingPref: [], distanceMin: 16, distanceMax: 24, isEBF: false, isMaiden: false, isNovice: false, silk: SILKS[Math.floor(Math.random() * SILKS.length)], notes: row.notes || "", form: [], arrivedDate: todayStr, provisionalEntries: [] });
         }
         setHorses(prev => {
           const updated = [...prev];
-          imported.forEach(imp => {
-            const idx = updated.findIndex(h => h.name.toLowerCase() === imp.name.toLowerCase());
-            if (idx >= 0) { updated[idx] = { ...updated[idx], ...imp, id: updated[idx].id, silk: updated[idx].silk, form: updated[idx].form }; }
-            else { updated.push(imp); }
-          });
+          imported.forEach(imp => { const idx = updated.findIndex(h => h.name.toLowerCase() === imp.name.toLowerCase()); if (idx >= 0) { updated[idx] = { ...updated[idx], ...imp, id: updated[idx].id, silk: updated[idx].silk, form: updated[idx].form }; } else { updated.push(imp); } });
           return updated;
         });
-        setCsvStatus(imported.length + " horses imported");
-        setTimeout(() => setCsvStatus(null), 5000);
-      } catch (err) { setCsvStatus("Error reading CSV"); setTimeout(() => setCsvStatus(null), 4000); }
+        setCsvStatus(`✓ ${imported.length} horses imported`);
+        setTimeout(() => setCsvStatus(null), 4000);
+      } catch (err) { setCsvStatus("✕ Error reading CSV"); setTimeout(() => setCsvStatus(null), 4000); }
     };
-    reader.readAsText(file);
-  };
-
-  const handleRatingsCSV = (e) => {
-    const file = e.target.files[0];
-    if (!file) return;
-    e.target.value = "";
-    const reader = new FileReader();
-    reader.onload = (ev) => {
-      try {
-        const text = ev.target.result;
-        const rawLines = text.split("\n").filter(l => l.trim());
-        const sep = rawLines[0].includes("\t") ? "\t" : ",";
-        const headers = rawLines[0].split(sep).map(h => h.trim().toLowerCase().replace(/\s+/g, "_").replace(/[^a-z0-9_]/g, ""));
-        let updated = 0;
-        setHorses(prev => {
-          const horses = [...prev];
-          rawLines.slice(1).forEach(line => {
-            const cols = line.split(sep).map(c => c.trim().replace(/^"|"$/g, ""));
-            if (!cols[0]) return;
-            const row = {};
-            headers.forEach((h, idx) => { row[h] = cols[idx] || ""; });
-            const name = row.horse_name || row.horse || cols[0];
-            if (!name) return;
-            const flat = parseInt(row.flat) || null;
-            const awt = parseInt(row.all_weather) || null;
-            const hurdle = parseInt(row.hurdle) || null;
-            const chase = parseInt(row.chase) || null;
-            const idx = horses.findIndex(h => h.name.toLowerCase().trim() === name.toLowerCase().trim());
-            if (idx >= 0) {
-              horses[idx] = { ...horses[idx], flatRating: flat || horses[idx].flatRating, awtRating: awt || horses[idx].awtRating, nhRating: hurdle || chase || horses[idx].nhRating, hurdleRating: hurdle || horses[idx].hurdleRating, chaseRating: chase || horses[idx].chaseRating, isMaiden: !flat && !awt && !hurdle && !chase, discipline: horses[idx].discipline && horses[idx].discipline.length > 0 ? horses[idx].discipline : hurdle && chase ? ["Hurdle","Chase"] : hurdle ? ["Hurdle"] : chase ? ["Chase"] : flat || awt ? ["Flat"] : [] };
-              updated++;
-            }
-          });
-          return horses;
-        });
-        setCsvStatus(updated + " horses updated with ratings");
-        setTimeout(() => setCsvStatus(null), 5000);
-      } catch (err) { setCsvStatus("Error reading ratings"); setTimeout(() => setCsvStatus(null), 4000); }
-    };
-    reader.readAsText(file);
-  };
     reader.readAsText(file); e.target.value = "";
   };
 
@@ -1101,12 +1038,8 @@ function YardView({ horses, setHorses }) {
         <div style={{ display: "flex", gap: 8, alignItems: "center" }}>
           {csvStatus && <span style={{ fontSize: 12, fontWeight: 700, color: csvStatus.startsWith("✓") ? C.green : C.red }}>{csvStatus}</span>}
           <label style={{ background: C.cardOff, border: `1.5px solid ${C.border}`, color: C.textMid, borderRadius: 9, padding: "9px 16px", fontSize: 13, fontWeight: 700, cursor: "pointer", display: "inline-flex", alignItems: "center", gap: 6 }}>
-            📥 Import Horses CSV <input type="file" accept=".csv,.tsv,.txt" onChange={handleCSV} style={{ display: "none" }} />
+            📥 Import CSV <input type="file" accept=".csv" onChange={handleCSV} style={{ display: "none" }} />
           </label>
-          <label style={{ background: C.cardOff, border: "1.5px solid " + C.border, color: C.textMid, borderRadius: 9, padding: "9px 16px", fontSize: 13, fontWeight: 700, cursor: "pointer", display: "inline-flex", alignItems: "center", gap: 6 }}>
-            📊 Import Ratings <input type="file" accept=".csv,.tsv,.txt" onChange={handleRatingsCSV} style={{ display: "none" }} />
-          </label>
-          <Btn variant="ghost" onClick={() => { if (window.confirm("Remove all horses?")) { setHorses([]); } }} style={{ fontSize: 12, color: C.red }}>Clear Yard</Btn>
           <Btn onClick={() => setShowAdd(true)}>+ Add Horse</Btn>
         </div>
       </div>
@@ -1121,7 +1054,7 @@ function YardView({ horses, setHorses }) {
       </div>
 
       {horses.map(h => (
-        <div key={h.id} style={{ background: C.card, border: "1px solid " + C.border, borderLeft: "4px solid " + (h.status === "Active" ? C.green : h.status === "CoolingOff" ? C.amber : C.red), borderRadius: 12, padding: "13px 16px", marginBottom: 9, boxShadow: C.shadow }}>
+        <div key={h.id} style={{ background: C.card, border: `1px solid ${C.border}`, borderLeft: `4px solid ${h.status === "Active" ? C.green : h.status === "CoolingOff" ? C.amber : C.red}`, borderRadius: 12, padding: "13px 16px", marginBottom: 9, boxShadow: C.shadow }}>
           <div style={{ display: "flex", alignItems: "center", gap: 12 }}>
             <Silk silk={h.silk} size={40} />
             <div style={{ flex: 1 }}>
@@ -1138,51 +1071,9 @@ function YardView({ horses, setHorses }) {
               </div>
               <div style={{ marginTop: 5, display: "flex", gap: 6, alignItems: "center" }}><FormDots form={h.form} />{h.notes && <span style={{ fontSize: 11, color: C.textMid, fontStyle: "italic" }}>💬 {h.notes}</span>}</div>
             </div>
-            <div style={{ display: "flex", gap: 6, marginTop: 8 }}>
-              <Btn variant="ghost" onClick={() => setEditHorse(h)} style={{ fontSize: 11, padding: "5px 12px" }}>Edit</Btn>
-              <Btn variant="red" onClick={() => { if (window.confirm("Remove " + h.name + "?")) { setHorses(prev => prev.filter(x => x.id !== h.id)); } }} style={{ fontSize: 11, padding: "5px 12px" }}>Remove</Btn>
-            </div>
           </div>
         </div>
       ))}
-
-      {editHorse && (
-        <div style={{ position: "fixed", inset: 0, background: "rgba(10,22,40,0.6)", zIndex: 500, display: "flex", alignItems: "center", justifyContent: "center", padding: 20 }}>
-          <div style={{ background: C.card, borderRadius: 16, width: "100%", maxWidth: 480, maxHeight: "90vh", overflowY: "auto" }}>
-            <div style={{ background: C.navy, padding: "16px 20px", display: "flex", justifyContent: "space-between", alignItems: "center", position: "sticky", top: 0 }}>
-              <div style={{ fontSize: 15, fontWeight: 700, color: "#fff" }}>{"Edit — " + editHorse.name}</div>
-              <button onClick={() => setEditHorse(null)} style={{ background: "rgba(255,255,255,0.1)", border: "none", color: "#fff", width: 28, height: 28, borderRadius: 6, cursor: "pointer" }}>X</button>
-            </div>
-            <div style={{ padding: 20, display: "flex", flexDirection: "column", gap: 11 }}>
-              {[
-                { key: "status", label: "Status", type: "select", options: ["Active", "CoolingOff", "Inactive"] },
-                { key: "sex", label: "Sex", type: "select", options: ["Gelding", "Mare", "Filly", "Colt", "Horse"] },
-                { key: "headgear", label: "Headgear" },
-                { key: "nhRating", label: "NH Rating", type: "number" },
-                { key: "flatRating", label: "Flat Rating", type: "number" },
-                { key: "hurdleRating", label: "Hurdle Rating", type: "number" },
-                { key: "chaseRating", label: "Chase Rating", type: "number" },
-                { key: "ownerPhone", label: "Owner WhatsApp", type: "tel" },
-                { key: "jockey", label: "Jockey" },
-                { key: "notes", label: "Notes" },
-              ].map(({ key, label, type, options }) => (
-                <div key={key}>
-                  <div style={{ fontSize: 10, fontWeight: 700, color: C.textMid, marginBottom: 3, textTransform: "uppercase" }}>{label}</div>
-                  {type === "select" ? (
-                    <select value={editHorse[key] || ""} onChange={e => setEditHorse(p => ({ ...p, [key]: e.target.value }))} style={{ width: "100%", background: C.cardOff, border: "1px solid " + C.border, borderRadius: 8, padding: "8px 12px", color: C.text, fontSize: 13 }}>
-                      {(options || []).map(o => <option key={o} value={o}>{o}</option>)}
-                    </select>
-                  ) : (
-                    <input type={type || "text"} value={editHorse[key] || ""} onChange={e => setEditHorse(p => ({ ...p, [key]: e.target.value }))} style={{ width: "100%", background: C.cardOff, border: "1px solid " + C.border, borderRadius: 8, padding: "8px 12px", color: C.text, fontSize: 13 }} />
-                  )}
-                </div>
-              ))}
-              <Btn onClick={() => { setHorses(prev => prev.map(h => h.id === editHorse.id ? { ...editHorse, nhRating: editHorse.nhRating ? parseInt(editHorse.nhRating) : null, flatRating: editHorse.flatRating ? parseInt(editHorse.flatRating) : null } : h)); setEditHorse(null); }} style={{ width: "100%", justifyContent: "center" }}>Save</Btn>
-              <Btn variant="red" onClick={() => { if (window.confirm("Remove " + editHorse.name + "?")) { setHorses(prev => prev.filter(h => h.id !== editHorse.id)); setEditHorse(null); } }} style={{ width: "100%", justifyContent: "center" }}>Remove</Btn>
-            </div>
-          </div>
-        </div>
-      )}
 
       {showAdd && (
         <div style={{ position: "fixed", inset: 0, background: "rgba(10,22,40,0.6)", zIndex: 500, display: "flex", alignItems: "center", justifyContent: "center", padding: 20, backdropFilter: "blur(4px)" }}>
@@ -1212,11 +1103,11 @@ function YardView({ horses, setHorses }) {
                 <div key={key}>
                   <div style={{ fontSize: 10, fontWeight: 700, color: C.textMid, marginBottom: 3, textTransform: "uppercase", letterSpacing: 0.5 }}>{label}</div>
                   {type === "select" ? (
-                    <select value={newHorse[key]} onChange={e => setNewHorse(p => ({ ...p, [key]: e.target.value }))} style={{ width: "100%", background: C.cardOff, border: "1px solid " + C.border, borderRadius: 8, padding: "8px 12px", color: C.text, fontSize: 13, outline: "none" }}>
+                    <select value={newHorse[key]} onChange={e => setNewHorse(p => ({ ...p, [key]: e.target.value }))} style={{ width: "100%", background: C.cardOff, border: `1px solid ${C.border}`, borderRadius: 8, padding: "8px 12px", color: C.text, fontSize: 13, outline: "none" }}>
                       {options.map(o => <option key={o} value={o}>{o}</option>)}
                     </select>
                   ) : (
-                    <input type={type || "text"} placeholder={placeholder} value={newHorse[key]} onChange={e => setNewHorse(p => ({ ...p, [key]: e.target.value }))} style={{ width: "100%", background: C.cardOff, border: "1px solid " + C.border, borderRadius: 8, padding: "8px 12px", color: C.text, fontSize: 13, outline: "none" }} />
+                    <input type={type || "text"} placeholder={placeholder} value={newHorse[key]} onChange={e => setNewHorse(p => ({ ...p, [key]: e.target.value }))} style={{ width: "100%", background: C.cardOff, border: `1px solid ${C.border}`, borderRadius: 8, padding: "8px 12px", color: C.text, fontSize: 13, outline: "none" }} />
                   )}
                 </div>
               ))}
@@ -1295,17 +1186,17 @@ function MovementLog({ horses }) {
                 <div key={key}>
                   <div style={{ fontSize: 10, fontWeight: 700, color: C.textMid, marginBottom: 3, textTransform: "uppercase", letterSpacing: 0.5 }}>{label}</div>
                   {type === "select" ? (
-                    <select value={nm[key]} onChange={e => setNm(p => ({ ...p, [key]: e.target.value }))} style={{ width: "100%", background: C.cardOff, border: "1px solid " + C.border, borderRadius: 8, padding: "8px 12px", color: C.text, fontSize: 13, outline: "none" }}>
+                    <select value={nm[key]} onChange={e => setNm(p => ({ ...p, [key]: e.target.value }))} style={{ width: "100%", background: C.cardOff, border: `1px solid ${C.border}`, borderRadius: 8, padding: "8px 12px", color: C.text, fontSize: 13, outline: "none" }}>
                       <option value="">Select horse</option>
                       {horses.map(h => <option key={h.id} value={h.id}>{h.name}</option>)}
                     </select>
                   ) : type === "select_type" ? (
-                    <select value={nm[key]} onChange={e => setNm(p => ({ ...p, [key]: e.target.value }))} style={{ width: "100%", background: C.cardOff, border: "1px solid " + C.border, borderRadius: 8, padding: "8px 12px", color: C.text, fontSize: 13, outline: "none" }}>
+                    <select value={nm[key]} onChange={e => setNm(p => ({ ...p, [key]: e.target.value }))} style={{ width: "100%", background: C.cardOff, border: `1px solid ${C.border}`, borderRadius: 8, padding: "8px 12px", color: C.text, fontSize: 13, outline: "none" }}>
                       <option value="arrival">Arrival</option>
                       <option value="departure">Departure</option>
                     </select>
                   ) : (
-                    <input type={type || "text"} placeholder={placeholder} value={nm[key]} onChange={e => setNm(p => ({ ...p, [key]: e.target.value }))} style={{ width: "100%", background: C.cardOff, border: "1px solid " + C.border, borderRadius: 8, padding: "8px 12px", color: C.text, fontSize: 13, outline: "none" }} />
+                    <input type={type || "text"} placeholder={placeholder} value={nm[key]} onChange={e => setNm(p => ({ ...p, [key]: e.target.value }))} style={{ width: "100%", background: C.cardOff, border: `1px solid ${C.border}`, borderRadius: 8, padding: "8px 12px", color: C.text, fontSize: 13, outline: "none" }} />
                   )}
                 </div>
               ))}
@@ -1333,7 +1224,7 @@ function OwnerPortal({ horses }) {
       <div style={{ fontSize: 22, fontWeight: 800, color: C.text, marginBottom: 4 }}>Owner Portal</div>
       <div style={{ fontSize: 13, color: C.textMid, marginBottom: 16 }}>Each owner sees their horses, entries, provisional targets and trainer notes</div>
       {owners.map(o => (
-        <div key={o.name} onClick={() => setSelOwner(o)} style={{ background: C.card, border: "1px solid " + C.border, borderRadius: 12, padding: "13px 16px", marginBottom: 9, cursor: "pointer", boxShadow: C.shadow, display: "flex", alignItems: "center", gap: 13 }}>
+        <div key={o.name} onClick={() => setSelOwner(o)} style={{ background: C.card, border: `1px solid ${C.border}`, borderRadius: 12, padding: "13px 16px", marginBottom: 9, cursor: "pointer", boxShadow: C.shadow, display: "flex", alignItems: "center", gap: 13 }}>
           <div style={{ width: 42, height: 42, borderRadius: "50%", background: C.navy, display: "flex", alignItems: "center", justifyContent: "center", fontSize: 15, fontWeight: 800, color: C.gold, flexShrink: 0 }}>
             {o.name.split(" ").map(w => w[0]).join("").slice(0, 2)}
           </div>
@@ -1365,7 +1256,7 @@ function OwnerPortal({ horses }) {
       {selOwner.horses.map(horse => {
         const provisional = horse.provisionalEntries || [];
         return (
-          <div key={horse.id} style={{ background: C.card, border: "1px solid " + C.border, borderRadius: 14, padding: "16px 18px", marginBottom: 14, boxShadow: C.shadow }}>
+          <div key={horse.id} style={{ background: C.card, border: `1px solid ${C.border}`, borderRadius: 14, padding: "16px 18px", marginBottom: 14, boxShadow: C.shadow }}>
             <div style={{ display: "flex", alignItems: "center", gap: 13, marginBottom: 13 }}>
               <Silk silk={horse.silk} size={46} />
               <div style={{ flex: 1 }}>
@@ -1382,10 +1273,10 @@ function OwnerPortal({ horses }) {
 
             {/* Provisional targets */}
             {provisional.length > 0 && (
-              <div style={{ borderTop: "1px solid " + C.border, paddingTop: 12, marginBottom: 12 }}>
+              <div style={{ borderTop: `1px solid ${C.border}`, paddingTop: 12, marginBottom: 12 }}>
                 <div style={{ fontSize: 11, fontWeight: 700, color: C.textDim, textTransform: "uppercase", letterSpacing: 1, marginBottom: 8 }}>Provisional Targets</div>
                 {provisional.map(pe => (
-                  <div key={pe.id} style={{ padding: "10px 12px", background: C.goldBg, border: "1px solid " + C.gold + "30", borderLeft: `3px solid ${C.gold}`, borderRadius: 9, marginBottom: 7 }}>
+                  <div key={pe.id} style={{ padding: "10px 12px", background: C.goldBg, border: `1px solid ${C.gold}30`, borderLeft: `3px solid ${C.gold}`, borderRadius: 9, marginBottom: 7 }}>
                     <div style={{ fontSize: 14, fontWeight: 700, color: C.text, marginBottom: 3 }}>{pe.raceName}</div>
                     <div style={{ display: "flex", gap: 10, flexWrap: "wrap", fontSize: 12, color: C.textMid }}>
                       <span>📍 {pe.venue}</span>
@@ -1399,13 +1290,13 @@ function OwnerPortal({ horses }) {
             )}
 
             {/* Form */}
-            <div style={{ borderTop: "1px solid " + C.border, paddingTop: 12 }}>
+            <div style={{ borderTop: `1px solid ${C.border}`, paddingTop: 12 }}>
               <div style={{ fontSize: 11, fontWeight: 700, color: C.textDim, textTransform: "uppercase", letterSpacing: 1, marginBottom: 8 }}>Recent Form</div>
               {(horse.form || []).slice(0, 3).map((f, i) => {
                 const pc = f.position === 1 ? C.green : f.position <= 3 ? C.amber : C.textMid;
                 return (
-                  <div key={i} style={{ display: "flex", alignItems: "center", gap: 10, padding: "8px 10px", background: C.cardOff, borderRadius: 8, border: "1px solid " + C.border, marginBottom: 6 }}>
-                    <div style={{ width: 24, height: 24, borderRadius: 6, background: pc + "12", border: `1.5px solid ${pc}40`, display: "flex", alignItems: "center", justifyContent: "center", fontSize: 12, fontWeight: 800, color: pc }}>{f.position}</div>
+                  <div key={i} style={{ display: "flex", alignItems: "center", gap: 10, padding: "8px 10px", background: C.cardOff, borderRadius: 8, border: `1px solid ${C.border}`, marginBottom: 6 }}>
+                    <div style={{ width: 24, height: 24, borderRadius: 6, background: `${pc}12`, border: `1.5px solid ${pc}40`, display: "flex", alignItems: "center", justifyContent: "center", fontSize: 12, fontWeight: 800, color: pc }}>{f.position}</div>
                     <div style={{ flex: 1 }}><span style={{ fontSize: 13, fontWeight: 600, color: C.text }}>{f.venue}</span><span style={{ fontSize: 11, color: C.textMid, marginLeft: 6 }}>{f.raceClass} · {f.going}</span></div>
                     <div style={{ fontSize: 11, color: C.textMid }}>{new Date(f.date).toLocaleDateString("en-IE", { day: "numeric", month: "short" })}</div>
                   </div>
@@ -1415,7 +1306,7 @@ function OwnerPortal({ horses }) {
             </div>
 
             {horse.notes && (
-              <div style={{ marginTop: 10, padding: "9px 12px", background: C.cardOff, borderRadius: 8, border: "1px solid " + C.border }}>
+              <div style={{ marginTop: 10, padding: "9px 12px", background: C.cardOff, borderRadius: 8, border: `1px solid ${C.border}` }}>
                 <div style={{ fontSize: 9, fontWeight: 700, color: C.textDim, textTransform: "uppercase", letterSpacing: 0.5, marginBottom: 3 }}>Trainer's Note</div>
                 <p style={{ fontSize: 13, color: C.textMid, fontStyle: "italic", margin: 0, lineHeight: 1.5 }}>{horse.notes}</p>
               </div>
@@ -1469,7 +1360,7 @@ export default function App() {
         </button>
 
         <div style={{ display: "flex", alignItems: "center", gap: 9 }}>
-          <div style={{ width: 30, height: 30, background: "linear-gradient(135deg," + C.gold + "," + C.goldLight + ")", borderRadius: 7, display: "flex", alignItems: "center", justifyContent: "center", fontSize: 15 }}>🏇</div>
+          <div style={{ width: 30, height: 30, background: `linear-gradient(135deg,${C.gold},${C.goldLight})`, borderRadius: 7, display: "flex", alignItems: "center", justifyContent: "center", fontSize: 15 }}>🏇</div>
           <div>
             <div style={{ fontSize: 16, fontWeight: 800, color: "#fff", lineHeight: 1 }}>RacePlan Pro</div>
             <div style={{ fontSize: 8, color: "rgba(255,255,255,0.35)", letterSpacing: 2 }}>YARD MANAGEMENT</div>
@@ -1483,7 +1374,7 @@ export default function App() {
 
         <div style={{ marginLeft: "auto", display: "flex", alignItems: "center", gap: 10 }}>
           {medAlerts > 0 && (
-            <button onClick={() => setTab("meds")} style={{ background: C.redBg, border: "1px solid " + C.red + "30", color: C.red, borderRadius: 20, padding: "4px 12px", fontSize: 11, fontWeight: 700, cursor: "pointer" }}>
+            <button onClick={() => setTab("meds")} style={{ background: C.redBg, border: `1px solid ${C.red}30`, color: C.red, borderRadius: 20, padding: "4px 12px", fontSize: 11, fontWeight: 700, cursor: "pointer" }}>
               🏥 {medAlerts} med alert{medAlerts !== 1 ? "s" : ""}
             </button>
           )}
