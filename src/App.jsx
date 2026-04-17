@@ -895,7 +895,7 @@ function RacePlanner({ horses, setHorses }) {
 
                     {!analysis && !isLoading && (
                       <Btn onClick={() => analyse(selHorse, race)} style={{ width: "100%", justifyContent: "center", marginBottom: 10 }}>
-                        🧠 Get My Take on This Race <span style={{ fontSize: 11, opacity: 0.5, fontWeight: 400 }}>· searches live form & opposition</span>
+                        {"🧠 Get My Take on This Race"}
                       </Btn>
                     )}
 
@@ -916,9 +916,9 @@ function RacePlanner({ horses, setHorses }) {
                         <div style={{ display: "flex", gap: 5, marginBottom: 10 }}>
                           {[["HCP", "handicap_edge"], ["Class", "class_fit"], ["Going", "conditions_match"], ["Timing", "timing"], ["Angle", "cuteness"]].map(([label, k2]) => {
                             const v = analysis.scores[k2]; const c = v >= 7 ? C.green : v >= 5 ? C.amber : C.red;
-                            return <div key={k2} style={{ flex: 1, textAlign: "center", padding: "6px 2px", background: "" + c + "10", borderRadius: 7, border: "1px solid " + c + "25" }}><div style={{ fontSize: 15, fontWeight: 800, color: c }}>{v}</div><div style={{ fontSize: 8, color: C.textMid, fontWeight: 600 }}>{label}</div></div>;
+                            return <div key={k2} style={{ flex: 1, textAlign: "center", padding: "6px 2px", background: c + "10", borderRadius: 7, border: "1px solid " + c + "25" }}><div style={{ fontSize: 15, fontWeight: 800, color: c }}>{v}</div><div style={{ fontSize: 8, color: C.textMid, fontWeight: 600 }}>{label}</div></div>;
                           })}
-                          <div style={{ width: 44, height: 44, borderRadius: "50%", background: "" + accent + "12", border: "3px solid " + accent, display: "flex", flexDirection: "column", alignItems: "center", justifyContent: "center", flexShrink: 0, marginLeft: 4 }}>
+                          <div style={{ width: 44, height: 44, borderRadius: "50%", background: accent + "12", border: "3px solid " + accent, display: "flex", flexDirection: "column", alignItems: "center", justifyContent: "center", flexShrink: 0, marginLeft: 4 }}>
                             <span style={{ fontSize: 15, fontWeight: 800, color: accent, lineHeight: 1 }}>{analysis.overall}</span>
                             <span style={{ fontSize: 7, color: C.textMid }}>{"/ 100"}</span>
                           </div>
@@ -938,7 +938,7 @@ function RacePlanner({ horses, setHorses }) {
 
                     {!canRace(selHorse) ? (
                       <div style={{ padding: "9px 12px", background: C.amberBg, border: "1px solid " + C.amber + "40", borderRadius: 9, fontSize: 12, color: C.amber, fontWeight: 600, textAlign: "center" }}>
-                        ⏳ Cool-off active · eligible {coolingDate(selHorse.activationDate)?.toLocaleDateString("en-IE", { day: "numeric", month: "short" })} · Do not contact owner yet
+                        {"⏳ Cool-off active · eligible " + (coolingDate(selHorse.activationDate)?.toLocaleDateString("en-IE", { day: "numeric", month: "short" }) || "") + " · Do not contact owner yet"}
                       </div>
                     ) : (
                       <div style={{ display: "flex", flexDirection: "column", gap: 7 }}>
