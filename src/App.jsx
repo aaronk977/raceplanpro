@@ -805,7 +805,7 @@ function RacePlanner({ horses, setHorses }) {
                           <div style={{ fontSize: 15, fontWeight: 700, color: C.text, marginBottom: 4 }}>{race.raceName}</div>
                           <div style={{ fontSize: 12, color: C.textMid }}>{race.venue + " · " + race.distanceFurlongs + "f · " + race.forecastGoing}</div>
                         </div>
-                        <div style={{ fontSize: 17, fontWeight: 800, color: C.gold }}>{"€" + (race.prizeMoney >= 1000 ? Math.round(race.prizeMoney / 1000) + "k" : race.prizeMoney)}</div>
+                        <div style={{ fontSize: 17, fontWeight: 800, color: C.gold }}>{"€" + (race.prizeMoney >= 1000 ? Math.round(race.prizeMoney * 0.001) + "k" : race.prizeMoney)}</div>
                       </div>
                       {!analysis && !isLoading && (
                         <Btn onClick={function() { analyse(selHorse, race); }} style={{ width: "100%", justifyContent: "center", marginBottom: 8 }}>{"Get My Take on This Race"}</Btn>
@@ -825,7 +825,7 @@ function RacePlanner({ horses, setHorses }) {
                           <div style={{ display: "flex", gap: 8, marginBottom: 8, alignItems: "center" }}>
                             <div style={{ flex: 1, fontSize: 13, fontWeight: 700, color: accent }}>{analysis.recommendation}</div>
                             <div style={{ fontSize: 22, fontWeight: 800, color: accent }}>{analysis.overall}</div>
-                            <div style={{ fontSize: 10, color: C.textMid }}>{" /100"}</div>
+                            <div style={{ fontSize: 10, color: C.textMid }}>{"out of 100"}</div>
                           </div>
                           {(analysis.bullets || []).map(function(b, i) {
                             return (
