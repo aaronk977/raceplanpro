@@ -202,7 +202,7 @@ Replace all template text with real analysis. recommendation = STRONG, CONSIDER,
 
   const res = await fetch("https://api.anthropic.com/v1/messages", {
     method: "POST",
-    headers: { "Content-Type": "application/json" },
+    headers: { "Content-Type": "application/json", "x-api-key": ANTHROPIC_KEY, "anthropic-version": "2023-06-01", "anthropic-dangerous-direct-browser-access": "true" },
     body: JSON.stringify({ model: "claude-sonnet-4-20250514", max_tokens: 2500, tools: [{ type: "web_search_20250305", name: "web_search" }], system, messages: [{ role: "user", content: prompt }] }),
   });
   const data = await res.json();
@@ -213,14 +213,12 @@ Replace all template text with real analysis. recommendation = STRONG, CONSIDER,
 }
 
 // ─── MEDICATION TRACKER ───────────────────────────────────────────────────────
-function MedicationTracker({ horses }) {
-  const [medLogs, setMedLogs] = useState({});
+function MedicationTracker({ horses, medLogs, setMedLogs, trackedIds, setTrackedIds }) {
   const [selMonth, setSelMonth] = useState(TODAY.getMonth());
   const [selYear, setSelYear] = useState(TODAY.getFullYear());
   const [openHorse, setOpenHorse] = useState(null);
   const [showBill, setShowBill] = useState(false);
   const [billHorse, setBillHorse] = useState(null);
-  const [trackedIds, setTrackedIds] = useState(["h1", "h2"]);
   const [showAdd, setShowAdd] = useState(false);
 
   const daysInMonth = getDaysInMonth(selYear, selMonth);
@@ -452,7 +450,7 @@ function ProvisionalEntries({ horses, setHorses }) {
     try {
       const res = await fetch("https://api.anthropic.com/v1/messages", {
         method: "POST",
-        headers: { "Content-Type": "application/json" },
+        headers: { "Content-Type": "application/json", "x-api-key": ANTHROPIC_KEY, "anthropic-version": "2023-06-01", "anthropic-dangerous-direct-browser-access": "true" },
         body: JSON.stringify({
           model: "claude-sonnet-4-20250514",
           max_tokens: 5000,
@@ -493,8 +491,17 @@ function ProvisionalEntries({ horses, setHorses }) {
         </div>
         <div style={{ display: "flex", gap: 8 }}>
           <Btn variant="ghost" onClick={fetchProvisional} disabled={fetchStatus === "fetching"} style={{ fontSize: 12 }}>
-            {fetchStatus === "fetching" ? "⟳ Fetching…" : "⟳ Fetch HRI Provisional Summaries"}
+            {fetchStatus === "fetching" ? "Fetching..." : "Fetch HRI Provisional"}
           </Btn>
+          <Btn variant="ghost" onClick={function() {
+            const txt = window.prompt("Paste provisional entries text (one per line: venue, date, race name):");
+            if (!txt) return;
+            const races = txt.split("\n").filter(function(l) { return l.trim(); }).map(function(l, idx) {
+              const p = l.split(/[,\t]/);
+              return { id: "p" + Date.now() + idx, meetingRef: p[0] || "", venue: p[1] || p[0] || "", date: p[2] || "", raceName: p[3] || l.trim(), discipline: p[4] || "Flat", raceRef: p[5] || "" };
+            });
+            setProvisionalRaces(function(prev) { return [...prev, ...races]; });
+          }} style={{ fontSize: 12 }}>{"Paste Conditions"}</Btn>
         </div>
       </div>
 
@@ -864,10 +871,8 @@ function RacePlanner({ horses, setHorses }) {
   );
 }
 
-function RacedayPrint({ horses }) {
-  const [entries, setEntries] = useState([
-    { id: "e1", horseId: "h3", meetingNo: "47", raceRef: "Race C", venue: "Dundalk", date: "2026-03-25", raceTime: "5:45 PM", raceName: "EBF Median Auction Maiden 7f", ballotNo: "" },
-  ]);
+function RacedayPrint({ horses, entries, setEntries }) {
+  const _unused = null; // entries/setEntries now passed from App for persistence
   const [showAdd, setShowAdd] = useState(false);
   const [ne, setNe] = useState({ horseId: "", meetingNo: "", raceRef: "", venue: "", date: "", raceTime: "", raceName: "", ballotNo: "" });
 
@@ -1454,9 +1459,27 @@ export default function App() {
     } catch(e) { return INITIAL_HORSES; }
   });
   const [sidebarOpen, setSidebarOpen] = useState(true);
+  const [medLogs, setMedLogs] = useState(function() {
+    try { const s = localStorage.getItem("rpp_medlogs"); return s ? JSON.parse(s) : {}; } catch(e) { return {}; }
+  });
+  const [trackedIds, setTrackedIds] = useState(function() {
+    try { const s = localStorage.getItem("rpp_tracked"); return s ? JSON.parse(s) : []; } catch(e) { return []; }
+  });
+  const [wbEntries, setWbEntries] = useState(function() {
+    try { const s = localStorage.getItem("rpp_whiteboard"); return s ? JSON.parse(s) : []; } catch(e) { return []; }
+  });
   React.useEffect(function() {
     try { localStorage.setItem("rpp_horses", JSON.stringify(horses)); } catch(e) {}
   }, [horses]);
+  React.useEffect(function() {
+    try { localStorage.setItem("rpp_medlogs", JSON.stringify(medLogs)); } catch(e) {}
+  }, [medLogs]);
+  React.useEffect(function() {
+    try { localStorage.setItem("rpp_tracked", JSON.stringify(trackedIds)); } catch(e) {}
+  }, [trackedIds]);
+  React.useEffect(function() {
+    try { localStorage.setItem("rpp_whiteboard", JSON.stringify(wbEntries)); } catch(e) {}
+  }, [wbEntries]);
 
   const medAlerts = horses.filter(h => { const d = daysUntil(h.nextRaceDate); return d && d >= 12 && d <= 16; }).length;
 
@@ -1554,8 +1577,8 @@ export default function App() {
         <div style={{ flex: 1, overflowY: "auto", padding: "20px 24px", minWidth: 0 }}>
           {tab === "planner" && <RacePlanner horses={horses} setHorses={setHorses} />}
           {tab === "provisional" && <ProvisionalEntries horses={horses} setHorses={setHorses} />}
-          {tab === "meds" && <MedicationTracker horses={horses} />}
-          {tab === "whiteboard" && <RacedayPrint horses={horses} />}
+          {tab === "meds" && <MedicationTracker horses={horses} medLogs={medLogs} setMedLogs={setMedLogs} trackedIds={trackedIds} setTrackedIds={setTrackedIds} />}
+          {tab === "whiteboard" && <RacedayPrint horses={horses} entries={wbEntries} setEntries={setWbEntries} />}
           {tab === "yard" && <YardView horses={horses} setHorses={setHorses} />}
           {tab === "movements" && <MovementLog horses={horses} />}
           {tab === "owners" && <OwnerPortal horses={horses} />}
