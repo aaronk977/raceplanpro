@@ -1338,19 +1338,18 @@ export default function App() {
 
   return (
     <div style={{ minHeight: "100vh", background: C.bg, fontFamily: "'Inter','Helvetica Neue',sans-serif", display: "flex", flexDirection: "column" }}>
-      <style>{`
-        /* Font loaded via index.html */
-        * { box-sizing: border-box; margin: 0; padding: 0; }
-        p { margin: 0; }
-        button:hover { opacity: 0.88; }
-        a:hover { opacity: 0.88; }
-        input:focus, select:focus { border-color: #0a1628 !important; outline: none; }
-        ::-webkit-scrollbar { width: 4px; }
-        ::-webkit-scrollbar-thumb { background: #b8c8da; border-radius: 2px; }
-        @keyframes spin { to { transform: rotate(360deg); } }
-        @keyframes slideUp { from { transform: translateY(50px); opacity: 0; } to { transform: translateY(0); opacity: 1; } }
-        @media print { body * { visibility: hidden; } #print-area, #print-area * { visibility: visible; } #print-area { position: absolute; left: 0; top: 0; width: 100%; } }
-      `}</style>
+      <style dangerouslySetInnerHTML={{ __html: [
+        "* { box-sizing: border-box; margin: 0; padding: 0; }",
+        "p { margin: 0; }",
+        "button:hover { opacity: 0.88; }",
+        "a:hover { opacity: 0.88; }",
+        "input:focus, select:focus { border-color: #0a1628 !important; outline: none; }",
+        "::-webkit-scrollbar { width: 4px; }",
+        "::-webkit-scrollbar-thumb { background: #b8c8da; border-radius: 2px; }",
+        "@keyframes spin { to { transform: rotate(360deg); } }",
+        "@keyframes slideUp { from { transform: translateY(50px); opacity: 0; } to { transform: translateY(0); opacity: 1; } }",
+        "@media print { body * { visibility: hidden; } #print-area, #print-area * { visibility: visible; } #print-area { position: absolute; left: 0; top: 0; width: 100%; } }"
+      ].join(" ") }} />
 
       {/* Top Header */}
       <div style={{ background: C.navy, height: 56, display: "flex", alignItems: "center", padding: "0 16px", boxShadow: "0 2px 10px rgba(10,22,40,0.25)", flexShrink: 0, zIndex: 100, gap: 12 }}>
