@@ -720,7 +720,7 @@ function RacePlanner({ horses, setHorses }) {
                   <div style={{ marginTop: 4 }}><FormDots form={h.form} /></div>
                 </div>
               </div>
-              {h.status === "CoolingOff" && <div style={{ marginTop: 5, padding: "2px 7px", background: "rgba(217,119,6,0.12)", borderRadius: 5, fontSize: 10, color: C.amber, fontWeight: 600 }}>⏳ {coolingDate(h.activationDate)?.toLocaleDateString("en-IE", { day: "numeric", month: "short" })}</div>}
+              {h.status === "CoolingOff" && <div style={{ marginTop: 5, padding: "2px 7px", background: "rgba(217,119,6,0.12)", borderRadius: 5, fontSize: 10, color: C.amber, fontWeight: 600 }}>⏳ {(coolingDate(h.activationDate) ? coolingDate(h.activationDate).toLocaleDateString("en-IE", { day: "numeric", month: "short" }) : "")}</div>}
               {h.status === "Inactive" && <div style={{ marginTop: 5, padding: "2px 7px", background: "rgba(192,57,43,0.10)", borderRadius: 5, fontSize: 10, color: C.red, fontWeight: 600 }}>✕ Inactive</div>}
             </div>
           );
@@ -752,7 +752,7 @@ function RacePlanner({ horses, setHorses }) {
             </div>
             <div style={{ display: "flex", gap: 10, flexWrap: "wrap", fontSize: 12, color: C.textMid }}>
               <span>{getAge(selHorse.dob)}yo {selHorse.sex}</span>
-              <span>Rtg {selHorse.nhRating ?? selHorse.flatRating ?? "—"}</span>
+              <span>{"Rtg " + (selHorse.nhRating || selHorse.flatRating || "—")}</span>
               <span>{selHorse.trainer}</span>
               <span>Owner: {selHorse.owner}</span>
             </div>
@@ -777,7 +777,7 @@ function RacePlanner({ horses, setHorses }) {
               const key = k(selHorse.id, race.id);
               const analysis = analyses[key];
               const isLoading = loading[key];
-              const stage = loadStage[key] ?? 0;
+              const stage = loadStage[key] || 0;
               const isSl = !!shortlisted[key];
               const accent = analysis ? (analysis.overall >= 75 ? C.green : analysis.overall >= 55 ? C.amber : C.red) : C.border;
 
@@ -855,7 +855,7 @@ function RacePlanner({ horses, setHorses }) {
 
                     {!canRace(selHorse) ? (
                       <div style={{ padding: "9px 12px", background: C.amberBg, border: `1px solid ${C.amber}40`, borderRadius: 9, fontSize: 12, color: C.amber, fontWeight: 600, textAlign: "center" }}>
-                        ⏳ Cool-off active · eligible {coolingDate(selHorse.activationDate)?.toLocaleDateString("en-IE", { day: "numeric", month: "short" })} · Do not contact owner yet
+                        {"⏳ Cool-off active · Do not contact owner yet"}
                       </div>
                     ) : (
                       <div style={{ display: "flex", flexDirection: "column", gap: 7 }}>
