@@ -1,6 +1,6 @@
 import { useState, useCallback } from "react";
 
-const ANTHROPIC_KEY = import.meta.env.VITE_ANTHROPIC_API_KEY || '';
+const ANTHROPIC_KEY = import.meta.env.VITE_ANTHROPIC_API_KEY || "";
 
 const C = {
   bg: "#f0f4f8", navy: "#0a1628", navyMid: "#112240", navyLight: "#1a3360",
@@ -167,7 +167,7 @@ function StatusPill({ status, activationDate }) {
   const days = d ? Math.ceil((d - TODAY) / 86400000) : 0;
   const cfg = {
     Active: { bg: C.greenBg, color: C.green, label: "● Active" },
-    CoolingOff: { bg: C.amberBg, color: C.amber, label: "⏳ Cool-off · " + days + "d" },
+    CoolingOff: { bg: C.amberBg, color: C.amber, label: `⏳ Cool-off · ${days}d` },
     Inactive: { bg: C.redBg, color: C.red, label: "✕ Inactive" },
   }[status];
   return <span style={{ ...cfg, border: `1px solid ${cfg.color}40`, borderRadius: 20, padding: "3px 10px", fontSize: 11, fontWeight: 700 }}>{cfg.label}</span>;
@@ -202,7 +202,7 @@ Replace all template text with real analysis. recommendation = STRONG, CONSIDER,
 
   const res = await fetch("https://api.anthropic.com/v1/messages", {
     method: "POST",
-    headers: { "Content-Type": "application/json", "x-api-key": ANTHROPIC_KEY, "anthropic-version": "2023-06-01", "anthropic-dangerous-direct-browser-access": "true" },
+    headers: { "Content-Type": "application/json" },
     body: JSON.stringify({ model: "claude-sonnet-4-20250514", max_tokens: 2500, tools: [{ type: "web_search_20250305", name: "web_search" }], system, messages: [{ role: "user", content: prompt }] }),
   });
   const data = await res.json();
@@ -220,7 +220,7 @@ function MedicationTracker({ horses }) {
   const [openHorse, setOpenHorse] = useState(null);
   const [showBill, setShowBill] = useState(false);
   const [billHorse, setBillHorse] = useState(null);
-  const [trackedIds, setTrackedIds] = useState(["h1", "h2"]);
+  const [trackedIds, setTrackedIds] = useState([]);
   const [showAdd, setShowAdd] = useState(false);
 
   const daysInMonth = getDaysInMonth(selYear, selMonth);
@@ -375,9 +375,9 @@ function MedicationTracker({ horses }) {
                             );
                           })}
                           <td style={{ padding: "5px 8px", textAlign: "right", fontSize: 13, fontWeight: 700, color: C.text }}>
-                            {type === "peptizole" && "€" + costs.peptizole}
-                            {type === "antepsin" && costs.antepsinBottles + " bot · €" + costs.antepsin}
-                            {type === "antibiotics" && "€" + costs.antibiotics}
+                            {type === "peptizole" && `€${costs.peptizole}`}
+                            {type === "antepsin" && `${costs.antepsinBottles} bot · €${costs.antepsin}`}
+                            {type === "antibiotics" && `€${costs.antibiotics}`}
                           </td>
                         </tr>
                       ))}
@@ -413,9 +413,9 @@ function MedicationTracker({ horses }) {
               <div style={{ padding: 22 }}>
                 <div style={{ fontSize: 12, fontWeight: 700, color: C.textMid, textTransform: "uppercase", letterSpacing: 1, marginBottom: 14 }}>For Yardman — {billHorse.owner}</div>
                 {[
-                  costs.peptizoleDays > 0 && { label: "Peptizole — " + costs.peptizoleDays + " days × €18", amount: costs.peptizole },
-                  costs.antepsinTicks > 0 && { label: "Antepsin — " + costs.antepsinBottles + " bottle" + (costs.antepsinBottles !== 1 ? "s" : "") + " × €25 (" + costs.antepsinTicks + " days)", amount: costs.antepsin },
-                  costs.antibioticDoses > 0 && { label: "Antibiotics — " + costs.antibioticDoses + " dose" + (costs.antibioticDoses !== 1 ? "s" : "") + " × €15", amount: costs.antibiotics },
+                  costs.peptizoleDays > 0 && { label: `Peptizole — ${costs.peptizoleDays} days × €18`, amount: costs.peptizole },
+                  costs.antepsinTicks > 0 && { label: `Antepsin — ${costs.antepsinBottles} bottle${costs.antepsinBottles !== 1 ? "s" : ""} × €25 (${costs.antepsinTicks} days)`, amount: costs.antepsin },
+                  costs.antibioticDoses > 0 && { label: `Antibiotics — ${costs.antibioticDoses} dose${costs.antibioticDoses !== 1 ? "s" : ""} × €15`, amount: costs.antibiotics },
                 ].filter(Boolean).map((item, i) => (
                   <div key={i} style={{ display: "flex", justifyContent: "space-between", padding: "10px 0", borderBottom: `1px solid ${C.border}` }}>
                     <span style={{ fontSize: 14, color: C.text }}>{item.label}</span>
@@ -452,12 +452,7 @@ function ProvisionalEntries({ horses, setHorses }) {
     try {
       const res = await fetch("https://api.anthropic.com/v1/messages", {
         method: "POST",
-        headers: {
-          "Content-Type": "application/json",
-          "x-api-key": ANTHROPIC_KEY,
-          "anthropic-version": "2023-06-01",
-          "anthropic-dangerous-direct-browser-access": "true",
-        },
+        headers: { "Content-Type": "application/json" },
         body: JSON.stringify({
           model: "claude-sonnet-4-20250514",
           max_tokens: 5000,
@@ -509,7 +504,7 @@ function ProvisionalEntries({ horses, setHorses }) {
           <div>
             <div style={{ fontSize: 14, fontWeight: 700, color: C.text, marginBottom: 2 }}>HRI Provisional Summaries</div>
             <div style={{ fontSize: 12, color: C.textMid }}>
-              {lastFetch ? "Last fetched: " + new Date(lastFetch).toLocaleString("en-IE", { weekday: "short", day: "numeric", month: "short", hour: "2-digit", minute: "2-digit" }) : "hri-ras.ie/provisional-summaries — use these to plan medication courses in advance"}
+              {lastFetch ? `Last fetched: ${new Date(lastFetch).toLocaleString("en-IE", { weekday: "short", day: "numeric", month: "short", hour: "2-digit", minute: "2-digit" })}` : "hri-ras.ie/provisional-summaries — use these to plan medication courses in advance"}
             </div>
           </div>
           <Btn onClick={fetchProvisional} disabled={fetchStatus === "fetching"} style={{ fontSize: 12, padding: "8px 16px" }}>
@@ -645,16 +640,11 @@ function RacePlanner({ horses, setHorses }) {
     try {
       const res = await fetch("https://api.anthropic.com/v1/messages", {
         method: "POST",
-        headers: {
-          "Content-Type": "application/json",
-          "x-api-key": ANTHROPIC_KEY,
-          "anthropic-version": "2023-06-01",
-          "anthropic-dangerous-direct-browser-access": "true",
-        },
+        headers: { "Content-Type": "application/json" },
         body: JSON.stringify({
           model: "claude-sonnet-4-20250514", max_tokens: 5000,
           tools: [{ type: "web_search_20250305", name: "web_search" }],
-          system: "Parse HRI race conditions PDF into JSON array. Return ONLY raw JSON array, no markdown. Each race needs: id, venue, date in YYYY-MM-DD format, raceName, discipline as Flat or Hurdle or Chase or Bumper, raceType as Maiden or Novice or Handicap or Weight For Age or Beginners or Bumper, grade as Grade 1 or Grade 2 or Grade 3 or Listed or Ungraded, surface as Turf or AWT where Dundalk is AWT, distanceFurlongs as number, prizeMoney as number, ageMin as number, ageMax as number or null, sexRestriction as Open or Mares or Fillies or Colts and Geldings, ratingMax as number or null, isMaiden as boolean, isNovice as boolean, isEBF as boolean, entryDeadline in YYYY-MM-DDTHH:MM format, forecastGoing.",
+          system: `Parse HRI race conditions PDF into JSON array. Return ONLY raw JSON array, no markdown. Each race: {"id":"r_venue_N","venue":string,"date":"YYYY-MM-DD","raceName":string,"discipline":"Flat|Hurdle|Chase|Bumper|NH Flat","raceType":"Maiden|Novice|Handicap|Novice Handicap|Weight For Age|Beginners|Bumper","grade":"Grade 1|Grade 2|Grade 3|Listed|Ungraded","surface":"Turf|AWT","distanceFurlongs":number,"prizeMoney":number,"ageMin":number,"ageMax":number|null,"sexRestriction":"Open|Mares|Fillies|Colts & Geldings","ratingMax":number|null,"isMaiden":boolean,"isNovice":boolean,"isEBF":boolean,"isSeries":boolean,"entryDeadline":"YYYY-MM-DDTHH:MM","declarationDeadline":"YYYY-MM-DDTHH:MM","forecastGoing":string} Dundalk=AWT, others=Turf.`,
           messages: [{ role: "user", content: "Fetch https://www.hri-ras.ie/upcoming-race-conditions, find latest PDF, parse all races, return JSON array only." }]
         })
       });
@@ -710,81 +700,8 @@ function RacePlanner({ horses, setHorses }) {
 
   const sorted = [...eligible].sort((a, b) => (analyses[k(selHorse.id, b.id)]?.overall ?? -1) - (analyses[k(selHorse.id, a.id)]?.overall ?? -1));
 
-
-  const getMedDates = (raceDate, withdrawalDays, courseDays) => {
-    if (!raceDate) return null;
-    const race = new Date(raceDate);
-    const stop = new Date(race);
-    stop.setDate(stop.getDate() - withdrawalDays);
-    const start = new Date(stop);
-    start.setDate(start.getDate() - (courseDays - 1));
-    return {
-      start: start.toLocaleDateString("en-IE", { day: "numeric", month: "short" }),
-      stop: stop.toLocaleDateString("en-IE", { day: "numeric", month: "short" }),
-      startDate: start,
-    };
-  };
-
-  const shortlistItems = Object.values(shortlisted).filter(Boolean);
-
   return (
-    <div>
-      {shortlistItems.length > 0 && (
-        <div style={{ background: C.card, border: "1px solid " + C.border, borderRadius: 14, padding: "16px 18px", marginBottom: 16, boxShadow: C.shadow }}>
-          <div style={{ display: "flex", justifyContent: "space-between", alignItems: "center", marginBottom: 12 }}>
-            <div>
-              <div style={{ fontSize: 16, fontWeight: 800, color: C.navy }}>{"★ Shortlist — " + shortlistItems.length + " race" + (shortlistItems.length !== 1 ? "s" : "")}</div>
-              <div style={{ fontSize: 12, color: C.textMid, marginTop: 2 }}>Medication dates calculated automatically</div>
-            </div>
-            <Btn variant="ghost" onClick={() => setShortlisted({})} style={{ fontSize: 12 }}>Clear All</Btn>
-          </div>
-          {shortlistItems.map((item, idx) => {
-            const peptDates = getMedDates(item.race.date, 4, 12);
-            const antepsinDates = getMedDates(item.race.date, 1, 12);
-            const peptWarning = peptDates && peptDates.startDate < new Date();
-            return (
-              <div key={idx} style={{ background: C.cardOff, border: "1px solid " + C.border, borderRadius: 10, padding: "12px 14px", marginBottom: 10 }}>
-                <div style={{ display: "flex", justifyContent: "space-between", alignItems: "flex-start", marginBottom: 8 }}>
-                  <div>
-                    <div style={{ display: "flex", alignItems: "center", gap: 8, marginBottom: 4 }}>
-                      <Silk silk={item.horse.silk} size={24} />
-                      <span style={{ fontSize: 15, fontWeight: 800, color: C.navy }}>{item.horse.name}</span>
-                      <span style={{ fontSize: 12, color: C.textMid }}>{"— " + item.race.raceName}</span>
-                    </div>
-                    <div style={{ fontSize: 12, color: C.textMid }}>
-                      {item.race.venue + (item.race.date ? " — " + new Date(item.race.date).toLocaleDateString("en-IE", { weekday: "short", day: "numeric", month: "short" }) : "")}
-                    </div>
-                  </div>
-                  <button onClick={() => setShortlisted(s => ({ ...s, [k(item.horse.id, item.race.id)]: null }))} style={{ background: "none", border: "none", color: C.textDim, cursor: "pointer", fontSize: 16 }}>X</button>
-                </div>
-                <div style={{ display: "grid", gridTemplateColumns: "1fr 1fr", gap: 8 }}>
-                  {peptDates && (
-                    <div style={{ background: peptWarning ? "rgba(192,57,43,0.08)" : "rgba(30,111,181,0.08)", border: "1px solid " + (peptWarning ? C.red : C.blue) + "40", borderRadius: 8, padding: "8px 12px" }}>
-                      <div style={{ fontSize: 11, fontWeight: 700, color: peptWarning ? C.red : C.blue, textTransform: "uppercase", marginBottom: 4 }}>
-                        {peptWarning ? "PEPTIZOLE — START NOW" : "Peptizole"}
-                      </div>
-                      <div style={{ fontSize: 12, color: C.text }}>Start: <strong>{peptDates.start}</strong></div>
-                      <div style={{ fontSize: 12, color: C.text }}>Stop: <strong>{peptDates.stop}</strong></div>
-                    </div>
-                  )}
-                  {antepsinDates && (
-                    <div style={{ background: "rgba(109,63,192,0.08)", border: "1px solid " + C.purple + "40", borderRadius: 8, padding: "8px 12px" }}>
-                      <div style={{ fontSize: 11, fontWeight: 700, color: C.purple, textTransform: "uppercase", marginBottom: 4 }}>Antepsin</div>
-                      <div style={{ fontSize: 12, color: C.text }}>Start: <strong>{antepsinDates.start}</strong></div>
-                      <div style={{ fontSize: 12, color: C.text }}>Stop: <strong>{antepsinDates.stop}</strong></div>
-                    </div>
-                  )}
-                </div>
-                <div style={{ display: "grid", gridTemplateColumns: "1fr 1fr", gap: 7, marginTop: 8 }}>
-                  <Btn variant="green" onClick={() => handleEntry(item.horse, item.race)} style={{ justifyContent: "center" }}>Confirm Entry</Btn>
-                  <button onClick={() => handleDeclaration(item.horse, item.race)} style={{ padding: "9px", background: C.blueBg, border: "2px solid " + C.blue + "50", borderRadius: 9, color: C.blue, fontSize: 12, fontWeight: 700, cursor: "pointer" }}>Declare to Run</button>
-                </div>
-              </div>
-            );
-          })}
-        </div>
-      )}
-      <div style={{ display: "grid", gridTemplateColumns: "240px 1fr", gap: 16 }}>
+    <div style={{ display: "grid", gridTemplateColumns: "240px 1fr", gap: 16 }}>
       {toast && <div style={{ position: "fixed", bottom: 24, left: "50%", transform: "translateX(-50%)", background: C.navy, color: "#fff", borderRadius: 12, padding: "12px 22px", fontSize: 13, fontWeight: 600, zIndex: 600, boxShadow: C.shadowMd, border: "1px solid " + toast.color + "50", whiteSpace: "nowrap", animation: "slideUp 0.3s ease" }}><span style={{ color: toast.color }}>{toast.msg}</span></div>}
 
       {/* Horse sidebar */}
@@ -883,7 +800,7 @@ function RacePlanner({ horses, setHorses }) {
                           <span>🌤 {race.forecastGoing}</span>
                         </div>
                       </div>
-                      <span style={{ fontSize: 18, fontWeight: 800, color: C.gold, flexShrink: 0 }}>{race.prizeMoney ? ("€" + (race.prizeMoney >= 1000 ? Math.round(race.prizeMoney / 1000) + "k" : race.prizeMoney)) : ""}</span>
+                      <span style={{ fontSize: 18, fontWeight: 800, color: C.gold, flexShrink: 0 }}>€{race.prizeMoney >= 1000 ? (race.prizeMoney / 1000) + "k" : race.prizeMoney}</span>
                     </div>
 
                     {race.entryDeadline && (
@@ -895,7 +812,7 @@ function RacePlanner({ horses, setHorses }) {
 
                     {!analysis && !isLoading && (
                       <Btn onClick={() => analyse(selHorse, race)} style={{ width: "100%", justifyContent: "center", marginBottom: 10 }}>
-                        {"🧠 Get My Take on This Race"}
+                        🧠 Get My Take on This Race <span style={{ fontSize: 11, opacity: 0.5, fontWeight: 400 }}>· searches live form & opposition</span>
                       </Btn>
                     )}
 
@@ -938,11 +855,11 @@ function RacePlanner({ horses, setHorses }) {
 
                     {!canRace(selHorse) ? (
                       <div style={{ padding: "9px 12px", background: C.amberBg, border: "1px solid " + C.amber + "40", borderRadius: 9, fontSize: 12, color: C.amber, fontWeight: 600, textAlign: "center" }}>
-                        {"⏳ Cool-off active · eligible " + (coolingDate(selHorse.activationDate)?.toLocaleDateString("en-IE", { day: "numeric", month: "short" }) || "") + " · Do not contact owner yet"}
+                        ⏳ Cool-off active · eligible {coolingDate(selHorse.activationDate)?.toLocaleDateString("en-IE", { day: "numeric", month: "short" })} · Do not contact owner yet
                       </div>
                     ) : (
                       <div style={{ display: "flex", flexDirection: "column", gap: 7 }}>
-                        <Btn variant="gold" onClick={() => setShortlisted(s => ({ ...s, [key]: s[key] ? null : { horse: selHorse, race } }))} style={{ width: "100%", justifyContent: "center" }}>
+                        <Btn variant="gold" onClick={() => setShortlisted(s => ({ ...s, [key]: !s[key] }))} style={{ width: "100%", justifyContent: "center" }}>
                           {isSl ? "★ On Shortlist" : "☆ Add to Shortlist"}
                         </Btn>
                         {isSl && (
@@ -966,7 +883,6 @@ function RacePlanner({ horses, setHorses }) {
           </>
         )}
       </div>
-    </div>
     </div>
     </div>
   );
@@ -1013,7 +929,7 @@ function RacedayPrint({ horses }) {
               return (
                 <div key={entry.id} style={{ display: "flex", alignItems: "center", gap: 14, padding: "12px 0", borderBottom: `1px solid ${C.border}` }}>
                   <div style={{ minWidth: 130, fontSize: 13, color: C.textMid, fontWeight: 600 }}>
-                    {entry.venue} {entry.meetingNo && "Mtg " + entry.meetingNo}{entry.raceRef && " · " + entry.raceRef}
+                    {entry.venue} {entry.meetingNo && `Mtg ${entry.meetingNo}`}{entry.raceRef && ` · ${entry.raceRef}`}
                   </div>
                   <div style={{ minWidth: 80, fontSize: 14, fontWeight: 700, color: C.navy }}>{entry.raceTime}</div>
                   <div style={{ flex: 1 }}>
@@ -1214,6 +1130,7 @@ function YardView({ horses, setHorses }) {
     reader.readAsText(file);
   };
 
+
   const addHorse = () => {
     if (!newHorse.name) return;
     setHorses(prev => [...prev, { ...newHorse, id: `h_${Date.now()}`, silk: SILKS[Math.floor(Math.random() * SILKS.length)], nhRating: newHorse.nhRating ? parseInt(newHorse.nhRating) : null, flatRating: newHorse.flatRating ? parseInt(newHorse.flatRating) : null, discipline: [newHorse.discipline], isEBF: false, isMaiden: false, isNovice: false, distanceMin: 16, distanceMax: 24, goingPref: [], form: [], arrivedDate: todayStr, provisionalEntries: [] }]);
@@ -1230,7 +1147,7 @@ function YardView({ horses, setHorses }) {
         </div>
         <div style={{ display: "flex", gap: 8, alignItems: "center" }}>
           {csvStatus && <span style={{ fontSize: 12, fontWeight: 700, color: csvStatus.startsWith("✓") ? C.green : C.red }}>{csvStatus}</span>}
-          <label style={{ background: C.cardOff, border: "1.5px solid " + C.border, color: C.textMid, borderRadius: 9, padding: "9px 16px", fontSize: 13, fontWeight: 700, cursor: "pointer", display: "inline-flex", alignItems: "center", gap: 6 }}>
+          <label style={{ background: C.cardOff, border: `1.5px solid ${C.border}`, color: C.textMid, borderRadius: 9, padding: "9px 16px", fontSize: 13, fontWeight: 700, cursor: "pointer", display: "inline-flex", alignItems: "center", gap: 6 }}>
             📥 Import Horses CSV <input type="file" accept=".csv,.tsv,.txt" onChange={handleCSV} style={{ display: "none" }} />
           </label>
           <label style={{ background: C.cardOff, border: "1.5px solid " + C.border, color: C.textMid, borderRadius: 9, padding: "9px 16px", fontSize: 13, fontWeight: 700, cursor: "pointer", display: "inline-flex", alignItems: "center", gap: 6 }}>
@@ -1280,7 +1197,7 @@ function YardView({ horses, setHorses }) {
         <div style={{ position: "fixed", inset: 0, background: "rgba(10,22,40,0.6)", zIndex: 500, display: "flex", alignItems: "center", justifyContent: "center", padding: 20 }}>
           <div style={{ background: C.card, borderRadius: 16, width: "100%", maxWidth: 480, maxHeight: "90vh", overflowY: "auto" }}>
             <div style={{ background: C.navy, padding: "16px 20px", display: "flex", justifyContent: "space-between", alignItems: "center", position: "sticky", top: 0 }}>
-              <div style={{ fontSize: 15, fontWeight: 700, color: "#fff" }}>Edit — {editHorse.name}</div>
+              <div style={{ fontSize: 15, fontWeight: 700, color: "#fff" }}>{"Edit — " + editHorse.name}</div>
               <button onClick={() => setEditHorse(null)} style={{ background: "rgba(255,255,255,0.1)", border: "none", color: "#fff", width: 28, height: 28, borderRadius: 6, cursor: "pointer", fontSize: 14 }}>X</button>
             </div>
             <div style={{ padding: 20, display: "flex", flexDirection: "column", gap: 11 }}>
@@ -1289,29 +1206,29 @@ function YardView({ horses, setHorses }) {
                 { key: "sex", label: "Sex", type: "select", options: ["Gelding", "Mare", "Filly", "Colt", "Horse"] },
                 { key: "discipline", label: "Discipline", type: "select", options: ["Hurdle", "Chase", "Flat", "Bumper"] },
                 { key: "headgear", label: "Headgear", placeholder: "e.g. Cheekpieces" },
-                { key: "nhRating", label: "NH Rating", type: "number", placeholder: "e.g. 98" },
-                { key: "flatRating", label: "Flat Rating", type: "number", placeholder: "e.g. 74" },
-                { key: "hurdleRating", label: "Hurdle Rating", type: "number", placeholder: "e.g. 85" },
-                { key: "chaseRating", label: "Chase Rating", type: "number", placeholder: "e.g. 90" },
-                { key: "ownerPhone", label: "Owner WhatsApp", type: "tel", placeholder: "+353 86 000 0000" },
+                { key: "nhRating", label: "NH Rating", type: "number" },
+                { key: "flatRating", label: "Flat Rating", type: "number" },
+                { key: "hurdleRating", label: "Hurdle Rating", type: "number" },
+                { key: "chaseRating", label: "Chase Rating", type: "number" },
+                { key: "ownerPhone", label: "Owner WhatsApp", type: "tel" },
                 { key: "ownerEmail", label: "Owner Email", type: "email" },
-                { key: "jockey", label: "Jockey", placeholder: "e.g. D.J. OKeeffe" },
-                { key: "notes", label: "Trainer Notes", placeholder: "Any notes" },
+                { key: "jockey", label: "Jockey" },
+                { key: "notes", label: "Trainer Notes" },
                 { key: "nextRaceDate", label: "Next Target Date", type: "date" },
               ].map(({ key, label, placeholder, type, options }) => (
                 <div key={key}>
                   <div style={{ fontSize: 10, fontWeight: 700, color: C.textMid, marginBottom: 3, textTransform: "uppercase", letterSpacing: 0.5 }}>{label}</div>
                   {type === "select" ? (
-                    <select value={key === "discipline" ? ((editHorse.discipline && editHorse.discipline[0]) || "") : (editHorse[key] || "")} onChange={e => setEditHorse(prev => ({ ...prev, [key]: key === "discipline" ? [e.target.value] : e.target.value }))} style={{ width: "100%", background: C.cardOff, border: "1px solid " + C.border, borderRadius: 8, padding: "8px 12px", color: C.text, fontSize: 13, outline: "none" }}>
+                    <select value={key === "discipline" ? ((editHorse.discipline && editHorse.discipline[0]) || "") : (editHorse[key] || "")} onChange={e => setEditHorse(prev => ({ ...prev, [key]: key === "discipline" ? [e.target.value] : e.target.value }))} style={{ width: "100%", background: C.cardOff, border: "1px solid " + C.border, borderRadius: 8, padding: "8px 12px", color: C.text, fontSize: 13 }}>
                       {(options || []).map(o => <option key={o} value={o}>{o}</option>)}
                     </select>
                   ) : (
-                    <input type={type || "text"} placeholder={placeholder} value={editHorse[key] || ""} onChange={e => setEditHorse(prev => ({ ...prev, [key]: e.target.value }))} style={{ width: "100%", background: C.cardOff, border: "1px solid " + C.border, borderRadius: 8, padding: "8px 12px", color: C.text, fontSize: 13, outline: "none" }} />
+                    <input type={type || "text"} placeholder={placeholder || ""} value={editHorse[key] || ""} onChange={e => setEditHorse(prev => ({ ...prev, [key]: e.target.value }))} style={{ width: "100%", background: C.cardOff, border: "1px solid " + C.border, borderRadius: 8, padding: "8px 12px", color: C.text, fontSize: 13 }} />
                   )}
                 </div>
               ))}
-              <Btn onClick={() => { setHorses(prev => prev.map(h => h.id === editHorse.id ? { ...editHorse, nhRating: editHorse.nhRating ? parseInt(editHorse.nhRating) : null, flatRating: editHorse.flatRating ? parseInt(editHorse.flatRating) : null, hurdleRating: editHorse.hurdleRating ? parseInt(editHorse.hurdleRating) : null, chaseRating: editHorse.chaseRating ? parseInt(editHorse.chaseRating) : null } : h)); setEditHorse(null); }} style={{ width: "100%", justifyContent: "center", marginTop: 4 }}>Save Changes</Btn>
-              <Btn variant="red" onClick={() => { if (window.confirm("Remove " + editHorse.name + " from the yard?")) { setHorses(prev => prev.filter(h => h.id !== editHorse.id)); setEditHorse(null); } }} style={{ width: "100%", justifyContent: "center" }}>Remove Horse from Yard</Btn>
+              <Btn onClick={() => { setHorses(prev => prev.map(h => h.id === editHorse.id ? { ...editHorse, nhRating: editHorse.nhRating ? parseInt(editHorse.nhRating) : null, flatRating: editHorse.flatRating ? parseInt(editHorse.flatRating) : null } : h)); setEditHorse(null); }} style={{ width: "100%", justifyContent: "center" }}>Save Changes</Btn>
+              <Btn variant="red" onClick={() => { if (window.confirm("Remove " + editHorse.name + "?")) { setHorses(prev => prev.filter(h => h.id !== editHorse.id)); setEditHorse(null); } }} style={{ width: "100%", justifyContent: "center" }}>Remove Horse</Btn>
             </div>
           </div>
         </div>
