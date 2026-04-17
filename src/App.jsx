@@ -873,15 +873,18 @@ function RacePlanner({ horses, setHorses }) {
         </div>
 
         {/* Races */}
-        {races.length === 0 ? (
-          <div style={{ padding: 40, textAlign: "center", border: "1.5px dashed " + C.border + "", borderRadius: 14, color: C.textMid }}>
-            <div style={{ fontSize: 26, marginBottom: 10 }}>📄</div>
+        {/* Races */}
+        {races.length === 0 && (
+          <div style={{ padding: 40, textAlign: "center", color: C.textMid }}>
+            <div style={{ fontSize: 26, marginBottom: 10 }}>{"📄"}</div>
             <div style={{ fontSize: 14, fontWeight: 700, color: C.text, marginBottom: 6 }}>No race conditions loaded</div>
-            <div style={{ fontSize: 13 }}>Tap <strong>Fetch Now</strong> above to pull this week's HRI conditions</div>
+            <div style={{ fontSize: 13 }}>Tap Fetch Now above to load this week's HRI conditions</div>
           </div>
-        ) : eligible.length === 0 ? (
-          <div style={{ padding: 32, textAlign: "center", border: "1.5px dashed " + C.border + "", borderRadius: 14, color: C.textMid }}>No eligible races for {selHorse.name} in current conditions</div>
-        ) : (
+        )}
+        {races.length > 0 && eligible.length === 0 && (
+          <div style={{ padding: 32, textAlign: "center", color: C.textMid }}>No eligible races for {selHorse.name}</div>
+        )}
+        {races.length > 0 && eligible.length > 0 && (
           <div>
             <div style={{ fontSize: 10, fontWeight: 700, color: C.textDim, letterSpacing: 1.5, marginBottom: 10, textTransform: "uppercase" }}>{eligible.length} eligible races</div>
             {sorted.map(race => renderRaceCard(race))}
