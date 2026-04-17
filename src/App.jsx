@@ -145,7 +145,7 @@ function Btn({ onClick, children, variant = "primary", style: s = {}, disabled =
     primary: { background: C.navy, color: "#fff" },
     gold: { background: C.goldBg, color: C.gold, border: `1.5px solid ${C.gold}50` },
     green: { background: C.greenBg, color: C.green, border: `1.5px solid ${C.green}40` },
-    ghost: { background: "none", color: C.textMid, "1px solid " + C.border },
+    ghost: { background: "none", color: C.textMid, border: "1px solid " + C.border },
     red: { background: C.redBg, color: C.red, border: `1px solid ${C.red}30` },
   };
   return <button onClick={onClick} disabled={disabled} style={{ ...base, ...variants[variant], ...s }}>{children}</button>;
@@ -270,7 +270,7 @@ function MedicationTracker({ horses }) {
 
       {/* Race timing alerts */}
       {horses.filter(h => { const d = daysUntil(h.nextRaceDate); return d && d >= 12 && d <= 16; }).map(h => (
-        <div key={h.id} style={{ background: C.amberBg, "1px solid " + C.amber + "40", borderLeft: `3px solid ${C.amber}`, borderRadius: 10, padding: "10px 14px", marginBottom: 10, display: "flex", alignItems: "center", gap: 12 }}>
+        <div key={h.id} style={{ background: C.amberBg, border: "1px solid " + C.amber + "40", borderLeft: `3px solid ${C.amber}`, borderRadius: 10, padding: "10px 14px", marginBottom: 10, display: "flex", alignItems: "center", gap: 12 }}>
           <Silk silk={h.silk} size={30} />
           <div>
             <div style={{ fontSize: 13, fontWeight: 700, color: C.text }}>{h.name} — race in {daysUntil(h.nextRaceDate)} days</div>
@@ -290,10 +290,10 @@ function MedicationTracker({ horses }) {
 
       {/* Add horse panel */}
       {showAdd && (
-        <div style={{ background: C.card, "1px solid " + C.border, borderRadius: 12, padding: "16px 18px", marginBottom: 16, boxShadow: C.shadow }}>
+        <div style={{ background: C.card, border: "1px solid " + C.border, borderRadius: 12, padding: "16px 18px", marginBottom: 16, boxShadow: C.shadow }}>
           <div style={{ fontSize: 14, fontWeight: 700, color: C.text, marginBottom: 12 }}>Add horse to {monthName} tracker:</div>
           {untrackedHorses.map(h => (
-            <div key={h.id} style={{ display: "flex", alignItems: "center", gap: 12, padding: "10px 12px", background: C.cardOff, borderRadius: 10, "1px solid " + C.border, marginBottom: 8 }}>
+            <div key={h.id} style={{ display: "flex", alignItems: "center", gap: 12, padding: "10px 12px", background: C.cardOff, borderRadius: 10, border: "1px solid " + C.border, marginBottom: 8 }}>
               <Silk silk={h.silk} size={30} />
               <div style={{ flex: 1 }}>
                 <div style={{ fontSize: 14, fontWeight: 700, color: C.text }}>{h.name}</div>
@@ -307,7 +307,7 @@ function MedicationTracker({ horses }) {
       )}
 
       {trackedHorses.length === 0 && (
-        <div style={{ padding: 48, textAlign: "center", "1.5px dashed " + C.border, borderRadius: 14, color: C.textMid }}>
+        <div style={{ padding: 48, textAlign: "center", border: "1.5px dashed " + C.border, borderRadius: 14, color: C.textMid }}>
           <div style={{ fontSize: 32, marginBottom: 12 }}>🏥</div>
           <div style={{ fontSize: 15, fontWeight: 700, color: C.text, marginBottom: 6 }}>No horses on the tracker</div>
           <div style={{ fontSize: 13, marginBottom: 16 }}>Tap <strong>+ Add Horse</strong> to start logging medication for this month</div>
@@ -319,7 +319,7 @@ function MedicationTracker({ horses }) {
         const isOpen = openHorse === horse.id;
         const costs = calcCost(horse.id);
         return (
-          <div key={horse.id} style={{ background: C.card, "1px solid " + C.border, borderRadius: 12, marginBottom: 12, overflow: "hidden", boxShadow: C.shadow }}>
+          <div key={horse.id} style={{ background: C.card, border: "1px solid " + C.border, borderRadius: 12, marginBottom: 12, overflow: "hidden", boxShadow: C.shadow }}>
             <div onClick={() => setOpenHorse(isOpen ? null : horse.id)} style={{ padding: "14px 16px", cursor: "pointer", display: "flex", alignItems: "center", gap: 12 }}>
               <Silk silk={horse.silk} size={36} />
               <div style={{ flex: 1 }}>
@@ -386,7 +386,7 @@ function MedicationTracker({ horses }) {
                 </div>
                 {/* Withdrawal deadlines */}
                 {horse.nextRaceDate && (
-                  <div style={{ marginTop: 10, padding: "10px 12px", background: C.cardOff, borderRadius: 8, "1px solid " + C.border, display: "flex", gap: 20, flexWrap: "wrap" }}>
+                  <div style={{ marginTop: 10, padding: "10px 12px", background: C.cardOff, borderRadius: 8, border: "1px solid " + C.border, display: "flex", gap: 20, flexWrap: "wrap" }}>
                     <div style={{ fontSize: 12, fontWeight: 700, color: C.text }}>⏱ Withdrawal for {new Date(horse.nextRaceDate).toLocaleDateString("en-IE", { day: "numeric", month: "short" })}:</div>
                     {[{ label: "Stop Peptizole", wd: 4 }, { label: "Stop Antepsin", wd: 1 }].map(({ label, wd }) => {
                       const stop = new Date(horse.nextRaceDate); stop.setDate(stop.getDate() - wd);
@@ -504,7 +504,7 @@ function ProvisionalEntries({ horses, setHorses }) {
       </div>
 
       {/* HRI Provisional Summaries */}
-      <div style={{ background: C.card, "1px solid " + C.border, borderRadius: 14, padding: "14px 18px", marginBottom: 16, boxShadow: C.shadow }}>
+      <div style={{ background: C.card, border: "1px solid " + C.border, borderRadius: 14, padding: "14px 18px", marginBottom: 16, boxShadow: C.shadow }}>
         <div style={{ display: "flex", justifyContent: "space-between", alignItems: "center", marginBottom: lastFetch || provisionalRaces.length > 0 ? 12 : 0 }}>
           <div>
             <div style={{ fontSize: 14, fontWeight: 700, color: C.text, marginBottom: 2 }}>HRI Provisional Summaries</div>
@@ -519,7 +519,7 @@ function ProvisionalEntries({ horses, setHorses }) {
         {provisionalRaces.length > 0 && (
           <div style={{ display: "flex", flexDirection: "column", gap: 6 }}>
             {provisionalRaces.slice(0, 8).map((r, i) => (
-              <div key={i} style={{ display: "flex", gap: 12, padding: "8px 10px", background: C.cardOff, borderRadius: 8, "1px solid " + C.border, fontSize: 12, alignItems: "center" }}>
+              <div key={i} style={{ display: "flex", gap: 12, padding: "8px 10px", background: C.cardOff, borderRadius: 8, border: "1px solid " + C.border, fontSize: 12, alignItems: "center" }}>
                 <span style={{ fontWeight: 700, color: C.navy, minWidth: 80 }}>{r.meetingRef}</span>
                 <span style={{ color: C.textMid, minWidth: 60 }}>{r.raceRef}</span>
                 <span style={{ fontWeight: 600, color: C.text, flex: 1 }}>{r.raceName}</span>
@@ -540,7 +540,7 @@ function ProvisionalEntries({ horses, setHorses }) {
         const entries = horse.provisionalEntries || [];
         const isAdding = showAdd === horse.id;
         return (
-          <div key={horse.id} style={{ background: C.card, "1px solid " + C.border, borderRadius: 12, padding: "14px 16px", marginBottom: 12, boxShadow: C.shadow }}>
+          <div key={horse.id} style={{ background: C.card, border: "1px solid " + C.border, borderRadius: 12, padding: "14px 16px", marginBottom: 12, boxShadow: C.shadow }}>
             <div style={{ display: "flex", alignItems: "center", gap: 12, marginBottom: entries.length > 0 || isAdding ? 12 : 0 }}>
               <Silk silk={horse.silk} size={36} />
               <div style={{ flex: 1 }}>
@@ -574,7 +574,7 @@ function ProvisionalEntries({ horses, setHorses }) {
 
             {/* Add entry form */}
             {isAdding && (
-              <div style={{ background: C.cardOff, "1px solid " + C.border, borderRadius: 10, padding: "14px 16px", marginTop: 8 }}>
+              <div style={{ background: C.cardOff, border: "1px solid " + C.border, borderRadius: 10, padding: "14px 16px", marginTop: 8 }}>
                 <div style={{ fontSize: 13, fontWeight: 700, color: C.text, marginBottom: 12 }}>Add Provisional Target for {horse.name}</div>
                 <div style={{ display: "grid", gridTemplateColumns: "1fr 1fr", gap: 10, marginBottom: 10 }}>
                   {[
@@ -585,13 +585,13 @@ function ProvisionalEntries({ horses, setHorses }) {
                   ].map(({ key, label, placeholder, type, full }) => (
                     <div key={key} style={{ gridColumn: full ? "1 / -1" : "auto" }}>
                       <div style={{ fontSize: 10, fontWeight: 700, color: C.textMid, marginBottom: 4, textTransform: "uppercase", letterSpacing: 0.5 }}>{label}</div>
-                      <input type={type || "text"} placeholder={placeholder} value={entry[key]} onChange={e => setEntry(p => ({ ...p, [key]: e.target.value }))} style={{ width: "100%", background: C.card, "1px solid " + C.border, borderRadius: 8, padding: "8px 12px", color: C.text, fontSize: 13, outline: "none" }} />
+                      <input type={type || "text"} placeholder={placeholder} value={entry[key]} onChange={e => setEntry(p => ({ ...p, [key]: e.target.value }))} style={{ width: "100%", background: C.card, border: "1px solid " + C.border, borderRadius: 8, padding: "8px 12px", color: C.text, fontSize: 13, outline: "none" }} />
                     </div>
                   ))}
                 </div>
                 <div style={{ marginBottom: 10 }}>
                   <div style={{ fontSize: 10, fontWeight: 700, color: C.textMid, marginBottom: 4, textTransform: "uppercase", letterSpacing: 0.5 }}>Trainer Note (visible to owner)</div>
-                  <input type="text" placeholder="e.g. If ground stays soft" value={entry.note} onChange={e => setEntry(p => ({ ...p, note: e.target.value }))} style={{ width: "100%", background: C.card, "1px solid " + C.border, borderRadius: 8, padding: "8px 12px", color: C.text, fontSize: 13, outline: "none" }} />
+                  <input type="text" placeholder="e.g. If ground stays soft" value={entry.note} onChange={e => setEntry(p => ({ ...p, note: e.target.value }))} style={{ width: "100%", background: C.card, border: "1px solid " + C.border, borderRadius: 8, padding: "8px 12px", color: C.text, fontSize: 13, outline: "none" }} />
                 </div>
                 <div style={{ display: "flex", gap: 8 }}>
                   <Btn onClick={() => addEntry(horse.id)}>Save Target</Btn>
@@ -604,7 +604,7 @@ function ProvisionalEntries({ horses, setHorses }) {
       })}
 
       {allProvisional.length > 0 && (
-        <div style={{ background: C.card, "1px solid " + C.border, borderRadius: 12, padding: "14px 18px", marginTop: 8, boxShadow: C.shadow }}>
+        <div style={{ background: C.card, border: "1px solid " + C.border, borderRadius: 12, padding: "14px 18px", marginTop: 8, boxShadow: C.shadow }}>
           <div style={{ fontSize: 13, fontWeight: 700, color: C.text, marginBottom: 12 }}>All Provisional Targets — by date</div>
           {[...allProvisional].filter(e => e.date).sort((a, b) => new Date(a.date) - new Date(b.date)).map((e, i) => (
             <div key={i} style={{ display: "flex", alignItems: "center", gap: 12, padding: "8px 0", borderBottom: `1px solid ${C.border}` }}>
@@ -813,7 +813,7 @@ function RacePlanner({ horses, setHorses }) {
       {/* Main area */}
       <div>
         {/* HRI Fetch */}
-        <div style={{ background: C.card, "1px solid " + C.border, borderRadius: 12, padding: "12px 16px", marginBottom: 12, boxShadow: C.shadow, display: "flex", justifyContent: "space-between", alignItems: "center" }}>
+        <div style={{ background: C.card, border: "1px solid " + C.border, borderRadius: 12, padding: "12px 16px", marginBottom: 12, boxShadow: C.shadow, display: "flex", justifyContent: "space-between", alignItems: "center" }}>
           <div>
             <div style={{ fontSize: 13, fontWeight: 700, color: C.text }}>HRI Race Conditions</div>
             <div style={{ fontSize: 11, color: C.textMid, marginTop: 2 }}>{lastFetch ? "Updated " + new Date(lastFetch).toLocaleString("en-IE", { day: "numeric", month: "short", hour: "2-digit", minute: "2-digit" }) : "hri-ras.ie/upcoming-race-conditions"}</div>
@@ -825,7 +825,7 @@ function RacePlanner({ horses, setHorses }) {
         </div>
 
         {/* Horse strip */}
-        <div style={{ background: C.card, "1px solid " + C.border, borderRadius: 12, padding: "12px 16px", marginBottom: 12, boxShadow: C.shadow, display: "flex", alignItems: "center", gap: 12 }}>
+        <div style={{ background: C.card, border: "1px solid " + C.border, borderRadius: 12, padding: "12px 16px", marginBottom: 12, boxShadow: C.shadow, display: "flex", alignItems: "center", gap: 12 }}>
           <Silk silk={selHorse.silk} size={44} />
           <div style={{ flex: 1 }}>
             <div style={{ display: "flex", alignItems: "center", gap: 8, marginBottom: 4, flexWrap: "wrap" }}>
@@ -846,13 +846,13 @@ function RacePlanner({ horses, setHorses }) {
 
         {/* Races */}
         {races.length === 0 ? (
-          <div style={{ padding: 40, textAlign: "center", "1.5px dashed " + C.border, borderRadius: 14, color: C.textMid }}>
+          <div style={{ padding: 40, textAlign: "center", border: "1.5px dashed " + C.border, borderRadius: 14, color: C.textMid }}>
             <div style={{ fontSize: 26, marginBottom: 10 }}>📄</div>
             <div style={{ fontSize: 14, fontWeight: 700, color: C.text, marginBottom: 6 }}>No race conditions loaded</div>
             <div style={{ fontSize: 13 }}>Tap <strong>Fetch Now</strong> above to pull this week's HRI conditions</div>
           </div>
         ) : eligible.length === 0 ? (
-          <div style={{ padding: 32, textAlign: "center", "1.5px dashed " + C.border, borderRadius: 14, color: C.textMid }}>No eligible races for {selHorse.name} in current conditions</div>
+          <div style={{ padding: 32, textAlign: "center", border: "1.5px dashed " + C.border, borderRadius: 14, color: C.textMid }}>No eligible races for {selHorse.name} in current conditions</div>
         ) : (
           <>
             <div style={{ fontSize: 10, fontWeight: 700, color: C.textDim, letterSpacing: 1.5, marginBottom: 10, textTransform: "uppercase" }}>{eligible.length} eligible races</div>
@@ -887,7 +887,7 @@ function RacePlanner({ horses, setHorses }) {
                     </div>
 
                     {race.entryDeadline && (
-                      <div style={{ display: "flex", alignItems: "center", gap: 8, padding: "7px 10px", background: C.cardOff, borderRadius: 8, "1px solid " + C.border, marginBottom: 10, fontSize: 12 }}>
+                      <div style={{ display: "flex", alignItems: "center", gap: 8, padding: "7px 10px", background: C.cardOff, borderRadius: 8, border: "1px solid " + C.border, marginBottom: 10, fontSize: 12 }}>
                         <span style={{ color: C.textMid, fontWeight: 600 }}>Entry closes</span>
                         <span style={{ fontWeight: 700, color: C.amber }}>{new Date(race.entryDeadline).toLocaleDateString("en-IE", { weekday: "short", day: "numeric", month: "short" })} · {new Date(race.entryDeadline).toLocaleTimeString("en-IE", { hour: "2-digit", minute: "2-digit" })}</span>
                       </div>
@@ -900,7 +900,7 @@ function RacePlanner({ horses, setHorses }) {
                     )}
 
                     {isLoading && (
-                      <div style={{ padding: "12px 14px", background: C.cardOff, "1px solid " + C.border, borderRadius: 9, marginBottom: 10 }}>
+                      <div style={{ padding: "12px 14px", background: C.cardOff, border: "1px solid " + C.border, borderRadius: 9, marginBottom: 10 }}>
                         <div style={{ fontSize: 12, fontWeight: 700, color: C.navy, marginBottom: 8 }}>🧠 Racing brain at work…</div>
                         {["Checking who's in this race…", "Looking at the field…", "Checking trainer record here…", "Building your analysis…"].map((s, i) => (
                           <div key={i} style={{ display: "flex", alignItems: "center", gap: 8, marginBottom: 5, opacity: i <= stage ? 1 : 0.25 }}>
@@ -918,13 +918,13 @@ function RacePlanner({ horses, setHorses }) {
                             const v = analysis.scores[k2]; const c = v >= 7 ? C.green : v >= 5 ? C.amber : C.red;
                             return <div key={k2} style={{ flex: 1, textAlign: "center", padding: "6px 2px", background: "" + c + "10", borderRadius: 7, border: "1px solid " + c + "25" }}><div style={{ fontSize: 15, fontWeight: 800, color: c }}>{v}</div><div style={{ fontSize: 8, color: C.textMid, fontWeight: 600 }}>{label}</div></div>;
                           })}
-                          <div style={{ width: 44, height: 44, borderRadius: "50%", "" + accent + "12", "3px solid " + accent, display: "flex", flexDirection: "column", alignItems: "center", justifyContent: "center", flexShrink: 0, marginLeft: 4 }}>
+                          <div style={{ width: 44, height: 44, borderRadius: "50%", background: "" + accent + "12", border: "3px solid " + accent, display: "flex", flexDirection: "column", alignItems: "center", justifyContent: "center", flexShrink: 0, marginLeft: 4 }}>
                             <span style={{ fontSize: 15, fontWeight: 800, color: accent, lineHeight: 1 }}>{analysis.overall}</span>
                             <span style={{ fontSize: 7, color: C.textMid }}>{"/ 100"}</span>
                           </div>
                         </div>
                         {analysis.bullets.map((b, i) => (
-                          <div key={i} style={{ background: C.cardOff, "1px solid " + C.border, borderLeft: "3px solid " + C.navy, borderRadius: 9, padding: "11px 13px", marginBottom: 8 }}>
+                          <div key={i} style={{ background: C.cardOff, border: "1px solid " + C.border, borderLeft: "3px solid " + C.navy, borderRadius: 9, padding: "11px 13px", marginBottom: 8 }}>
                             <div style={{ display: "flex", alignItems: "center", gap: 6, marginBottom: 5 }}><span style={{ fontSize: 14 }}>{b.icon}</span><span style={{ fontSize: 10, fontWeight: 700, color: C.navy, textTransform: "uppercase", letterSpacing: 0.8 }}>{b.category}</span></div>
                             <p style={{ fontSize: 13, color: C.text, lineHeight: 1.75, margin: 0 }}>{b.point}</p>
                           </div>
@@ -937,7 +937,7 @@ function RacePlanner({ horses, setHorses }) {
                     )}
 
                     {!canRace(selHorse) ? (
-                      <div style={{ padding: "9px 12px", background: C.amberBg, "1px solid " + C.amber + "40", borderRadius: 9, fontSize: 12, color: C.amber, fontWeight: 600, textAlign: "center" }}>
+                      <div style={{ padding: "9px 12px", background: C.amberBg, border: "1px solid " + C.amber + "40", borderRadius: 9, fontSize: 12, color: C.amber, fontWeight: 600, textAlign: "center" }}>
                         ⏳ Cool-off active · eligible {coolingDate(selHorse.activationDate)?.toLocaleDateString("en-IE", { day: "numeric", month: "short" })} · Do not contact owner yet
                       </div>
                     ) : (
@@ -951,7 +951,7 @@ function RacePlanner({ horses, setHorses }) {
                               <span>✓ Confirm Entry</span>
                               <span style={{ fontSize: 10, opacity: 0.7, fontWeight: 400 }}>WhatsApp owner</span>
                             </Btn>
-                            <button onClick={() => handleDeclaration(selHorse, race)} style={{ padding: "9px", background: C.blueBg, "2px solid " + C.blue + "50", borderRadius: 9, color: C.blue, fontSize: 12, fontWeight: 700, cursor: "pointer", display: "flex", flexDirection: "column", alignItems: "center", gap: 2 }}>
+                            <button onClick={() => handleDeclaration(selHorse, race)} style={{ padding: "9px", background: C.blueBg, border: "2px solid " + C.blue + "50", borderRadius: 9, color: C.blue, fontSize: 12, fontWeight: 700, cursor: "pointer", display: "flex", flexDirection: "column", alignItems: "center", gap: 2 }}>
                               <span>📋 Declare to Run</span>
                               <span style={{ fontSize: 10, opacity: 0.7, fontWeight: 400 }}>WhatsApp owner + jockey</span>
                             </button>
@@ -1003,7 +1003,7 @@ function RacedayPrint({ horses }) {
 
       <div id="print-area">
         {Object.entries(grouped).sort(([a], [b]) => new Date(a) - new Date(b)).map(([date, dayEntries]) => (
-          <div key={date} style={{ background: C.card, "1px solid " + C.border, borderRadius: 12, padding: "18px 20px", marginBottom: 14, boxShadow: C.shadow }}>
+          <div key={date} style={{ background: C.card, border: "1px solid " + C.border, borderRadius: 12, padding: "18px 20px", marginBottom: 14, boxShadow: C.shadow }}>
             <div style={{ fontSize: 16, fontWeight: 800, color: C.navy, marginBottom: 12, paddingBottom: 10, borderBottom: `2px solid ${C.navy}` }}>
               {new Date(date).toLocaleDateString("en-IE", { weekday: "long", day: "numeric", month: "long", year: "numeric" })}
             </div>
@@ -1027,7 +1027,7 @@ function RacedayPrint({ horses }) {
             })}
           </div>
         ))}
-        {entries.length === 0 && <div style={{ padding: 40, textAlign: "center", "1.5px dashed " + C.border, borderRadius: 14, color: C.textMid }}>No entries added yet — tap + Add Entry</div>}
+        {entries.length === 0 && <div style={{ padding: 40, textAlign: "center", border: "1.5px dashed " + C.border, borderRadius: 14, color: C.textMid }}>No entries added yet — tap + Add Entry</div>}
       </div>
 
       {showAdd && (
@@ -1051,12 +1051,12 @@ function RacedayPrint({ horses }) {
                 <div key={key}>
                   <div style={{ fontSize: 10, fontWeight: 700, color: C.textMid, marginBottom: 4, textTransform: "uppercase", letterSpacing: 0.5 }}>{label}</div>
                   {type === "select" ? (
-                    <select value={ne[key]} onChange={e => setNe(p => ({ ...p, [key]: e.target.value }))} style={{ width: "100%", background: C.cardOff, "1px solid " + C.border, borderRadius: 8, padding: "8px 12px", color: C.text, fontSize: 13, outline: "none" }}>
+                    <select value={ne[key]} onChange={e => setNe(p => ({ ...p, [key]: e.target.value }))} style={{ width: "100%", background: C.cardOff, border: "1px solid " + C.border, borderRadius: 8, padding: "8px 12px", color: C.text, fontSize: 13, outline: "none" }}>
                       <option value="">Select horse</option>
                       {horses.map(h => <option key={h.id} value={h.id}>{h.name}</option>)}
                     </select>
                   ) : (
-                    <input type={type || "text"} placeholder={placeholder} value={ne[key]} onChange={e => setNe(p => ({ ...p, [key]: e.target.value }))} style={{ width: "100%", background: C.cardOff, "1px solid " + C.border, borderRadius: 8, padding: "8px 12px", color: C.text, fontSize: 13, outline: "none" }} />
+                    <input type={type || "text"} placeholder={placeholder} value={ne[key]} onChange={e => setNe(p => ({ ...p, [key]: e.target.value }))} style={{ width: "100%", background: C.cardOff, border: "1px solid " + C.border, borderRadius: 8, padding: "8px 12px", color: C.text, fontSize: 13, outline: "none" }} />
                   )}
                 </div>
               ))}
@@ -1230,10 +1230,10 @@ function YardView({ horses, setHorses }) {
         </div>
         <div style={{ display: "flex", gap: 8, alignItems: "center" }}>
           {csvStatus && <span style={{ fontSize: 12, fontWeight: 700, color: csvStatus.startsWith("✓") ? C.green : C.red }}>{csvStatus}</span>}
-          <label style={{ background: C.cardOff, "1.5px solid " + C.border, color: C.textMid, borderRadius: 9, padding: "9px 16px", fontSize: 13, fontWeight: 700, cursor: "pointer", display: "inline-flex", alignItems: "center", gap: 6 }}>
+          <label style={{ background: C.cardOff, border: "1.5px solid " + C.border, color: C.textMid, borderRadius: 9, padding: "9px 16px", fontSize: 13, fontWeight: 700, cursor: "pointer", display: "inline-flex", alignItems: "center", gap: 6 }}>
             📥 Import Horses CSV <input type="file" accept=".csv,.tsv,.txt" onChange={handleCSV} style={{ display: "none" }} />
           </label>
-          <label style={{ background: C.cardOff, "1.5px solid " + C.border, color: C.textMid, borderRadius: 9, padding: "9px 16px", fontSize: 13, fontWeight: 700, cursor: "pointer", display: "inline-flex", alignItems: "center", gap: 6 }}>
+          <label style={{ background: C.cardOff, border: "1.5px solid " + C.border, color: C.textMid, borderRadius: 9, padding: "9px 16px", fontSize: 13, fontWeight: 700, cursor: "pointer", display: "inline-flex", alignItems: "center", gap: 6 }}>
             📊 Import Ratings CSV <input type="file" accept=".csv,.tsv,.txt" onChange={handleRatingsCSV} style={{ display: "none" }} />
           </label>
           <Btn variant="ghost" onClick={() => { if (window.confirm("Remove all horses from the yard?")) { setHorses([]); } }} style={{ fontSize: 12, color: C.red, borderColor: C.red }}>Clear Yard</Btn>
@@ -1251,7 +1251,7 @@ function YardView({ horses, setHorses }) {
       </div>
 
       {horses.map(h => (
-        <div key={h.id} style={{ background: C.card, "1px solid " + C.border, borderLeft: `4px solid ${h.status === "Active" ? C.green : h.status === "CoolingOff" ? C.amber : C.red}`, borderRadius: 12, padding: "13px 16px", marginBottom: 9, boxShadow: C.shadow }}>
+        <div key={h.id} style={{ background: C.card, border: "1px solid " + C.border, borderLeft: `4px solid ${h.status === "Active" ? C.green : h.status === "CoolingOff" ? C.amber : C.red}`, borderRadius: 12, padding: "13px 16px", marginBottom: 9, boxShadow: C.shadow }}>
           <div style={{ display: "flex", alignItems: "center", gap: 12 }}>
             <Silk silk={h.silk} size={40} />
             <div style={{ flex: 1 }}>
@@ -1302,11 +1302,11 @@ function YardView({ horses, setHorses }) {
                 <div key={key}>
                   <div style={{ fontSize: 10, fontWeight: 700, color: C.textMid, marginBottom: 3, textTransform: "uppercase", letterSpacing: 0.5 }}>{label}</div>
                   {type === "select" ? (
-                    <select value={key === "discipline" ? ((editHorse.discipline && editHorse.discipline[0]) || "") : (editHorse[key] || "")} onChange={e => setEditHorse(prev => ({ ...prev, [key]: key === "discipline" ? [e.target.value] : e.target.value }))} style={{ width: "100%", background: C.cardOff, "1px solid " + C.border, borderRadius: 8, padding: "8px 12px", color: C.text, fontSize: 13, outline: "none" }}>
+                    <select value={key === "discipline" ? ((editHorse.discipline && editHorse.discipline[0]) || "") : (editHorse[key] || "")} onChange={e => setEditHorse(prev => ({ ...prev, [key]: key === "discipline" ? [e.target.value] : e.target.value }))} style={{ width: "100%", background: C.cardOff, border: "1px solid " + C.border, borderRadius: 8, padding: "8px 12px", color: C.text, fontSize: 13, outline: "none" }}>
                       {(options || []).map(o => <option key={o} value={o}>{o}</option>)}
                     </select>
                   ) : (
-                    <input type={type || "text"} placeholder={placeholder} value={editHorse[key] || ""} onChange={e => setEditHorse(prev => ({ ...prev, [key]: e.target.value }))} style={{ width: "100%", background: C.cardOff, "1px solid " + C.border, borderRadius: 8, padding: "8px 12px", color: C.text, fontSize: 13, outline: "none" }} />
+                    <input type={type || "text"} placeholder={placeholder} value={editHorse[key] || ""} onChange={e => setEditHorse(prev => ({ ...prev, [key]: e.target.value }))} style={{ width: "100%", background: C.cardOff, border: "1px solid " + C.border, borderRadius: 8, padding: "8px 12px", color: C.text, fontSize: 13, outline: "none" }} />
                   )}
                 </div>
               ))}
@@ -1345,11 +1345,11 @@ function YardView({ horses, setHorses }) {
                 <div key={key}>
                   <div style={{ fontSize: 10, fontWeight: 700, color: C.textMid, marginBottom: 3, textTransform: "uppercase", letterSpacing: 0.5 }}>{label}</div>
                   {type === "select" ? (
-                    <select value={newHorse[key]} onChange={e => setNewHorse(p => ({ ...p, [key]: e.target.value }))} style={{ width: "100%", background: C.cardOff, "1px solid " + C.border, borderRadius: 8, padding: "8px 12px", color: C.text, fontSize: 13, outline: "none" }}>
+                    <select value={newHorse[key]} onChange={e => setNewHorse(p => ({ ...p, [key]: e.target.value }))} style={{ width: "100%", background: C.cardOff, border: "1px solid " + C.border, borderRadius: 8, padding: "8px 12px", color: C.text, fontSize: 13, outline: "none" }}>
                       {options.map(o => <option key={o} value={o}>{o}</option>)}
                     </select>
                   ) : (
-                    <input type={type || "text"} placeholder={placeholder} value={newHorse[key]} onChange={e => setNewHorse(p => ({ ...p, [key]: e.target.value }))} style={{ width: "100%", background: C.cardOff, "1px solid " + C.border, borderRadius: 8, padding: "8px 12px", color: C.text, fontSize: 13, outline: "none" }} />
+                    <input type={type || "text"} placeholder={placeholder} value={newHorse[key]} onChange={e => setNewHorse(p => ({ ...p, [key]: e.target.value }))} style={{ width: "100%", background: C.cardOff, border: "1px solid " + C.border, borderRadius: 8, padding: "8px 12px", color: C.text, fontSize: 13, outline: "none" }} />
                   )}
                 </div>
               ))}
@@ -1428,17 +1428,17 @@ function MovementLog({ horses }) {
                 <div key={key}>
                   <div style={{ fontSize: 10, fontWeight: 700, color: C.textMid, marginBottom: 3, textTransform: "uppercase", letterSpacing: 0.5 }}>{label}</div>
                   {type === "select" ? (
-                    <select value={nm[key]} onChange={e => setNm(p => ({ ...p, [key]: e.target.value }))} style={{ width: "100%", background: C.cardOff, "1px solid " + C.border, borderRadius: 8, padding: "8px 12px", color: C.text, fontSize: 13, outline: "none" }}>
+                    <select value={nm[key]} onChange={e => setNm(p => ({ ...p, [key]: e.target.value }))} style={{ width: "100%", background: C.cardOff, border: "1px solid " + C.border, borderRadius: 8, padding: "8px 12px", color: C.text, fontSize: 13, outline: "none" }}>
                       <option value="">Select horse</option>
                       {horses.map(h => <option key={h.id} value={h.id}>{h.name}</option>)}
                     </select>
                   ) : type === "select_type" ? (
-                    <select value={nm[key]} onChange={e => setNm(p => ({ ...p, [key]: e.target.value }))} style={{ width: "100%", background: C.cardOff, "1px solid " + C.border, borderRadius: 8, padding: "8px 12px", color: C.text, fontSize: 13, outline: "none" }}>
+                    <select value={nm[key]} onChange={e => setNm(p => ({ ...p, [key]: e.target.value }))} style={{ width: "100%", background: C.cardOff, border: "1px solid " + C.border, borderRadius: 8, padding: "8px 12px", color: C.text, fontSize: 13, outline: "none" }}>
                       <option value="arrival">Arrival</option>
                       <option value="departure">Departure</option>
                     </select>
                   ) : (
-                    <input type={type || "text"} placeholder={placeholder} value={nm[key]} onChange={e => setNm(p => ({ ...p, [key]: e.target.value }))} style={{ width: "100%", background: C.cardOff, "1px solid " + C.border, borderRadius: 8, padding: "8px 12px", color: C.text, fontSize: 13, outline: "none" }} />
+                    <input type={type || "text"} placeholder={placeholder} value={nm[key]} onChange={e => setNm(p => ({ ...p, [key]: e.target.value }))} style={{ width: "100%", background: C.cardOff, border: "1px solid " + C.border, borderRadius: 8, padding: "8px 12px", color: C.text, fontSize: 13, outline: "none" }} />
                   )}
                 </div>
               ))}
@@ -1466,7 +1466,7 @@ function OwnerPortal({ horses }) {
       <div style={{ fontSize: 22, fontWeight: 800, color: C.text, marginBottom: 4 }}>Owner Portal</div>
       <div style={{ fontSize: 13, color: C.textMid, marginBottom: 16 }}>Each owner sees their horses, entries, provisional targets and trainer notes</div>
       {owners.map(o => (
-        <div key={o.name} onClick={() => setSelOwner(o)} style={{ background: C.card, "1px solid " + C.border, borderRadius: 12, padding: "13px 16px", marginBottom: 9, cursor: "pointer", boxShadow: C.shadow, display: "flex", alignItems: "center", gap: 13 }}>
+        <div key={o.name} onClick={() => setSelOwner(o)} style={{ background: C.card, border: "1px solid " + C.border, borderRadius: 12, padding: "13px 16px", marginBottom: 9, cursor: "pointer", boxShadow: C.shadow, display: "flex", alignItems: "center", gap: 13 }}>
           <div style={{ width: 42, height: 42, borderRadius: "50%", background: C.navy, display: "flex", alignItems: "center", justifyContent: "center", fontSize: 15, fontWeight: 800, color: C.gold, flexShrink: 0 }}>
             {o.name.split(" ").map(w => w[0]).join("").slice(0, 2)}
           </div>
@@ -1498,7 +1498,7 @@ function OwnerPortal({ horses }) {
       {selOwner.horses.map(horse => {
         const provisional = horse.provisionalEntries || [];
         return (
-          <div key={horse.id} style={{ background: C.card, "1px solid " + C.border, borderRadius: 14, padding: "16px 18px", marginBottom: 14, boxShadow: C.shadow }}>
+          <div key={horse.id} style={{ background: C.card, border: "1px solid " + C.border, borderRadius: 14, padding: "16px 18px", marginBottom: 14, boxShadow: C.shadow }}>
             <div style={{ display: "flex", alignItems: "center", gap: 13, marginBottom: 13 }}>
               <Silk silk={horse.silk} size={46} />
               <div style={{ flex: 1 }}>
@@ -1537,7 +1537,7 @@ function OwnerPortal({ horses }) {
               {(horse.form || []).slice(0, 3).map((f, i) => {
                 const pc = f.position === 1 ? C.green : f.position <= 3 ? C.amber : C.textMid;
                 return (
-                  <div key={i} style={{ display: "flex", alignItems: "center", gap: 10, padding: "8px 10px", background: C.cardOff, borderRadius: 8, "1px solid " + C.border, marginBottom: 6 }}>
+                  <div key={i} style={{ display: "flex", alignItems: "center", gap: 10, padding: "8px 10px", background: C.cardOff, borderRadius: 8, border: "1px solid " + C.border, marginBottom: 6 }}>
                     <div style={{ width: 24, height: 24, borderRadius: 6, background: `${pc}12`, border: `1.5px solid ${pc}40`, display: "flex", alignItems: "center", justifyContent: "center", fontSize: 12, fontWeight: 800, color: pc }}>{f.position}</div>
                     <div style={{ flex: 1 }}><span style={{ fontSize: 13, fontWeight: 600, color: C.text }}>{f.venue}</span><span style={{ fontSize: 11, color: C.textMid, marginLeft: 6 }}>{f.raceClass} · {f.going}</span></div>
                     <div style={{ fontSize: 11, color: C.textMid }}>{new Date(f.date).toLocaleDateString("en-IE", { day: "numeric", month: "short" })}</div>
@@ -1548,7 +1548,7 @@ function OwnerPortal({ horses }) {
             </div>
 
             {horse.notes && (
-              <div style={{ marginTop: 10, padding: "9px 12px", background: C.cardOff, borderRadius: 8, "1px solid " + C.border }}>
+              <div style={{ marginTop: 10, padding: "9px 12px", background: C.cardOff, borderRadius: 8, border: "1px solid " + C.border }}>
                 <div style={{ fontSize: 9, fontWeight: 700, color: C.textDim, textTransform: "uppercase", letterSpacing: 0.5, marginBottom: 3 }}>Trainer's Note</div>
                 <p style={{ fontSize: 13, color: C.textMid, fontStyle: "italic", margin: 0, lineHeight: 1.5 }}>{horse.notes}</p>
               </div>
