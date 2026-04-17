@@ -207,7 +207,7 @@ Replace all template text with real analysis. recommendation = STRONG, CONSIDER,
   });
   const data = await res.json();
   const text = (data.content || []).filter(b => b.type === "text").map(b => b.text).join("").trim();
-  const match = text.match(/\{[\s\S]*\}/);
+  const match = text.match(new RegExp("\\{[\\s\\S]*\\}"));
   if (!match) throw new Error("No JSON");
   return JSON.parse(match[0]);
 }
@@ -463,7 +463,7 @@ function ProvisionalEntries({ horses, setHorses }) {
       });
       const data = await res.json();
       const text = (data.content || []).filter(b => b.type === "text").map(b => b.text).join("").trim();
-      const match = text.match(/\[[\s\S]*\]/);
+      const match = text.match(new RegExp("\\[[\\s\\S]*\\]"));
       if (!match) throw new Error("No races");
       setProvisionalRaces(JSON.parse(match[0]));
       setLastFetch(new Date().toISOString());
@@ -650,7 +650,7 @@ function RacePlanner({ horses, setHorses }) {
       });
       const data = await res.json();
       const text = (data.content || []).filter(b => b.type === "text").map(b => b.text).join("").trim();
-      const match = text.match(/\[[\s\S]*\]/);
+      const match = text.match(new RegExp("\\[[\\s\\S]*\\]"));
       if (!match) throw new Error("No races");
       const parsed = JSON.parse(match[0]);
       setRaces(parsed); setLastFetch(new Date().toISOString()); setFetchStatus("done");
@@ -685,7 +685,7 @@ function RacePlanner({ horses, setHorses }) {
 
   const handleEntry = (horse, race) => {
     const msg = encodeURIComponent(`🏇 RacePlan Pro — ${horse.trainer}\n\n${horse.name} has been entered in the ${race.raceName} at ${race.venue} on ${new Date(race.date).toLocaleDateString("en-IE", { weekday: "long", day: "numeric", month: "long" })}.\n\nPrize fund: €${(race.prizeMoney ? race.prizeMoney.toLocaleString() : "")}\nForecast going: ${race.forecastGoing}\n\nWe'll be in touch closer to declaration day.`);
-    const phone = horse.ownerPhone ? horse.ownerPhone.replace(/\D/g, "") : "";
+    const phone = horse.ownerPhone ? horse.ownerPhone.split("").filter(c => c >= "0" && c <= "9").join("") : "";
     if (phone) window.open(`https://wa.me/${phone}?text=${msg}`, "_blank");
     showToast(`✓ Entry confirmed — WhatsApp opened for ${horse.owner}`);
   };
@@ -693,7 +693,7 @@ function RacePlanner({ horses, setHorses }) {
   const handleDeclaration = (horse, race) => {
     const jockey = horse.jockey || "D.J. O'Keeffe";
     const msg = encodeURIComponent(`✅ RacePlan Pro — ${horse.trainer}\n\n${horse.name} is declared to run in the ${race.raceName} at ${race.venue}.\n\nJockey: ${jockey}\nForecast going: ${race.forecastGoing}\n\nWe'll keep you updated on race day.`);
-    const phone = horse.ownerPhone ? horse.ownerPhone.replace(/\D/g, "") : "";
+    const phone = horse.ownerPhone ? horse.ownerPhone.split("").filter(c => c >= "0" && c <= "9").join("") : "";
     if (phone) window.open(`https://wa.me/${phone}?text=${msg}`, "_blank");
     showToast(`📋 Declaration confirmed — WhatsApp opened for ${horse.owner}`, C.blue);
   };
@@ -999,10 +999,10 @@ function YardView({ horses, setHorses }) {
     reader.onload = (ev) => {
       try {
         const lines = ev.target.result.split("\n").filter(l => l.trim());
-        const headers = lines[0].split(",").map(h => h.trim().toLowerCase().replace(/[^a-z0-9]/g, "_"));
+        const headers = lines[0].split(",").map(h => h.trim().toLowerCase().split("").map(c => (c >= "a" && c <= "z") || (c >= "0" && c <= "9") ? c : "_").join(""));
         const imported = [];
         for (let i = 1; i < lines.length; i++) {
-          const cols = lines[i].split(",").map(c => c.trim().replace(/^"|"$/g, ""));
+          const cols = lines[i].split(",").map(c => c.trim().replace(/^"/, "").replace(/"$/, ""));
           if (!cols[0]) continue;
           const row = {}; headers.forEach((h, idx) => { row[h] = cols[idx] || ""; });
           const name = row.horse_name || row.name || row.horse || cols[0];
@@ -1067,7 +1067,7 @@ function YardView({ horses, setHorses }) {
                 <span>{getAge(h.dob)}yo {h.sex} · {h.colour}</span>
                 <span>Rtg: {h.nhRating || h.flatRating || "—"}</span>
                 <span>Owner: {h.owner}</span>
-                {h.ownerPhone && <a href={`https://wa.me/${h.ownerPhone.replace(/\D/g, "")}`} target="_blank" rel="noopener noreferrer" style={{ color: C.green, fontWeight: 600, textDecoration: "none" }}>💬 WhatsApp</a>}
+                {h.ownerPhone && <a href={`https://wa.me/${h.ownerPhone.split("").filter(c => c >= "0" && c <= "9").join("")}`} target="_blank" rel="noopener noreferrer" style={{ color: C.green, fontWeight: 600, textDecoration: "none" }}>💬 WhatsApp</a>}
               </div>
               <div style={{ marginTop: 5, display: "flex", gap: 6, alignItems: "center" }}><FormDots form={h.form} />{h.notes && <span style={{ fontSize: 11, color: C.textMid, fontStyle: "italic" }}>💬 {h.notes}</span>}</div>
             </div>
@@ -1246,7 +1246,7 @@ function OwnerPortal({ horses }) {
       <div style={{ display: "flex", justifyContent: "space-between", alignItems: "center", marginBottom: 14 }}>
         <Btn variant="ghost" onClick={() => setSelOwner(null)} style={{ fontSize: 12, padding: "6px 14px" }}>← All Owners</Btn>
         <div style={{ display: "flex", gap: 8 }}>
-          {selOwner.phone && <a href={`https://wa.me/${selOwner.phone.replace(/\D/g, "")}`} target="_blank" rel="noopener noreferrer" style={{ background: "#f0fdf4", border: "1px solid #bbf7d0", color: "#15803d", borderRadius: 8, padding: "7px 14px", fontSize: 12, fontWeight: 700, textDecoration: "none" }}>💬 WhatsApp</a>}
+          {selOwner.phone && <a href={`https://wa.me/${selOwner.phone.split("").filter(c => c >= "0" && c <= "9").join("")}`} target="_blank" rel="noopener noreferrer" style={{ background: "#f0fdf4", border: "1px solid #bbf7d0", color: "#15803d", borderRadius: 8, padding: "7px 14px", fontSize: 12, fontWeight: 700, textDecoration: "none" }}>💬 WhatsApp</a>}
           {selOwner.phone && <a href={`tel:${selOwner.phone}`} style={{ background: C.blueBg, border: `1px solid ${C.blue}30`, color: C.blue, borderRadius: 8, padding: "7px 14px", fontSize: 12, fontWeight: 700, textDecoration: "none" }}>📞 Call</a>}
           {selOwner.email && <a href={`mailto:${selOwner.email}`} style={{ background: C.navy, border: "none", color: "#fff", borderRadius: 8, padding: "7px 14px", fontSize: 12, fontWeight: 700, textDecoration: "none" }}>✉ Email</a>}
         </div>
