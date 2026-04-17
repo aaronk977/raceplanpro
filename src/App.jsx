@@ -414,8 +414,8 @@ function MedicationTracker({ horses }) {
                 <div style={{ fontSize: 12, fontWeight: 700, color: C.textMid, textTransform: "uppercase", letterSpacing: 1, marginBottom: 14 }}>For Yardman — {billHorse.owner}</div>
                 {[
                   costs.peptizoleDays > 0 && { label: `Peptizole — ${costs.peptizoleDays} days × €18`, amount: costs.peptizole },
-                  costs.antepsinTicks > 0 && { label: `Antepsin — ${costs.antepsinBottles} bottle${costs.antepsinBottles !== 1 ? "s" : ""} × €25 (${costs.antepsinTicks} days)`, amount: costs.antepsin },
-                  costs.antibioticDoses > 0 && { label: `Antibiotics — ${costs.antibioticDoses} dose${costs.antibioticDoses !== 1 ? "s" : ""} × €15`, amount: costs.antibiotics },
+                  costs.antepsinTicks > 0 && { label: "Antepsin — " + costs.antepsinBottles + " bottle" + (costs.antepsinBottles !== 1 ? "s" : "") + " · €25", amount: costs.antepsin },
+                  costs.antibioticDoses > 0 && { label: "Antibiotics — " + costs.antibioticDoses + " dose" + (costs.antibioticDoses !== 1 ? "s" : "") + " · €15", amount: costs.antibiotics },
                 ].filter(Boolean).map((item, i) => (
                   <div key={i} style={{ display: "flex", justifyContent: "space-between", padding: "10px 0", borderBottom: `1px solid ${C.border}` }}>
                     <span style={{ fontSize: 14, color: C.text }}>{item.label}</span>
@@ -457,7 +457,7 @@ function ProvisionalEntries({ horses, setHorses }) {
           model: "claude-sonnet-4-20250514",
           max_tokens: 5000,
           tools: [{ type: "web_search_20250305", name: "web_search" }],
-          system: `Parse HRI provisional summary PDFs into a JSON array. Return ONLY raw JSON array, no markdown. Each race: {"id":"string","meetingRef":"string e.g. Limerick 55","raceRef":"string e.g. Race A","venue":"string","date":"YYYY-MM-DD","raceName":"string","discipline":"string","grade":"string","distanceFurlongs":number,"prizeMoney":number,"forecastGoing":"string","entryDeadline":"YYYY-MM-DDTHH:MM"}`,
+          system: "Parse HRI provisional summary PDFs into a JSON array. Return ONLY raw JSON array, no markdown. Fields: id, meetingRef, raceRef, venue, date as YYYY-MM-DD, raceName, discipline, grade, distanceFurlongs, prizeMoney, forecastGoing, entryDeadline as YYYY-MM-DDTHH:MM.",
           messages: [{ role: "user", content: "Fetch https://www.hri-ras.ie/provisional-summaries, find the most recent provisional summary PDF links, fetch and parse all races into JSON array. Return only the JSON." }]
         })
       });
@@ -504,7 +504,7 @@ function ProvisionalEntries({ horses, setHorses }) {
           <div>
             <div style={{ fontSize: 14, fontWeight: 700, color: C.text, marginBottom: 2 }}>HRI Provisional Summaries</div>
             <div style={{ fontSize: 12, color: C.textMid }}>
-              {lastFetch ? `Last fetched: ${new Date(lastFetch).toLocaleString("en-IE", { weekday: "short", day: "numeric", month: "short", hour: "2-digit", minute: "2-digit" })}` : "hri-ras.ie/provisional-summaries — use these to plan medication courses in advance"}
+            {lastFetch ? "Last fetched: " + new Date(lastFetch).toLocaleString("en-IE", { weekday: "short", day: "numeric", month: "short", hour: "2-digit", minute: "2-digit" }) : "Tap below to load current entries from HRI"}
             </div>
           </div>
           <Btn onClick={fetchProvisional} disabled={fetchStatus === "fetching"} style={{ fontSize: 12, padding: "8px 16px" }}>
@@ -644,7 +644,7 @@ function RacePlanner({ horses, setHorses }) {
         body: JSON.stringify({
           model: "claude-sonnet-4-20250514", max_tokens: 5000,
           tools: [{ type: "web_search_20250305", name: "web_search" }],
-          system: `Parse HRI race conditions PDF into JSON array. Return ONLY raw JSON array, no markdown. Each race: {"id":"r_venue_N","venue":string,"date":"YYYY-MM-DD","raceName":string,"discipline":"Flat|Hurdle|Chase|Bumper|NH Flat","raceType":"Maiden|Novice|Handicap|Novice Handicap|Weight For Age|Beginners|Bumper","grade":"Grade 1|Grade 2|Grade 3|Listed|Ungraded","surface":"Turf|AWT","distanceFurlongs":number,"prizeMoney":number,"ageMin":number,"ageMax":number|null,"sexRestriction":"Open|Mares|Fillies|Colts & Geldings","ratingMax":number|null,"isMaiden":boolean,"isNovice":boolean,"isEBF":boolean,"isSeries":boolean,"entryDeadline":"YYYY-MM-DDTHH:MM","declarationDeadline":"YYYY-MM-DDTHH:MM","forecastGoing":string} Dundalk=AWT, others=Turf.`,
+          system: "Parse HRI race conditions PDF into JSON array. Return ONLY raw JSON array, no markdown. Each race needs: id as r_venue_N, venue, date as YYYY-MM-DD, raceName, discipline as Flat or Hurdle or Chase or Bumper, raceType as Maiden or Novice or Handicap or Weight For Age, grade as Grade 1 or Grade 2 or Grade 3 or Listed or Ungraded, surface as Turf or AWT where Dundalk is AWT, distanceFurlongs as number, prizeMoney as number, ageMin as number, ageMax as number, ratingMax as number, isMaiden as boolean, isNovice as boolean, isEBF as boolean, entryDeadline as YYYY-MM-DDTHH:MM, forecastGoing.",
           messages: [{ role: "user", content: "Fetch https://www.hri-ras.ie/upcoming-race-conditions, find latest PDF, parse all races, return JSON array only." }]
         })
       });
@@ -733,7 +733,7 @@ function RacePlanner({ horses, setHorses }) {
         <div style={{ background: C.card, border: `1px solid ${C.border}`, borderRadius: 12, padding: "12px 16px", marginBottom: 12, boxShadow: C.shadow, display: "flex", justifyContent: "space-between", alignItems: "center" }}>
           <div>
             <div style={{ fontSize: 13, fontWeight: 700, color: C.text }}>HRI Race Conditions</div>
-            <div style={{ fontSize: 11, color: C.textMid, marginTop: 2 }}>{lastFetch ? `Updated ${new Date(lastFetch).toLocaleString("en-IE", { day: "numeric", month: "short", hour: "2-digit", minute: "2-digit" })}` : "hri-ras.ie/upcoming-race-conditions"}</div>
+            <div style={{ fontSize: 11, color: C.textMid, marginTop: 2 }}>{lastFetch ? "Updated " + new Date(lastFetch).toLocaleString("en-IE", { day: "numeric", month: "short", hour: "2-digit", minute: "2-digit" }) : "Paste from HRI PDF below"}</div>
             {fetchStatus === "done" && <div style={{ fontSize: 11, color: C.green, fontWeight: 600, marginTop: 2 }}>✓ {races.length} races · {eligible.length} eligible for {selHorse.name}</div>}
           </div>
           <Btn onClick={fetchRaces} disabled={fetchStatus === "fetching"} style={{ fontSize: 12, padding: "8px 16px" }}>
@@ -771,7 +771,7 @@ function RacePlanner({ horses, setHorses }) {
         ) : eligible.length === 0 ? (
           <div style={{ padding: 32, textAlign: "center", border: `1.5px dashed ${C.border}`, borderRadius: 14, color: C.textMid }}>No eligible races for {selHorse.name} in current conditions</div>
         ) : (
-          <>
+          <div>
             <div style={{ fontSize: 10, fontWeight: 700, color: C.textDim, letterSpacing: 1.5, marginBottom: 10, textTransform: "uppercase" }}>{eligible.length} eligible races</div>
             {sorted.map(race => {
               const key = k(selHorse.id, race.id);
@@ -880,7 +880,7 @@ function RacePlanner({ horses, setHorses }) {
                 </div>
               );
             })}
-          </>
+          </div>
         )}
       </div>
     </div>
