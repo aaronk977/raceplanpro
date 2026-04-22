@@ -1459,15 +1459,20 @@ export default function App() {
     } catch(e) { return INITIAL_HORSES; }
   });
   const [sidebarOpen, setSidebarOpen] = useState(true);
-  const [medLogs, setMedLogs] = useState(function() {
-    try { const s = localStorage.getItem("rpp_medlogs"); return s ? JSON.parse(s) : {}; } catch(e) { return {}; }
+  useEffect(() => {
+  localStorage.setItem("rpp_medlogs", JSON.stringify(medLogs));
+}, [medLogs]);
   });
   const [trackedIds, setTrackedIds] = useState(function() {
     try { const s = localStorage.getItem("rpp_tracked"); return s ? JSON.parse(s) : []; } catch(e) { return []; }
   });
-  const [wbEntries, setWbEntries] = useState(function() {
-    try { const s = localStorage.getItem("rpp_whiteboard"); return s ? JSON.parse(s) : []; } catch(e) { return []; }
-  });
+ useEffect(() => {
+  localStorage.setItem("rpp_tracked", JSON.stringify(trackedIds));
+}, [trackedIds]);
+
+useEffect(() => {
+  localStorage.setItem("rpp_whiteboard", JSON.stringify(wbEntries));
+}, [wbEntries]);
   React.useEffect(function() {
     try { localStorage.setItem("rpp_horses", JSON.stringify(horses)); } catch(e) {}
   }, [horses]);
