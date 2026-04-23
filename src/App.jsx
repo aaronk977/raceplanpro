@@ -992,12 +992,22 @@ function YardView({ horses, setHorses }) {
           const row = {}; headers.forEach(function(h, idx) { row[h] = cols[idx] || ""; });
           const name = row.horse_name || row.horse || row.name || cols[0];
           if (!name) continue;
-          const yof = parseInt(row.yof) || null;
-          const age = yof ? (new Date().getFullYear() - yof) : null;
+          const yof = parseInt(row.yof || row.foaling_year || row.year_of_foaling || row.year || row.age && (new Date().getFullYear() - parseInt(row.age))) || null;
+          const rawSex = (row.sex || row.gender || row.coloursex || "").trim();
+          const sexMap = { "M": "Mare", "G": "Gelding", "F": "Filly", "C": "Colt", "H": "Horse", "R": "Gelding",
+                           "mare": "Mare", "gelding": "Gelding", "filly": "Filly", "colt": "Colt", "horse": "Horse",
+                           "g": "Gelding", "m": "Mare", "f": "Filly", "c": "Colt", "h": "Horse" };
+          // HRI combines colour+sex e.g. "B G" or "CH M" - last word is sex code
+          const colourSexRaw = row.colour_sex || row.coloursex || row.colour || row.color || "";
+          const parts = colourSexRaw.trim().split(/\s+/);
+          const lastPart = parts[parts.length - 1];
+          const sexFromColour = parts.length > 1 ? (sexMap[lastPart] || sexMap[lastPart.toLowerCase()] || "") : "";
+          const sex = sexMap[rawSex] || sexMap[rawSex.toLowerCase()] || sexFromColour || (rawSex.length > 1 ? rawSex : "Gelding");
+          const colour = parts.length > 1 ? parts.slice(0, -1).join(" ") : (colourSexRaw || row.colour || "");
           imported.push({
             id: "h_" + Date.now() + "_" + i, name,
             dob: yof ? yof + "-01-01" : (row.dob || row.date_of_birth || ""),
-            sex: row.sex || "Gelding", colour: row.colour || row.color || "",
+            sex, colour,
             trainer: row.trainer || "", owner: row.owner || "",
             ownerPhone: row.owner_phone || row.ownerphone || "",
             ownerEmail: row.owner_email || row.owneremail || "",
