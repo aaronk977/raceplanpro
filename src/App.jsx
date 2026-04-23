@@ -1372,8 +1372,13 @@ function YardView({ horses, setHorses }) {
               const chase = parseInt(row.chase || row.chase_rating || row.chaserating || row.chs || "") || null;
               const nh = parseInt(row.nh_rating || row.nhrating || row.nh || row.national_hunt || row.rating || "") || null;
               const awt = parseInt(row.awt || row.all_weather || row.allweather || row.aw || "") || null;
-              if (flat) horses[idx].flatRating = flat; if (hurdle) horses[idx].hurdleRating = hurdle; if (chase) horses[idx].chaseRating = chase; if (awt) horses[idx].awtRating = awt; if (nh) horses[idx].nhRating = nh;
+              if (flat) horses[idx].flatRating = flat;
+              if (hurdle) horses[idx].hurdleRating = hurdle;
+              if (chase) horses[idx].chaseRating = chase;
+              if (awt) horses[idx].awtRating = awt;
+              if (nh) horses[idx].nhRating = nh;
               updated++;
+            }
           });
           return horses;
         });
