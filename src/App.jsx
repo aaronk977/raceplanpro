@@ -1,5 +1,9 @@
 import React, { useState, useCallback, useEffect } from "react";
-import { supabase } from "./supabase";
+import { createClient } from "@supabase/supabase-js";
+
+const SUPABASE_URL = import.meta.env.VITE_SUPABASE_URL || "";
+const SUPABASE_ANON_KEY = import.meta.env.VITE_SUPABASE_ANON_KEY || "";
+const supabase = createClient(SUPABASE_URL, SUPABASE_ANON_KEY);
 
 const ANTHROPIC_KEY = import.meta.env.VITE_ANTHROPIC_API_KEY || "";
 
@@ -176,30 +180,24 @@ function StatusPill({ status, activationDate }) {
 
 // ─── AI RACE PLANNER ──────────────────────────────────────────────────────────
 async function getAITake(horse, race) {
-  const lastRun = (horse.form && horse.form[0]);
+  const lastRun = horse.form?.[0];
   const daysSince = lastRun ? Math.floor((TODAY - new Date(lastRun.date)) / 86400000) : null;
   const daysToRace = daysUntil(race.date);
 
-  const system = `You are a highly experienced Irish racehorse trainer and racing secretary with 30 years on the gallops and in the entry office. You speak directly to a fellow professional trainer — never describe their own horse's form back at them. Talk about the RACE OPPORTUNITY — field, tactics, timing, equipment, campaign.
+  const system = "You are an experienced Irish racing professional giving a trainer your honest read on a race. The trainer already knows their horse inside out — never tell them their own horse's form, stats, or history. They lived it. Focus ONLY on the race itself — who else is likely in it, how weak or strong the field looks, whether the timing suits a campaign, what the pace scenario might be, and whether this is a race worth targeting. Use web_search to find likely runners and recent form at this venue and trip. Speak like a racing professional — direct, specific, no waffle. Use phrases like: Not a great race, I would be going there to win it. Plenty of dead wood in here. The handicapper has left him alone. This sets Punchestown up perfectly. Ride cold and come through them late. Worth trying cheekpieces here. I would be very tempted at this trip. Do not say things the trainer already knows about their own horse. Never mention days since last run or the horse's rating as if the trainer does not know it. Your job is to give them information about the RACE not about their horse.";
 
-Your voice is authentic trainer language: "Not a great race — I'd be going there to win it", "Plenty of dead wood in here", "Could do with the run", "Hunt him around today", "Worth trying cheekpieces", "This sets the Punchestown run up perfectly", "The handicapper hasn't copped on yet", "I'd be very tempted", "Ride cold, get cover, come through them late".
 
-Use web_search to check likely runners and trainer record at the venue before writing.`;
-
-  const prompt = `Give me your honest take — trainer to trainer. Search first.
-
-HORSE: ${horse.name} | ${getAge(horse.dob)}yo ${horse.sex} | ${horse.trainer} | Rating: ${horse.nhRating || horse.flatRating || "unknown"}
-Headgear: ${horse.headgear || "None"} | ${daysSince || "?"} days since last run
-Notes: "${horse.notes}"
-
-RACE: ${race.raceName} | ${race.venue} | ${race.date}
-${race.grade} ${race.discipline} ${race.raceType} | ${race.distanceFurlongs}f | €${(race.prizeMoney ? race.prizeMoney.toLocaleString() : "0")} | ${race.forecastGoing} | ${daysToRace} days away
-
-Search: "${race.raceName} ${race.venue} 2026 runners" and "${horse.trainer} ${race.venue} record"
-
-Return ONLY raw JSON:
-{"scores":{"handicap_edge":7,"class_fit":8,"conditions_match":7,"timing":8,"cuteness":6},"overall":75,"bullets":[{"category":"The Field","icon":"🏟","point":"Honest read on who's in this. Is it winnable? Name rivals if found."},{"category":"How to Ride It","icon":"⚡","point":"Specific jockey instructions based on pace scenario."},{"category":"The Timing","icon":"📅","point":"Prep run, education, or genuine day out? Campaign picture."},{"category":"Equipment","icon":"🔧","point":"Anything worth trying or change for this race?"},{"category":"The Risk","icon":"⚠️","point":"One thing that could make this a bad idea. Direct."},{"category":"My Verdict","icon":"🎯","point":"What do you actually think? Be definitive."}],"conclusion":"3-4 sentences max. Trainer to trainer. What would you do?","recommendation":"STRONG"}
-Replace all template text with real analysis. recommendation = STRONG, CONSIDER, WAIT, or PASS.`;
+  const prompt = "Give me your honest take trainer to trainer. Search first.\n\n"
+    + "HORSE: " + horse.name + " | " + getAge(horse.dob) + "yo " + horse.sex
+    + " | " + horse.trainer + " | Rating: " + (horse.nhRating || horse.flatRating || "unknown")
+    + "\nHeadgear: " + (horse.headgear || "None")
+    + " | " + (daysSince || "?") + " days since last run"
+    + "\nNotes: " + horse.notes
+    + "\n\nRACE: " + race.raceName + " | " + race.venue + " | " + race.date
+    + " | " + race.distanceFurlongs + "f"
+    + " | " + (race.forecastGoing || "") + " | " + daysToRace + " days away"
+    + "\n\nSearch for recent runners in this race and trainer record at this venue."
+    + "\n\nReturn ONLY a raw JSON object with these keys: scores (object with handicap_edge, class_fit, conditions_match, timing, cuteness each scored 1-10), overall (number 0-100), bullets (array of 6 objects each with category, icon, point), conclusion (string 3-4 sentences), recommendation (one of STRONG or CONSIDER or WAIT or PASS). No markdown.";
 
   const res = await fetch("https://api.anthropic.com/v1/messages", {
     method: "POST",
@@ -207,8 +205,8 @@ Replace all template text with real analysis. recommendation = STRONG, CONSIDER,
     body: JSON.stringify({ model: "claude-sonnet-4-20250514", max_tokens: 2500, tools: [{ type: "web_search_20250305", name: "web_search" }], system, messages: [{ role: "user", content: prompt }] }),
   });
   const data = await res.json();
-  const text = (data.content || []).filter(b => b.type === "text").map(b => b.text).join("").trim();
-  const match = text.match(new RegExp("\\{[\\s\\S]*\\}"));
+  const text = data.content?.filter(b => b.type === "text").map(b => b.text).join("").trim();
+  const match = text.match(/\{[\s\S]*\}/);
   if (!match) throw new Error("No JSON");
   return JSON.parse(match[0]);
 }
@@ -252,11 +250,9 @@ function MedicationTracker({ horses, medLogs, setMedLogs, trackedIds, setTracked
     return { peptizoleDays, antepsinTicks, antepsinBottles: Math.ceil(antepsinTicks / 4), antibioticDoses, peptizole, antepsin, antibiotics, total: peptizole + antepsin + antibiotics };
   };
 
-  // If no tracked IDs set yet, show all active horses by default
-  const effectiveTracked = trackedIds.length > 0 ? trackedIds : horses.filter(h => h.status !== "Inactive").map(h => h.id);
   const [medView, setMedView] = useState("tracker");
-  const trackedHorses = horses.filter(h => effectiveTracked.includes(h.id));
-  const untrackedHorses = horses.filter(h => h.status !== "Inactive" && !effectiveTracked.includes(h.id));
+  const trackedHorses = horses.filter(h => trackedIds.includes(h.id));
+  const untrackedHorses = horses.filter(h => h.status !== "Inactive" && !trackedIds.includes(h.id));
 
   const todayMedKey = function(hId, t) {
     const mm = String(TODAY.getMonth() + 1).padStart(2, "0");
@@ -283,9 +279,9 @@ function MedicationTracker({ horses, medLogs, setMedLogs, trackedIds, setTracked
         <div style={{ display: "flex", gap: 8, alignItems: "center", flexWrap: "wrap" }}>
           {medView === "tracker" && (
             <React.Fragment>
-              <Btn variant="ghost" onClick={function() { var d = new Date(selYear, selMonth - 1); setSelMonth(d.getMonth()); setSelYear(d.getFullYear()); }} style={{ padding: "7px 12px" }}>{"<"}</Btn>
+              <Btn variant="ghost" onClick={function() { var d = new Date(selYear, selMonth - 1); setSelMonth(d.getMonth()); setSelYear(d.getFullYear()); }}>{"<"}</Btn>
               <span style={{ fontSize: 14, fontWeight: 700, color: C.text, minWidth: 150, textAlign: "center" }}>{monthName}</span>
-              <Btn variant="ghost" onClick={function() { var d = new Date(selYear, selMonth + 1); setSelMonth(d.getMonth()); setSelYear(d.getFullYear()); }} style={{ padding: "7px 12px" }}>{">"}</Btn>
+              <Btn variant="ghost" onClick={function() { var d = new Date(selYear, selMonth + 1); setSelMonth(d.getMonth()); setSelYear(d.getFullYear()); }}>{">"}</Btn>
               <Btn onClick={function() { setShowAdd(true); }} disabled={untrackedHorses.length === 0}>+ Add Horse</Btn>
             </React.Fragment>
           )}
@@ -338,10 +334,11 @@ function MedicationTracker({ horses, medLogs, setMedLogs, trackedIds, setTracked
             })}
           </div>
           <div style={{ background: C.cardOff, border: "1px solid " + C.border, borderRadius: 10, padding: "12px 16px", fontSize: 12, color: C.textMid }}>
-            Tap each medication to toggle for today. All changes save automatically.
+            Tap each medication to toggle for today. Changes save automatically.
           </div>
         </div>
       )}
+
       {medView === "tracker" && (
         <div>
 
@@ -419,9 +416,9 @@ function MedicationTracker({ horses, medLogs, setMedLogs, trackedIds, setTracked
               <div style={{ padding: "0 16px 16px", borderTop: `1px solid ${C.border}` }}>
                 {/* Legend */}
                 <div style={{ display: "flex", gap: 16, padding: "10px 0", marginBottom: 8, flexWrap: "wrap" }}>
-                  <div style={{ fontSize: 11, color: C.textMid }}><strong style={{ color: C.blue }}>Peptizole</strong> {"— €18/day"}</div>
-                  <div style={{ fontSize: 11, color: C.textMid }}><strong style={{ color: C.purple }}>Antepsin</strong> {"— €25/bottle (1 bottle per 4 days, rounds up)"}</div>
-                  <div style={{ fontSize: 11, color: C.textMid }}><strong style={{ color: C.amber }}>Antibiotics</strong> {"— €15/dose (tap once=1 dose, twice=2 doses)"}</div>
+                  <div style={{ fontSize: 11, color: C.textMid }}><strong style={{ color: C.blue }}>Peptizole</strong>{" — €18/day"}</div>
+                  <div style={{ fontSize: 11, color: C.textMid }}><strong style={{ color: C.purple }}>Antepsin</strong>{" — €25/bottle (1 bottle per 4 days, rounds up)"}</div>
+                  <div style={{ fontSize: 11, color: C.textMid }}><strong style={{ color: C.amber }}>Antibiotics</strong>{" — €15/dose (tap once=1 dose, twice=2 doses)"}</div>
                 </div>
                 <div style={{ overflowX: "auto" }}>
                   <table style={{ borderCollapse: "collapse", width: "100%", minWidth: 1100 }}>
@@ -490,9 +487,9 @@ function MedicationTracker({ horses, medLogs, setMedLogs, trackedIds, setTracked
               <div style={{ padding: 22 }}>
                 <div style={{ fontSize: 12, fontWeight: 700, color: C.textMid, textTransform: "uppercase", letterSpacing: 1, marginBottom: 14 }}>For Yardman — {billHorse.owner}</div>
                 {[
-                  costs.peptizoleDays > 0 && { label: `Peptizole — ${costs.peptizoleDays} days × €18`, amount: costs.peptizole },
-                  costs.antepsinTicks > 0 && { label: "Antepsin — " + costs.antepsinBottles + " bottle" + (costs.antepsinBottles !== 1 ? "s" : "") + " · €25", amount: costs.antepsin },
-                  costs.antibioticDoses > 0 && { label: "Antibiotics — " + costs.antibioticDoses + " dose" + (costs.antibioticDoses !== 1 ? "s" : "") + " · €15", amount: costs.antibiotics },
+                  costs.peptizoleDays > 0 && { label: "Peptizole — " + costs.peptizoleDays + " days × €18", amount: costs.peptizole },
+                  costs.antepsinTicks > 0 && { label: "Antepsin — " + costs.antepsinBottles + " bottle" + (costs.antepsinBottles !== 1 ? "s" : "") + " × €25 (" + costs.antepsinTicks + " days)", amount: costs.antepsin },
+                  costs.antibioticDoses > 0 && { label: "Antibiotics — " + costs.antibioticDoses + " dose" + (costs.antibioticDoses !== 1 ? "s" : "") + " × €15", amount: costs.antibiotics },
                 ].filter(Boolean).map((item, i) => (
                   <div key={i} style={{ display: "flex", justifyContent: "space-between", padding: "10px 0", borderBottom: `1px solid ${C.border}` }}>
                     <span style={{ fontSize: 14, color: C.text }}>{item.label}</span>
@@ -509,29 +506,28 @@ function MedicationTracker({ horses, medLogs, setMedLogs, trackedIds, setTracked
                 <Btn onClick={() => window.print()} style={{ width: "100%", marginTop: 16, justifyContent: "center" }}>{"🖨 Print / Save for Yardman"}</Btn>
               </div>
             </div>
-        </div>
-      )}
+          </div>
         );
       })()}
+        </div>
+      )}
     </div>
   );
 }
 
 // ─── PROVISIONAL ENTRIES ──────────────────────────────────────────────────────
 function ProvisionalEntries({ horses, setHorses }) {
-  const [pasteText, setPasteText] = useState("");
-  const [parseStatus, setParseStatus] = useState("idle"); // idle | parsing | done | error
-  const [racePool, setRacePool] = useState([]);
-  const [lastParsed, setLastParsed] = useState(null);
-  const [expandedHorse, setExpandedHorse] = useState(null);
-  const [raceSearch, setRaceSearch] = useState("");
-  const [selectedRaceId, setSelectedRaceId] = useState("");
-  const [note, setNote] = useState("");
-  const [showPaste, setShowPaste] = useState(true);
+  const [showAdd, setShowAdd] = useState(null); // horseId
+  const [entry, setEntry] = useState({ venue: "", date: "", raceName: "", raceRef: "", note: "" });
+  const [provisionalRaces, setProvisionalRaces] = useState([]);
+  const [fetchStatus, setFetchStatus] = useState("idle");
+  const [lastFetch, setLastFetch] = useState(null);
+  const [showProvPaste, setShowProvPaste] = useState(false);
+  const [provPasteText, setProvPasteText] = useState("");
 
-  const parseRaces = async function() {
-    if (!pasteText.trim()) return;
-    setParseStatus("parsing");
+  const handleProvParseText = async () => {
+    if (!provPasteText.trim()) return;
+    setFetchStatus("fetching");
     try {
       const headers = {
         "Content-Type": "application/json",
@@ -544,291 +540,262 @@ function ProvisionalEntries({ horses, setHorses }) {
         headers,
         body: JSON.stringify({
           model: "claude-sonnet-4-20250514",
-          max_tokens: 6000,
-          system: "You are parsing Irish HRI race conditions or provisional summary text. Extract every race and return ONLY a raw JSON array. Each race object needs: id (rc_1, rc_2 etc), source (conditions or provisional), venue, date as YYYY-MM-DD, raceName, discipline (Flat, Hurdle, Chase, or Bumper), grade, surface (Turf or AWT), distanceFurlongs as number, prizeMoney as number, ageMin as number, ageMax as number or null, sexRestriction (Open, Mares, or Fillies), ratingMax as number or null, isMaiden as boolean, isNovice as boolean, isEBF as boolean, entryDeadline as YYYY-MM-DDTHH:MM or null, forecastGoing. Return ONLY raw JSON array, no markdown, no explanation.",
-          messages: [{ role: "user", content: "Parse all races from this text into a JSON array:\n\n" + pasteText }],
+          max_tokens: 5000,
+          messages: [{ role: "user", content: "Parse every race from this HRI provisional summary text into a JSON array. Return ONLY the raw JSON array with no markdown. Each race needs: id as ps_N, source as provisional, meetingRef like Limerick 55, raceRef like Race A, venue, date in YYYY-MM-DD format, raceName, discipline, grade, distanceFurlongs as number, prizeMoney as number, forecastGoing, entryDeadline in YYYY-MM-DDTHH:MM format.\n\nTEXT:\n" + provPasteText }],
         }),
       });
       const data = await res.json();
-      const text = (data.content || []).filter(function(b) { return b.type === "text"; }).map(function(b) { return b.text; }).join("").trim();
-      const match = text.match(/\[[\s\S]*\]/);
+      const txt = (data.content || []).filter(b => b.type === "text").map(b => b.text).join("").trim();
+      const match = txt.match(/\[[\s\S]*\]/);
       if (!match) throw new Error("No races found");
       const parsed = JSON.parse(match[0]);
-      setRacePool(parsed);
-      setLastParsed(new Date().toISOString());
-      setParseStatus("done");
-      setShowPaste(false);
-    } catch (e) {
-      console.error(e);
-      setParseStatus("error");
+      setProvisionalRaces(parsed);
+      setLastFetch(new Date().toISOString());
+      setFetchStatus("done");
+      setShowProvPaste(false);
+      setProvPasteText("");
+    } catch (err) {
+      console.error(err);
+      setFetchStatus("error");
     }
   };
 
-  const isEligible = function(horse, race) {
-    const age = getAge(horse.dob);
-    if (race.ageMin && age < race.ageMin) return false;
-    if (race.ageMax && age > race.ageMax) return false;
-    const sexMap = { Mares: ["Mare", "Filly"], Fillies: ["Filly"], "Colts & Geldings": ["Colt", "Gelding"] };
-    if (race.sexRestriction && race.sexRestriction !== "Open") {
-      const allowed = sexMap[race.sexRestriction] || [];
-      if (!allowed.includes(horse.sex)) return false;
+  const handleProvPDFUpload = async (e) => {
+    const file = e.target.files[0];
+    if (!file) return;
+    setFetchStatus("fetching");
+    e.target.value = "";
+    try {
+      const reader = new FileReader();
+      reader.onload = async (ev) => {
+        const base64 = ev.target.result.split(",")[1];
+        const headers = {
+          "Content-Type": "application/json",
+          "x-api-key": ANTHROPIC_KEY,
+          "anthropic-version": "2023-06-01",
+          "anthropic-dangerous-direct-browser-access": "true",
+        };
+        const res = await fetch("https://api.anthropic.com/v1/messages", {
+          method: "POST",
+          headers,
+          body: JSON.stringify({
+            model: "claude-sonnet-4-20250514",
+            max_tokens: 5000,
+            messages: [{ role: "user", content: [
+              { type: "document", source: { type: "base64", media_type: "application/pdf", data: base64 } },
+              { type: "text", text: "Parse every race from this HRI provisional summary PDF into a JSON array. Return ONLY the raw JSON array. Each race needs: id as ps_N, source as provisional, meetingRef like Limerick 55, raceRef like Race A, venue, date in YYYY-MM-DD format, raceName, discipline, grade, distanceFurlongs as number, prizeMoney as number, forecastGoing, entryDeadline in YYYY-MM-DDTHH:MM format." }
+            ]}],
+          }),
+        });
+        const data = await res.json();
+        const txt = (data.content || []).filter(b => b.type === "text").map(b => b.text).join("").trim();
+        const arr = txt.match(/\[([\s\S]*)\]/);
+        if (!arr) throw new Error("No races found");
+        const parsed = JSON.parse(arr[0]);
+        setProvisionalRaces(parsed);
+        setLastFetch(new Date().toISOString());
+        setFetchStatus("done");
+      };
+      reader.readAsDataURL(file);
+    } catch (err) {
+      console.error(err);
+      setFetchStatus("error");
     }
-    const horseDisciplines = Array.isArray(horse.discipline) ? horse.discipline : [horse.discipline];
-    if (race.discipline && !horseDisciplines.includes(race.discipline)) return false;
-    if (race.surface && horse.surface && horse.surface !== race.surface) return false;
-    const rtg = race.discipline === "Flat" ? (horse.flatRating || horse.nhRating) : (horse.nhRating || horse.flatRating);
-    if (race.ratingMax && rtg && rtg > race.ratingMax) return false;
-    if (race.isMaiden && !horse.isMaiden) return false;
-    if (race.isNovice && !horse.isNovice) return false;
-    if (race.isEBF && !horse.isEBF) return false;
-    return true;
   };
 
-  const addEntry = function(horseId) {
-    const race = racePool.find(function(r) { return r.id === selectedRaceId; });
-    if (!race) return;
-    const newEntry = {
-      id: "pe_" + Date.now(),
-      raceName: race.raceName, venue: race.venue, date: race.date,
-      raceRef: ((race.meetingRef || "") + " " + (race.raceRef || "")).trim(),
-      discipline: race.discipline, grade: race.grade, distanceFurlongs: race.distanceFurlongs,
-      prizeMoney: race.prizeMoney, forecastGoing: race.forecastGoing,
-      entryDeadline: race.entryDeadline, source: race.source, note,
-    };
-    setHorses(function(prev) {
-      return prev.map(function(h) {
-        return h.id === horseId ? { ...h, provisionalEntries: [...(h.provisionalEntries || []), newEntry] } : h;
+  const fetchProvisional = async () => {
+    setFetchStatus("fetching");
+    try {
+      const res = await fetch("https://api.anthropic.com/v1/messages", {
+        method: "POST",
+        headers: { "Content-Type": "application/json", "x-api-key": ANTHROPIC_KEY, "anthropic-version": "2023-06-01", "anthropic-dangerous-direct-browser-access": "true" },
+        body: JSON.stringify({
+          model: "claude-sonnet-4-20250514",
+          max_tokens: 5000,
+          tools: [{ type: "web_search_20250305", name: "web_search" }],
+          system: "Parse HRI provisional summary PDFs into a JSON array. Return ONLY raw JSON array, no markdown. Each race needs these fields: id, source set to provisional, meetingRef like Limerick 55, raceRef like Race A, venue, date in YYYY-MM-DD format, raceName, discipline, grade, distanceFurlongs as number, prizeMoney as number, forecastGoing, entryDeadline in YYYY-MM-DDTHH:MM format.",
+          messages: [{ role: "user", content: "Search for HRI provisional race summaries at hri-ras.ie/provisional-summaries and find the most recent provisional summary documents. Fetch and parse all races into a JSON array. If you cannot find PDFs directly, search for HRI provisional summaries 2026 Ireland. Return only the JSON array with no markdown." }]
+        })
       });
-    });
-    setSelectedRaceId(""); setRaceSearch(""); setNote("");
+      const data = await res.json();
+      const text = data.content?.filter(b => b.type === "text").map(b => b.text).join("").trim();
+      const match = text.match(/\[[\s\S]*\]/);
+      if (!match) throw new Error("No races");
+      setProvisionalRaces(JSON.parse(match[0]));
+      setLastFetch(new Date().toISOString());
+      setFetchStatus("done");
+    } catch (e) { console.error(e); setFetchStatus("error"); }
   };
 
-  const removeEntry = function(horseId, entryId) {
-    setHorses(function(prev) {
-      return prev.map(function(h) {
-        return h.id === horseId ? { ...h, provisionalEntries: (h.provisionalEntries || []).filter(function(e) { return e.id !== entryId; }) } : h;
-      });
-    });
+  const addEntry = (horseId) => {
+    if (!entry.venue || !entry.raceName) return;
+    setHorses(prev => prev.map(h => h.id === horseId ? { ...h, provisionalEntries: [...(h.provisionalEntries || []), { ...entry, id: "pe_" + Date.now() }] } : h));
+    setEntry({ venue: "", date: "", raceName: "", raceRef: "", note: "" });
+    setShowAdd(null);
   };
 
-  const allTargets = horses.flatMap(function(h) {
-    return (h.provisionalEntries || []).map(function(e) { return { ...e, horse: h }; });
-  }).filter(function(e) { return e.date; }).sort(function(a, b) { return new Date(a.date) - new Date(b.date); });
+  const removeEntry = (horseId, entryId) => {
+    setHorses(prev => prev.map(h => h.id === horseId ? { ...h, provisionalEntries: (h.provisionalEntries || []).filter(e => e.id !== entryId) } : h));
+  };
 
-  const activeHorse = expandedHorse ? horses.find(function(h) { return h.id === expandedHorse; }) : null;
-  const eligibleRaces = activeHorse ? racePool.filter(function(r) { return isEligible(activeHorse, r); }) : [];
-  const filteredRaces = eligibleRaces.filter(function(r) {
-    if (!raceSearch) return true;
-    const q = raceSearch.toLowerCase();
-    return (r.raceName || "").toLowerCase().includes(q) || (r.venue || "").toLowerCase().includes(q);
-  });
+  const allProvisional = horses.flatMap(h => (h.provisionalEntries || []).map(e => ({ ...e, horse: h })));
 
   return (
     <div>
-      <div style={{ marginBottom: 16 }}>
-        <div style={{ fontSize: 22, fontWeight: 800, color: C.text }}>Provisional Entries</div>
-        <div style={{ fontSize: 13, color: C.textMid, marginTop: 3 }}>Paste race conditions or provisional summaries — eligible races shown per horse</div>
-      </div>
-
-      {/* Paste box */}
-      <div style={{ background: C.card, border: "1px solid " + C.border, borderRadius: 14, padding: "14px 18px", marginBottom: 16, boxShadow: C.shadow }}>
-        <div style={{ display: "flex", justifyContent: "space-between", alignItems: "center", marginBottom: showPaste ? 12 : 0 }}>
-          <div>
-            <div style={{ fontSize: 14, fontWeight: 700, color: C.text, marginBottom: 2 }}>HRI Race Conditions / Provisional Summaries</div>
-            {lastParsed && (
-              <div style={{ fontSize: 12, color: C.green, fontWeight: 600 }}>
-                {racePool.length} races loaded — {new Date(lastParsed).toLocaleString("en-IE", { day: "numeric", month: "short", hour: "2-digit", minute: "2-digit" })}
-              </div>
-            )}
-            {parseStatus === "error" && <div style={{ fontSize: 12, color: C.red, fontWeight: 600 }}>Could not parse — check the text and try again</div>}
-          </div>
-          <div style={{ display: "flex", gap: 8 }}>
-            <Btn variant="ghost" onClick={function() { setShowPaste(!showPaste); }} style={{ fontSize: 12 }}>
-              {showPaste ? "Hide" : "Paste Text"}
-            </Btn>
-            {pasteText.trim() && (
-              <Btn onClick={parseRaces} disabled={parseStatus === "parsing"} style={{ fontSize: 12 }}>
-                {parseStatus === "parsing" ? "Parsing..." : "Parse Races"}
-              </Btn>
-            )}
-          </div>
+      <div style={{ display: "flex", justifyContent: "space-between", alignItems: "flex-start", marginBottom: 16, flexWrap: "wrap", gap: 10 }}>
+        <div>
+          <div style={{ fontSize: 22, fontWeight: 800, color: C.text }}>Provisional Entries</div>
+          <div style={{ fontSize: 13, color: C.textMid, marginTop: 3 }}>Planning targets before official entries — visible to owners in their portal</div>
         </div>
-        {showPaste && (
-          <div>
-            <textarea
-              value={pasteText}
-              onChange={function(e) { setPasteText(e.target.value); setParseStatus("idle"); }}
-              placeholder={"Paste HRI race conditions or provisional summaries text here...\n\nTip: open the PDF, select all, copy and paste."}
-              rows={8}
-              style={{ width: "100%", background: C.cardOff, border: "1px solid " + C.border, borderRadius: 10, padding: "11px 14px", color: C.text, fontSize: 12, lineHeight: 1.6, resize: "vertical", outline: "none", fontFamily: "inherit", marginBottom: 10 }}
-            />
-            {!pasteText.trim() && (
-              <div style={{ fontSize: 12, color: C.textMid }}>
-                Open the PDF from hri-ras.ie → select all text → paste above → hit Parse Races
-              </div>
-            )}
-          </div>
-        )}
-        {racePool.length > 0 && (
-          <div style={{ display: "flex", gap: 10, marginTop: showPaste ? 10 : 0 }}>
-            {[
-              { l: "Conditions", v: racePool.filter(function(r) { return r.source === "conditions"; }).length, c: C.blue },
-              { l: "Provisional", v: racePool.filter(function(r) { return r.source === "provisional"; }).length, c: C.gold },
-              { l: "Total", v: racePool.length, c: C.green },
-            ].map(function(s) {
-              return (
-                <div key={s.l} style={{ flex: 1, padding: "8px 12px", background: s.c + "12", border: "1px solid " + s.c + "30", borderRadius: 9 }}>
-                  <div style={{ fontSize: 10, fontWeight: 700, color: s.c, textTransform: "uppercase", letterSpacing: 0.8, marginBottom: 2 }}>{s.l}</div>
-                  <div style={{ fontSize: 18, fontWeight: 800, color: s.c }}>{s.v}</div>
-                </div>
-              );
-            })}
-          </div>
-        )}
+        <div style={{ display: "flex", gap: 8 }}>
+          <Btn variant="ghost" onClick={fetchProvisional} disabled={fetchStatus === "fetching"} style={{ fontSize: 12 }}>
+            {fetchStatus === "fetching" ? "⟳ Fetching…" : "⟳ Fetch HRI Provisional Summaries"}
+          </Btn>
+        </div>
       </div>
 
-      {/* Horses — click to expand eligible races */}
-      {horses.filter(function(h) { return h.status !== "Inactive"; }).map(function(horse) {
-        const entries = horse.provisionalEntries || [];
-        const isExpanded = expandedHorse === horse.id;
-        const eligible = racePool.filter(function(r) { return isEligible(horse, r); });
+      {/* HRI Provisional Summaries */}
+      <div style={{ background: C.card, border: `1px solid ${C.border}`, borderRadius: 14, padding: "14px 18px", marginBottom: 16, boxShadow: C.shadow }}>
+        <div style={{ display: "flex", justifyContent: "space-between", alignItems: "center", marginBottom: lastFetch || provisionalRaces.length > 0 ? 12 : 0 }}>
+          <div>
+            <div style={{ fontSize: 14, fontWeight: 700, color: C.text, marginBottom: 2 }}>HRI Provisional Summaries</div>
+            <div style={{ fontSize: 12, color: C.textMid }}>
+              {lastFetch ? `Last fetched: ${new Date(lastFetch).toLocaleString("en-IE", { weekday: "short", day: "numeric", month: "short", hour: "2-digit", minute: "2-digit" })}` : "hri-ras.ie/provisional-summaries — use these to plan medication courses in advance"}
+            </div>
+          </div>
+          <Btn onClick={() => setShowProvPaste(!showProvPaste)} disabled={fetchStatus === "fetching"} style={{ fontSize: 12, padding: "8px 16px" }}>
+            {fetchStatus === "fetching" ? "Parsing..." : "📋 Paste Provisional Summary"}
+          </Btn>
+        </div>
+        {showProvPaste && (
+          <div style={{ background: C.card, border: "1px solid " + C.border, borderRadius: 12, padding: "16px 18px", marginBottom: 12 }}>
+            <div style={{ fontSize: 13, fontWeight: 700, color: C.text, marginBottom: 8 }}>Paste Provisional Summary Text</div>
+            <div style={{ fontSize: 12, color: C.textMid, marginBottom: 10, lineHeight: 1.6 }}>Open the HRI provisional summary PDF, press Ctrl+A then Ctrl+C, then paste below.</div>
+            <textarea
+              value={provPasteText}
+              onChange={e => setProvPasteText(e.target.value)}
+              placeholder="Paste provisional summary text here..."
+              rows={6}
+              style={{ width: "100%", background: C.cardOff, border: "1px solid " + C.border, borderRadius: 9, padding: "10px 12px", color: C.text, fontSize: 12, fontFamily: "inherit", lineHeight: 1.6, resize: "vertical", outline: "none", marginBottom: 10 }}
+            />
+            <div style={{ display: "flex", gap: 8 }}>
+              <Btn onClick={handleProvParseText} disabled={!provPasteText.trim() || fetchStatus === "fetching"} style={{ flex: 1, justifyContent: "center" }}>
+                {fetchStatus === "fetching" ? "Parsing..." : "Parse Races"}
+              </Btn>
+              <Btn variant="ghost" onClick={() => { setShowProvPaste(false); setProvPasteText(""); }} style={{ fontSize: 12 }}>Cancel</Btn>
+            </div>
+          </div>
+        )}
 
+        {provisionalRaces.length > 0 && (
+          <div style={{ display: "flex", flexDirection: "column", gap: 6 }}>
+            {provisionalRaces.slice(0, 8).map((r, i) => (
+              <div key={i} style={{ display: "flex", gap: 12, padding: "8px 10px", background: C.cardOff, borderRadius: 8, border: `1px solid ${C.border}`, fontSize: 12, alignItems: "center" }}>
+                <span style={{ fontWeight: 700, color: C.navy, minWidth: 80 }}>{r.meetingRef}</span>
+                <span style={{ color: C.textMid, minWidth: 60 }}>{r.raceRef}</span>
+                <span style={{ fontWeight: 600, color: C.text, flex: 1 }}>{r.raceName}</span>
+                <span style={{ color: C.textMid }}>{r.venue}</span>
+                <span style={{ color: C.gold, fontWeight: 700 }}>€{r.prizeMoney >= 1000 ? (Math.round(r.prizeMoney / 1000)) + "k" : r.prizeMoney}</span>
+                <span style={{ color: C.textMid }}>{new Date(r.date).toLocaleDateString("en-IE", { day: "numeric", month: "short" })}</span>
+              </div>
+            ))}
+            {provisionalRaces.length > 8 && <div style={{ fontSize: 12, color: C.textMid, padding: "4px 0" }}>+ {provisionalRaces.length - 8} more races</div>}
+          </div>
+        )}
+        {fetchStatus === "error" && <div style={{ fontSize: 12, color: C.red, fontWeight: 600, marginTop: 8 }}>✕ Failed to fetch — try again</div>}
+        {fetchStatus === "done" && provisionalRaces.length === 0 && <div style={{ fontSize: 12, color: C.textMid, marginTop: 8 }}>No races found in provisional summaries</div>}
+      </div>
+
+      {/* Per-horse provisional entries */}
+      {horses.filter(h => h.status !== "Inactive").map(horse => {
+        const entries = horse.provisionalEntries || [];
+        const isAdding = showAdd === horse.id;
         return (
-          <div key={horse.id} style={{ background: C.card, border: "1px solid " + C.border, borderRadius: 12, padding: "14px 16px", marginBottom: 12, boxShadow: C.shadow }}>
-            <div
-              onClick={function() { setExpandedHorse(isExpanded ? null : horse.id); setSelectedRaceId(""); setRaceSearch(""); setNote(""); }}
-              style={{ display: "flex", alignItems: "center", gap: 12, cursor: "pointer" }}
-            >
+          <div key={horse.id} style={{ background: C.card, border: `1px solid ${C.border}`, borderRadius: 12, padding: "14px 16px", marginBottom: 12, boxShadow: C.shadow }}>
+            <div style={{ display: "flex", alignItems: "center", gap: 12, marginBottom: entries.length > 0 || isAdding ? 12 : 0 }}>
               <Silk silk={horse.silk} size={36} />
               <div style={{ flex: 1 }}>
                 <div style={{ fontSize: 15, fontWeight: 700, color: C.text }}>{horse.name}</div>
-                <div style={{ fontSize: 12, color: C.textMid }}>
-                  {horse.owner}
-                  {entries.length > 0 && " · " + entries.length + " target" + (entries.length !== 1 ? "s" : "")}
-                  {racePool.length > 0 && (
-                    <span style={{ marginLeft: 6, color: eligible.length > 0 ? C.green : C.textDim, fontWeight: 700 }}>
-                      {eligible.length} eligible
-                    </span>
-                  )}
-                </div>
+                <div style={{ fontSize: 12, color: C.textMid }}>{horse.owner} · {entries.length} provisional target{entries.length !== 1 ? "s" : ""}</div>
               </div>
-              <span style={{ color: C.textDim, fontSize: 14 }}>{isExpanded ? "▲" : "▼"}</span>
+              <Btn variant="gold" onClick={() => setShowAdd(isAdding ? null : horse.id)} style={{ fontSize: 12, padding: "6px 14px" }}>
+                {isAdding ? "Cancel" : "+ Add Target"}
+              </Btn>
             </div>
 
-            {/* Existing entries */}
-            {entries.length > 0 && (
-              <div style={{ marginTop: 10 }}>
-                {entries.map(function(e) {
-                  return (
-                    <div key={e.id} style={{ display: "flex", alignItems: "flex-start", gap: 10, padding: "9px 12px", background: C.goldBg, border: "1px solid rgba(201,149,42,0.30)", borderLeft: "3px solid " + C.gold, borderRadius: 10, marginBottom: 7 }}>
-                      <div style={{ flex: 1 }}>
-                        <div style={{ fontSize: 14, fontWeight: 700, color: C.text, marginBottom: 3 }}>{e.raceName}</div>
-                        <div style={{ fontSize: 12, color: C.textMid }}>
-                          {e.venue}
-                          {e.date && " · " + new Date(e.date).toLocaleDateString("en-IE", { weekday: "short", day: "numeric", month: "short" })}
-                          {e.raceRef && " · " + e.raceRef}
-                          {e.date && daysUntil(e.date) > 0 && (
-                            <span style={{ marginLeft: 6, color: daysUntil(e.date) <= 16 ? C.amber : C.textMid, fontWeight: daysUntil(e.date) <= 16 ? 700 : 400 }}>
-                              {daysUntil(e.date)}d{daysUntil(e.date) <= 16 ? " — start meds" : ""}
-                            </span>
-                          )}
-                        </div>
-                        {e.note && <div style={{ fontSize: 12, color: C.textMid, fontStyle: "italic", marginTop: 3 }}>{e.note}</div>}
-                      </div>
-                      <Btn variant="red" onClick={function() { removeEntry(horse.id, e.id); }} style={{ padding: "3px 8px", fontSize: 11 }}>✕</Btn>
-                    </div>
-                  );
-                })}
+            {/* Existing provisional entries */}
+            {entries.map(e => (
+              <div key={e.id} style={{ display: "flex", alignItems: "center", gap: 10, padding: "10px 12px", background: C.goldBg, border: `1px solid ${C.gold}30`, borderLeft: `3px solid ${C.gold}`, borderRadius: 10, marginBottom: 8 }}>
+                <div style={{ flex: 1 }}>
+                  <div style={{ display: "flex", gap: 8, alignItems: "center", flexWrap: "wrap", marginBottom: 4 }}>
+                    <span style={{ fontSize: 14, fontWeight: 700, color: C.text }}>{e.raceName}</span>
+                    {e.raceRef && <Tag color={C.navy} bg="rgba(10,22,40,0.07)">{e.raceRef}</Tag>}
+                    <Tag color={C.gold}>Provisional</Tag>
+                  </div>
+                  <div style={{ display: "flex", gap: 10, flexWrap: "wrap", fontSize: 12, color: C.textMid }}>
+                    <span>📍 {e.venue}</span>
+                    {e.date && <span>📅 {new Date(e.date).toLocaleDateString("en-IE", { weekday: "short", day: "numeric", month: "short" })}</span>}
+                    {e.date && daysUntil(e.date) && <span style={{ color: daysUntil(e.date) <= 16 ? C.amber : C.textMid, fontWeight: daysUntil(e.date) <= 16 ? 700 : 400 }}>{daysUntil(e.date)} days away</span>}
+                  </div>
+                  {e.note && <div style={{ fontSize: 12, color: C.textMid, fontStyle: "italic", marginTop: 4 }}>💬 {e.note}</div>}
+                </div>
+                <Btn variant="red" onClick={() => removeEntry(horse.id, e.id)} style={{ padding: "5px 10px", fontSize: 11 }}>✕</Btn>
               </div>
-            )}
+            ))}
 
-            {/* Expanded race picker */}
-            {isExpanded && (
-              <div style={{ marginTop: 12, borderTop: "1px solid " + C.border, paddingTop: 12 }}>
-                {racePool.length === 0 ? (
-                  <div style={{ fontSize: 13, color: C.textMid, textAlign: "center", padding: "16px 0" }}>
-                    Paste race conditions above and hit Parse Races first
-                  </div>
-                ) : eligible.length === 0 ? (
-                  <div style={{ fontSize: 13, color: C.textMid, textAlign: "center", padding: "16px 0" }}>
-                    No eligible races found for {horse.name} — check discipline, age, sex and rating
-                  </div>
-                ) : (
-                  <div>
-                    <div style={{ fontSize: 12, fontWeight: 700, color: C.textDim, marginBottom: 8, textTransform: "uppercase", letterSpacing: 0.8 }}>
-                      {eligible.length} Eligible races for {horse.name}
+            {/* Add entry form */}
+            {isAdding && (
+              <div style={{ background: C.cardOff, border: `1px solid ${C.border}`, borderRadius: 10, padding: "14px 16px", marginTop: 8 }}>
+                <div style={{ fontSize: 13, fontWeight: 700, color: C.text, marginBottom: 12 }}>Add Provisional Target for {horse.name}</div>
+                <div style={{ display: "grid", gridTemplateColumns: "1fr 1fr", gap: 10, marginBottom: 10 }}>
+                  {[
+                    { key: "raceName", label: "Race Name", placeholder: "e.g. Mares Handicap Hurdle", full: true },
+                    { key: "venue", label: "Venue", placeholder: "e.g. Navan" },
+                    { key: "date", label: "Date", type: "date" },
+                    { key: "raceRef", label: "Meeting Ref", placeholder: "e.g. Limerick 55 Race A" },
+                  ].map(({ key, label, placeholder, type, full }) => (
+                    <div key={key} style={{ gridColumn: full ? "1 / -1" : "auto" }}>
+                      <div style={{ fontSize: 10, fontWeight: 700, color: C.textMid, marginBottom: 4, textTransform: "uppercase", letterSpacing: 0.5 }}>{label}</div>
+                      <input type={type || "text"} placeholder={placeholder} value={entry[key]} onChange={e => setEntry(p => ({ ...p, [key]: e.target.value }))} style={{ width: "100%", background: C.card, border: `1px solid ${C.border}`, borderRadius: 8, padding: "8px 12px", color: C.text, fontSize: 13, outline: "none" }} />
                     </div>
-                    <input
-                      type="text"
-                      placeholder="Search race or venue..."
-                      value={raceSearch}
-                      onChange={function(e) { setRaceSearch(e.target.value); setSelectedRaceId(""); }}
-                      style={{ width: "100%", background: "#fff", border: "1px solid " + C.border, borderRadius: 8, padding: "8px 12px", color: C.text, fontSize: 13, outline: "none", marginBottom: 8 }}
-                    />
-                    <div style={{ maxHeight: 260, overflowY: "auto", border: "1px solid " + C.border, borderRadius: 8, background: "#fff", marginBottom: 10 }}>
-                      {filteredRaces.map(function(r) {
-                        const sel = selectedRaceId === r.id;
-                        return (
-                          <div key={r.id} onClick={function() { setSelectedRaceId(r.id); }} style={{ padding: "10px 14px", cursor: "pointer", background: sel ? C.navy : "none", borderBottom: "1px solid " + C.border }}>
-                            <div style={{ fontSize: 13, fontWeight: 700, color: sel ? "#fff" : C.text, marginBottom: 2 }}>{r.raceName}</div>
-                            <div style={{ fontSize: 11, color: sel ? "rgba(255,255,255,0.6)" : C.textMid }}>
-                              {r.venue}{r.date && " · " + new Date(r.date).toLocaleDateString("en-IE", { day: "numeric", month: "short" })}
-                              {r.distanceFurlongs && " · " + r.distanceFurlongs + "f"}
-                              {r.prizeMoney && " · €" + (r.prizeMoney >= 1000 ? (r.prizeMoney/1000) + "k" : r.prizeMoney)}
-                              {r.forecastGoing && " · " + r.forecastGoing}
-                            </div>
-                          </div>
-                        );
-                      })}
-                    </div>
-                    {selectedRaceId && (
-                      <div>
-                        <input
-                          type="text"
-                          placeholder="Trainer note for owner e.g. If ground stays soft"
-                          value={note}
-                          onChange={function(e) { setNote(e.target.value); }}
-                          style={{ width: "100%", background: "#fff", border: "1px solid " + C.border, borderRadius: 8, padding: "8px 12px", color: C.text, fontSize: 13, outline: "none", marginBottom: 8 }}
-                        />
-                        <Btn onClick={function() { addEntry(horse.id); }} style={{ width: "100%", justifyContent: "center" }}>
-                          Add Target for {horse.name}
-                        </Btn>
-                      </div>
-                    )}
-                  </div>
-                )}
+                  ))}
+                </div>
+                <div style={{ marginBottom: 10 }}>
+                  <div style={{ fontSize: 10, fontWeight: 700, color: C.textMid, marginBottom: 4, textTransform: "uppercase", letterSpacing: 0.5 }}>Trainer Note (visible to owner)</div>
+                  <input type="text" placeholder="e.g. If ground stays soft" value={entry.note} onChange={e => setEntry(p => ({ ...p, note: e.target.value }))} style={{ width: "100%", background: C.card, border: `1px solid ${C.border}`, borderRadius: 8, padding: "8px 12px", color: C.text, fontSize: 13, outline: "none" }} />
+                </div>
+                <div style={{ display: "flex", gap: 8 }}>
+                  <Btn onClick={() => addEntry(horse.id)}>Save Target</Btn>
+                  <Btn variant="ghost" onClick={() => setShowAdd(null)}>Cancel</Btn>
+                </div>
               </div>
             )}
           </div>
         );
       })}
 
-      {/* All targets by date */}
-      {allTargets.length > 0 && (
-        <div style={{ background: C.card, border: "1px solid " + C.border, borderRadius: 12, padding: "14px 18px", marginTop: 8, boxShadow: C.shadow }}>
-          <div style={{ fontSize: 13, fontWeight: 700, color: C.text, marginBottom: 12 }}>All Targets — by date</div>
-          {allTargets.map(function(e, i) {
-            return (
-              <div key={i} style={{ display: "flex", alignItems: "center", gap: 12, padding: "8px 0", borderBottom: "1px solid " + C.border }}>
-                <Silk silk={e.horse.silk} size={22} />
-                <div style={{ flex: 1, fontSize: 13 }}>
-                  <span style={{ fontWeight: 700, color: C.text }}>{e.horse.name}</span>
-                  <span style={{ color: C.textMid, marginLeft: 8 }}>{e.raceName} · {e.venue}</span>
-                </div>
-                <span style={{ fontSize: 12, color: C.textMid }}>{new Date(e.date).toLocaleDateString("en-IE", { day: "numeric", month: "short" })}</span>
-                <span style={{ fontSize: 12, fontWeight: 700, color: daysUntil(e.date) <= 16 ? C.amber : C.textMid }}>
-                  {daysUntil(e.date) > 0 ? daysUntil(e.date) + "d" : "past"}
-                </span>
+      {allProvisional.length > 0 && (
+        <div style={{ background: C.card, border: `1px solid ${C.border}`, borderRadius: 12, padding: "14px 18px", marginTop: 8, boxShadow: C.shadow }}>
+          <div style={{ fontSize: 13, fontWeight: 700, color: C.text, marginBottom: 12 }}>All Provisional Targets — by date</div>
+          {[...allProvisional].filter(e => e.date).sort((a, b) => new Date(a.date) - new Date(b.date)).map((e, i) => (
+            <div key={i} style={{ display: "flex", alignItems: "center", gap: 12, padding: "8px 0", borderBottom: `1px solid ${C.border}` }}>
+              <Silk silk={e.horse.silk} size={24} />
+              <div style={{ flex: 1, fontSize: 13 }}>
+                <span style={{ fontWeight: 700, color: C.text }}>{e.horse.name}</span>
+                <span style={{ color: C.textMid, marginLeft: 8 }}>{e.raceName} · {e.venue}</span>
+                {e.raceRef && <span style={{ color: C.textDim, marginLeft: 6, fontSize: 11 }}>{e.raceRef}</span>}
               </div>
-            );
-          })}
+              <span style={{ fontSize: 12, color: C.textMid }}>{new Date(e.date).toLocaleDateString("en-IE", { day: "numeric", month: "short" })}</span>
+              <span style={{ fontSize: 12, fontWeight: 700, color: daysUntil(e.date) <= 16 ? C.amber : C.textMid }}>{daysUntil(e.date)} days</span>
+            </div>
+          ))}
         </div>
       )}
     </div>
   );
 }
 
-
+// ─── RACE PLANNER ─────────────────────────────────────────────────────────────
 function RacePlanner({ horses, setHorses }) {
   const [selHorse, setSelHorse] = useState(horses[0]);
   const [races, setRaces] = useState([]);
@@ -838,384 +805,533 @@ function RacePlanner({ horses, setHorses }) {
   const [loading, setLoading] = useState({});
   const [loadStage, setLoadStage] = useState({});
   const [shortlisted, setShortlisted] = useState({});
+  const [showShortlist, setShowShortlist] = useState(false);
   const [toast, setToast] = useState(null);
-  const [showPaste, setShowPaste] = useState(false);
+
+  const k = (hId, rId) => `${hId}_${rId}`;
+
+  const showToast = (msg, color = C.green) => { setToast({ msg, color }); setTimeout(() => setToast(null), 4000); };
+
   const [pasteText, setPasteText] = useState("");
+  const [showPaste, setShowPaste] = useState(false);
 
-  const raceKey = (hId, rId) => hId + "_" + rId;
-
-  const parsePastedRaces = function() {
+  const handleParseText = async () => {
     if (!pasteText.trim()) return;
-    const parsedRaces = [];
-    const raceBlocks = pasteText.split(/\n(?=Race|RACE|\d+\.|Meeting)/i).filter(function(b) { return b.trim(); });
-    
-    // Try to parse structured format first
-    if (raceBlocks.length > 1) {
-      raceBlocks.forEach(function(block, idx) {
-        const lineArr = block.split("\n").map(function(l) { return l.trim(); }).filter(Boolean);
-        if (!lineArr.length) return;
-        const race = {
-          id: "r_paste_" + idx + "_" + Date.now(),
-          raceName: lineArr[0] || "Race " + (idx+1),
-          venue: "", date: "", distanceFurlongs: 0, prizeMoney: 0,
-          discipline: "Flat", raceType: "Flat", grade: "Ungraded",
-          forecastGoing: "", ageMin: 3, ageMax: null, ratingMax: null,
-          isMaiden: false, isNovice: false, isEBF: false, entryDeadline: ""
-        };
-        lineArr.forEach(function(l) {
-          if (/venue|at |@/i.test(l)) race.venue = l.replace(/venue[:\s]*/i,"").trim();
-          if (/hurdle/i.test(l)) race.discipline = "Hurdle";
-          if (/chase/i.test(l)) race.discipline = "Chase";
-          if (/bumper/i.test(l)) { race.discipline = "Bumper"; race.raceType = "Bumper"; }
-          if (/maiden/i.test(l)) { race.isMaiden = true; race.raceType = "Maiden"; }
-          if (/novice/i.test(l)) { race.isNovice = true; race.raceType = "Novice"; }
-          if (/handicap/i.test(l)) race.raceType = "Handicap";
-          if (/ebf/i.test(l)) race.isEBF = true;
-          const distM = l.match(/(\d+)f/i); if (distM) race.distanceFurlongs = parseInt(distM[1]);
-          const prizeM = l.match(/€([\d,]+)/); if (prizeM) race.prizeMoney = parseInt(prizeM[1].replace(/,/g,""));
-          const ratingM = l.match(/rated? (\d+)/i); if (ratingM) race.ratingMax = parseInt(ratingM[1]);
-          const ageM = l.match(/(\d+)yo?\+?/i); if (ageM) race.ageMin = parseInt(ageM[1]);
-          const goingM = l.match(/(good|yielding|soft|heavy|firm|standard|slow)/i); if (goingM) race.forecastGoing = goingM[1];
-          const dateM = l.match(/(\d{1,2}[\/\-]\d{1,2}[\/\-]\d{2,4})/); if (dateM) race.date = dateM[1];
-          const venueM = l.match(/(Leopardstown|Fairyhouse|Punchestown|Navan|Naas|Curragh|Gowran|Thurles|Clonmel|Cork|Galway|Killarney|Listowel|Roscommon|Sligo|Tramore|Ballinrobe|Bellewstown|Downpatrick|Down Royal|Dundalk|Kilbeggan|Laytown|Limerick|Tipperary|Wexford)/i);
-          if (venueM) race.venue = venueM[1];
-        });
-        parsedRaces.push(race);
-      });
-    } else {
-      // Simple line-by-line format
-      const lineArr = pasteText.split("\n").filter(function(l) { return l.trim(); });
-      lineArr.forEach(function(l, idx) {
-        parsedRaces.push({
-          id: "r_paste_" + idx + "_" + Date.now(),
-          raceName: l.trim(), venue: "", date: "", distanceFurlongs: 0, prizeMoney: 0,
-          discipline: /hurdle/i.test(l) ? "Hurdle" : /chase/i.test(l) ? "Chase" : "Flat",
-          raceType: /maiden/i.test(l) ? "Maiden" : /handicap/i.test(l) ? "Handicap" : /novice/i.test(l) ? "Novice" : "Flat",
-          grade: "Ungraded", forecastGoing: "", ageMin: 3, ageMax: null, ratingMax: null,
-          isMaiden: /maiden/i.test(l), isNovice: /novice/i.test(l), isEBF: /ebf/i.test(l), entryDeadline: ""
-        });
-      });
-    }
-    setRaces(parsedRaces);
-    setLastFetch(Date.now());
-    setPasteText("");
-    setShowPaste(false);
-    showToast(parsedRaces.length + " races loaded from paste");
-  };
-
-  const showToast = (msg, color) => {
-    setToast({ msg, color: color || C.green });
-    setTimeout(() => setToast(null), 3000);
-  };
-
-  const fetchRaces = async () => {
     setFetchStatus("fetching");
     try {
+      const headers = {
+        "Content-Type": "application/json",
+        "x-api-key": ANTHROPIC_KEY,
+        "anthropic-version": "2023-06-01",
+        "anthropic-dangerous-direct-browser-access": "true",
+      };
       const res = await fetch("https://api.anthropic.com/v1/messages", {
         method: "POST",
-        headers: { "Content-Type": "application/json", "x-api-key": ANTHROPIC_KEY, "anthropic-version": "2023-06-01", "anthropic-dangerous-direct-browser-access": "true" },
+        headers,
         body: JSON.stringify({
-          model: "claude-sonnet-4-20250514", max_tokens: 5000,
-          tools: [{ type: "web_search_20250305", name: "web_search" }],
-          system: "Parse HRI race conditions into JSON array. Return ONLY raw JSON, no markdown. Each race: id, venue, date as YYYY-MM-DD, raceName, discipline, raceType, grade, distanceFurlongs, prizeMoney, ageMin, ageMax, ratingMax, isMaiden, isNovice, isEBF, entryDeadline, forecastGoing.",
-          messages: [{ role: "user", content: "Fetch https://www.hri-ras.ie/upcoming-race-conditions and parse all races into JSON." }]
-        })
+          model: "claude-sonnet-4-20250514",
+          max_tokens: 5000,
+          messages: [{ role: "user", content: "Parse every race from this HRI race conditions text into a JSON array. Return ONLY the raw JSON array with no markdown. Each race needs: id as r_N, venue, date in YYYY-MM-DD format, raceName, discipline as Flat or Hurdle or Chase or Bumper, raceType as Maiden or Novice or Handicap or Weight For Age or Beginners or Bumper, grade as Grade 1 or Grade 2 or Grade 3 or Listed or Ungraded, surface as Turf or AWT where Dundalk is AWT, distanceFurlongs as number, prizeMoney as winner prize number, ageMin as number, ageMax as number or null, sexRestriction as Open or Mares or Fillies or Colts and Geldings, ratingMax as number or null, isMaiden as boolean, isNovice as boolean, isEBF as boolean, entryDeadline in YYYY-MM-DDTHH:MM format using closing date at noon, forecastGoing as good or soft etc.\n\nTEXT:\n" + pasteText }],
+        }),
       });
       const data = await res.json();
-      const text = (data.content || []).filter(function(b) { return b.type === "text"; }).map(function(b) { return b.text; }).join("").trim();
-      const match = text.match(new RegExp("\\[[\\s\\S]*\\]"));
-      if (match) {
-        const parsed = JSON.parse(match[0]);
-        setRaces(parsed);
-        setLastFetch(Date.now());
-        setFetchStatus("done");
-        showToast("Loaded " + parsed.length + " races from HRI");
-      } else {
-        setFetchStatus("idle");
-        showToast("Could not parse races", C.red);
+      const txt = (data.content || []).filter(b => b.type === "text").map(b => b.text).join("").trim();
+      const match = txt.match(/\[([\s\S]*)\]/);
+      if (!match) {
+        console.log("API response:", txt.substring(0, 500));
+        throw new Error("No JSON array found in response");
       }
-    } catch (e) {
-      setFetchStatus("idle");
-      showToast("Fetch failed: " + e.message, C.red);
+      let parsed;
+      try {
+        parsed = JSON.parse(match[0]);
+      } catch(parseErr) {
+        console.log("Parse error:", parseErr, "JSON:", match[0].substring(0, 200));
+        throw new Error("Invalid JSON returned");
+      }
+      setRaces(parsed);
+      setLastFetch(new Date().toISOString());
+      setFetchStatus("done");
+      setShowPaste(false);
+      setPasteText("");
+      showToast(parsed.length + " races loaded");
+    } catch (err) {
+      console.error(err);
+      setFetchStatus("error");
+      showToast("Failed to parse — try again", C.red);
     }
   };
 
-  const analyse = async (horse, race) => {
-    const key = raceKey(horse.id, race.id);
-    setLoading(function(l) { return Object.assign({}, l, { [key]: true }); });
-    setLoadStage(function(s) { return Object.assign({}, s, { [key]: 0 }); });
-    const timer = setInterval(function() {
-      setLoadStage(function(s) {
-        const c = s[key] || 0;
-        if (c < 3) return Object.assign({}, s, { [key]: c + 1 });
-        clearInterval(timer);
-        return s;
-      });
-    }, 1200);
-    try {
-      const res = await fetch("https://api.anthropic.com/v1/messages", {
-        method: "POST",
-        headers: { "Content-Type": "application/json", "x-api-key": ANTHROPIC_KEY, "anthropic-version": "2023-06-01", "anthropic-dangerous-direct-browser-access": "true" },
-        body: JSON.stringify({
-          model: "claude-sonnet-4-20250514", max_tokens: 2000,
-          tools: [{ type: "web_search_20250305", name: "web_search" }],
-          system: "You are an Irish racing expert. Return ONLY raw JSON: { overall: 0-100, recommendation: STRONG|CONSIDER|WAIT|PASS, scores: { handicap_edge, class_fit, conditions_match, timing, cuteness }, bullets: [{ icon, category, point }], conclusion }",
-          messages: [{ role: "user", content: "Analyse " + horse.name + " for " + race.raceName + " at " + race.venue + ". Rating: " + (horse.nhRating || horse.flatRating || "unknown") + ". Going: " + race.forecastGoing + ". Distance: " + race.distanceFurlongs + "f. Search for recent form." }]
-        })
-      });
-      const data = await res.json();
-      const text = (data.content || []).filter(function(b) { return b.type === "text"; }).map(function(b) { return b.text; }).join("").trim();
-      const match = text.match(new RegExp("\\{[\\s\\S]*\\}"));
-      if (match) {
-        const parsed = JSON.parse(match[0]);
-        setAnalyses(function(a) { return Object.assign({}, a, { [key]: parsed }); });
-      }
-    } catch (e) {
-      showToast("Analysis failed", C.red);
-    } finally {
-      clearInterval(timer);
-      setLoading(function(l) { return Object.assign({}, l, { [key]: false }); });
-    }
-  };
 
-  const handleEntry = function(horse, race) {
-    const phone = horse.ownerPhone ? horse.ownerPhone.split("").filter(function(c) { return c >= "0" && c <= "9"; }).join("") : "";
-    if (phone) window.open("https://wa.me/" + phone + "?text=" + encodeURIComponent("RacePlan Pro - " + horse.name + " entered in " + race.raceName + " at " + race.venue), "_blank");
-    showToast("Entry confirmed for " + horse.name);
-  };
-
-  const handleDeclaration = function(horse, race) {
-    const phone = horse.ownerPhone ? horse.ownerPhone.split("").filter(function(c) { return c >= "0" && c <= "9"; }).join("") : "";
-    if (phone) window.open("https://wa.me/" + phone + "?text=" + encodeURIComponent("RacePlan Pro - " + horse.name + " declared for " + race.raceName + " at " + race.venue), "_blank");
-    showToast("Declaration confirmed for " + horse.name);
-  };
-
-  const eligible = races.filter(function(r) {
-    if (!selHorse) return false;
+  const eligible = races.filter(r => {
     const age = getAge(selHorse.dob);
-    if (r.ageMin && age < r.ageMin) return false;
+    if (age < r.ageMin) return false;
     if (r.ageMax && age > r.ageMax) return false;
-    if (r.ratingMax && (selHorse.nhRating || selHorse.flatRating || 0) > r.ratingMax) return false;
+    const sexMap = { "Mares": ["Mare", "Filly"], "Fillies": ["Filly"], "Colts & Geldings": ["Colt", "Gelding"] };
+    if (r.sexRestriction !== "Open" && !(sexMap[r.sexRestriction] || []).includes(selHorse.sex)) return false;
+    if (!selHorse.discipline.includes(r.discipline)) return false;
+    if (selHorse.surface !== r.surface) return false;
+    const getRating = () => {
+      if (r.discipline === "Flat" && r.surface === "AWT") return selHorse.awtRating || selHorse.flatRating;
+      if (r.discipline === "Flat") return selHorse.flatRating || selHorse.awtRating;
+      if (r.discipline === "Chase") return selHorse.chaseRating || selHorse.nhRating;
+      if (r.discipline === "Hurdle") return selHorse.hurdleRating || selHorse.nhRating;
+      return selHorse.nhRating || selHorse.flatRating;
+    };
+    const rtg = getRating();
+    if (r.ratingMax && rtg && rtg > r.ratingMax) return false;
+    if (r.ratingMin && rtg && rtg < r.ratingMin) return false;
+    if (r.isMaiden && !selHorse.isMaiden) return false;
+    if (r.isNovice && !selHorse.isNovice) return false;
+    if (r.isEBF && !selHorse.isEBF) return false;
     return true;
   });
 
-  const sorted = eligible.slice().sort(function(a, b) {
-    const ka = raceKey(selHorse.id, a.id);
-    const kb = raceKey(selHorse.id, b.id);
-    return ((analyses[kb] || {}).overall || -1) - ((analyses[ka] || {}).overall || -1);
-  });
+  const analyse = async (horse, race) => {
+    const key = k(horse.id, race.id);
+    setLoading(l => ({ ...l, [key]: true })); setLoadStage(s => ({ ...s, [key]: 0 }));
+    const timer = setInterval(() => setLoadStage(s => { const c = s[key] ?? 0; if (c < 3) return { ...s, [key]: c + 1 }; clearInterval(timer); return s; }), 2800);
+    try { const r = await getAITake(horse, race); clearInterval(timer); setAnalyses(a => ({ ...a, [key]: r })); }
+    catch (e) { console.error(e); clearInterval(timer); }
+    setLoading(l => ({ ...l, [key]: false }));
+  };
+
+  const handleEntry = (horse, race) => {
+    const msg = encodeURIComponent(`🏇 RacePlan Pro — ${horse.trainer}\n\n${horse.name} has been entered in the ${race.raceName} at ${race.venue} on ${new Date(race.date).toLocaleDateString("en-IE", { weekday: "long", day: "numeric", month: "long" })}.\n\nPrize fund: €${race.prizeMoney?.toLocaleString()}\nForecast going: ${race.forecastGoing}\n\nWe'll be in touch closer to declaration day.`);
+    const phone = horse.ownerPhone?.replace(/\D/g, "");
+    if (phone) window.open(`https://wa.me/${phone}?text=${msg}`, "_blank");
+    showToast(`✓ Entry confirmed — WhatsApp opened for ${horse.owner}`);
+  };
+
+  const handleDeclaration = (horse, race) => {
+    const jockey = horse.jockey || "D.J. O'Keeffe";
+    const msg = encodeURIComponent(`✅ RacePlan Pro — ${horse.trainer}\n\n${horse.name} is declared to run in the ${race.raceName} at ${race.venue}.\n\nJockey: ${jockey}\nForecast going: ${race.forecastGoing}\n\nWe'll keep you updated on race day.`);
+    const phone = horse.ownerPhone?.replace(/\D/g, "");
+    if (phone) window.open(`https://wa.me/${phone}?text=${msg}`, "_blank");
+    showToast(`📋 Declaration confirmed — WhatsApp opened for ${horse.owner}`, C.blue);
+  };
+
+  const sorted = [...eligible].sort((a, b) => (analyses[k(selHorse.id, b.id)]?.overall ?? -1) - (analyses[k(selHorse.id, a.id)]?.overall ?? -1));
+
+  // Calculate medication dates for shortlisted races
+  const shortlistItems = Object.values(shortlisted).filter(Boolean);
+
+  const getMedDates = (raceDate, withdrawalDays, courseDays) => {
+    if (!raceDate) return null;
+    const race = new Date(raceDate);
+    const lastDay = new Date(race);
+    lastDay.setDate(lastDay.getDate() - withdrawalDays);
+    const startDay = new Date(lastDay);
+    startDay.setDate(startDay.getDate() - (courseDays - 1));
+    return {
+      start: startDay.toLocaleDateString("en-IE", { day: "numeric", month: "short" }),
+      stop: lastDay.toLocaleDateString("en-IE", { day: "numeric", month: "short" }),
+      startDate: startDay,
+    };
+  };
 
   return (
-    <div style={{ padding: 20 }}>
-      {toast && (
-        <div style={{ position: "fixed", bottom: 24, left: "50%", transform: "translateX(-50%)", background: toast.color, color: "#fff", padding: "10px 20px", borderRadius: 10, fontWeight: 700, zIndex: 999 }}>
-          {toast.msg}
-        </div>
-      )}
-      <div style={{ display: "grid", gridTemplateColumns: "220px 1fr", gap: 16 }}>
-        <div>
-          <div style={{ fontSize: 10, fontWeight: 700, color: C.textDim, letterSpacing: 1.5, marginBottom: 8, textTransform: "uppercase" }}>Horses</div>
-          {horses.map(function(h) {
-            const sel = selHorse && selHorse.id === h.id;
+    <div>
+      {shortlistItems.length > 0 && (
+        <div style={{ background: C.card, border: "1px solid " + C.border, borderRadius: 14, padding: "16px 18px", marginBottom: 16, boxShadow: C.shadow }}>
+          <div style={{ display: "flex", justifyContent: "space-between", alignItems: "center", marginBottom: 12 }}>
+            <div>
+              <div style={{ fontSize: 16, fontWeight: 800, color: C.navy }}>
+                {"★ Shortlist — " + shortlistItems.length + " race" + (shortlistItems.length !== 1 ? "s" : "")}
+              </div>
+              <div style={{ fontSize: 12, color: C.textMid, marginTop: 2 }}>
+                Medication start and stop dates calculated automatically
+              </div>
+            </div>
+            <Btn variant="ghost" onClick={() => setShortlisted({})} style={{ fontSize: 12 }}>Clear All</Btn>
+          </div>
+          {shortlistItems.map((item, idx) => {
+            const peptDates = getMedDates(item.race.date, 4, 12);
+            const antepsinDates = getMedDates(item.race.date, 1, 12);
+            const today = new Date();
+            const peptWarning = peptDates && peptDates.startDate < today;
+            const pm = item.race.prizeMoney;
+            const pmStr = pm ? (" — €" + (pm >= 1000 ? Math.round(pm / 1000) + "k" : pm)) : "";
             return (
-              <div key={h.id} onClick={function() { setSelHorse(h); }} style={{ background: sel ? C.navy : C.card, border: "1.5px solid " + (sel ? C.navyLight : C.border), borderRadius: 10, padding: "10px 12px", marginBottom: 6, cursor: "pointer" }}>
-                <div style={{ fontSize: 13, fontWeight: 700, color: sel ? "#fff" : C.text }}>{h.name}</div>
-                <div style={{ fontSize: 10, color: sel ? "rgba(255,255,255,0.6)" : C.textMid }}>{h.sex}{h.nhRating || h.flatRating ? " · Rtg " + (h.nhRating || h.flatRating) : ""}</div>
-                {h.status === "CoolingOff" && <div style={{ marginTop: 4, fontSize: 10, color: C.amber }}>{"Cooling off"}</div>}
-                {h.status === "Inactive" && <div style={{ marginTop: 4, fontSize: 10, color: C.red }}>{"Inactive"}</div>}
+              <div key={idx} style={{ background: C.cardOff, border: "1px solid " + C.border, borderRadius: 10, padding: "12px 14px", marginBottom: 10 }}>
+                <div style={{ display: "flex", justifyContent: "space-between", alignItems: "flex-start", marginBottom: 8 }}>
+                  <div>
+                    <div style={{ display: "flex", alignItems: "center", gap: 8, marginBottom: 4 }}>
+                      <Silk silk={item.horse.silk} size={24} />
+                      <span style={{ fontSize: 15, fontWeight: 800, color: C.navy }}>{item.horse.name}</span>
+                      <span style={{ fontSize: 12, color: C.textMid }}>—</span>
+                      <span style={{ fontSize: 14, fontWeight: 700, color: C.text }}>{item.race.raceName}</span>
+                    </div>
+                    <div style={{ fontSize: 12, color: C.textMid }}>
+                      {item.race.venue}
+                      {item.race.date ? " — " + new Date(item.race.date).toLocaleDateString("en-IE", { weekday: "short", day: "numeric", month: "short" }) : ""}
+                      {pmStr}
+                    </div>
+                  </div>
+                  <button
+                    onClick={() => setShortlisted(s => ({ ...s, [k(item.horse.id, item.race.id)]: null }))}
+                    style={{ background: "none", border: "none", color: C.textDim, cursor: "pointer", fontSize: 16 }}
+                  >
+                    ✕
+                  </button>
+                </div>
+                <div style={{ display: "grid", gridTemplateColumns: "1fr 1fr", gap: 8 }}>
+                  {peptDates && (
+                    <div style={{ background: peptWarning ? "rgba(192,57,43,0.08)" : "rgba(30,111,181,0.08)", border: "1px solid " + (peptWarning ? C.red : C.blue) + "40", borderRadius: 8, padding: "8px 12px" }}>
+                      <div style={{ fontSize: 11, fontWeight: 700, color: peptWarning ? C.red : C.blue, textTransform: "uppercase", letterSpacing: 0.5, marginBottom: 4 }}>
+                        {peptWarning ? "⚠️ Peptizole — START IMMEDIATELY" : "Peptizole"}
+                      </div>
+                      <div style={{ fontSize: 12, color: C.text }}>Start: <strong>{peptDates.start}</strong></div>
+                      <div style={{ fontSize: 12, color: C.text }}>Stop: <strong>{peptDates.stop}</strong></div>
+                    </div>
+                  )}
+                  {antepsinDates && (
+                    <div style={{ background: "rgba(109,63,192,0.08)", border: "1px solid " + C.purple + "40", borderRadius: 8, padding: "8px 12px" }}>
+                      <div style={{ fontSize: 11, fontWeight: 700, color: C.purple, textTransform: "uppercase", letterSpacing: 0.5, marginBottom: 4 }}>
+                        Antepsin
+                      </div>
+                      <div style={{ fontSize: 12, color: C.text }}>Start: <strong>{antepsinDates.start}</strong></div>
+                      <div style={{ fontSize: 12, color: C.text }}>Stop: <strong>{antepsinDates.stop}</strong></div>
+                    </div>
+                  )}
+                </div>
+                <div style={{ display: "grid", gridTemplateColumns: "1fr 1fr", gap: 7, marginTop: 8 }}>
+                  <Btn variant="green" onClick={() => handleEntry(item.horse, item.race)} style={{ justifyContent: "center" }}>
+                    ✓ Confirm Entry
+                  </Btn>
+                  <button
+                    onClick={() => handleDeclaration(item.horse, item.race)}
+                    style={{ padding: "9px", background: C.blueBg, border: "2px solid " + C.blue + "50", borderRadius: 9, color: C.blue, fontSize: 12, fontWeight: 700, cursor: "pointer" }}
+                  >
+                    📋 Declare to Run
+                  </button>
+                </div>
               </div>
             );
           })}
         </div>
+      )}
+
+      <div style={{ display: "grid", gridTemplateColumns: "240px 1fr", gap: 16 }}>
+
+        {/* Horse sidebar */}
         <div>
-          <div style={{ background: C.card, border: "1px solid " + C.border, borderRadius: 12, padding: "12px 16px", marginBottom: 12 }}>
-            <div style={{ display: "flex", justifyContent: "space-between", alignItems: "center", marginBottom: showPaste ? 12 : 0 }}>
-              <div>
-                <div style={{ fontSize: 13, fontWeight: 700, color: C.text }}>HRI Race Conditions</div>
-                <div style={{ fontSize: 11, color: C.textMid }}>{lastFetch ? "Updated " + new Date(lastFetch).toLocaleString("en-IE") : "Fetch or paste race conditions below"}</div>
-              </div>
-              <div style={{ display: "flex", gap: 8 }}>
-                <Btn variant="ghost" onClick={function() { setShowPaste(function(p) { return !p; }); }} style={{ fontSize: 12 }}>{"Paste Conditions"}</Btn>
-                <Btn onClick={fetchRaces} disabled={fetchStatus === "fetching"} style={{ fontSize: 12 }}>{fetchStatus === "fetching" ? "Fetching..." : "Fetch HRI"}</Btn>
-              </div>
-            </div>
-            {showPaste && (
-              <div>
-                <textarea
-                  value={pasteText}
-                  onChange={function(e) { setPasteText(e.target.value); }}
-                  placeholder={"Paste race conditions here — from HRI PDF, email, or any text format. Include race names, distances, grades, venues and the app will parse them automatically."}
-                  style={{ width: "100%", height: 160, padding: "10px 12px", border: "1.5px solid " + C.border, borderRadius: 8, fontSize: 12, color: C.text, background: C.cardOff, resize: "vertical", fontFamily: "monospace", boxSizing: "border-box" }}
-                />
-                <div style={{ display: "flex", gap: 8, marginTop: 8 }}>
-                  <Btn onClick={parsePastedRaces} style={{ fontSize: 12 }}>{"Parse Races"}</Btn>
-                  <Btn variant="ghost" onClick={function() { setShowPaste(false); setPasteText(""); }} style={{ fontSize: 12 }}>{"Cancel"}</Btn>
+          <div style={{ fontSize: 10, fontWeight: 700, color: C.textDim, letterSpacing: 1.5, marginBottom: 10, textTransform: "uppercase" }}>Horses</div>
+          {horses.map(h => {
+            const sel = selHorse.id === h.id;
+            const stCol = h.status === "Active" ? C.green : h.status === "CoolingOff" ? C.amber : C.red;
+            return (
+              <div key={h.id} onClick={() => setSelHorse(h)} style={{ background: sel ? C.navy : C.card, border: "1.5px solid " + (sel ? C.navyLight : C.border), borderLeft: "4px solid " + stCol, borderRadius: 11, padding: "10px 12px", marginBottom: 7, cursor: "pointer" }}>
+                <div style={{ display: "flex", alignItems: "center", gap: 9 }}>
+                  <Silk silk={h.silk} size={32} />
+                  <div style={{ flex: 1, minWidth: 0 }}>
+                    <div style={{ fontSize: 13, fontWeight: 700, color: sel ? "#fff" : C.text, whiteSpace: "nowrap", overflow: "hidden", textOverflow: "ellipsis" }}>{h.name}</div>
+                    <div style={{ fontSize: 10, color: sel ? "rgba(255,255,255,0.5)" : C.textMid, marginTop: 1 }}>
+                      {getAge(h.dob)}yo
+                      {h.nhRating ? " · NH " + h.nhRating : ""}
+                      {h.flatRating ? " · Flat " + h.flatRating : ""}
+                      {h.headgear ? " · " + h.headgear : ""}
+                    </div>
+                    <div style={{ marginTop: 4 }}><FormDots form={h.form} /></div>
+                  </div>
                 </div>
+                {h.status === "CoolingOff" && (
+                  <div style={{ marginTop: 5, padding: "2px 7px", background: "rgba(217,119,6,0.12)", borderRadius: 5, fontSize: 10, color: C.amber, fontWeight: 600 }}>
+                    {"Eligible " + (coolingDate(h.activationDate) ? coolingDate(h.activationDate).toLocaleDateString("en-IE", { day: "numeric", month: "short" }) : "")}
+                  </div>
+                )}
+                {h.status === "Inactive" && (
+                  <div style={{ marginTop: 5, padding: "2px 7px", background: "rgba(192,57,43,0.10)", borderRadius: 5, fontSize: 10, color: C.red, fontWeight: 600 }}>Inactive</div>
+                )}
               </div>
-            )}
-          </div>
-          {selHorse && (
-            <div style={{ background: C.card, border: "1px solid " + C.border, borderRadius: 12, padding: "12px 16px", marginBottom: 12, display: "flex", alignItems: "center", gap: 12 }}>
-              <Silk silk={selHorse.silk} size={44} />
-              <div>
-                <div style={{ fontSize: 18, fontWeight: 800, color: C.text }}>{selHorse.name}</div>
-                <div style={{ fontSize: 12, color: C.textMid }}>{selHorse.sex + " · Rtg " + (selHorse.nhRating || selHorse.flatRating || "—")}</div>
-              </div>
-            </div>
-          )}
-          {races.length === 0 && (
-            <div style={{ padding: 40, textAlign: "center", color: C.textMid, border: "1.5px dashed " + C.border, borderRadius: 12 }}>
-              <div style={{ fontSize: 24, marginBottom: 8 }}>{"📄"}</div>
-              <div style={{ fontWeight: 700, marginBottom: 4 }}>No race conditions loaded</div>
-              <div style={{ fontSize: 13 }}>Tap Fetch Now above</div>
-            </div>
-          )}
-          {races.length > 0 && eligible.length === 0 && (
-            <div style={{ padding: 32, textAlign: "center", color: C.textMid, border: "1.5px dashed " + C.border, borderRadius: 12 }}>
-              {"No eligible races for " + (selHorse ? selHorse.name : "this horse")}
-            </div>
-          )}
-          {races.length > 0 && eligible.length > 0 && (
+            );
+          })}
+        </div>
+
+        {/* Main area */}
+        <div>
+          <div style={{ background: C.card, border: "1px solid " + C.border, borderRadius: 12, padding: "12px 16px", marginBottom: 12, display: "flex", justifyContent: "space-between", alignItems: "center" }}>
             <div>
-              <div style={{ fontSize: 10, fontWeight: 700, color: C.textDim, letterSpacing: 1.5, marginBottom: 10, textTransform: "uppercase" }}>{eligible.length + " eligible races"}</div>
-              {sorted.map(function(race) {
-                const key = raceKey(selHorse.id, race.id);
+              <div style={{ fontSize: 13, fontWeight: 700, color: C.text }}>HRI Race Conditions</div>
+              <div style={{ fontSize: 11, color: C.textMid, marginTop: 2 }}>
+                {lastFetch ? "Updated " + new Date(lastFetch).toLocaleString("en-IE", { day: "numeric", month: "short", hour: "2-digit", minute: "2-digit" }) : "Paste from hri-ras.ie/upcoming-race-conditions PDF"}
+              </div>
+              {fetchStatus === "done" && (
+                <div style={{ fontSize: 11, color: C.green, fontWeight: 600, marginTop: 2 }}>
+                  {"✓ " + races.length + " races · " + eligible.length + " eligible for " + selHorse.name}
+                </div>
+              )}
+            </div>
+            <Btn onClick={() => setShowPaste(!showPaste)} disabled={fetchStatus === "fetching"} style={{ fontSize: 12, padding: "8px 16px" }}>
+              {fetchStatus === "fetching" ? "Parsing..." : "📋 Paste Race Conditions"}
+            </Btn>
+          </div>
+
+          {showPaste && (
+            <div style={{ background: C.card, border: "1px solid " + C.border, borderRadius: 12, padding: "16px 18px", marginBottom: 16 }}>
+              <div style={{ fontSize: 14, fontWeight: 700, color: C.text, marginBottom: 8 }}>Paste Race Conditions Text</div>
+              <div style={{ fontSize: 12, color: C.textMid, marginBottom: 12, lineHeight: 1.6 }}>
+                Open the HRI PDF, press Ctrl+A then Ctrl+C, paste below. Takes about 10 seconds.
+              </div>
+              <textarea
+                value={pasteText}
+                onChange={e => setPasteText(e.target.value)}
+                placeholder="Paste the race conditions text here..."
+                rows={8}
+                style={{ width: "100%", background: C.cardOff, border: "1px solid " + C.border, borderRadius: 9, padding: "10px 12px", color: C.text, fontSize: 12, fontFamily: "inherit", lineHeight: 1.6, resize: "vertical", outline: "none", marginBottom: 10 }}
+              />
+              <div style={{ display: "flex", gap: 8 }}>
+                <Btn onClick={handleParseText} disabled={!pasteText.trim() || fetchStatus === "fetching"} style={{ flex: 1, justifyContent: "center" }}>
+                  {fetchStatus === "fetching" ? "Parsing races..." : "Parse Races"}
+                </Btn>
+                <Btn variant="ghost" onClick={() => { setShowPaste(false); setPasteText(""); }} style={{ fontSize: 12 }}>Cancel</Btn>
+              </div>
+            </div>
+          )}
+
+          <div style={{ background: C.card, border: "1px solid " + C.border, borderRadius: 12, padding: "12px 16px", marginBottom: 12, display: "flex", alignItems: "center", gap: 12 }}>
+            <Silk silk={selHorse.silk} size={44} />
+            <div style={{ flex: 1 }}>
+              <div style={{ display: "flex", alignItems: "center", gap: 8, marginBottom: 4, flexWrap: "wrap" }}>
+                <span style={{ fontSize: 19, fontWeight: 800, color: C.text }}>{selHorse.name}</span>
+                <StatusPill status={selHorse.status} activationDate={selHorse.activationDate} />
+                {selHorse.headgear && <Tag color={C.purple}>{selHorse.headgear}</Tag>}
+              </div>
+              <div style={{ display: "flex", gap: 10, flexWrap: "wrap", fontSize: 12, color: C.textMid }}>
+                <span>{getAge(selHorse.dob)}yo {selHorse.sex}</span>
+                {selHorse.nhRating && <span>NH {selHorse.nhRating}</span>}
+                {selHorse.flatRating && <span>Flat {selHorse.flatRating}</span>}
+                {selHorse.hurdleRating && <span>Hrd {selHorse.hurdleRating}</span>}
+                {selHorse.chaseRating && <span>Chs {selHorse.chaseRating}</span>}
+                <span>{selHorse.trainer}</span>
+                <span>Owner: {selHorse.owner}</span>
+              </div>
+              {selHorse.notes && (
+                <div style={{ fontSize: 11, color: C.textMid, fontStyle: "italic", marginTop: 4, padding: "4px 8px", background: C.cardOff, borderRadius: 6, borderLeft: "2px solid " + C.borderMid }}>
+                  {selHorse.notes}
+                </div>
+              )}
+            </div>
+            <FormDots form={selHorse.form} />
+          </div>
+
+          {toast && (
+            <div style={{ position: "fixed", bottom: 24, left: "50%", transform: "translateX(-50%)", background: C.navy, color: "#fff", borderRadius: 12, padding: "12px 22px", fontSize: 13, fontWeight: 600, zIndex: 600, whiteSpace: "nowrap" }}>
+              <span style={{ color: toast.color }}>{toast.msg}</span>
+            </div>
+          )}
+
+          {races.length === 0 ? (
+            <div style={{ padding: 40, textAlign: "center", border: "1.5px dashed " + C.border, borderRadius: 14, color: C.textMid }}>
+              <div style={{ fontSize: 26, marginBottom: 10 }}>📄</div>
+              <div style={{ fontSize: 14, fontWeight: 700, color: C.text, marginBottom: 6 }}>No race conditions loaded</div>
+              <div style={{ fontSize: 13 }}>{"Paste text from hri-ras.ie/upcoming-race-conditions PDF above"}</div>
+            </div>
+          ) : eligible.length === 0 ? (
+            <div style={{ padding: 32, textAlign: "center", border: "1.5px dashed " + C.border, borderRadius: 14, color: C.textMid }}>
+              {"No eligible races for " + selHorse.name}
+            </div>
+          ) : (
+            <>
+              <div style={{ fontSize: 10, fontWeight: 700, color: C.textDim, letterSpacing: 1.5, marginBottom: 10, textTransform: "uppercase" }}>
+                {eligible.length + " eligible races for " + selHorse.name}
+              </div>
+              {sorted.map(race => {
+                const key = k(selHorse.id, race.id);
                 const analysis = analyses[key];
                 const isLoading = loading[key];
                 const stage = loadStage[key] || 0;
                 const isSl = !!shortlisted[key];
                 const accent = analysis ? (analysis.overall >= 75 ? C.green : analysis.overall >= 55 ? C.amber : C.red) : C.border;
                 return (
-                  <div key={race.id} style={{ background: C.card, borderRadius: 12, border: "1px solid " + (isSl ? C.gold : C.border), marginBottom: 12, overflow: "hidden" }}>
-                    <div style={{ height: 3, background: analysis ? accent : (isSl ? C.gold : C.border) }} />
+                  <div key={race.id} style={{ background: C.card, borderRadius: 13, border: "1px solid " + (isSl ? C.gold + "99" : C.border), marginBottom: 12, overflow: "hidden" }}>
+                    <div style={{ height: 3, background: analysis ? accent : isSl ? C.gold : C.border }} />
                     <div style={{ padding: "14px 16px" }}>
-                      <div style={{ display: "flex", justifyContent: "space-between", marginBottom: 8 }}>
-                        <div>
-                          <div style={{ fontSize: 15, fontWeight: 700, color: C.text, marginBottom: 4 }}>{race.raceName}</div>
-                          <div style={{ fontSize: 12, color: C.textMid }}>{race.venue + " · " + race.distanceFurlongs + "f · " + race.forecastGoing}</div>
+                      <div style={{ display: "flex", justifyContent: "space-between", alignItems: "flex-start", marginBottom: 8 }}>
+                        <div style={{ flex: 1, marginRight: 12 }}>
+                          <div style={{ display: "flex", gap: 5, flexWrap: "wrap", marginBottom: 5 }}>
+                            {race.grade && race.grade !== "Ungraded" && <Tag color={C.gold}>{race.grade}</Tag>}
+                            {race.isEBF && <Tag color={C.purple}>EBF</Tag>}
+                            {race.discipline && <Tag color={C.textMid} bg="#f0f4f8">{race.discipline + " · " + (race.raceType || "")}</Tag>}
+                          </div>
+                          <div style={{ fontSize: 16, fontWeight: 700, color: C.text, lineHeight: 1.3, marginBottom: 5 }}>{race.raceName}</div>
+                          <div style={{ display: "flex", gap: 10, flexWrap: "wrap", fontSize: 12, color: C.textMid }}>
+                            <span>{"📍 " + race.venue}</span>
+                            {race.date && <span>{"📅 " + new Date(race.date).toLocaleDateString("en-IE", { weekday: "short", day: "numeric", month: "short" })}</span>}
+                            {race.distanceFurlongs && <span>{race.distanceFurlongs + "f"}</span>}
+                            {race.forecastGoing && <span>{race.forecastGoing}</span>}
+                          </div>
                         </div>
-                        <div style={{ fontSize: 17, fontWeight: 800, color: C.gold }}>{"€" + (race.prizeMoney >= 1000 ? Math.round(race.prizeMoney * 0.001) + "k" : race.prizeMoney)}</div>
+                        <span style={{ fontSize: 18, fontWeight: 800, color: C.gold, flexShrink: 0 }}>
+                          {race.prizeMoney ? ("€" + (race.prizeMoney >= 1000 ? Math.round(race.prizeMoney / 1000) + "k" : race.prizeMoney)) : ""}
+                        </span>
                       </div>
+
+                      {race.entryDeadline && (
+                        <div style={{ display: "flex", alignItems: "center", gap: 8, padding: "7px 10px", background: C.cardOff, borderRadius: 8, border: "1px solid " + C.border, marginBottom: 10, fontSize: 12 }}>
+                          <span style={{ color: C.textMid, fontWeight: 600 }}>Entry closes</span>
+                          <span style={{ fontWeight: 700, color: C.amber }}>
+                            {new Date(race.entryDeadline).toLocaleDateString("en-IE", { weekday: "short", day: "numeric", month: "short" }) + " · " + new Date(race.entryDeadline).toLocaleTimeString("en-IE", { hour: "2-digit", minute: "2-digit" })}
+                          </span>
+                        </div>
+                      )}
+
                       {!analysis && !isLoading && (
-                        <Btn onClick={function() { analyse(selHorse, race); }} style={{ width: "100%", justifyContent: "center", marginBottom: 8 }}>{"Get My Take on This Race"}</Btn>
-                      )}
-                      {isLoading && (
-                        <div style={{ padding: "10px 14px", background: C.cardOff, borderRadius: 9, marginBottom: 8 }}>
-                          <div style={{ fontSize: 12, fontWeight: 700, color: C.navy }}>{"Analysing..."}</div>
-                          {["Checking field...", "Reviewing form...", "Checking going...", "Building analysis..."].map(function(s, i) {
-                            return (
-                              <div key={i} style={{ fontSize: 12, color: i <= stage ? C.text : C.textDim, marginTop: 4, opacity: i <= stage ? 1 : 0.4 }}>{(i < stage ? "✓ " : i === stage ? "⟳ " : "○ ") + s}</div>
-                            );
-                          })}
-                        </div>
-                      )}
-                      {analysis && (
-                        <div style={{ marginBottom: 8 }}>
-                          <div style={{ display: "flex", gap: 8, marginBottom: 8, alignItems: "center" }}>
-                            <div style={{ flex: 1, fontSize: 13, fontWeight: 700, color: accent }}>{analysis.recommendation}</div>
-                            <div style={{ fontSize: 22, fontWeight: 800, color: accent }}>{analysis.overall}</div>
-                            <div style={{ fontSize: 10, color: C.textMid }}>{"out of 100"}</div>
-                          </div>
-                          {(analysis.bullets || []).map(function(b, i) {
-                            return (
-                              <div key={i} style={{ background: C.cardOff, borderRadius: 8, padding: "8px 12px", marginBottom: 6 }}>
-                                <div style={{ fontSize: 11, fontWeight: 700, color: C.navy, marginBottom: 3 }}>{b.icon + " " + b.category}</div>
-                                <div style={{ fontSize: 13, color: C.text }}>{b.point}</div>
-                              </div>
-                            );
-                          })}
-                          <div style={{ background: C.navy, borderRadius: 8, padding: "12px 14px" }}>
-                            <div style={{ fontSize: 11, fontWeight: 700, color: "rgba(255,255,255,0.5)", marginBottom: 6, textTransform: "uppercase" }}>{"Bottom Line"}</div>
-                            <div style={{ fontSize: 13, color: "#e8edf5", fontStyle: "italic" }}>{analysis.conclusion}</div>
-                          </div>
-                        </div>
-                      )}
-                      <div style={{ display: "flex", flexDirection: "column", gap: 6, marginTop: 8 }}>
-                        <Btn variant="gold" onClick={function() { setShortlisted(function(s) { return Object.assign({}, s, { [key]: !s[key] }); }); }} style={{ width: "100%", justifyContent: "center" }}>
-                          {isSl ? "★ On Shortlist" : "☆ Add to Shortlist"}
+                        <Btn onClick={() => analyse(selHorse, race)} style={{ width: "100%", justifyContent: "center", marginBottom: 10 }}>
+                          🧠 Get My Take on This Race
                         </Btn>
-                        {isSl && (
-                          <div style={{ display: "grid", gridTemplateColumns: "1fr 1fr", gap: 6 }}>
-                            <Btn variant="green" onClick={function() { handleEntry(selHorse, race); }} style={{ justifyContent: "center" }}>{"Confirm Entry"}</Btn>
-                            <Btn onClick={function() { handleDeclaration(selHorse, race); }} style={{ justifyContent: "center" }}>{"Declare to Run"}</Btn>
+                      )}
+
+                      {isLoading && (
+                        <div style={{ padding: "12px 14px", background: C.cardOff, border: "1px solid " + C.border, borderRadius: 9, marginBottom: 10 }}>
+                          <div style={{ fontSize: 12, fontWeight: 700, color: C.navy, marginBottom: 8 }}>🧠 Racing brain at work...</div>
+                          {["Checking who is in this race...", "Looking at the field...", "Checking trainer record...", "Building your analysis..."].map((s, i) => (
+                            <div key={i} style={{ display: "flex", alignItems: "center", gap: 8, marginBottom: 5, opacity: i <= stage ? 1 : 0.25 }}>
+                              <span style={{ fontSize: 12 }}>{i < stage ? "✓" : i === stage ? "⟳" : "○"}</span>
+                              <span style={{ fontSize: 12, color: i <= stage ? C.text : C.textDim }}>{s}</span>
+                            </div>
+                          ))}
+                        </div>
+                      )}
+
+                      {analysis && (
+                        <div style={{ marginBottom: 10 }}>
+                          <div style={{ display: "flex", gap: 5, marginBottom: 10 }}>
+                            {[["HCP", "handicap_edge"], ["Class", "class_fit"], ["Going", "conditions_match"], ["Timing", "timing"], ["Angle", "cuteness"]].map(([label, k2]) => {
+                              const v = (analysis.scores || {})[k2] || 0;
+                              const c = v >= 7 ? C.green : v >= 5 ? C.amber : C.red;
+                              return (
+                                <div key={k2} style={{ flex: 1, textAlign: "center", padding: "6px 2px", background: c + "10", borderRadius: 7, border: "1px solid " + c + "25" }}>
+                                  <div style={{ fontSize: 15, fontWeight: 800, color: c }}>{v}</div>
+                                  <div style={{ fontSize: 8, color: C.textMid, fontWeight: 600 }}>{label}</div>
+                                </div>
+                              );
+                            })}
+                            <div style={{ width: 44, height: 44, borderRadius: "50%", background: accent + "12", border: "3px solid " + accent, display: "flex", flexDirection: "column", alignItems: "center", justifyContent: "center", flexShrink: 0, marginLeft: 4 }}>
+                              <span style={{ fontSize: 15, fontWeight: 800, color: accent, lineHeight: 1 }}>{analysis.overall}</span>
+                              <span style={{ fontSize: 7, color: C.textMid }}>{"/ 100"}</span>
+                            </div>
                           </div>
-                        )}
-                      </div>
+                          {(analysis.bullets || []).map((b, i) => (
+                            <div key={i} style={{ background: C.cardOff, border: "1px solid " + C.border, borderLeft: "3px solid " + C.navy, borderRadius: 9, padding: "11px 13px", marginBottom: 8 }}>
+                              <div style={{ display: "flex", alignItems: "center", gap: 6, marginBottom: 5 }}>
+                                <span style={{ fontSize: 14 }}>{b.icon}</span>
+                                <span style={{ fontSize: 10, fontWeight: 700, color: C.text, textTransform: "uppercase", letterSpacing: 0.8 }}>{b.category}</span>
+                              </div>
+                              <p style={{ fontSize: 13, color: C.text, lineHeight: 1.75, margin: 0 }}>{b.point}</p>
+                            </div>
+                          ))}
+                          <div style={{ background: C.navy, borderRadius: 10, padding: "16px 18px", marginBottom: 10 }}>
+                            <div style={{ fontSize: 9, fontWeight: 700, color: "rgba(255,255,255,0.4)", letterSpacing: 1.5, textTransform: "uppercase", marginBottom: 8 }}>Bottom Line</div>
+                            <p style={{ fontSize: 14, color: "#e8edf5", lineHeight: 1.8, margin: 0, fontStyle: "italic" }}>{analysis.conclusion}</p>
+                          </div>
+                        </div>
+                      )}
+
+                      {!canRace(selHorse) ? (
+                        <div style={{ padding: "9px 12px", background: C.amberBg, border: "1px solid " + C.amber + "40", borderRadius: 9, fontSize: 12, color: C.amber, fontWeight: 600, textAlign: "center" }}>
+                          {"⏳ Cool-off active · eligible " + (coolingDate(selHorse.activationDate) ? coolingDate(selHorse.activationDate).toLocaleDateString("en-IE", { day: "numeric", month: "short" }) : "") + " · Do not contact owner yet"}
+                        </div>
+                      ) : (
+                        <div style={{ display: "flex", flexDirection: "column", gap: 7 }}>
+                          <Btn variant="gold" onClick={() => {
+                            setShortlisted(s => ({ ...s, [key]: s[key] ? null : { horse: selHorse, race } }));
+                          }} style={{ width: "100%", justifyContent: "center" }}>
+                            {isSl ? "★ On Shortlist" : "☆ Add to Shortlist"}
+                          </Btn>
+                          {isSl && (
+                            <div style={{ display: "grid", gridTemplateColumns: "1fr 1fr", gap: 7 }}>
+                              <Btn variant="green" onClick={() => handleEntry(selHorse, race)} style={{ justifyContent: "center", flexDirection: "column", gap: 2 }}>
+                                <span>✓ Confirm Entry</span>
+                                <span style={{ fontSize: 10, opacity: 0.7, fontWeight: 400 }}>WhatsApp owner</span>
+                              </Btn>
+                              <button onClick={() => handleDeclaration(selHorse, race)} style={{ padding: "9px", background: C.blueBg, border: "2px solid " + C.blue + "50", borderRadius: 9, color: C.blue, fontSize: 12, fontWeight: 700, cursor: "pointer", display: "flex", flexDirection: "column", alignItems: "center", gap: 2 }}>
+                                <span>📋 Declare to Run</span>
+                                <span style={{ fontSize: 10, opacity: 0.7, fontWeight: 400 }}>WhatsApp owner + jockey</span>
+                              </button>
+                            </div>
+                          )}
+                        </div>
+                      )}
                     </div>
                   </div>
                 );
               })}
-            </div>
+            </>
           )}
         </div>
+
       </div>
     </div>
+  </div>
   );
 }
 
 function RacedayPrint({ horses, entries, setEntries }) {
   const [showAdd, setShowAdd] = useState(false);
   const [csvStatus, setCsvStatus] = useState(null);
-  const emptyNe = { horseId: "", meetingNo: "", raceRef: "", venue: "", date: "", raceTime: "", raceName: "", ballotNo: "", headgear: "", jockey: "" };
-  const [ne, setNe] = useState(emptyNe);
+  const [ne, setNe] = useState({ horseId: "", meetingNo: "", raceRef: "", venue: "", date: "", raceTime: "", raceName: "", ballotNo: "" });
 
-  const add = function() {
-    if (!ne.horseId || !ne.venue) return;
-    setEntries(function(p) { return [...p, Object.assign({}, ne, { id: "e_" + Date.now() })]; });
-    setNe(emptyNe);
+  const add = () => {
+    if (!ne.horseId || !ne.raceName) return;
+    setEntries(p => [...p, { ...ne, id: "e_" + Date.now() }]);
+    setNe({ horseId: "", meetingNo: "", raceRef: "", venue: "", date: "", raceTime: "", raceName: "", ballotNo: "" });
     setShowAdd(false);
   };
 
-  const removeEntry = function(id) {
-    setEntries(function(p) { return p.filter(function(e) { return e.id !== id; }); });
-  };
-
-  const handleCSV = function(ev) {
-    const file = ev.target.files[0]; if (!file) return;
-    ev.target.value = "";
+  const handleCSV = (e) => {
+    const file = e.target.files[0];
+    if (!file) return;
+    e.target.value = "";
     const reader = new FileReader();
-    reader.onload = function(e) {
+    reader.onload = (ev) => {
       try {
-        const text = e.target.result;
-        const rawLines = text.split("\n").filter(function(l) { return l.trim(); });
+        const text = ev.target.result;
+        const rawLines = text.split("\n").filter(l => l.trim());
         const sep = rawLines[0].includes("\t") ? "\t" : ",";
-        const headers = rawLines[0].split(sep).map(function(h) { return h.trim().toLowerCase().replace(/\s+/g, "_").replace(/[^a-z0-9_]/g, ""); });
-        const headgearMap = { "H": "Hood", "T": "Tongue Strap", "TT": "Tongue Tie", "B": "Blinkers", "BL": "Blinkers", "C": "Cheekpieces", "CP": "Cheekpieces", "V": "Visor", "EM": "Ear Muffs", "P": "Pacifiers" };
+        const headers = rawLines[0].split(sep).map(h => h.trim().toLowerCase().replace(/\s+/g, "_").replace(/[^a-z0-9_]/g, ""));
         const imported = [];
         for (let i = 1; i < rawLines.length; i++) {
-          const cols = rawLines[i].split(sep).map(function(c) { return c.trim().replace(/^"|"$/g, ""); });
+          const cols = rawLines[i].split(sep).map(c => c.trim().replace(/^"|"$/g, ""));
           if (!cols[0]) continue;
           const row = {};
-          headers.forEach(function(h, idx) { row[h] = cols[idx] || ""; });
+          headers.forEach((h, idx) => { row[h] = cols[idx] || ""; });
           const horseName = row.horse || row.horse_name || row.name || cols[0];
           if (!horseName) continue;
-          const nl = horseName.toLowerCase().trim();
-          const horse = horses.find(function(h) {
-            const hl = h.name.toLowerCase().trim();
-            return hl === nl || hl.includes(nl) || nl.includes(hl);
-          });
+          const matchHorse = (name) => {
+            if (!name) return null;
+            const nl = name.toLowerCase().trim();
+            return horses.find(h =>
+              h.name.toLowerCase().trim() === nl ||
+              h.name.toLowerCase().trim().includes(nl) ||
+              nl.includes(h.name.toLowerCase().trim())
+            );
+          };
+          const horse = matchHorse(horseName);
           const rawDate = row.date || row.race_date || row.meeting_date || "";
-          let parsedDate = rawDate;
+          let parsedDate = "";
           if (rawDate) {
             const parts = rawDate.split(/[\/\-\.]/);
             if (parts.length === 3) {
               if (parts[2] && parts[2].length === 4) {
-                parsedDate = parts[2] + "-" + parts[1].padStart(2, "0") + "-" + parts[0].padStart(2, "0");
-              } else if (parts[2] && parts[2].length === 2) {
-                parsedDate = "20" + parts[2] + "-" + parts[1].padStart(2, "0") + "-" + parts[0].padStart(2, "0");
+                parsedDate = parts[2] + "-" + parts[1].padStart(2,"0") + "-" + parts[0].padStart(2,"0");
+              } else if (parts[0] && parts[0].length === 4) {
+                parsedDate = rawDate;
+              } else {
+                parsedDate = "20" + parts[2] + "-" + parts[1].padStart(2,"0") + "-" + parts[0].padStart(2,"0");
               }
             }
           }
-          const extrasRaw = (row.extras || row.extra || row.headgear || row.equipment || "").trim().toUpperCase();
-          const headgear = headgearMap[extrasRaw] || (extrasRaw.length > 0 && extrasRaw.length <= 4 ? extrasRaw : "");
-          const statusRaw = row.status || "";
-          const ballotNo = statusRaw.toLowerCase().includes("ballot") ? statusRaw : (row.ballot || row.ballot_no || "");
+          const extras = row.extras || row.extra || row.headgear || row.equipment || "";
+          const headgearMap = { "H": "Hood", "T": "Tongue Strap", "B": "Blinkers", "C": "Cheekpieces", "V": "Visor", "EM": "Ear Muffs", "P": "Pacifiers", "TT": "Tongue Tie", "CP": "Cheekpieces", "BL": "Blinkers" };
+          const headgear = headgearMap[extras.trim().toUpperCase()] || extras || "";
+          const status = row.status || "";
+          const ballotNo = status.toLowerCase().includes("ballot") ? status : (row.ballot || row.ballot_no || "");
           imported.push({
             id: "e_" + Date.now() + "_" + i,
             horseId: horse ? horse.id : "",
             horseName,
             venue: row.race || row.venue || row.racecourse || row.course || "",
-            date: parsedDate,
+            date: parsedDate || rawDate,
             raceTime: row.time || row.race_time || "",
             raceName: row.race_name || row.racename || "",
             meetingNo: row.meeting || row.meeting_no || "",
@@ -1225,99 +1341,79 @@ function RacedayPrint({ horses, entries, setEntries }) {
             jockey: row.jockey || "",
           });
         }
-        setEntries(function(prev) { return [...prev, ...imported]; });
-        const matched = imported.filter(function(e) { return e.horseId; }).length;
+        setEntries(prev => [...prev, ...imported]);
+        const matched = imported.filter(e => e.horseId).length;
         setCsvStatus(imported.length + " entries imported — " + matched + " horses matched");
-        setTimeout(function() { setCsvStatus(null); }, 5000);
+        setTimeout(() => setCsvStatus(null), 5000);
       } catch (err) {
         console.error(err);
-        setCsvStatus("Error reading CSV — check file format");
-        setTimeout(function() { setCsvStatus(null); }, 4000);
+        setCsvStatus("Error reading CSV — check the file format");
+        setTimeout(() => setCsvStatus(null), 5000);
       }
     };
     reader.readAsText(file);
   };
 
   const grouped = {};
-  entries.forEach(function(e) {
-    if (!e.date) return;  // skip entries with no date
-    if (!grouped[e.date]) grouped[e.date] = [];
-    grouped[e.date].push(e);
-  });
+  entries.forEach(function(e) { if (!e.date) return; if (!grouped[e.date]) grouped[e.date] = []; grouped[e.date].push(e); });
 
   return (
     <div>
-      <div style={{ display: "flex", justifyContent: "space-between", alignItems: "center", marginBottom: 16 }}>
+      <div style={{ display: "flex", justifyContent: "space-between", alignItems: "center", marginBottom: 16, flexWrap: "wrap", gap: 10 }}>
         <div>
           <div style={{ fontSize: 22, fontWeight: 800, color: C.text }}>Raceday Whiteboard</div>
-          <div style={{ fontSize: 13, color: C.textMid, marginTop: 3 }}>Import pending engagements CSV or add entries manually</div>
+          <div style={{ fontSize: 13, color: C.textMid, marginTop: 3 }}>Export pending engagements CSV from HRI RAS and upload here</div>
         </div>
-        <div style={{ display: "flex", gap: 8, flexWrap: "wrap" }}>
-          <label style={{ background: C.cardOff, border: "1.5px solid " + C.border, color: C.textMid, borderRadius: 9, padding: "9px 14px", fontSize: 13, fontWeight: 700, cursor: "pointer", display: "inline-flex", alignItems: "center", gap: 6 }}>
-            Import CSV <input type="file" accept=".csv,.tsv,.txt" onChange={handleCSV} style={{ display: "none" }} />
+        <div style={{ display: "flex", gap: 8, flexWrap: "wrap", alignItems: "center" }}>
+          {csvStatus && (
+            <span style={{ fontSize: 12, fontWeight: 700, color: csvStatus.includes("Error") ? C.red : C.green }}>
+              {csvStatus}
+            </span>
+          )}
+          <label style={{ background: C.blue, color: "#fff", borderRadius: 9, padding: "9px 16px", fontSize: 13, fontWeight: 700, cursor: "pointer", display: "inline-flex", alignItems: "center", gap: 6 }}>
+            📥 Import HRI CSV
+            <input type="file" accept=".csv" onChange={handleCSV} style={{ display: "none" }} />
           </label>
-          <Btn onClick={function() { setShowAdd(true); }}>+ Add Entry</Btn>
-          <Btn variant="ghost" onClick={function() { if (window.confirm("Clear all whiteboard entries?")) setEntries(function() { return []; }); }} style={{ color: C.red, borderColor: C.red, fontSize: 12 }}>Clear All</Btn>
-          <Btn variant="gold" onClick={function() { window.print(); }}>Print</Btn>
+          <Btn onClick={() => setShowAdd(true)}>+ Add Manual</Btn>
+          <Btn variant="gold" onClick={() => window.print()}>🖨 Print</Btn>
         </div>
       </div>
 
-      {csvStatus && <div style={{ background: C.cardOff, border: "1px solid " + C.border, borderRadius: 8, padding: "10px 14px", marginBottom: 12, fontSize: 13, color: C.green, fontWeight: 600 }}>{csvStatus}</div>}
-
       <div id="print-area">
-        {Object.entries(grouped).sort(function(a, b) { return new Date(a[0]) - new Date(b[0]); }).map(function(entry) {
-          const date = entry[0]; const dayEntries = entry[1];
-          return (
-            <div key={date} style={{ background: C.card, border: "1px solid " + C.border, borderRadius: 12, padding: "18px 20px", marginBottom: 14 }}>
-              <div style={{ fontSize: 16, fontWeight: 800, color: C.navy, marginBottom: 12, paddingBottom: 10, borderBottom: "2px solid " + C.border }}>
-                {new Date(date + "T12:00:00").toLocaleDateString("en-IE", { weekday: "long", day: "numeric", month: "long", year: "numeric" })}
-              </div>
-              {dayEntries.map(function(ent) {
-                const horse = horses.find(function(h) { return h.id === ent.horseId; });
-                const displayName = horse ? horse.name : ent.horseName;
-                if (!displayName) return null;
-                const hg = ent.headgear || (horse && horse.headgear) || "";
-                return (
-                  <div key={ent.id} style={{ display: "flex", alignItems: "flex-start", gap: 14, padding: "12px 0", borderBottom: "1px solid " + C.border }}>
-                    <div style={{ minWidth: 130, fontSize: 13, color: C.textMid, fontWeight: 600 }}>
-                      <div style={{ fontWeight: 700, color: C.text }}>{ent.venue}</div>
-                      {ent.meetingNo && <div>Mtg {ent.meetingNo}</div>}
-                      {ent.raceRef && <div>{ent.raceRef}</div>}
-                    </div>
-                    <div style={{ minWidth: 80, fontSize: 14, fontWeight: 700, color: C.navy }}>{ent.raceTime}</div>
-                    <div style={{ flex: 1 }}>
-                      <div style={{ display: "flex", alignItems: "center", gap: 8, flexWrap: "wrap" }}>
-                        <span style={{ fontSize: 17, fontWeight: 800, color: C.text, textTransform: "uppercase" }}>{displayName}</span>
-                        {hg && (
-                          <span style={{ fontSize: 12, color: "#fff", fontWeight: 700, background: C.purple, padding: "2px 8px", borderRadius: 6 }}>{hg}</span>
-                        )}
-                        {ent.ballotNo && (
-                          <span style={{ fontSize: 12, color: "#fff", fontWeight: 700, background: C.amber, padding: "2px 8px", borderRadius: 6 }}>Ballot {ent.ballotNo}</span>
-                        )}
-                      </div>
-                      {ent.jockey && <div style={{ fontSize: 12, color: C.textMid, marginTop: 2 }}>Jockey: <span style={{ fontWeight: 600, color: C.text }}>{ent.jockey}</span></div>}
-                      {ent.raceName && <div style={{ fontSize: 12, color: C.textMid, marginTop: 2 }}>{ent.raceName}</div>}
-                    </div>
-                    <button onClick={function() { removeEntry(ent.id); }} style={{ background: "none", border: "none", color: C.red, cursor: "pointer", fontSize: 18, padding: "0 4px", lineHeight: 1 }}>x</button>
-                  </div>
-                );
-              })}
+        {Object.entries(grouped).sort(([a], [b]) => new Date(a) - new Date(b)).map(([date, dayEntries]) => (
+          <div key={date} style={{ background: C.card, border: `1px solid ${C.border}`, borderRadius: 12, padding: "18px 20px", marginBottom: 14, boxShadow: C.shadow }}>
+            <div style={{ fontSize: 16, fontWeight: 800, color: C.navy, marginBottom: 12, paddingBottom: 10, borderBottom: `2px solid ${C.navy}` }}>
+              {new Date(date).toLocaleDateString("en-IE", { weekday: "long", day: "numeric", month: "long", year: "numeric" })}
             </div>
-          );
-        })}
-        {entries.length === 0 && (
-          <div style={{ padding: 40, textAlign: "center", border: "1.5px dashed " + C.border, borderRadius: 12, color: C.textMid }}>
-            Import your pending engagements CSV from HRI or add entries manually
+            {dayEntries.map(entry => {
+              const horse = horses.find(h => h.id === entry.horseId);
+              if (!horse) return null;
+              return (
+                <div key={entry.id} style={{ display: "flex", alignItems: "center", gap: 14, padding: "12px 0", borderBottom: `1px solid ${C.border}` }}>
+                  <div style={{ minWidth: 130, fontSize: 13, color: C.textMid, fontWeight: 600 }}>
+                    {entry.venue} {entry.meetingNo && `Mtg ${entry.meetingNo}`}{entry.raceRef && ` · ${entry.raceRef}`}
+                  </div>
+                  <div style={{ minWidth: 80, fontSize: 14, fontWeight: 700, color: C.navy }}>{entry.raceTime}</div>
+                  <div style={{ flex: 1 }}>
+                    <span style={{ fontSize: 17, fontWeight: 800, color: C.text, textTransform: "uppercase" }}>{horse.name}</span>
+                    {horse.headgear && <span style={{ fontSize: 13, color: C.textMid, marginLeft: 8 }}>({horse.headgear})</span>}
+                    {entry.ballotNo && <span style={{ fontSize: 13, color: C.purple, marginLeft: 8, fontWeight: 700 }}>[Ballot {entry.ballotNo}]</span>}
+                  </div>
+                  <div style={{ fontSize: 12, color: C.textMid }}>{entry.raceName}</div>
+                </div>
+              );
+            })}
           </div>
-        )}
+        ))}
+        {entries.length === 0 && <div style={{ padding: 40, textAlign: "center", border: `1.5px dashed ${C.border}`, borderRadius: 14, color: C.textMid }}>No entries added yet — tap + Add Entry</div>}
       </div>
 
       {showAdd && (
-        <div style={{ position: "fixed", inset: 0, background: "rgba(10,22,40,0.6)", zIndex: 500, display: "flex", alignItems: "center", justifyContent: "center", padding: 20 }}>
-          <div style={{ background: C.card, borderRadius: 16, width: "100%", maxWidth: 440, boxShadow: C.shadowMd, overflow: "hidden", maxHeight: "90vh", overflowY: "auto" }}>
-            <div style={{ background: C.navy, padding: "16px 20px", display: "flex", justifyContent: "space-between", alignItems: "center", position: "sticky", top: 0 }}>
+        <div style={{ position: "fixed", inset: 0, background: "rgba(10,22,40,0.6)", zIndex: 500, display: "flex", alignItems: "center", justifyContent: "center", padding: 20, backdropFilter: "blur(4px)" }}>
+          <div style={{ background: C.card, borderRadius: 16, width: "100%", maxWidth: 440, boxShadow: C.shadowMd, overflow: "hidden" }}>
+            <div style={{ background: C.navy, padding: "16px 20px", display: "flex", justifyContent: "space-between", alignItems: "center" }}>
               <div style={{ fontSize: 15, fontWeight: 700, color: "#fff" }}>Add Raceday Entry</div>
-              <button onClick={function() { setShowAdd(false); }} style={{ background: "rgba(255,255,255,0.1)", border: "none", color: "#fff", width: 28, height: 28, borderRadius: 6, cursor: "pointer", fontSize: 14 }}>x</button>
+              <button onClick={() => setShowAdd(false)} style={{ background: "rgba(255,255,255,0.1)", border: "none", color: "#fff", width: 28, height: 28, borderRadius: 6, cursor: "pointer", fontSize: 14 }}>✕</button>
             </div>
             <div style={{ padding: 20, display: "flex", flexDirection: "column", gap: 10 }}>
               {[
@@ -1328,25 +1424,20 @@ function RacedayPrint({ horses, entries, setEntries }) {
                 { key: "raceName", label: "Race Name", placeholder: "e.g. Mares Handicap Hurdle" },
                 { key: "raceTime", label: "Race Time", placeholder: "e.g. 2:28 PM" },
                 { key: "date", label: "Date", type: "date" },
-                { key: "ballotNo", label: "Ballot No.", placeholder: "Leave blank if not balloted" },
-                { key: "headgear", label: "Headgear", placeholder: "e.g. Hood, Tongue Strap" },
-                { key: "jockey", label: "Jockey", placeholder: "e.g. D.J. O Keeffe" },
-              ].map(function(field) {
-                const fkey = field.key;
-                return (
-                  <div key={fkey}>
-                    <div style={{ fontSize: 10, fontWeight: 700, color: C.textMid, marginBottom: 4, textTransform: "uppercase", letterSpacing: 0.5 }}>{field.label}</div>
-                    {fkey === "horseId" ? (
-                      <select value={ne[fkey]} onChange={function(e) { setNe(function(p) { return Object.assign({}, p, { horseId: e.target.value }); }); }} style={{ width: "100%", background: C.cardOff, border: "1px solid " + C.border, borderRadius: 8, padding: "8px 12px", color: C.text, fontSize: 13, outline: "none" }}>
-                        <option value="">Select horse</option>
-                        {horses.map(function(h) { return <option key={h.id} value={h.id}>{h.name}</option>; })}
-                      </select>
-                    ) : (
-                      <input type={field.type || "text"} placeholder={field.placeholder} value={ne[fkey] || ""} onChange={function(e) { var v = e.target.value; setNe(function(p) { return Object.assign({}, p, { [fkey]: v }); }); }} style={{ width: "100%", background: C.cardOff, border: "1px solid " + C.border, borderRadius: 8, padding: "8px 12px", color: C.text, fontSize: 13, outline: "none" }} />
-                    )}
-                  </div>
-                );
-              })}
+                { key: "ballotNo", label: "Ballot No. (if applicable)", placeholder: "Leave blank if not balloted" },
+              ].map(({ key, label, placeholder, type }) => (
+                <div key={key}>
+                  <div style={{ fontSize: 10, fontWeight: 700, color: C.textMid, marginBottom: 4, textTransform: "uppercase", letterSpacing: 0.5 }}>{label}</div>
+                  {type === "select" ? (
+                    <select value={ne[key]} onChange={e => setNe(p => ({ ...p, [key]: e.target.value }))} style={{ width: "100%", background: C.cardOff, border: `1px solid ${C.border}`, borderRadius: 8, padding: "8px 12px", color: C.text, fontSize: 13, outline: "none" }}>
+                      <option value="">Select horse</option>
+                      {horses.map(h => <option key={h.id} value={h.id}>{h.name}</option>)}
+                    </select>
+                  ) : (
+                    <input type={type || "text"} placeholder={placeholder} value={ne[key]} onChange={e => setNe(p => ({ ...p, [key]: e.target.value }))} style={{ width: "100%", background: C.cardOff, border: `1px solid ${C.border}`, borderRadius: 8, padding: "8px 12px", color: C.text, fontSize: 13, outline: "none" }} />
+                  )}
+                </div>
+              ))}
               <Btn onClick={add} style={{ width: "100%", justifyContent: "center", marginTop: 6 }}>Add to Whiteboard</Btn>
             </div>
           </div>
@@ -1355,300 +1446,321 @@ function RacedayPrint({ horses, entries, setEntries }) {
     </div>
   );
 }
+
 // ─── YARD VIEW ────────────────────────────────────────────────────────────────
 function YardView({ horses, setHorses }) {
   const [showAdd, setShowAdd] = useState(false);
   const [editHorse, setEditHorse] = useState(null);
   const [csvStatus, setCsvStatus] = useState(null);
-  const [newHorse, setNewHorse] = useState({ name: "", sex: "Gelding", colour: "", trainer: "", owner: "", ownerPhone: "", ownerEmail: "", nhRating: "", flatRating: "", hurdleRating: "", chaseRating: "", headgear: "", jockey: "", notes: "", status: "Active" });
+  const [newHorse, setNewHorse] = useState({ name: "", dob: "", sex: "Gelding", colour: "", nhRating: "", flatRating: "", discipline: "Hurdle", surface: "Turf", status: "Active", owner: "", ownerPhone: "", ownerEmail: "", headgear: "", nextRaceDate: "", notes: "" });
 
-  const handleCSV = function(e) {
-    const file = e.target.files[0]; if (!file) return;
+  const handleCSV = (e) => {
+    const file = e.target.files[0];
+    if (!file) return;
     e.target.value = "";
     const reader = new FileReader();
-    reader.onload = function(ev) {
+    reader.onload = (ev) => {
       try {
         const text = ev.target.result;
-        const rawLines = text.split("\n").filter(function(l) { return l.trim(); });
-        const sep = rawLines[0].includes("\t") ? "\t" : ",";
-        const headers = rawLines[0].split(sep).map(function(h) { return h.trim().toLowerCase().replace(/\s+/g, "_").replace(/[^a-z0-9_]/g, ""); });
+        const lines = text.split("\n").filter(l => l.trim());
+        const sep = lines[0].includes("\t") ? "\t" : ",";
+        const headers = lines[0].split(sep).map(h => h.trim().toLowerCase().replace(/\s+/g, "_").replace(/[^a-z0-9_]/g, ""));
         const imported = [];
-        for (let i = 1; i < rawLines.length; i++) {
-          const cols = rawLines[i].split(sep).map(function(c) { return c.trim().replace(/^"/, "").replace(/"$/, ""); });
+        for (let i = 1; i < lines.length; i++) {
+          const cols = lines[i].split(sep).map(c => c.trim().replace(/^"|"$/g, ""));
           if (!cols[0]) continue;
-          const row = {}; headers.forEach(function(h, idx) { row[h] = cols[idx] || ""; });
-          const name = row.horse_name || row.horse || row.name || cols[0];
+          const row = {};
+          headers.forEach((h, idx) => { row[h] = cols[idx] || ""; });
+          const name = row.horse_name || row.horse || cols[0];
           if (!name) continue;
-          const yof = parseInt(row.yof || row.foaling_year || row.year_of_foaling || row.year || row.age && (new Date().getFullYear() - parseInt(row.age))) || null;
-          const rawSex = (row.sex || row.gender || row.coloursex || "").trim();
-          const sexMap = { "M": "Mare", "G": "Gelding", "F": "Filly", "C": "Colt", "H": "Horse", "R": "Gelding",
-                           "mare": "Mare", "gelding": "Gelding", "filly": "Filly", "colt": "Colt", "horse": "Horse",
-                           "g": "Gelding", "m": "Mare", "f": "Filly", "c": "Colt", "h": "Horse" };
-          // If sex is its own column use it directly, otherwise try to parse from colour
-          const sex = sexMap[rawSex] || sexMap[rawSex.toLowerCase()] || (rawSex.length > 1 ? rawSex : "Gelding");
-          const colour = row.colour || row.color || "";
-          // Map HRI status values
-          const hriStatus = (row.status || "").toLowerCase();
-          const status = hriStatus.includes("inactive") ? "Inactive" : hriStatus.includes("cool") ? "CoolingOff" : "Active";
+          const yof = parseInt(row.yof) || null;
+          const currentYear = new Date().getFullYear();
           imported.push({
-            id: "h_" + Date.now() + "_" + i, name,
-            dob: yof ? yof + "-01-01" : (row.dob || row.date_of_birth || ""),
-            sex, colour, status,
-            trainer: row.trainer || "", owner: row.owner || "",
-            ownerPhone: row.owner_phone || row.ownerphone || "",
-            ownerEmail: row.owner_email || row.owneremail || "",
-            nhRating: parseInt(row.nh_rating || row.nhrating) || null,
-            flatRating: parseInt(row.flat_rating || row.flatrating || row.flat) || null,
-            hurdleRating: parseInt(row.hurdle_rating || row.hurdle) || null,
-            chaseRating: parseInt(row.chase_rating || row.chase) || null,
-            headgear: row.headgear || "", jockey: row.jockey || "",
-            notes: row.notes || "", activationDate: null,
+            id: "h_" + Date.now() + "_" + i,
+            name,
+            dob: yof ? yof + "-01-01" : "",
+            yof,
+            sex: (function() {
+              const s = (row.sex || "").trim();
+              const m = { "G": "Gelding", "M": "Mare", "F": "Filly", "C": "Colt", "H": "Horse",
+                "g": "Gelding", "m": "Mare", "f": "Filly", "c": "Colt", "h": "Horse",
+                "gelding": "Gelding", "mare": "Mare", "filly": "Filly", "colt": "Colt", "horse": "Horse" };
+              return m[s] || m[s.toLowerCase()] || (s.length > 1 ? s : "Gelding");
+            })(),
+            colour: row.colour || row.color || "",
+            owner: row.owner || "",
+            ownerPhone: "",
+            ownerEmail: "",
+            status: (function() {
+              const st = (row.status || "").toLowerCase();
+              return st.includes("inactive") ? "Inactive" : st.includes("cool") ? "CoolingOff" : "Active";
+            })(),
+            activationDate: null,
+            nhRating: null,
+            flatRating: null,
+            discipline: [],
+            surface: "Turf",
+            headgear: "",
+            jockey: "",
+            trainer: "",
+            nextRaceDate: "",
+            notes: "",
+            isEBF: false,
+            isMaiden: true,
+            isNovice: false,
+            goingPref: [],
+            distanceMin: 16,
+            distanceMax: 24,
             silk: SILKS[Math.floor(Math.random() * SILKS.length)],
-            form: [], provisionalEntries: []
+            form: [],
+            arrivedDate: todayStr,
+            provisionalEntries: [],
+            hcert: row.hcert || "",
+            stalls: row.stalls || "",
+            partnership: row.partnership || "",
           });
         }
-        setHorses(function(prev) {
+        setHorses(prev => {
           const updated = [...prev];
-          imported.forEach(function(imp) {
-            const idx = updated.findIndex(function(h) { return h.name.toLowerCase() === imp.name.toLowerCase(); });
-            if (idx >= 0) { updated[idx] = Object.assign({}, updated[idx], imp, { id: updated[idx].id, silk: updated[idx].silk }); }
-            else { updated.push(imp); }
+          imported.forEach(imp => {
+            const idx = updated.findIndex(h => h.name.toLowerCase() === imp.name.toLowerCase());
+            if (idx >= 0) {
+              updated[idx] = { ...updated[idx], ...imp, id: updated[idx].id, silk: updated[idx].silk, form: updated[idx].form };
+            } else {
+              updated.push(imp);
+            }
           });
           return updated;
         });
-        setCsvStatus(imported.length + " horses imported");
-        setTimeout(function() { setCsvStatus(null); }, 4000);
-      } catch (err) { setCsvStatus("Error reading CSV"); setTimeout(function() { setCsvStatus(null); }, 4000); }
+        setCsvStatus(imported.length + " horses imported from HRI");
+        setTimeout(() => setCsvStatus(null), 5000);
+      } catch (err) {
+        console.error(err);
+        setCsvStatus("Error reading file — check format");
+        setTimeout(() => setCsvStatus(null), 5000);
+      }
     };
     reader.readAsText(file);
   };
 
-  const handleRatingsCSV = function(e) {
-    const file = e.target.files[0]; if (!file) return;
+  const handleRatingsCSV = (e) => {
+    const file = e.target.files[0];
+    if (!file) return;
     e.target.value = "";
     const reader = new FileReader();
-    reader.onload = function(ev) {
+    reader.onload = (ev) => {
       try {
         const text = ev.target.result;
-        const rawLines = text.split("\n").filter(function(l) { return l.trim(); });
+        const rawLines = text.split("\n").filter(l => l.trim());
         const sep = rawLines[0].includes("\t") ? "\t" : ",";
-        const headers = rawLines[0].split(sep).map(function(h) { return h.trim().toLowerCase().replace(/\s+/g, "_"); });
+        const headers = rawLines[0].split(sep).map(h => h.trim().toLowerCase().replace(/\s+/g, "_").replace(/[^a-z0-9_]/g, ""));
         let updated = 0;
-        setHorses(function(prev) {
+        const ratingLines = rawLines.slice(1);
+        setHorses(prev => {
           const horses = [...prev];
-          rawLines.slice(1).forEach(function(line) {
-            const cols = line.split(sep).map(function(c) { return c.trim().replace(/^"/, "").replace(/"$/, ""); });
+          ratingLines.forEach(line => {
+            const cols = line.split(sep).map(c => c.trim().replace(/^"|"$/g, ""));
             if (!cols[0]) return;
-            const row = {}; headers.forEach(function(h, idx) { row[h] = cols[idx] || ""; });
-            const name = row.horse_name || row.horse || row.name || cols[0];
+            const row = {};
+            headers.forEach((h, idx) => { row[h] = cols[idx] || ""; });
+            const name = row.horse_name || row.horse || cols[0];
             if (!name) return;
-            const idx = horses.findIndex(function(h) { return h.name.toLowerCase().trim() === name.toLowerCase().trim(); });
+            const flatRating = parseInt(row.flat || row.flat_rating || row.flatrating || row.turf || row.official_flat || "") || null;
+            const awtRating = parseInt(row.all_weather || row.awt || row.allweather || row.aw || "") || null;
+            const hurdleRating = parseInt(row.hurdle || row.hurdle_rating || row.hurdlerating || row.hdl || row.hurdles || row.nh_hurdle || "") || null;
+            const chaseRating = parseInt(row.chase || row.chase_rating || row.chaserating || row.chs || row.chases || row.nh_chase || "") || null;
+            const nhRating = parseInt(row.nh_rating || row.nhrating || row.nh || row.national_hunt || row.official_nh || "") || null;
+            const genericRating = parseInt(row.rating || row.official_rating || row.mark || row.handicap_mark || row.official || "") || null;
+            const idx = horses.findIndex(h => h.name.toLowerCase().trim() === name.toLowerCase().trim());
             if (idx >= 0) {
-              // Try every possible column name variant
-              const flat = parseInt(row.flat || row.flat_rating || row.flatrating || row.turf || row["flat_official_rating"] || row.official_flat || "") || null;
-              const hurdle = parseInt(row.hurdle || row.hurdle_rating || row.hurdlerating || row.hdl || row.hurdles || row.nh_hurdle || "") || null;
-              const chase = parseInt(row.chase || row.chase_rating || row.chaserating || row.chs || row.chases || row.nh_chase || "") || null;
-              const nh = parseInt(row.nh_rating || row.nhrating || row.nh || row.national_hunt || row.nh_official || row.official_nh || "") || null;
-              const awt = parseInt(row.awt || row.all_weather || row.allweather || row.aw || "") || null;
-              // If a single "rating" or "official rating" column — use as nhRating
-              const generic = parseInt(row.rating || row.official_rating || row.official || row.mark || row.handicap_mark || "") || null;
-              if (flat) horses[idx].flatRating = flat;
-              if (hurdle) horses[idx].hurdleRating = hurdle;
-              if (chase) horses[idx].chaseRating = chase;
-              if (awt) horses[idx].awtRating = awt;
-              if (nh) horses[idx].nhRating = nh;
-              if (!flat && !hurdle && !chase && !nh && generic) horses[idx].nhRating = generic;
+              horses[idx] = {
+                ...horses[idx],
+                flatRating: flatRating || awtRating || horses[idx].flatRating,
+                awtRating: awtRating || horses[idx].awtRating,
+                nhRating: nhRating || hurdleRating || chaseRating || genericRating || horses[idx].nhRating,
+                hurdleRating: hurdleRating || horses[idx].hurdleRating,
+                chaseRating: chaseRating || horses[idx].chaseRating,
+                isMaiden: !flatRating && !awtRating && !hurdleRating && !chaseRating,
+                discipline: horses[idx].discipline && horses[idx].discipline.length > 0
+                  ? horses[idx].discipline
+                  : hurdleRating && chaseRating ? ["Hurdle", "Chase"]
+                  : hurdleRating ? ["Hurdle"]
+                  : chaseRating ? ["Chase"]
+                  : flatRating || awtRating ? ["Flat"]
+                  : horses[idx].discipline,
+                surface: horses[idx].surface || (awtRating && !flatRating ? "AWT" : "Turf"),
+              };
               updated++;
             }
           });
           return horses;
         });
-        setCsvStatus(updated + " ratings updated");
-        setTimeout(function() { setCsvStatus(null); }, 4000);
-      } catch (err) { setCsvStatus("Error reading ratings"); setTimeout(function() { setCsvStatus(null); }, 4000); }
+        setCsvStatus(updated + " horses updated with ratings");
+        setTimeout(() => setCsvStatus(null), 5000);
+      } catch (err) {
+        console.error(err);
+        setCsvStatus("Error reading ratings file");
+        setTimeout(() => setCsvStatus(null), 5000);
+      }
     };
     reader.readAsText(file);
   };
 
-  const saveEdit = function() {
-    setHorses(function(prev) {
-      return prev.map(function(h) {
-        if (h.id !== editHorse.id) return h;
-        return Object.assign({}, h, editHorse, {
-          nhRating: editHorse.nhRating ? parseInt(editHorse.nhRating) : null,
-          flatRating: editHorse.flatRating ? parseInt(editHorse.flatRating) : null,
-          hurdleRating: editHorse.hurdleRating ? parseInt(editHorse.hurdleRating) : null,
-          chaseRating: editHorse.chaseRating ? parseInt(editHorse.chaseRating) : null,
-        });
-      });
-    });
-    setEditHorse(null);
-  };
-
-  const addHorse = function() {
+  const addHorse = () => {
     if (!newHorse.name) return;
-    setHorses(function(prev) {
-      return [...prev, Object.assign({}, newHorse, {
-        id: "h_" + Date.now(),
-        silk: SILKS[Math.floor(Math.random() * SILKS.length)],
-        form: [], provisionalEntries: [], activationDate: null,
-        nhRating: newHorse.nhRating ? parseInt(newHorse.nhRating) : null,
-        flatRating: newHorse.flatRating ? parseInt(newHorse.flatRating) : null,
-      })];
-    });
-    setNewHorse({ name: "", sex: "Gelding", colour: "", trainer: "", owner: "", ownerPhone: "", ownerEmail: "", nhRating: "", flatRating: "", hurdleRating: "", chaseRating: "", headgear: "", jockey: "", notes: "", status: "Active" });
+    setHorses(prev => [...prev, { ...newHorse, id: "h_" + Date.now(), silk: SILKS[Math.floor(Math.random() * SILKS.length)], nhRating: newHorse.nhRating ? parseInt(newHorse.nhRating) : null, flatRating: newHorse.flatRating ? parseInt(newHorse.flatRating) : null, discipline: [newHorse.discipline], isEBF: false, isMaiden: false, isNovice: false, distanceMin: 16, distanceMax: 24, goingPref: [], form: [], arrivedDate: todayStr, provisionalEntries: [] }]);
+    setNewHorse({ name: "", dob: "", sex: "Gelding", colour: "", nhRating: "", flatRating: "", discipline: "Hurdle", surface: "Turf", status: "Active", owner: "", ownerPhone: "", ownerEmail: "", headgear: "", nextRaceDate: "", notes: "" });
     setShowAdd(false);
   };
 
-  const removeHorse = function(id, name) {
-    if (window.confirm("Remove " + name + " from yard?")) {
-      setHorses(function(prev) { return prev.filter(function(h) { return h.id !== id; }); });
-    }
-  };
-
-  const statCards = [
-    { l: "Total", c: C.blue, v: horses.length },
-    { l: "Active", c: C.green, v: horses.filter(function(h) { return h.status === "Active"; }).length },
-    { l: "Cooling", c: C.amber, v: horses.filter(function(h) { return h.status === "CoolingOff"; }).length },
-    { l: "Inactive", c: C.red, v: horses.filter(function(h) { return h.status === "Inactive"; }).length },
-  ];
-
   return (
-    <div style={{ padding: 20 }}>
-      {csvStatus && <div style={{ background: C.green, color: "#fff", padding: "10px 16px", borderRadius: 9, marginBottom: 12, fontWeight: 700 }}>{csvStatus}</div>}
-      <div style={{ display: "flex", gap: 10, marginBottom: 20, flexWrap: "wrap", alignItems: "center" }}>
-        <label style={{ background: C.cardOff, border: "1.5px solid " + C.border, color: C.textMid, borderRadius: 9, padding: "9px 16px", fontSize: 13, fontWeight: 700, cursor: "pointer" }}>
-          {"Import HRI CSV"}
-          <input type="file" accept=".csv,.tsv,.txt" onChange={handleCSV} style={{ display: "none" }} />
-        </label>
-        <label style={{ background: C.cardOff, border: "1.5px solid " + C.border, color: C.textMid, borderRadius: 9, padding: "9px 16px", fontSize: 13, fontWeight: 700, cursor: "pointer" }}>
-          {"Import Ratings"}
-          <input type="file" accept=".csv,.tsv,.txt" onChange={handleRatingsCSV} style={{ display: "none" }} />
-        </label>
-        <Btn variant="ghost" onClick={function() { if (window.confirm("Clear all horses from yard?")) setHorses([]); }} style={{ fontSize: 12, color: C.red }}>{"Clear Yard"}</Btn>
-        <Btn onClick={function() { setShowAdd(true); }}>{"+ Add Horse"}</Btn>
-      </div>
-      <div style={{ display: "grid", gridTemplateColumns: "repeat(4,1fr)", gap: 10, marginBottom: 20 }}>
-        {statCards.map(function(s) {
-          return (
-            <div key={s.l} style={{ background: C.card, borderRadius: 10, padding: "13px 16px", borderTop: "4px solid " + s.c, textAlign: "center" }}>
-              <div style={{ fontSize: 22, fontWeight: 800, color: s.c }}>{s.v}</div>
-              <div style={{ fontSize: 11, color: C.textMid, fontWeight: 600 }}>{s.l}</div>
-            </div>
-          );
-        })}
-      </div>
-      {horses.length === 0 && (
-        <div style={{ padding: 48, textAlign: "center", border: "1.5px dashed " + C.border, borderRadius: 14, color: C.textMid }}>
-          <div style={{ fontSize: 32, marginBottom: 10 }}>{"🐎"}</div>
-          <div style={{ fontWeight: 700 }}>{"No horses in yard"}</div>
-          <div style={{ fontSize: 13, marginTop: 4 }}>{"Import a CSV or add horses manually"}</div>
+    <div>
+      <div style={{ display: "flex", justifyContent: "space-between", alignItems: "center", marginBottom: 16, flexWrap: "wrap", gap: 10 }}>
+        <div>
+          <div style={{ fontSize: 22, fontWeight: 800, color: C.text }}>My Yard</div>
+          <div style={{ fontSize: 13, color: C.textMid, marginTop: 3 }}>{horses.length} horses · {horses.filter(h => h.status === "Active").length} active</div>
         </div>
-      )}
-      {horses.map(function(h) {
-        const stCol = h.status === "Active" ? C.green : h.status === "CoolingOff" ? C.amber : C.red;
-        return (
-          <div key={h.id} style={{ background: C.card, border: "1px solid " + C.border, borderLeft: "4px solid " + stCol, borderRadius: 12, padding: "14px 16px", marginBottom: 10, display: "flex", justifyContent: "space-between", alignItems: "flex-start" }}>
-            <div style={{ display: "flex", gap: 12, alignItems: "flex-start", flex: 1 }}>
-              <Silk silk={h.silk} size={36} />
-              <div>
-                <div style={{ fontSize: 15, fontWeight: 700, color: C.text }}>{h.name}</div>
-                <div style={{ fontSize: 12, color: C.textMid, marginTop: 2 }}>{[h.sex, h.colour, h.trainer].filter(Boolean).join(" · ")}</div>
-                <div style={{ fontSize: 12, color: C.textMid, marginTop: 2 }}>
-                  {h.owner ? "Owner: " + h.owner : ""}
-                  {(h.nhRating || h.flatRating || h.hurdleRating || h.chaseRating) ? " · Rtg " + (h.nhRating || h.hurdleRating || h.chaseRating || h.flatRating) : ""}
-                  {h.headgear ? " · " + h.headgear : ""}
-                </div>
-                <div style={{ marginTop: 6 }}><FormDots form={h.form} /></div>
+        <div style={{ display: "flex", gap: 8, alignItems: "center" }}>
+          {csvStatus && <span style={{ fontSize: 12, fontWeight: 700, color: csvStatus.startsWith("✓") ? C.green : C.red }}>{csvStatus}</span>}
+          <label style={{ background: C.cardOff, border: "1.5px solid " + C.border, color: C.textMid, borderRadius: 9, padding: "9px 16px", fontSize: 13, fontWeight: 700, cursor: "pointer", display: "inline-flex", alignItems: "center", gap: 6 }}>
+            📥 Import Horses CSV <input type="file" accept=".csv,.tsv,.txt" onChange={handleCSV} style={{ display: "none" }} />
+          </label>
+          <label style={{ background: C.cardOff, border: "1.5px solid " + C.border, color: C.textMid, borderRadius: 9, padding: "9px 16px", fontSize: 13, fontWeight: 700, cursor: "pointer", display: "inline-flex", alignItems: "center", gap: 6 }}>
+            📊 Import Ratings CSV <input type="file" accept=".csv,.tsv,.txt" onChange={handleRatingsCSV} style={{ display: "none" }} />
+          </label>
+          <Btn variant="ghost" onClick={() => { if (window.confirm("Remove all horses from the yard? This cannot be undone.")) { setHorses([]); } }} style={{ fontSize: 12, color: C.red, borderColor: C.red }}>Clear Yard</Btn>
+          <Btn onClick={() => setShowAdd(true)}>+ Add Horse</Btn>
+        </div>
+      </div>
+
+      <div style={{ display: "grid", gridTemplateColumns: "repeat(4,1fr)", gap: 10, marginBottom: 18 }}>
+        {[{ l: "Total", v: horses.length, c: C.blue }, { l: "Active", v: horses.filter(h => h.status === "Active").length, c: C.green }, { l: "Cooling Off", v: horses.filter(h => h.status === "CoolingOff").length, c: C.amber }, { l: "Inactive", v: horses.filter(h => h.status === "Inactive").length, c: C.red }].map(s => (
+          <div key={s.l} style={{ background: C.card, borderRadius: 10, padding: "13px 16px", borderTop: `4px solid ${s.c}`, boxShadow: C.shadow }}>
+            <div style={{ fontSize: 28, fontWeight: 800, color: s.c, lineHeight: 1 }}>{s.v}</div>
+            <div style={{ fontSize: 11, color: C.textMid, marginTop: 3, fontWeight: 600 }}>{s.l}</div>
+          </div>
+        ))}
+      </div>
+
+      {horses.map(h => (
+        <div key={h.id} style={{ background: C.card, border: `1px solid ${C.border}`, borderLeft: `4px solid ${h.status === "Active" ? C.green : h.status === "CoolingOff" ? C.amber : C.red}`, borderRadius: 12, padding: "13px 16px", marginBottom: 9, boxShadow: C.shadow }}>
+          <div style={{ display: "flex", alignItems: "center", gap: 12 }}>
+            <Silk silk={h.silk} size={40} />
+            <div style={{ flex: 1 }}>
+              <div style={{ display: "flex", alignItems: "center", gap: 7, marginBottom: 3, flexWrap: "wrap" }}>
+                <span style={{ fontSize: 16, fontWeight: 700, color: C.text }}>{h.name}</span>
+                <StatusPill status={h.status} activationDate={h.activationDate} />
+                {h.headgear && <Tag color={C.purple}>{h.headgear}</Tag>}
               </div>
+              <div style={{ display: "flex", gap: 10, flexWrap: "wrap", fontSize: 12, color: C.textMid }}>
+                <span>{getAge(h.dob)}yo {h.sex} · {h.colour}</span>
+                {h.flatRating && <span>Flat: {h.flatRating}</span>}
+                {h.awtRating && <span>AWT: {h.awtRating}</span>}
+                {h.hurdleRating && <span>Hrd: {h.hurdleRating}</span>}
+                {h.chaseRating && <span>Chs: {h.chaseRating}</span>}
+                {!h.flatRating && !h.awtRating && !h.hurdleRating && !h.chaseRating && <span style={{ color: C.amber }}>Unrated</span>}
+                <span>Owner: {h.owner}</span>
+                {h.ownerPhone && <a href={`https://wa.me/${h.ownerPhone.replace(/\D/g, "")}`} target="_blank" rel="noopener noreferrer" style={{ color: C.green, fontWeight: 600, textDecoration: "none" }}>💬 WhatsApp</a>}
+              </div>
+              <div style={{ marginTop: 5, display: "flex", gap: 6, alignItems: "center" }}><FormDots form={h.form} />{h.notes && <span style={{ fontSize: 11, color: C.textMid, fontStyle: "italic" }}>💬 {h.notes}</span>}</div>
             </div>
-            <div style={{ display: "flex", gap: 6 }}>
-              <Btn variant="ghost" onClick={function() { setEditHorse(Object.assign({}, h)); }} style={{ fontSize: 11, padding: "5px 12px" }}>{"Edit"}</Btn>
-              <Btn variant="red" onClick={function() { removeHorse(h.id, h.name); }} style={{ fontSize: 11, padding: "5px 12px" }}>{"Remove"}</Btn>
+            <div style={{ display: "flex", gap: 6, marginTop: 8 }}>
+              <Btn variant="ghost" onClick={() => setEditHorse(h)} style={{ fontSize: 11, padding: "5px 12px" }}>✏️ Edit</Btn>
+              <Btn variant="red" onClick={() => { if (window.confirm("Remove " + h.name + " from the yard?")) { setHorses(prev => prev.filter(x => x.id !== h.id)); } }} style={{ fontSize: 11, padding: "5px 12px" }}>🗑 Remove</Btn>
             </div>
           </div>
-        );
-      })}
+        </div>
+      ))}
 
       {editHorse && (
         <div style={{ position: "fixed", inset: 0, background: "rgba(10,22,40,0.6)", zIndex: 500, display: "flex", alignItems: "center", justifyContent: "center", padding: 20 }}>
           <div style={{ background: C.card, borderRadius: 16, width: "100%", maxWidth: 480, maxHeight: "90vh", overflowY: "auto" }}>
-            <div style={{ background: C.navy, padding: "16px 20px", display: "flex", justifyContent: "space-between", alignItems: "center" }}>
-              <div style={{ fontSize: 15, fontWeight: 700, color: "#fff" }}>{"Edit — " + editHorse.name}</div>
-              <button onClick={function() { setEditHorse(null); }} style={{ background: "rgba(255,255,255,0.1)", border: "none", color: "#fff", width: 28, height: 28, borderRadius: 6, cursor: "pointer", fontSize: 16 }}>{"×"}</button>
+            <div style={{ background: C.navy, padding: "16px 20px", display: "flex", justifyContent: "space-between", alignItems: "center", position: "sticky", top: 0 }}>
+              <div style={{ fontSize: 15, fontWeight: 700, color: "#fff" }}>Edit — {editHorse.name}</div>
+              <button onClick={() => setEditHorse(null)} style={{ background: "rgba(255,255,255,0.1)", border: "none", color: "#fff", width: 28, height: 28, borderRadius: 6, cursor: "pointer", fontSize: 14 }}>✕</button>
             </div>
-            <div style={{ padding: 20, display: "flex", flexDirection: "column", gap: 12 }}>
+            <div style={{ padding: 20, display: "flex", flexDirection: "column", gap: 11 }}>
               {[
-                ["Status", "status", "select", ["Active","CoolingOff","Inactive"]],
-                ["Sex", "sex", "select", ["Gelding","Mare","Filly","Colt","Horse"]],
-                ["Trainer", "trainer", "text", null],
-                ["Owner", "owner", "text", null],
-                ["Owner WhatsApp", "ownerPhone", "tel", null],
-                ["Owner Email", "ownerEmail", "email", null],
-                ["NH Rating", "nhRating", "number", null],
-                ["Flat Rating", "flatRating", "number", null],
-                ["Hurdle Rating", "hurdleRating", "number", null],
-                ["Chase Rating", "chaseRating", "number", null],
-                ["Headgear", "headgear", "text", null],
-                ["Jockey", "jockey", "text", null],
-                ["Notes", "notes", "text", null],
-              ].map(function(field) {
-                const label = field[0], key = field[1], type = field[2], opts = field[3];
-                return (
-                  <div key={key}>
-                    <div style={{ fontSize: 10, fontWeight: 700, color: C.textMid, marginBottom: 4, textTransform: "uppercase" }}>{label}</div>
-                    {opts ? (
-                      <select value={editHorse[key] || ""} onChange={function(e) { setEditHorse(function(p) { return Object.assign({}, p, { [key]: e.target.value }); }); }} style={{ width: "100%", background: C.cardOff, border: "1px solid " + C.border, borderRadius: 8, padding: "8px 12px", color: C.text, fontSize: 13 }}>
-                        {opts.map(function(o) { return <option key={o} value={o}>{o}</option>; })}
-                      </select>
-                    ) : (
-                      <input type={type} value={editHorse[key] || ""} onChange={function(e) { setEditHorse(function(p) { return Object.assign({}, p, { [key]: e.target.value }); }); }} style={{ width: "100%", background: C.cardOff, border: "1px solid " + C.border, borderRadius: 8, padding: "8px 12px", color: C.text, fontSize: 13, boxSizing: "border-box" }} />
-                    )}
-                  </div>
-                );
-              })}
-              <Btn onClick={saveEdit} style={{ width: "100%", justifyContent: "center" }}>{"Save Changes"}</Btn>
-              <Btn variant="red" onClick={function() { removeHorse(editHorse.id, editHorse.name); setEditHorse(null); }} style={{ width: "100%", justifyContent: "center" }}>{"Remove from Yard"}</Btn>
+                { key: "status", label: "Status", type: "select", options: ["Active", "CoolingOff", "Inactive"] },
+                { key: "sex", label: "Sex", type: "select", options: ["Gelding", "Mare", "Filly", "Colt", "Horse"] },
+                { key: "discipline", label: "Discipline", type: "select", options: ["Hurdle", "Chase", "Flat", "Bumper"] },
+                { key: "headgear", label: "Headgear", placeholder: "e.g. Cheekpieces" },
+                { key: "nhRating", label: "NH Rating", type: "number", placeholder: "e.g. 98" },
+                { key: "flatRating", label: "Flat Rating", type: "number", placeholder: "e.g. 74" },
+                { key: "ownerPhone", label: "Owner WhatsApp", type: "tel", placeholder: "+353 86 000 0000" },
+                { key: "ownerEmail", label: "Owner Email", type: "email", placeholder: "owner@email.com" },
+                { key: "jockey", label: "Jockey", placeholder: "e.g. D.J. OKeeffe" },
+                { key: "notes", label: "Trainer Notes", placeholder: "Any notes" },
+                { key: "nextRaceDate", label: "Next Target Date", type: "date" },
+              ].map(({ key, label, placeholder, type, options }) => (
+                <div key={key}>
+                  <div style={{ fontSize: 10, fontWeight: 700, color: C.textMid, marginBottom: 3, textTransform: "uppercase", letterSpacing: 0.5 }}>{label}</div>
+                  {type === "select" ? (
+                    <select
+                      value={key === "discipline" ? (editHorse.discipline && editHorse.discipline[0]) || "" : editHorse[key] || ""}
+                      onChange={e => setEditHorse(prev => ({ ...prev, [key]: key === "discipline" ? [e.target.value] : e.target.value }))}
+                      style={{ width: "100%", background: C.cardOff, border: "1px solid " + C.border, borderRadius: 8, padding: "8px 12px", color: C.text, fontSize: 13, outline: "none" }}
+                    >
+                      {(options || []).map(o => <option key={o} value={o}>{o}</option>)}
+                    </select>
+                  ) : (
+                    <input
+                      type={type || "text"}
+                      placeholder={placeholder}
+                      value={editHorse[key] || ""}
+                      onChange={e => setEditHorse(prev => ({ ...prev, [key]: e.target.value }))}
+                      style={{ width: "100%", background: C.cardOff, border: "1px solid " + C.border, borderRadius: 8, padding: "8px 12px", color: C.text, fontSize: 13, outline: "none" }}
+                    />
+                  )}
+                </div>
+              ))}
+              <Btn onClick={() => {
+                setHorses(prev => prev.map(h => h.id === editHorse.id ? { ...editHorse, nhRating: editHorse.nhRating ? parseInt(editHorse.nhRating) : null, flatRating: editHorse.flatRating ? parseInt(editHorse.flatRating) : null } : h));
+                setEditHorse(null);
+              }} style={{ width: "100%", justifyContent: "center", marginTop: 4 }}>Save Changes</Btn>
+              <Btn variant="red" onClick={() => { if (window.confirm("Remove " + editHorse.name + " from the yard?")) { setHorses(prev => prev.filter(h => h.id !== editHorse.id)); setEditHorse(null); } }} style={{ width: "100%", justifyContent: "center" }}>Remove Horse from Yard</Btn>
             </div>
           </div>
         </div>
       )}
 
       {showAdd && (
-        <div style={{ position: "fixed", inset: 0, background: "rgba(10,22,40,0.6)", zIndex: 500, display: "flex", alignItems: "center", justifyContent: "center", padding: 20 }}>
-          <div style={{ background: C.card, borderRadius: 16, width: "100%", maxWidth: 480, maxHeight: "90vh", overflowY: "auto" }}>
-            <div style={{ background: C.navy, padding: "16px 20px", display: "flex", justifyContent: "space-between", alignItems: "center" }}>
-              <div style={{ fontSize: 15, fontWeight: 700, color: "#fff" }}>{"Add Horse"}</div>
-              <button onClick={function() { setShowAdd(false); }} style={{ background: "rgba(255,255,255,0.1)", border: "none", color: "#fff", width: 28, height: 28, borderRadius: 6, cursor: "pointer", fontSize: 16 }}>{"×"}</button>
+        <div style={{ position: "fixed", inset: 0, background: "rgba(10,22,40,0.6)", zIndex: 500, display: "flex", alignItems: "center", justifyContent: "center", padding: 20, backdropFilter: "blur(4px)" }}>
+          <div style={{ background: C.card, borderRadius: 16, width: "100%", maxWidth: 480, maxHeight: "90vh", overflowY: "auto", boxShadow: C.shadowMd }}>
+            <div style={{ background: C.navy, padding: "16px 20px", display: "flex", justifyContent: "space-between", alignItems: "center", position: "sticky", top: 0 }}>
+              <div style={{ fontSize: 15, fontWeight: 700, color: "#fff" }}>Add Horse</div>
+              <button onClick={() => setShowAdd(false)} style={{ background: "rgba(255,255,255,0.1)", border: "none", color: "#fff", width: 28, height: 28, borderRadius: 6, cursor: "pointer", fontSize: 14 }}>✕</button>
             </div>
-            <div style={{ padding: 20, display: "flex", flexDirection: "column", gap: 12 }}>
+            <div style={{ padding: 20, display: "flex", flexDirection: "column", gap: 11 }}>
               {[
-                ["Name *", "name", "text", null],
-                ["Sex", "sex", "select", ["Gelding","Mare","Filly","Colt","Horse"]],
-                ["Colour", "colour", "text", null],
-                ["Trainer", "trainer", "text", null],
-                ["Owner", "owner", "text", null],
-                ["Owner WhatsApp", "ownerPhone", "tel", null],
-                ["NH Rating", "nhRating", "number", null],
-                ["Flat Rating", "flatRating", "number", null],
-                ["Headgear", "headgear", "text", null],
-                ["Jockey", "jockey", "text", null],
-              ].map(function(field) {
-                const label = field[0], key = field[1], type = field[2], opts = field[3];
-                return (
-                  <div key={key}>
-                    <div style={{ fontSize: 10, fontWeight: 700, color: C.textMid, marginBottom: 4, textTransform: "uppercase" }}>{label}</div>
-                    {opts ? (
-                      <select value={newHorse[key] || ""} onChange={function(e) { setNewHorse(function(p) { return Object.assign({}, p, { [key]: e.target.value }); }); }} style={{ width: "100%", background: C.cardOff, border: "1px solid " + C.border, borderRadius: 8, padding: "8px 12px", color: C.text, fontSize: 13 }}>
-                        {opts.map(function(o) { return <option key={o} value={o}>{o}</option>; })}
-                      </select>
-                    ) : (
-                      <input type={type} value={newHorse[key] || ""} onChange={function(e) { setNewHorse(function(p) { return Object.assign({}, p, { [key]: e.target.value }); }); }} style={{ width: "100%", background: C.cardOff, border: "1px solid " + C.border, borderRadius: 8, padding: "8px 12px", color: C.text, fontSize: 13, boxSizing: "border-box" }} />
-                    )}
-                  </div>
-                );
-              })}
-              <Btn onClick={addHorse} style={{ width: "100%", justifyContent: "center" }}>{"Add to Yard"}</Btn>
+                { key: "name", label: "Horse Name", placeholder: "e.g. Bob Olinger" },
+                { key: "dob", label: "Date of Birth", type: "date" },
+                { key: "sex", label: "Sex", type: "select", options: ["Gelding", "Mare", "Filly", "Colt", "Horse"] },
+                { key: "colour", label: "Colour", placeholder: "e.g. Bay" },
+                { key: "nhRating", label: "NH Rating", type: "number", placeholder: "e.g. 98" },
+                { key: "flatRating", label: "Flat Rating", type: "number", placeholder: "e.g. 74" },
+                { key: "discipline", label: "Discipline", type: "select", options: ["Hurdle", "Chase", "Flat", "Bumper"] },
+                { key: "surface", label: "Surface", type: "select", options: ["Turf", "AWT"] },
+                { key: "status", label: "Status", type: "select", options: ["Active", "CoolingOff", "Inactive"] },
+                { key: "owner", label: "Owner", placeholder: "e.g. J. Murphy" },
+                { key: "ownerPhone", label: "Owner WhatsApp", type: "tel", placeholder: "+353 86 000 0000" },
+                { key: "ownerEmail", label: "Owner Email", type: "email", placeholder: "owner@email.com" },
+                { key: "headgear", label: "Headgear", placeholder: "e.g. Cheekpieces" },
+                { key: "nextRaceDate", label: "Next Target Date", type: "date" },
+                { key: "notes", label: "Trainer Notes", placeholder: "Any notes" },
+              ].map(({ key, label, placeholder, type, options }) => (
+                <div key={key}>
+                  <div style={{ fontSize: 10, fontWeight: 700, color: C.textMid, marginBottom: 3, textTransform: "uppercase", letterSpacing: 0.5 }}>{label}</div>
+                  {type === "select" ? (
+                    <select value={newHorse[key]} onChange={e => setNewHorse(p => ({ ...p, [key]: e.target.value }))} style={{ width: "100%", background: C.cardOff, border: `1px solid ${C.border}`, borderRadius: 8, padding: "8px 12px", color: C.text, fontSize: 13, outline: "none" }}>
+                      {options.map(o => <option key={o} value={o}>{o}</option>)}
+                    </select>
+                  ) : (
+                    <input type={type || "text"} placeholder={placeholder} value={newHorse[key]} onChange={e => setNewHorse(p => ({ ...p, [key]: e.target.value }))} style={{ width: "100%", background: C.cardOff, border: `1px solid ${C.border}`, borderRadius: 8, padding: "8px 12px", color: C.text, fontSize: 13, outline: "none" }} />
+                  )}
+                </div>
+              ))}
+              <Btn onClick={addHorse} style={{ width: "100%", justifyContent: "center", marginTop: 4 }}>Add Horse to Yard</Btn>
             </div>
           </div>
         </div>
@@ -1656,7 +1768,6 @@ function YardView({ horses, setHorses }) {
     </div>
   );
 }
-
 
 // ─── MOVEMENT LOG ─────────────────────────────────────────────────────────────
 function MovementLog({ horses }) {
@@ -1753,8 +1864,8 @@ function OwnerPortal({ horses }) {
 
   const owners = [...new Set(horses.map(h => h.owner))].map(name => ({
     name, horses: horses.filter(h => h.owner === name),
-    phone: (horses.find(h => h.owner === name) || {}).ownerPhone,
-    email: (horses.find(h => h.owner === name) || {}).ownerEmail,
+    phone: horses.find(h => h.owner === name)?.ownerPhone,
+    email: horses.find(h => h.owner === name)?.ownerEmail,
   }));
 
   if (!selOwner) return (
@@ -1784,7 +1895,7 @@ function OwnerPortal({ horses }) {
       <div style={{ display: "flex", justifyContent: "space-between", alignItems: "center", marginBottom: 14 }}>
         <Btn variant="ghost" onClick={() => setSelOwner(null)} style={{ fontSize: 12, padding: "6px 14px" }}>← All Owners</Btn>
         <div style={{ display: "flex", gap: 8 }}>
-          {selOwner.phone && <a href={`https://wa.me/${selOwner.phone.split("").filter(c => c >= "0" && c <= "9").join("")}`} target="_blank" rel="noopener noreferrer" style={{ background: "#f0fdf4", border: "1px solid #bbf7d0", color: "#15803d", borderRadius: 8, padding: "7px 14px", fontSize: 12, fontWeight: 700, textDecoration: "none" }}>💬 WhatsApp</a>}
+          {selOwner.phone && <a href={`https://wa.me/${selOwner.phone.replace(/\D/g, "")}`} target="_blank" rel="noopener noreferrer" style={{ background: "#f0fdf4", border: "1px solid #bbf7d0", color: "#15803d", borderRadius: 8, padding: "7px 14px", fontSize: 12, fontWeight: 700, textDecoration: "none" }}>💬 WhatsApp</a>}
           {selOwner.phone && <a href={`tel:${selOwner.phone}`} style={{ background: C.blueBg, border: `1px solid ${C.blue}30`, color: C.blue, borderRadius: 8, padding: "7px 14px", fontSize: 12, fontWeight: 700, textDecoration: "none" }}>📞 Call</a>}
           {selOwner.email && <a href={`mailto:${selOwner.email}`} style={{ background: C.navy, border: "none", color: "#fff", borderRadius: 8, padding: "7px 14px", fontSize: 12, fontWeight: 700, textDecoration: "none" }}>✉ Email</a>}
         </div>
@@ -1858,127 +1969,124 @@ function OwnerPortal({ horses }) {
 
 // ─── ROOT ─────────────────────────────────────────────────────────────────────
 export default function App() {
-  const [tab, setTab] = useState("planner");
   const [user, setUser] = useState(null);
-  const [authLoading, setAuthLoading] = useState(true);
-  const [authMode, setAuthMode] = useState("login"); // login | signup
+  const [authMode, setAuthMode] = useState("login");
   const [email, setEmail] = useState("");
   const [password, setPassword] = useState("");
   const [authError, setAuthError] = useState("");
-  const [horses, setHorsesRaw] = useState([]);
-  const [medLogs, setMedLogsRaw] = useState({});
-  const [trackedIds, setTrackedIdsRaw] = useState([]);
-  const [wbEntries, setWbEntriesRaw] = useState([]);
-  const [sidebarOpen, setSidebarOpen] = useState(true);
-  const [saving, setSaving] = useState(false);
+  const [authLoading, setAuthLoading] = useState(false);
+  const [appLoading, setAppLoading] = useState(true);
 
-  // ── AUTH ────────────────────────────────────────────────────
+  const [tab, setTab] = useState("planner");
+  const [horsesRaw, setHorsesRaw] = useState([]);
+  const [medLogsRaw, setMedLogsRaw] = useState({});
+  const [trackedIdsRaw, setTrackedIdsRaw] = useState([]);
+  const [wbEntriesRaw, setWbEntriesRaw] = useState([]);
+  const [sidebarOpen, setSidebarOpen] = useState(true);
+
+  // ── AUTH LISTENER ────────────────────────────────────────────
   useEffect(function() {
     supabase.auth.getSession().then(function(res) {
       setUser(res.data.session ? res.data.session.user : null);
-      setAuthLoading(false);
+      setAppLoading(false);
     });
-    const { data: listener } = supabase.auth.onAuthStateChange(function(event, session) {
+    const listener = supabase.auth.onAuthStateChange(function(event, session) {
       setUser(session ? session.user : null);
     });
-    return function() { listener.subscription.unsubscribe(); };
+    return function() { listener.data.subscription.unsubscribe(); };
   }, []);
 
-  // ── LOAD DATA ───────────────────────────────────────────────
+  // ── LOAD DATA ────────────────────────────────────────────────
   useEffect(function() {
     if (!user) { setHorsesRaw([]); setMedLogsRaw({}); setTrackedIdsRaw([]); setWbEntriesRaw([]); return; }
-    
-    // Load horses
     supabase.from("horses").select("*").eq("user_id", user.id).then(function(res) {
-      if (res.data) {
-        setHorsesRaw(res.data.map(function(h) {
-          return {
-            id: h.id, name: h.name, sex: h.sex, colour: h.colour, dob: h.dob,
-            trainer: h.trainer, owner: h.owner, ownerPhone: h.owner_phone, ownerEmail: h.owner_email,
-            nhRating: h.nh_rating, flatRating: h.flat_rating, hurdleRating: h.hurdle_rating, chaseRating: h.chase_rating,
-            headgear: h.headgear, jockey: h.jockey, notes: h.notes, status: h.status,
-            activationDate: h.activation_date, silk: h.silk, form: h.form || [], provisionalEntries: h.provisional_entries || []
-          };
-        }));
-      }
+      if (res.data) setHorsesRaw(res.data.map(function(h) {
+        return {
+          id: h.id, name: h.name, sex: h.sex || "Gelding", colour: h.colour || "",
+          dob: h.dob || "", trainer: h.trainer || "", owner: h.owner || "",
+          ownerPhone: h.owner_phone || "", ownerEmail: h.owner_email || "",
+          nhRating: h.nh_rating, flatRating: h.flat_rating, hurdleRating: h.hurdle_rating,
+          chaseRating: h.chase_rating, headgear: h.headgear || "", jockey: h.jockey || "",
+          notes: h.notes || "", status: h.status || "Active", activationDate: h.activation_date || null,
+          silk: h.silk, form: h.form || [], provisionalEntries: h.provisional_entries || [],
+          discipline: h.discipline || [], surface: h.surface || "Turf",
+          isMaiden: h.is_maiden !== false, isNovice: h.is_novice || false,
+          isEBF: h.is_ebf || false, nextRaceDate: h.next_race_date || "",
+          distanceMin: h.distance_min || 10, distanceMax: h.distance_max || 32,
+          goingPref: h.going_pref || [],
+        };
+      }));
     });
-
-    // Load med logs
     supabase.from("med_logs").select("*").eq("user_id", user.id).then(function(res) {
       if (res.data) {
         const logs = {};
         res.data.forEach(function(row) {
-          // key format matches MedicationTracker: horseId_YYYY-MM-DD_medType
-          const key = row.horse_id + "_" + row.log_date + "_" + row.med_type;
-          logs[key] = row.value !== undefined ? (row.value || 1) : 1;
+          logs[row.horse_id + "_" + row.log_date + "_" + row.med_type] = row.value || 1;
         });
         setMedLogsRaw(logs);
       }
     });
-
-    // Load whiteboard
     supabase.from("whiteboard_entries").select("*").eq("user_id", user.id).then(function(res) {
-      if (res.data) {
-        setWbEntriesRaw(res.data.map(function(e) {
-          return { id: e.id, horseId: e.horse_id, horseName: e.horse_name, venue: e.venue, date: e.date, raceTime: e.race_time, raceName: e.race_name, meetingNo: e.meeting_no, raceRef: e.race_ref, ballotNo: e.ballot_no, headgear: e.headgear || "", jockey: e.jockey || "" };
-        }));
-      }
+      if (res.data) setWbEntriesRaw(res.data.map(function(e) {
+        return {
+          id: e.id, horseId: e.horse_id, horseName: e.horse_name || "",
+          venue: e.venue || "", date: e.date || "", raceTime: e.race_time || "",
+          raceName: e.race_name || "", meetingNo: e.meeting_no || "",
+          raceRef: e.race_ref || "", ballotNo: e.ballot_no || "",
+          headgear: e.headgear || "", jockey: e.jockey || "",
+        };
+      }));
     });
   }, [user]);
 
-  // ── SAVE HORSES ─────────────────────────────────────────────
+  // ── SAVE HORSES ──────────────────────────────────────────────
   const setHorses = function(updater) {
     setHorsesRaw(function(prev) {
       const next = typeof updater === "function" ? updater(prev) : updater;
       if (!user) return next;
-      // Upsert all horses to Supabase
       const rows = next.map(function(h) {
         return {
-          id: h.id, user_id: user.id, name: h.name, sex: h.sex || "Gelding", colour: h.colour || "",
-          dob: h.dob || "", trainer: h.trainer || "", owner: h.owner || "",
-          owner_phone: h.ownerPhone || "", owner_email: h.ownerEmail || "",
+          id: h.id, user_id: user.id, name: h.name, sex: h.sex || "Gelding",
+          colour: h.colour || "", dob: h.dob || "", trainer: h.trainer || "",
+          owner: h.owner || "", owner_phone: h.ownerPhone || "", owner_email: h.ownerEmail || "",
           nh_rating: h.nhRating || null, flat_rating: h.flatRating || null,
           hurdle_rating: h.hurdleRating || null, chase_rating: h.chaseRating || null,
           headgear: h.headgear || "", jockey: h.jockey || "", notes: h.notes || "",
           status: h.status || "Active", activation_date: h.activationDate || null,
-          silk: h.silk || null, form: h.form || [], provisional_entries: h.provisionalEntries || []
+          silk: h.silk || null, form: h.form || [], provisional_entries: h.provisionalEntries || [],
+          next_race_date: h.nextRaceDate || null,
         };
       });
       supabase.from("horses").upsert(rows).then(function(res) {
-        if (res.error) console.error("Save horses error:", res.error);
+        if (res.error) console.error("Horse save error:", res.error);
       });
-      // Delete removed horses
       if (prev.length > next.length) {
-        const nextIds = next.map(function(h) { return h.id; });
-        const removed = prev.filter(function(h) { return !nextIds.includes(h.id); });
-        removed.forEach(function(h) {
-          supabase.from("horses").delete().eq("id", h.id).then(function() {});
-        });
+        const removed = prev.filter(function(h) { return !next.find(function(n) { return n.id === h.id; }); });
+        removed.forEach(function(h) { supabase.from("horses").delete().eq("id", h.id).then(function() {}); });
       }
       return next;
     });
   };
 
-  // ── SAVE MED LOGS ───────────────────────────────────────────
+  // ── SAVE MED LOGS ────────────────────────────────────────────
   const setMedLogs = function(updater) {
     setMedLogsRaw(function(prev) {
       const next = typeof updater === "function" ? updater(prev) : updater;
       if (!user) return next;
-      // Find changed keys
       Object.keys(next).forEach(function(key) {
-        if (!prev[key]) {
-          // key format: horseId_YYYY-MM-DD_medType  (e.g. "h_123_2026-04-23_peptizole")
-          const lastUnderscore = key.lastIndexOf("_");
-          const medType = key.slice(lastUnderscore + 1);
-          const rest = key.slice(0, lastUnderscore);
-          // rest is: horseId_YYYY-MM-DD
-          // find the date part (10 chars YYYY-MM-DD preceded by underscore)
+        if (next[key] !== prev[key]) {
+          const lastU = key.lastIndexOf("_");
+          const medType = key.slice(lastU + 1);
+          const rest = key.slice(0, lastU);
           const dateMatch = rest.match(/_(\d{4}-\d{2}-\d{2})$/);
-          const logDate = dateMatch ? dateMatch[1] : "";
-          const horseId = dateMatch ? rest.slice(0, rest.length - dateMatch[0].length) : rest;
+          if (!dateMatch) return;
+          const logDate = dateMatch[1];
+          const horseId = rest.slice(0, rest.length - dateMatch[0].length);
           const val = next[key];
-          if (val && logDate) {
+          if (val) {
             supabase.from("med_logs").upsert({ user_id: user.id, horse_id: horseId, log_date: logDate, med_type: medType, value: val }).then(function() {});
+          } else {
+            supabase.from("med_logs").delete().match({ user_id: user.id, horse_id: horseId, log_date: logDate, med_type: medType }).then(function() {});
           }
         }
       });
@@ -1986,20 +2094,22 @@ export default function App() {
     });
   };
 
-  // ── SAVE WHITEBOARD ─────────────────────────────────────────
+  // ── SAVE WHITEBOARD ──────────────────────────────────────────
   const setWbEntries = function(updater) {
     setWbEntriesRaw(function(prev) {
       const next = typeof updater === "function" ? updater(prev) : updater;
       if (!user) return next;
       if (next.length > prev.length) {
-        const newEntry = next[next.length - 1];
-        supabase.from("whiteboard_entries").upsert({
-          id: newEntry.id, user_id: user.id, horse_id: newEntry.horseId, horse_name: newEntry.horseName || "",
-          venue: newEntry.venue || "", date: newEntry.date || "", race_time: newEntry.raceTime || "",
-          race_name: newEntry.raceName || "", meeting_no: newEntry.meetingNo || "",
-          race_ref: newEntry.raceRef || "", ballot_no: newEntry.ballotNo || "",
-          headgear: newEntry.headgear || "", jockey: newEntry.jockey || "", horse_name: newEntry.horseName || ""
-        }).then(function() {});
+        const newEntries = next.filter(function(e) { return !prev.find(function(p) { return p.id === e.id; }); });
+        newEntries.forEach(function(e) {
+          supabase.from("whiteboard_entries").upsert({
+            id: e.id, user_id: user.id, horse_id: e.horseId || null,
+            horse_name: e.horseName || "", venue: e.venue || "", date: e.date || "",
+            race_time: e.raceTime || "", race_name: e.raceName || "",
+            meeting_no: e.meetingNo || "", race_ref: e.raceRef || "",
+            ballot_no: e.ballotNo || "", headgear: e.headgear || "", jockey: e.jockey || "",
+          }).then(function() {});
+        });
       } else if (next.length < prev.length) {
         const removed = prev.filter(function(e) { return !next.find(function(n) { return n.id === e.id; }); });
         removed.forEach(function(e) { supabase.from("whiteboard_entries").delete().eq("id", e.id).then(function() {}); });
@@ -2008,150 +2118,150 @@ export default function App() {
     });
   };
 
-  const setTrackedIds = setTrackedIdsRaw;
-
-  // ── AUTH HANDLERS ───────────────────────────────────────────
+  // ── AUTH HANDLERS ────────────────────────────────────────────
   const handleLogin = async function() {
-    setAuthError("");
+    setAuthLoading(true); setAuthError("");
     const res = await supabase.auth.signInWithPassword({ email, password });
+    setAuthLoading(false);
     if (res.error) setAuthError(res.error.message);
   };
-
   const handleSignup = async function() {
-    setAuthError("");
+    setAuthLoading(true); setAuthError("");
     const res = await supabase.auth.signUp({ email, password });
+    setAuthLoading(false);
     if (res.error) setAuthError(res.error.message);
     else setAuthError("Check your email to confirm your account.");
   };
-
   const handleLogout = async function() {
     await supabase.auth.signOut();
-    setHorsesRaw([]); setMedLogsRaw({}); setWbEntriesRaw([]);
+    setHorsesRaw([]); setMedLogsRaw({}); setTrackedIdsRaw([]); setWbEntriesRaw([]);
   };
 
-  // ── AUTH SCREEN ─────────────────────────────────────────────
-  if (authLoading) return (
-    <div style={{ minHeight: "100vh", display: "flex", alignItems: "center", justifyContent: "center", background: C.bg }}>
-      <div style={{ fontSize: 18, color: C.textMid }}>Loading...</div>
+  const horses = horsesRaw;
+  const medLogs = medLogsRaw;
+  const trackedIds = trackedIdsRaw;
+  const setTrackedIds = setTrackedIdsRaw;
+  const wbEntries = wbEntriesRaw;
+  const medAlerts = horses.filter(function(h) { const d = daysUntil(h.nextRaceDate); return d && d >= 12 && d <= 16; }).length;
+
+  const NAV = [
+    { id: "planner", icon: "x", label: "Race Planner" },
+    { id: "provisional", icon: "x", label: "Provisional Entries" },
+    { id: "meds", icon: "x", label: "Medication Tracker", badge: medAlerts },
+    { id: "whiteboard", icon: "x", label: "Raceday Whiteboard" },
+    { id: "yard", icon: "x", label: "My Yard" },
+    { id: "movements", icon: "x", label: "Horse Movements" },
+    { id: "owners", icon: "x", label: "Owner Portal" },
+  ];
+
+  if (appLoading) return (
+    <div style={{ minHeight: "100vh", background: C.bg, display: "flex", alignItems: "center", justifyContent: "center" }}>
+      <div style={{ color: C.textMid, fontSize: 15 }}>Loading...</div>
     </div>
   );
 
   if (!user) return (
-    <div style={{ minHeight: "100vh", display: "flex", alignItems: "center", justifyContent: "center", background: C.bg, padding: 20 }}>
-      <div style={{ background: C.card, borderRadius: 20, padding: 40, width: "100%", maxWidth: 400, boxShadow: C.shadowMd }}>
-        <div style={{ textAlign: "center", marginBottom: 32 }}>
-          <div style={{ fontSize: 32, marginBottom: 8 }}>{"🏇"}</div>
-          <div style={{ fontSize: 24, fontWeight: 800, color: C.navy }}>RacePlan Pro</div>
-          <div style={{ fontSize: 14, color: C.textMid, marginTop: 4 }}>Irish Racing Secretary Platform</div>
+    <div style={{ minHeight: "100vh", background: C.bg, display: "flex", alignItems: "center", justifyContent: "center", padding: 20 }}>
+      <div style={{ background: C.card, borderRadius: 20, width: "100%", maxWidth: 400, boxShadow: C.shadowMd, overflow: "hidden" }}>
+        <div style={{ background: C.navy, padding: "28px 32px" }}>
+          <div style={{ fontSize: 22, fontWeight: 800, color: "#fff", marginBottom: 4 }}>RacePlan Pro</div>
+          <div style={{ fontSize: 13, color: "rgba(255,255,255,0.5)" }}>Yard Management System</div>
         </div>
-        <div style={{ marginBottom: 16 }}>
-          <div style={{ fontSize: 11, fontWeight: 700, color: C.textMid, marginBottom: 6, textTransform: "uppercase" }}>Email</div>
-          <input type="email" value={email} onChange={function(e) { setEmail(e.target.value); }} placeholder="trainer@example.com" style={{ width: "100%", padding: "10px 14px", border: "1.5px solid " + C.border, borderRadius: 10, fontSize: 14, background: C.cardOff, color: C.text, boxSizing: "border-box" }} />
-        </div>
-        <div style={{ marginBottom: 20 }}>
-          <div style={{ fontSize: 11, fontWeight: 700, color: C.textMid, marginBottom: 6, textTransform: "uppercase" }}>Password</div>
-          <input type="password" value={password} onChange={function(e) { setPassword(e.target.value); }} placeholder="••••••••" style={{ width: "100%", padding: "10px 14px", border: "1.5px solid " + C.border, borderRadius: 10, fontSize: 14, background: C.cardOff, color: C.text, boxSizing: "border-box" }} onKeyDown={function(e) { if (e.key === "Enter") authMode === "login" ? handleLogin() : handleSignup(); }} />
-        </div>
-        {authError && <div style={{ background: authError.includes("Check") ? C.greenBg : C.redBg, color: authError.includes("Check") ? C.green : C.red, padding: "10px 14px", borderRadius: 8, fontSize: 13, marginBottom: 16 }}>{authError}</div>}
-        <Btn onClick={authMode === "login" ? handleLogin : handleSignup} style={{ width: "100%", justifyContent: "center", padding: "12px" }}>
-          {authMode === "login" ? "Sign In" : "Create Account"}
-        </Btn>
-        <div style={{ textAlign: "center", marginTop: 16, fontSize: 13, color: C.textMid }}>
-          {authMode === "login" ? "No account? " : "Have an account? "}
-          <span onClick={function() { setAuthMode(authMode === "login" ? "signup" : "login"); setAuthError(""); }} style={{ color: C.blue, cursor: "pointer", fontWeight: 600 }}>
-            {authMode === "login" ? "Sign up" : "Sign in"}
-          </span>
+        <div style={{ padding: "28px 32px" }}>
+          <div style={{ display: "flex", gap: 0, marginBottom: 24, background: C.cardOff, borderRadius: 10, padding: 4 }}>
+            {["login", "signup"].map(function(m) {
+              return (
+                <button key={m} onClick={function() { setAuthMode(m); setAuthError(""); }}
+                  style={{ flex: 1, padding: "8px 0", borderRadius: 8, border: "none", fontWeight: 700, fontSize: 13, cursor: "pointer",
+                    background: authMode === m ? C.navy : "transparent", color: authMode === m ? "#fff" : C.textMid }}>
+                  {m === "login" ? "Log In" : "Sign Up"}
+                </button>
+              );
+            })}
+          </div>
+          {["email", "password"].map(function(field) {
+            return (
+              <div key={field} style={{ marginBottom: 14 }}>
+                <div style={{ fontSize: 11, fontWeight: 700, color: C.textMid, marginBottom: 5, textTransform: "uppercase", letterSpacing: 0.5 }}>
+                  {field === "email" ? "Email" : "Password"}
+                </div>
+                <input type={field === "password" ? "password" : "email"} value={field === "email" ? email : password}
+                  onChange={function(e) { field === "email" ? setEmail(e.target.value) : setPassword(e.target.value); }}
+                  onKeyDown={function(e) { if (e.key === "Enter") authMode === "login" ? handleLogin() : handleSignup(); }}
+                  placeholder={field === "email" ? "trainer@example.com" : "Password"}
+                  style={{ width: "100%", padding: "10px 14px", background: C.cardOff, border: "1px solid " + C.border,
+                    borderRadius: 10, fontSize: 14, color: C.text, outline: "none" }} />
+              </div>
+            );
+          })}
+          {authError && (
+            <div style={{ fontSize: 13, color: authError.includes("Check") ? C.green : C.red, marginBottom: 14, fontWeight: 600 }}>
+              {authError}
+            </div>
+          )}
+          <Btn onClick={authMode === "login" ? handleLogin : handleSignup} disabled={authLoading}
+            style={{ width: "100%", justifyContent: "center", marginTop: 4 }}>
+            {authLoading ? "Please wait..." : authMode === "login" ? "Log In" : "Create Account"}
+          </Btn>
         </div>
       </div>
     </div>
   );
 
-  const medAlerts = horses.filter(h => { const d = daysUntil(h.nextRaceDate); return d && d >= 12 && d <= 16; }).length;
-
-  const NAV = [
-    { id: "planner", icon: "🏇", label: "Race Planner" },
-    { id: "provisional", icon: "📋", label: "Provisional Entries" },
-    { id: "meds", icon: "🏥", label: "Medication Tracker", badge: medAlerts },
-    { id: "whiteboard", icon: "🖨", label: "Raceday Whiteboard" },
-    { id: "yard", icon: "🐎", label: "My Yard" },
-    { id: "movements", icon: "🚪", label: "Horse Movements" },
-    { id: "owners", icon: "👤", label: "Owner Portal" },
-  ];
-
   return (
     <div style={{ minHeight: "100vh", background: C.bg, fontFamily: "'Inter','Helvetica Neue',sans-serif", display: "flex", flexDirection: "column" }}>
-      <style dangerouslySetInnerHTML={{ __html: [
-        "* { box-sizing: border-box; margin: 0; padding: 0; }",
-        "p { margin: 0; }",
-        "button:hover { opacity: 0.88; }",
-        "a:hover { opacity: 0.88; }",
-        "input:focus, select:focus { border-color: #0a1628 !important; outline: none; }",
-        "::-webkit-scrollbar { width: 4px; }",
-        "::-webkit-scrollbar-thumb { background: #b8c8da; border-radius: 2px; }",
-        "@keyframes spin { to { transform: rotate(360deg); } }",
-        "@keyframes slideUp { from { transform: translateY(50px); opacity: 0; } to { transform: translateY(0); opacity: 1; } }",
-        "@media print { body * { visibility: hidden; } #print-area, #print-area * { visibility: visible; } #print-area { position: absolute; left: 0; top: 0; width: 100%; } }"
-      ].join(" ") }} />
+      <style>{"* { box-sizing: border-box; margin: 0; padding: 0; } p { margin: 0; } button:hover { opacity: 0.88; } a:hover { opacity: 0.88; } input:focus, select:focus { border-color: #0a1628 !important; outline: none; } ::-webkit-scrollbar { width: 4px; } ::-webkit-scrollbar-thumb { background: #b8c8da; border-radius: 2px; } @keyframes spin { to { transform: rotate(360deg); } } @keyframes slideUp { from { transform: translateY(50px); opacity: 0; } to { transform: translateY(0); opacity: 1; } } @media print { body * { visibility: hidden; } #print-area, #print-area * { visibility: visible; } #print-area { position: absolute; left: 0; top: 0; width: 100%; } }"}</style>
 
-      {/* Top Header */}
-      <div style={{ background: C.navy, height: 56, display: "flex", alignItems: "center", padding: "0 16px", boxShadow: "0 2px 10px rgba(10,22,40,0.25)", flexShrink: 0, zIndex: 100, gap: 12 }}>
-        {/* Sidebar toggle */}
-        <button onClick={() => setSidebarOpen(o => !o)} style={{ background: "rgba(255,255,255,0.08)", border: "1px solid rgba(255,255,255,0.12)", borderRadius: 7, width: 34, height: 34, display: "flex", alignItems: "center", justifyContent: "center", cursor: "pointer", flexShrink: 0, fontSize: 16, color: "rgba(255,255,255,0.7)" }}>
-          {sidebarOpen ? "◀" : "▶"}
+      <div style={{ background: C.navy, height: 56, display: "flex", alignItems: "center", padding: "0 16px", boxShadow: "0 2px 12px rgba(0,0,0,0.15)", flexShrink: 0, gap: 10 }}>
+        <button onClick={function() { setSidebarOpen(function(o) { return !o; }); }} style={{ background: "rgba(255,255,255,0.08)", border: "1px solid rgba(255,255,255,0.12)", color: "#fff", width: 32, height: 32, borderRadius: 8, cursor: "pointer", fontSize: 13 }}>
+          {sidebarOpen ? "<" : ">"}
         </button>
-
         <div style={{ display: "flex", alignItems: "center", gap: 9 }}>
-          <div style={{ width: 30, height: 30, background: `linear-gradient(135deg,${C.gold},${C.goldLight})`, borderRadius: 7, display: "flex", alignItems: "center", justifyContent: "center", fontSize: 15 }}>🏇</div>
+          <div style={{ width: 30, height: 30, background: "linear-gradient(135deg," + C.gold + "," + C.goldLight + ")", borderRadius: 8, display: "flex", alignItems: "center", justifyContent: "center", fontSize: 14 }}>x</div>
           <div>
             <div style={{ fontSize: 16, fontWeight: 800, color: "#fff", lineHeight: 1 }}>RacePlan Pro</div>
             <div style={{ fontSize: 8, color: "rgba(255,255,255,0.35)", letterSpacing: 2 }}>YARD MANAGEMENT</div>
           </div>
         </div>
-
-        {/* Active tab label */}
-        <div style={{ marginLeft: 8, padding: "4px 12px", background: "rgba(255,255,255,0.08)", borderRadius: 20, fontSize: 12, fontWeight: 600, color: "rgba(255,255,255,0.7)" }}>
-          {(NAV.find(n => n.id === tab) || {}).icon} {(NAV.find(n => n.id === tab) || {}).label}
+        <div style={{ marginLeft: 8, padding: "4px 12px", background: "rgba(255,255,255,0.08)", borderRadius: 20, fontSize: 12, color: "rgba(255,255,255,0.7)", fontWeight: 600 }}>
+          {(NAV.find(function(n) { return n.id === tab; }) || {}).label || ""}
         </div>
-
         <div style={{ marginLeft: "auto", display: "flex", alignItems: "center", gap: 10 }}>
           {medAlerts > 0 && (
-            <button onClick={() => setTab("meds")} style={{ background: C.redBg, border: `1px solid ${C.red}30`, color: C.red, borderRadius: 20, padding: "4px 12px", fontSize: 11, fontWeight: 700, cursor: "pointer" }}>
-              🏥 {medAlerts} med alert{medAlerts !== 1 ? "s" : ""}
+            <button onClick={function() { setTab("meds"); }} style={{ background: C.redBg, border: "1px solid " + C.red + "30", color: C.red, padding: "5px 12px", borderRadius: 20, fontSize: 12, fontWeight: 700, cursor: "pointer" }}>
+              {"Med alerts: " + medAlerts}
             </button>
           )}
-          <span style={{ fontSize: 11, color: "rgba(255,255,255,0.3)" }}>{TODAY.toLocaleDateString("en-IE", { weekday: "short", day: "numeric", month: "short" })}</span>
-          <span style={{ fontSize: 11, color: "rgba(255,255,255,0.5)", maxWidth: 140, overflow: "hidden", textOverflow: "ellipsis", whiteSpace: "nowrap" }}>{user.email}</span>
-          <button onClick={handleLogout} style={{ background: "rgba(255,255,255,0.08)", border: "none", color: "rgba(255,255,255,0.6)", borderRadius: 6, padding: "4px 10px", fontSize: 11, cursor: "pointer" }}>{"Sign Out"}</button>
+          <span style={{ fontSize: 11, color: "rgba(255,255,255,0.4)" }}>{user.email}</span>
+          <button onClick={handleLogout} style={{ background: "rgba(255,255,255,0.08)", border: "1px solid rgba(255,255,255,0.12)", color: "#fff", padding: "5px 12px", borderRadius: 8, fontSize: 12, cursor: "pointer" }}>Sign Out</button>
         </div>
       </div>
 
-      {/* Body */}
       <div style={{ display: "flex", flex: 1, minHeight: 0 }}>
-
-        {/* Collapsible Sidebar */}
-        <div style={{ width: sidebarOpen ? 200 : 52, background: C.sidebar, flexShrink: 0, display: "flex", flexDirection: "column", paddingTop: 12, transition: "width 0.2s ease", overflow: "hidden" }}>
-          {NAV.map(({ id, icon, label, badge }) => {
-            const active = tab === id;
+        <div style={{ width: sidebarOpen ? 200 : 52, background: C.sidebar, flexShrink: 0, display: "flex", flexDirection: "column", transition: "width 0.2s", overflow: "hidden" }}>
+          {NAV.map(function(nav) {
+            const active = tab === nav.id;
             return (
-              <button key={id} onClick={() => setTab(id)} title={label} style={{ position: "relative", display: "flex", alignItems: "center", gap: 10, padding: "11px 16px", background: active ? "rgba(255,255,255,0.10)" : "none", border: "none", borderLeft: `3px solid ${active ? C.gold : "transparent"}`, color: active ? "#fff" : "rgba(255,255,255,0.45)", fontSize: 13, fontWeight: active ? 700 : 400, cursor: "pointer", textAlign: "left", width: "100%", transition: "all 0.12s", whiteSpace: "nowrap" }}>
-                <span style={{ fontSize: 17, minWidth: 20, textAlign: "center", flexShrink: 0 }}>{icon}</span>
-                {sidebarOpen && <span style={{ flex: 1 }}>{label}</span>}
-                {badge > 0 && sidebarOpen && <span style={{ background: C.red, color: "#fff", borderRadius: "50%", width: 18, height: 18, fontSize: 10, fontWeight: 800, display: "flex", alignItems: "center", justifyContent: "center", flexShrink: 0 }}>{badge}</span>}
-                {badge > 0 && !sidebarOpen && <span style={{ position: "absolute", top: 6, right: 6, background: C.red, color: "#fff", borderRadius: "50%", width: 14, height: 14, fontSize: 9, fontWeight: 800, display: "flex", alignItems: "center", justifyContent: "center" }}>{badge}</span>}
+              <button key={nav.id} onClick={function() { setTab(nav.id); }} title={nav.label}
+                style={{ position: "relative", display: "flex", alignItems: "center", gap: 10, padding: sidebarOpen ? "12px 16px" : "14px 0", justifyContent: sidebarOpen ? "flex-start" : "center", background: active ? "rgba(255,255,255,0.12)" : "transparent", border: "none", borderLeft: active ? "3px solid " + C.gold : "3px solid transparent", color: active ? "#fff" : "rgba(255,255,255,0.55)", fontSize: 13, fontWeight: active ? 700 : 400, cursor: "pointer", width: "100%", textAlign: "left" }}>
+                <span style={{ fontSize: 17, minWidth: 20, textAlign: "center", flexShrink: 0 }}>{nav.id === "planner" ? "x" : nav.id === "provisional" ? "x" : nav.id === "meds" ? "x" : nav.id === "whiteboard" ? "x" : nav.id === "yard" ? "x" : nav.id === "movements" ? "x" : "x"}</span>
+                {sidebarOpen && <span style={{ flex: 1 }}>{nav.label}</span>}
+                {nav.badge > 0 && sidebarOpen && <span style={{ background: C.red, color: "#fff", borderRadius: "50%", width: 18, height: 18, display: "flex", alignItems: "center", justifyContent: "center", fontSize: 10, fontWeight: 700 }}>{nav.badge}</span>}
+                {nav.badge > 0 && !sidebarOpen && <span style={{ position: "absolute", top: 6, right: 6, background: C.red, color: "#fff", borderRadius: "50%", width: 14, height: 14, display: "flex", alignItems: "center", justifyContent: "center", fontSize: 9 }}>{nav.badge}</span>}
               </button>
             );
           })}
-
-          {/* Yard summary — only when open */}
           {sidebarOpen && (
             <div style={{ marginTop: "auto", padding: "14px 16px", borderTop: "1px solid rgba(255,255,255,0.08)" }}>
               <div style={{ fontSize: 9, fontWeight: 700, color: "rgba(255,255,255,0.25)", letterSpacing: 1.5, textTransform: "uppercase", marginBottom: 8 }}>Yard</div>
-              {[{ l: "Active", v: horses.filter(h => h.status === "Active").length, c: C.green }, { l: "Cool-off", v: horses.filter(h => h.status === "CoolingOff").length, c: C.amber }, { l: "Inactive", v: horses.filter(h => h.status === "Inactive").length, c: C.red }].map(s => (
-                <div key={s.l} style={{ display: "flex", justifyContent: "space-between", marginBottom: 5 }}>
-                  <span style={{ fontSize: 11, color: "rgba(255,255,255,0.4)" }}>{s.l}</span>
-                  <span style={{ fontSize: 12, fontWeight: 700, color: s.c }}>{s.v}</span>
-                </div>
-              ))}
+              {[{ l: "Active", v: horses.filter(function(h) { return h.status === "Active"; }).length, c: C.green }, { l: "Cool-off", v: horses.filter(function(h) { return h.status === "CoolingOff"; }).length, c: C.amber }, { l: "Inactive", v: horses.filter(function(h) { return h.status === "Inactive"; }).length, c: C.textDim }].map(function(s) {
+                return (
+                  <div key={s.l} style={{ display: "flex", justifyContent: "space-between", marginBottom: 5 }}>
+                    <span style={{ fontSize: 11, color: "rgba(255,255,255,0.4)" }}>{s.l}</span>
+                    <span style={{ fontSize: 12, fontWeight: 700, color: s.c }}>{s.v}</span>
+                  </div>
+                );
+              })}
               <div style={{ display: "flex", justifyContent: "space-between", paddingTop: 5, borderTop: "1px solid rgba(255,255,255,0.08)" }}>
                 <span style={{ fontSize: 11, color: "rgba(255,255,255,0.4)" }}>Total</span>
                 <span style={{ fontSize: 12, fontWeight: 700, color: "#fff" }}>{horses.length}</span>
@@ -2160,7 +2270,6 @@ export default function App() {
           )}
         </div>
 
-        {/* Main content */}
         <div style={{ flex: 1, overflowY: "auto", padding: "20px 24px", minWidth: 0 }}>
           {tab === "planner" && <RacePlanner horses={horses} setHorses={setHorses} />}
           {tab === "provisional" && <ProvisionalEntries horses={horses} setHorses={setHorses} />}
