@@ -511,7 +511,6 @@ function MedicationTracker({ horses, medLogs, setMedLogs, trackedIds, setTracked
             </div>
         </div>
       )}
-          </div>
         );
       })()}
     </div>
