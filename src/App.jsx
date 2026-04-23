@@ -1208,7 +1208,7 @@ function RacePlanner({ horses, setHorses }) {
                             })}
                             <div style={{ width: 44, height: 44, borderRadius: "50%", background: accent + "12", border: "3px solid " + accent, display: "flex", flexDirection: "column", alignItems: "center", justifyContent: "center", flexShrink: 0, marginLeft: 4 }}>
                               <span style={{ fontSize: 15, fontWeight: 800, color: accent, lineHeight: 1 }}>{analysis.overall}</span>
-                              <span style={{ fontSize: 7, color: C.textMid }}>{"/ 100"}</span>
+                              <span style={{ fontSize: 7, color: C.textMid }}> / 100</span>
                             </div>
                           </div>
                           {(analysis.bullets || []).map((b, i) => (
