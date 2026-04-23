@@ -1896,8 +1896,9 @@ export default function App() {
           const logDate = dateMatch ? dateMatch[1] : "";
           const horseId = dateMatch ? rest.slice(0, rest.length - dateMatch[0].length) : rest;
           const val = next[key];
-          if (val) {
+          if (val && logDate) {
             supabase.from("med_logs").upsert({ user_id: user.id, horse_id: horseId, log_date: logDate, med_type: medType, value: val }).then(function() {});
+          }
         }
       });
       return next;
