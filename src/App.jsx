@@ -254,24 +254,96 @@ function MedicationTracker({ horses, medLogs, setMedLogs, trackedIds, setTracked
 
   // If no tracked IDs set yet, show all active horses by default
   const effectiveTracked = trackedIds.length > 0 ? trackedIds : horses.filter(h => h.status !== "Inactive").map(h => h.id);
+  const [medView, setMedView] = useState("tracker");
   const trackedHorses = horses.filter(h => effectiveTracked.includes(h.id));
   const untrackedHorses = horses.filter(h => h.status !== "Inactive" && !effectiveTracked.includes(h.id));
+
+  const todayMedKey = function(hId, t) {
+    const mm = String(TODAY.getMonth() + 1).padStart(2, "0");
+    const dd = String(TODAY.getDate()).padStart(2, "0");
+    return hId + "_" + TODAY.getFullYear() + "-" + mm + "-" + dd + "_" + t;
+  };
+  const getMedToday = function(hId, t) { return medLogs[todayMedKey(hId, t)] || 0; };
+  const toggleMedToday = function(hId, t) {
+    setMedLogs(function(prev) {
+      const cur = prev[todayMedKey(hId, t)] || 0;
+      if (t === "antibiotics") return Object.assign({}, prev, { [todayMedKey(hId, t)]: cur === 0 ? 1 : cur === 1 ? 2 : 0 });
+      return Object.assign({}, prev, { [todayMedKey(hId, t)]: cur ? 0 : 1 });
+    });
+  };
 
   return (
     <div>
       {/* Header */}
-      <div style={{ display: "flex", justifyContent: "space-between", alignItems: "center", marginBottom: 16, flexWrap: "wrap", gap: 10 }}>
+      <div style={{ display: "flex", justifyContent: "space-between", alignItems: "center", marginBottom: 12, flexWrap: "wrap", gap: 10 }}>
         <div>
           <div style={{ fontSize: 22, fontWeight: 800, color: C.text }}>Medication Tracker</div>
           <div style={{ fontSize: 13, color: C.textMid, marginTop: 3 }}>Tap each day to log · costs auto-calculated for Yardman</div>
         </div>
         <div style={{ display: "flex", gap: 8, alignItems: "center", flexWrap: "wrap" }}>
-          <Btn variant="ghost" onClick={() => { const d = new Date(selYear, selMonth - 1); setSelMonth(d.getMonth()); setSelYear(d.getFullYear()); }} style={{ padding: "7px 12px" }}>←</Btn>
-          <span style={{ fontSize: 14, fontWeight: 700, color: C.text, minWidth: 150, textAlign: "center" }}>{monthName}</span>
-          <Btn variant="ghost" onClick={() => { const d = new Date(selYear, selMonth + 1); setSelMonth(d.getMonth()); setSelYear(d.getFullYear()); }} style={{ padding: "7px 12px" }}>→</Btn>
-          <Btn onClick={() => setShowAdd(true)} disabled={untrackedHorses.length === 0}>+ Add Horse</Btn>
+          {medView === "tracker" && (
+            <React.Fragment>
+              <Btn variant="ghost" onClick={function() { var d = new Date(selYear, selMonth - 1); setSelMonth(d.getMonth()); setSelYear(d.getFullYear()); }} style={{ padding: "7px 12px" }}>{"<"}</Btn>
+              <span style={{ fontSize: 14, fontWeight: 700, color: C.text, minWidth: 150, textAlign: "center" }}>{monthName}</span>
+              <Btn variant="ghost" onClick={function() { var d = new Date(selYear, selMonth + 1); setSelMonth(d.getMonth()); setSelYear(d.getFullYear()); }} style={{ padding: "7px 12px" }}>{">"}</Btn>
+              <Btn onClick={function() { setShowAdd(true); }} disabled={untrackedHorses.length === 0}>+ Add Horse</Btn>
+            </React.Fragment>
+          )}
+          <Btn variant={medView === "daily" ? "primary" : "ghost"} onClick={function() { setMedView(medView === "daily" ? "tracker" : "daily"); }}>
+            {medView === "daily" ? "Monthly View" : "Today's Summary"}
+          </Btn>
         </div>
       </div>
+
+      {/* DAILY SUMMARY VIEW */}
+      {medView === "daily" && (
+        <div>
+          <div style={{ background: C.card, border: "1px solid " + C.border, borderRadius: 14, padding: "18px 20px", marginBottom: 14 }}>
+            <div style={{ fontSize: 16, fontWeight: 800, color: C.navy, marginBottom: 14, paddingBottom: 10, borderBottom: "2px solid " + C.border }}>
+              {"Today — " + TODAY.toLocaleDateString("en-IE", { weekday: "long", day: "numeric", month: "long", year: "numeric" })}
+            </div>
+            {trackedHorses.length === 0 && (
+              <div style={{ color: C.textMid, fontSize: 13, padding: "20px 0" }}>No horses on tracker. Use Monthly View to add horses.</div>
+            )}
+            {trackedHorses.map(function(horse) {
+              const pep = getMedToday(horse.id, "peptizole");
+              const ant = getMedToday(horse.id, "antepsin");
+              const ab = getMedToday(horse.id, "antibiotics");
+              const anyGiven = pep || ant || ab;
+              return (
+                <div key={horse.id} style={{ display: "flex", alignItems: "center", gap: 12, padding: "12px 0", borderBottom: "1px solid " + C.border }}>
+                  <Silk silk={horse.silk} size={32} />
+                  <div style={{ flex: 1 }}>
+                    <div style={{ fontSize: 14, fontWeight: 700, color: C.text, marginBottom: 6 }}>{horse.name}</div>
+                    <div style={{ display: "flex", gap: 8, flexWrap: "wrap" }}>
+                      {[["peptizole", "Peptizole", C.blue], ["antepsin", "Antepsin", C.purple], ["antibiotics", "Antibiotics", C.amber]].map(function(arr) {
+                        var t = arr[0]; var label = arr[1]; var col = arr[2];
+                        var val = getMedToday(horse.id, t);
+                        return (
+                          <button key={t} onClick={function() { toggleMedToday(horse.id, t); }}
+                            style={{ padding: "6px 14px", borderRadius: 8, border: "2px solid " + col,
+                              background: val ? col : "transparent", color: val ? "#fff" : col,
+                              fontSize: 12, fontWeight: 700, cursor: "pointer" }}>
+                            {val > 1 ? label + " x" + val : label}{val ? " ✓" : ""}
+                          </button>
+                        );
+                      })}
+                    </div>
+                  </div>
+                  <div style={{ fontSize: 12, fontWeight: 700, color: anyGiven ? C.green : C.textMid }}>
+                    {anyGiven ? "Logged" : "None today"}
+                  </div>
+                </div>
+              );
+            })}
+          </div>
+          <div style={{ background: C.cardOff, border: "1px solid " + C.border, borderRadius: 10, padding: "12px 16px", fontSize: 12, color: C.textMid }}>
+            Tap each medication to toggle for today. All changes save automatically.
+          </div>
+        </div>
+      )}
+      {medView === "tracker" && (
+        <div>
 
       {/* Race timing alerts */}
       {horses.filter(h => { const d = daysUntil(h.nextRaceDate); return d && d >= 12 && d <= 16; }).map(h => (
@@ -352,7 +424,7 @@ function MedicationTracker({ horses, medLogs, setMedLogs, trackedIds, setTracked
                   <div style={{ fontSize: 11, color: C.textMid }}><strong style={{ color: C.amber }}>Antibiotics</strong> {"— €15/dose (tap once=1 dose, twice=2 doses)"}</div>
                 </div>
                 <div style={{ overflowX: "auto" }}>
-                  <table style={{ borderCollapse: "collapse", width: "100%", minWidth: 700 }}>
+                  <table style={{ borderCollapse: "collapse", width: "100%", minWidth: 1100 }}>
                     <thead>
                       <tr>
                         <th style={{ textAlign: "left", padding: "6px 8px", fontSize: 11, fontWeight: 700, color: C.textMid, width: 110 }}>Treatment</th>
@@ -437,6 +509,8 @@ function MedicationTracker({ horses, medLogs, setMedLogs, trackedIds, setTracked
                 <Btn onClick={() => window.print()} style={{ width: "100%", marginTop: 16, justifyContent: "center" }}>{"🖨 Print / Save for Yardman"}</Btn>
               </div>
             </div>
+        </div>
+      )}
           </div>
         );
       })()}
@@ -1166,7 +1240,11 @@ function RacedayPrint({ horses, entries, setEntries }) {
   };
 
   const grouped = {};
-  entries.forEach(function(e) { if (!grouped[e.date]) grouped[e.date] = []; grouped[e.date].push(e); });
+  entries.forEach(function(e) {
+    if (!e.date) return;  // skip entries with no date
+    if (!grouped[e.date]) grouped[e.date] = [];
+    grouped[e.date].push(e);
+  });
 
   return (
     <div>
@@ -1367,16 +1445,20 @@ function YardView({ horses, setHorses }) {
             if (!name) return;
             const idx = horses.findIndex(function(h) { return h.name.toLowerCase().trim() === name.toLowerCase().trim(); });
             if (idx >= 0) {
-              const flat = parseInt(row.flat || row.flat_rating || row.flatrating || row.turf || "") || null;
-              const hurdle = parseInt(row.hurdle || row.hurdle_rating || row.hurdlerating || row.hdl || "") || null;
-              const chase = parseInt(row.chase || row.chase_rating || row.chaserating || row.chs || "") || null;
-              const nh = parseInt(row.nh_rating || row.nhrating || row.nh || row.national_hunt || row.rating || "") || null;
+              // Try every possible column name variant
+              const flat = parseInt(row.flat || row.flat_rating || row.flatrating || row.turf || row["flat_official_rating"] || row.official_flat || "") || null;
+              const hurdle = parseInt(row.hurdle || row.hurdle_rating || row.hurdlerating || row.hdl || row.hurdles || row.nh_hurdle || "") || null;
+              const chase = parseInt(row.chase || row.chase_rating || row.chaserating || row.chs || row.chases || row.nh_chase || "") || null;
+              const nh = parseInt(row.nh_rating || row.nhrating || row.nh || row.national_hunt || row.nh_official || row.official_nh || "") || null;
               const awt = parseInt(row.awt || row.all_weather || row.allweather || row.aw || "") || null;
+              // If a single "rating" or "official rating" column — use as nhRating
+              const generic = parseInt(row.rating || row.official_rating || row.official || row.mark || row.handicap_mark || "") || null;
               if (flat) horses[idx].flatRating = flat;
               if (hurdle) horses[idx].hurdleRating = hurdle;
               if (chase) horses[idx].chaseRating = chase;
               if (awt) horses[idx].awtRating = awt;
               if (nh) horses[idx].nhRating = nh;
+              if (!flat && !hurdle && !chase && !nh && generic) horses[idx].nhRating = generic;
               updated++;
             }
           });
@@ -1829,7 +1911,7 @@ export default function App() {
         res.data.forEach(function(row) {
           // key format matches MedicationTracker: horseId_YYYY-MM-DD_medType
           const key = row.horse_id + "_" + row.log_date + "_" + row.med_type;
-          logs[key] = row.value || 1;  // store value (antibiotics can be 1 or 2)
+          logs[key] = row.value !== undefined ? (row.value || 1) : 1;
         });
         setMedLogsRaw(logs);
       }
