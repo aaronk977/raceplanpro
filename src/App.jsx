@@ -228,7 +228,11 @@ function MedicationTracker({ horses, medLogs, setMedLogs, trackedIds, setTracked
   const isCurrent = selMonth === TODAY.getMonth() && selYear === TODAY.getFullYear();
   const monthName = new Date(selYear, selMonth).toLocaleString("en-IE", { month: "long", year: "numeric" });
 
-  const k = (hId, d, t) => `${hId}_${selYear}_${selMonth}_${d}_${t}`;
+  const k = (hId, d, t) => {
+    const mm = String(selMonth + 1).padStart(2, "0");
+    const dd = String(d).padStart(2, "0");
+    return hId + "_" + selYear + "-" + mm + "-" + dd + "_" + t;
+  };
   const getMed = (hId, d, t) => medLogs[k(hId, d, t)] || 0;
   const toggleMed = (hId, d, t) => {
     setMedLogs(prev => {
@@ -248,8 +252,10 @@ function MedicationTracker({ horses, medLogs, setMedLogs, trackedIds, setTracked
     return { peptizoleDays, antepsinTicks, antepsinBottles: Math.ceil(antepsinTicks / 4), antibioticDoses, peptizole, antepsin, antibiotics, total: peptizole + antepsin + antibiotics };
   };
 
-  const trackedHorses = horses.filter(h => trackedIds.includes(h.id));
-  const untrackedHorses = horses.filter(h => h.status !== "Inactive" && !trackedIds.includes(h.id));
+  // If no tracked IDs set yet, show all active horses by default
+  const effectiveTracked = trackedIds.length > 0 ? trackedIds : horses.filter(h => h.status !== "Inactive").map(h => h.id);
+  const trackedHorses = horses.filter(h => effectiveTracked.includes(h.id));
+  const untrackedHorses = horses.filter(h => h.status !== "Inactive" && !effectiveTracked.includes(h.id));
 
   return (
     <div>
@@ -440,194 +446,316 @@ function MedicationTracker({ horses, medLogs, setMedLogs, trackedIds, setTracked
 
 // ─── PROVISIONAL ENTRIES ──────────────────────────────────────────────────────
 function ProvisionalEntries({ horses, setHorses }) {
-  const [showAdd, setShowAdd] = useState(null); // horseId
-  const [entry, setEntry] = useState({ venue: "", date: "", raceName: "", raceRef: "", note: "" });
-  const [provisionalRaces, setProvisionalRaces] = useState([]);
-  const [fetchStatus, setFetchStatus] = useState("idle");
-  const [lastFetch, setLastFetch] = useState(null);
+  const [pasteText, setPasteText] = useState("");
+  const [parseStatus, setParseStatus] = useState("idle"); // idle | parsing | done | error
+  const [racePool, setRacePool] = useState([]);
+  const [lastParsed, setLastParsed] = useState(null);
+  const [expandedHorse, setExpandedHorse] = useState(null);
+  const [raceSearch, setRaceSearch] = useState("");
+  const [selectedRaceId, setSelectedRaceId] = useState("");
+  const [note, setNote] = useState("");
+  const [showPaste, setShowPaste] = useState(true);
 
-  const fetchProvisional = async () => {
-    setFetchStatus("fetching");
+  const parseRaces = async function() {
+    if (!pasteText.trim()) return;
+    setParseStatus("parsing");
     try {
+      const headers = {
+        "Content-Type": "application/json",
+        "x-api-key": ANTHROPIC_KEY,
+        "anthropic-version": "2023-06-01",
+        "anthropic-dangerous-direct-browser-access": "true",
+      };
       const res = await fetch("https://api.anthropic.com/v1/messages", {
         method: "POST",
-        headers: { "Content-Type": "application/json", "x-api-key": ANTHROPIC_KEY, "anthropic-version": "2023-06-01", "anthropic-dangerous-direct-browser-access": "true" },
+        headers,
         body: JSON.stringify({
           model: "claude-sonnet-4-20250514",
-          max_tokens: 5000,
-          tools: [{ type: "web_search_20250305", name: "web_search" }],
-          system: "Parse HRI provisional summary PDFs into a JSON array. Return ONLY raw JSON array, no markdown. Fields: id, meetingRef, raceRef, venue, date as YYYY-MM-DD, raceName, discipline, grade, distanceFurlongs, prizeMoney, forecastGoing, entryDeadline as YYYY-MM-DDTHH:MM.",
-          messages: [{ role: "user", content: "Fetch https://www.hri-ras.ie/provisional-summaries, find the most recent provisional summary PDF links, fetch and parse all races into JSON array. Return only the JSON." }]
-        })
+          max_tokens: 6000,
+          system: "You are parsing Irish HRI race conditions or provisional summary text. Extract every race and return ONLY a raw JSON array. Each race object needs: id (rc_1, rc_2 etc), source (conditions or provisional), venue, date as YYYY-MM-DD, raceName, discipline (Flat, Hurdle, Chase, or Bumper), grade, surface (Turf or AWT), distanceFurlongs as number, prizeMoney as number, ageMin as number, ageMax as number or null, sexRestriction (Open, Mares, or Fillies), ratingMax as number or null, isMaiden as boolean, isNovice as boolean, isEBF as boolean, entryDeadline as YYYY-MM-DDTHH:MM or null, forecastGoing. Return ONLY raw JSON array, no markdown, no explanation.",
+          messages: [{ role: "user", content: "Parse all races from this text into a JSON array:\n\n" + pasteText }],
+        }),
       });
       const data = await res.json();
-      const text = (data.content || []).filter(b => b.type === "text").map(b => b.text).join("").trim();
-      const match = text.match(new RegExp("\\[[\\s\\S]*\\]"));
-      if (!match) throw new Error("No races");
-      setProvisionalRaces(JSON.parse(match[0]));
-      setLastFetch(new Date().toISOString());
-      setFetchStatus("done");
-    } catch (e) { console.error(e); setFetchStatus("error"); }
+      const text = (data.content || []).filter(function(b) { return b.type === "text"; }).map(function(b) { return b.text; }).join("").trim();
+      const match = text.match(/\[[\s\S]*\]/);
+      if (!match) throw new Error("No races found");
+      const parsed = JSON.parse(match[0]);
+      setRacePool(parsed);
+      setLastParsed(new Date().toISOString());
+      setParseStatus("done");
+      setShowPaste(false);
+    } catch (e) {
+      console.error(e);
+      setParseStatus("error");
+    }
   };
 
-  const addEntry = (horseId) => {
-    if (!entry.venue || !entry.raceName) return;
-    setHorses(prev => prev.map(h => h.id === horseId ? { ...h, provisionalEntries: [...(h.provisionalEntries || []), { ...entry, id: `pe_${Date.now()}` }] } : h));
-    setEntry({ venue: "", date: "", raceName: "", raceRef: "", note: "" });
-    setShowAdd(null);
+  const isEligible = function(horse, race) {
+    const age = getAge(horse.dob);
+    if (race.ageMin && age < race.ageMin) return false;
+    if (race.ageMax && age > race.ageMax) return false;
+    const sexMap = { Mares: ["Mare", "Filly"], Fillies: ["Filly"], "Colts & Geldings": ["Colt", "Gelding"] };
+    if (race.sexRestriction && race.sexRestriction !== "Open") {
+      const allowed = sexMap[race.sexRestriction] || [];
+      if (!allowed.includes(horse.sex)) return false;
+    }
+    const horseDisciplines = Array.isArray(horse.discipline) ? horse.discipline : [horse.discipline];
+    if (race.discipline && !horseDisciplines.includes(race.discipline)) return false;
+    if (race.surface && horse.surface && horse.surface !== race.surface) return false;
+    const rtg = race.discipline === "Flat" ? (horse.flatRating || horse.nhRating) : (horse.nhRating || horse.flatRating);
+    if (race.ratingMax && rtg && rtg > race.ratingMax) return false;
+    if (race.isMaiden && !horse.isMaiden) return false;
+    if (race.isNovice && !horse.isNovice) return false;
+    if (race.isEBF && !horse.isEBF) return false;
+    return true;
   };
 
-  const removeEntry = (horseId, entryId) => {
-    setHorses(prev => prev.map(h => h.id === horseId ? { ...h, provisionalEntries: (h.provisionalEntries || []).filter(e => e.id !== entryId) } : h));
+  const addEntry = function(horseId) {
+    const race = racePool.find(function(r) { return r.id === selectedRaceId; });
+    if (!race) return;
+    const newEntry = {
+      id: "pe_" + Date.now(),
+      raceName: race.raceName, venue: race.venue, date: race.date,
+      raceRef: ((race.meetingRef || "") + " " + (race.raceRef || "")).trim(),
+      discipline: race.discipline, grade: race.grade, distanceFurlongs: race.distanceFurlongs,
+      prizeMoney: race.prizeMoney, forecastGoing: race.forecastGoing,
+      entryDeadline: race.entryDeadline, source: race.source, note,
+    };
+    setHorses(function(prev) {
+      return prev.map(function(h) {
+        return h.id === horseId ? { ...h, provisionalEntries: [...(h.provisionalEntries || []), newEntry] } : h;
+      });
+    });
+    setSelectedRaceId(""); setRaceSearch(""); setNote("");
   };
 
-  const allProvisional = horses.flatMap(h => (h.provisionalEntries || []).map(e => ({ ...e, horse: h })));
+  const removeEntry = function(horseId, entryId) {
+    setHorses(function(prev) {
+      return prev.map(function(h) {
+        return h.id === horseId ? { ...h, provisionalEntries: (h.provisionalEntries || []).filter(function(e) { return e.id !== entryId; }) } : h;
+      });
+    });
+  };
+
+  const allTargets = horses.flatMap(function(h) {
+    return (h.provisionalEntries || []).map(function(e) { return { ...e, horse: h }; });
+  }).filter(function(e) { return e.date; }).sort(function(a, b) { return new Date(a.date) - new Date(b.date); });
+
+  const activeHorse = expandedHorse ? horses.find(function(h) { return h.id === expandedHorse; }) : null;
+  const eligibleRaces = activeHorse ? racePool.filter(function(r) { return isEligible(activeHorse, r); }) : [];
+  const filteredRaces = eligibleRaces.filter(function(r) {
+    if (!raceSearch) return true;
+    const q = raceSearch.toLowerCase();
+    return (r.raceName || "").toLowerCase().includes(q) || (r.venue || "").toLowerCase().includes(q);
+  });
 
   return (
     <div>
-      <div style={{ display: "flex", justifyContent: "space-between", alignItems: "flex-start", marginBottom: 16, flexWrap: "wrap", gap: 10 }}>
-        <div>
-          <div style={{ fontSize: 22, fontWeight: 800, color: C.text }}>Provisional Entries</div>
-          <div style={{ fontSize: 13, color: C.textMid, marginTop: 3 }}>Planning targets before official entries — visible to owners in their portal</div>
-        </div>
-        <div style={{ display: "flex", gap: 8 }}>
-          <Btn variant="ghost" onClick={fetchProvisional} disabled={fetchStatus === "fetching"} style={{ fontSize: 12 }}>
-            {fetchStatus === "fetching" ? "Fetching..." : "Fetch HRI Provisional"}
-          </Btn>
-          <Btn variant="ghost" onClick={function() {
-            const txt = window.prompt("Paste provisional entries text (one per line: venue, date, race name):");
-            if (!txt) return;
-            const races = txt.split("\n").filter(function(l) { return l.trim(); }).map(function(l, idx) {
-              const p = l.split(/[,\t]/);
-              return { id: "p" + Date.now() + idx, meetingRef: p[0] || "", venue: p[1] || p[0] || "", date: p[2] || "", raceName: p[3] || l.trim(), discipline: p[4] || "Flat", raceRef: p[5] || "" };
-            });
-            setProvisionalRaces(function(prev) { return [...prev, ...races]; });
-          }} style={{ fontSize: 12 }}>{"Paste Conditions"}</Btn>
-        </div>
+      <div style={{ marginBottom: 16 }}>
+        <div style={{ fontSize: 22, fontWeight: 800, color: C.text }}>Provisional Entries</div>
+        <div style={{ fontSize: 13, color: C.textMid, marginTop: 3 }}>Paste race conditions or provisional summaries — eligible races shown per horse</div>
       </div>
 
-      {/* HRI Provisional Summaries */}
-      <div style={{ background: C.card, border: `1px solid ${C.border}`, borderRadius: 14, padding: "14px 18px", marginBottom: 16, boxShadow: C.shadow }}>
-        <div style={{ display: "flex", justifyContent: "space-between", alignItems: "center", marginBottom: lastFetch || provisionalRaces.length > 0 ? 12 : 0 }}>
+      {/* Paste box */}
+      <div style={{ background: C.card, border: "1px solid " + C.border, borderRadius: 14, padding: "14px 18px", marginBottom: 16, boxShadow: C.shadow }}>
+        <div style={{ display: "flex", justifyContent: "space-between", alignItems: "center", marginBottom: showPaste ? 12 : 0 }}>
           <div>
-            <div style={{ fontSize: 14, fontWeight: 700, color: C.text, marginBottom: 2 }}>HRI Provisional Summaries</div>
-            <div style={{ fontSize: 12, color: C.textMid }}>
-            {lastFetch ? "Last fetched: " + new Date(lastFetch).toLocaleString("en-IE", { weekday: "short", day: "numeric", month: "short", hour: "2-digit", minute: "2-digit" }) : "Tap below to load current entries from HRI"}
-            </div>
-          </div>
-          <Btn onClick={fetchProvisional} disabled={fetchStatus === "fetching"} style={{ fontSize: 12, padding: "8px 16px" }}>
-            {fetchStatus === "fetching" ? "⟳ Fetching..." : (lastFetch ? "⟳ Refresh" : "⟳ Fetch Now")}
-          </Btn>
-        </div>
-        {provisionalRaces.length > 0 && (
-          <div style={{ display: "flex", flexDirection: "column", gap: 6 }}>
-            {provisionalRaces.slice(0, 8).map((r, i) => (
-              <div key={i} style={{ display: "flex", gap: 12, padding: "8px 10px", background: C.cardOff, borderRadius: 8, border: `1px solid ${C.border}`, fontSize: 12, alignItems: "center" }}>
-                <span style={{ fontWeight: 700, color: C.navy, minWidth: 80 }}>{r.meetingRef}</span>
-                <span style={{ color: C.textMid, minWidth: 60 }}>{r.raceRef}</span>
-                <span style={{ fontWeight: 600, color: C.text, flex: 1 }}>{r.raceName}</span>
-                <span style={{ color: C.textMid }}>{r.venue}</span>
-                <span style={{ color: C.gold, fontWeight: 700 }}>€{r.prizeMoney >= 1000 ? (r.prizeMoney / 1000) + "k" : r.prizeMoney}</span>
-                <span style={{ color: C.textMid }}>{new Date(r.date).toLocaleDateString("en-IE", { day: "numeric", month: "short" })}</span>
+            <div style={{ fontSize: 14, fontWeight: 700, color: C.text, marginBottom: 2 }}>HRI Race Conditions / Provisional Summaries</div>
+            {lastParsed && (
+              <div style={{ fontSize: 12, color: C.green, fontWeight: 600 }}>
+                {racePool.length} races loaded — {new Date(lastParsed).toLocaleString("en-IE", { day: "numeric", month: "short", hour: "2-digit", minute: "2-digit" })}
               </div>
-            ))}
-            {provisionalRaces.length > 8 && <div style={{ fontSize: 12, color: C.textMid, padding: "4px 0" }}>+ {provisionalRaces.length - 8} more races</div>}
+            )}
+            {parseStatus === "error" && <div style={{ fontSize: 12, color: C.red, fontWeight: 600 }}>Could not parse — check the text and try again</div>}
+          </div>
+          <div style={{ display: "flex", gap: 8 }}>
+            <Btn variant="ghost" onClick={function() { setShowPaste(!showPaste); }} style={{ fontSize: 12 }}>
+              {showPaste ? "Hide" : "Paste Text"}
+            </Btn>
+            {pasteText.trim() && (
+              <Btn onClick={parseRaces} disabled={parseStatus === "parsing"} style={{ fontSize: 12 }}>
+                {parseStatus === "parsing" ? "Parsing..." : "Parse Races"}
+              </Btn>
+            )}
+          </div>
+        </div>
+        {showPaste && (
+          <div>
+            <textarea
+              value={pasteText}
+              onChange={function(e) { setPasteText(e.target.value); setParseStatus("idle"); }}
+              placeholder={"Paste HRI race conditions or provisional summaries text here...\n\nTip: open the PDF, select all, copy and paste."}
+              rows={8}
+              style={{ width: "100%", background: C.cardOff, border: "1px solid " + C.border, borderRadius: 10, padding: "11px 14px", color: C.text, fontSize: 12, lineHeight: 1.6, resize: "vertical", outline: "none", fontFamily: "inherit", marginBottom: 10 }}
+            />
+            {!pasteText.trim() && (
+              <div style={{ fontSize: 12, color: C.textMid }}>
+                Open the PDF from hri-ras.ie → select all text → paste above → hit Parse Races
+              </div>
+            )}
           </div>
         )}
-        {fetchStatus === "error" && <div style={{ fontSize: 12, color: C.red, fontWeight: 600, marginTop: 8 }}>✕ Failed to fetch — try again</div>}
-        {fetchStatus === "done" && provisionalRaces.length === 0 && <div style={{ fontSize: 12, color: C.textMid, marginTop: 8 }}>No races found in provisional summaries</div>}
+        {racePool.length > 0 && (
+          <div style={{ display: "flex", gap: 10, marginTop: showPaste ? 10 : 0 }}>
+            {[
+              { l: "Conditions", v: racePool.filter(function(r) { return r.source === "conditions"; }).length, c: C.blue },
+              { l: "Provisional", v: racePool.filter(function(r) { return r.source === "provisional"; }).length, c: C.gold },
+              { l: "Total", v: racePool.length, c: C.green },
+            ].map(function(s) {
+              return (
+                <div key={s.l} style={{ flex: 1, padding: "8px 12px", background: s.c + "12", border: "1px solid " + s.c + "30", borderRadius: 9 }}>
+                  <div style={{ fontSize: 10, fontWeight: 700, color: s.c, textTransform: "uppercase", letterSpacing: 0.8, marginBottom: 2 }}>{s.l}</div>
+                  <div style={{ fontSize: 18, fontWeight: 800, color: s.c }}>{s.v}</div>
+                </div>
+              );
+            })}
+          </div>
+        )}
       </div>
 
-      {/* Per-horse provisional entries */}
-      {horses.filter(h => h.status !== "Inactive").map(horse => {
+      {/* Horses — click to expand eligible races */}
+      {horses.filter(function(h) { return h.status !== "Inactive"; }).map(function(horse) {
         const entries = horse.provisionalEntries || [];
-        const isAdding = showAdd === horse.id;
+        const isExpanded = expandedHorse === horse.id;
+        const eligible = racePool.filter(function(r) { return isEligible(horse, r); });
+
         return (
-          <div key={horse.id} style={{ background: C.card, border: `1px solid ${C.border}`, borderRadius: 12, padding: "14px 16px", marginBottom: 12, boxShadow: C.shadow }}>
-            <div style={{ display: "flex", alignItems: "center", gap: 12, marginBottom: entries.length > 0 || isAdding ? 12 : 0 }}>
+          <div key={horse.id} style={{ background: C.card, border: "1px solid " + C.border, borderRadius: 12, padding: "14px 16px", marginBottom: 12, boxShadow: C.shadow }}>
+            <div
+              onClick={function() { setExpandedHorse(isExpanded ? null : horse.id); setSelectedRaceId(""); setRaceSearch(""); setNote(""); }}
+              style={{ display: "flex", alignItems: "center", gap: 12, cursor: "pointer" }}
+            >
               <Silk silk={horse.silk} size={36} />
               <div style={{ flex: 1 }}>
                 <div style={{ fontSize: 15, fontWeight: 700, color: C.text }}>{horse.name}</div>
-                <div style={{ fontSize: 12, color: C.textMid }}>{horse.owner} · {entries.length} provisional target{entries.length !== 1 ? "s" : ""}</div>
+                <div style={{ fontSize: 12, color: C.textMid }}>
+                  {horse.owner}
+                  {entries.length > 0 && " · " + entries.length + " target" + (entries.length !== 1 ? "s" : "")}
+                  {racePool.length > 0 && (
+                    <span style={{ marginLeft: 6, color: eligible.length > 0 ? C.green : C.textDim, fontWeight: 700 }}>
+                      {eligible.length} eligible
+                    </span>
+                  )}
+                </div>
               </div>
-              <Btn variant="gold" onClick={() => setShowAdd(isAdding ? null : horse.id)} style={{ fontSize: 12, padding: "6px 14px" }}>
-                {isAdding ? "Cancel" : "+ Add Target"}
-              </Btn>
+              <span style={{ color: C.textDim, fontSize: 14 }}>{isExpanded ? "▲" : "▼"}</span>
             </div>
 
-            {/* Existing provisional entries */}
-            {entries.map(e => (
-              <div key={e.id} style={{ display: "flex", alignItems: "center", gap: 10, padding: "10px 12px", background: C.goldBg, border: `1px solid ${C.gold}30`, borderLeft: `3px solid ${C.gold}`, borderRadius: 10, marginBottom: 8 }}>
-                <div style={{ flex: 1 }}>
-                  <div style={{ display: "flex", gap: 8, alignItems: "center", flexWrap: "wrap", marginBottom: 4 }}>
-                    <span style={{ fontSize: 14, fontWeight: 700, color: C.text }}>{e.raceName}</span>
-                    {e.raceRef && <Tag color={C.navy} bg="rgba(10,22,40,0.07)">{e.raceRef}</Tag>}
-                    <Tag color={C.gold}>Provisional</Tag>
-                  </div>
-                  <div style={{ display: "flex", gap: 10, flexWrap: "wrap", fontSize: 12, color: C.textMid }}>
-                    <span>📍 {e.venue}</span>
-                    {e.date && <span>📅 {new Date(e.date).toLocaleDateString("en-IE", { weekday: "short", day: "numeric", month: "short" })}</span>}
-                    {e.date && daysUntil(e.date) && <span style={{ color: daysUntil(e.date) <= 16 ? C.amber : C.textMid, fontWeight: daysUntil(e.date) <= 16 ? 700 : 400 }}>{daysUntil(e.date)} days away</span>}
-                  </div>
-                  {e.note && <div style={{ fontSize: 12, color: C.textMid, fontStyle: "italic", marginTop: 4 }}>💬 {e.note}</div>}
-                </div>
-                <Btn variant="red" onClick={() => removeEntry(horse.id, e.id)} style={{ padding: "5px 10px", fontSize: 11 }}>✕</Btn>
-              </div>
-            ))}
-
-            {/* Add entry form */}
-            {isAdding && (
-              <div style={{ background: C.cardOff, border: `1px solid ${C.border}`, borderRadius: 10, padding: "14px 16px", marginTop: 8 }}>
-                <div style={{ fontSize: 13, fontWeight: 700, color: C.text, marginBottom: 12 }}>Add Provisional Target for {horse.name}</div>
-                <div style={{ display: "grid", gridTemplateColumns: "1fr 1fr", gap: 10, marginBottom: 10 }}>
-                  {[
-                    { key: "raceName", label: "Race Name", placeholder: "e.g. Mares Handicap Hurdle", full: true },
-                    { key: "venue", label: "Venue", placeholder: "e.g. Navan" },
-                    { key: "date", label: "Date", type: "date" },
-                    { key: "raceRef", label: "Meeting Ref", placeholder: "e.g. Limerick 55 Race A" },
-                  ].map(({ key, label, placeholder, type, full }) => (
-                    <div key={key} style={{ gridColumn: full ? "1 / -1" : "auto" }}>
-                      <div style={{ fontSize: 10, fontWeight: 700, color: C.textMid, marginBottom: 4, textTransform: "uppercase", letterSpacing: 0.5 }}>{label}</div>
-                      <input type={type || "text"} placeholder={placeholder} value={entry[key]} onChange={e => setEntry(p => ({ ...p, [key]: e.target.value }))} style={{ width: "100%", background: C.card, border: `1px solid ${C.border}`, borderRadius: 8, padding: "8px 12px", color: C.text, fontSize: 13, outline: "none" }} />
+            {/* Existing entries */}
+            {entries.length > 0 && (
+              <div style={{ marginTop: 10 }}>
+                {entries.map(function(e) {
+                  return (
+                    <div key={e.id} style={{ display: "flex", alignItems: "flex-start", gap: 10, padding: "9px 12px", background: C.goldBg, border: "1px solid rgba(201,149,42,0.30)", borderLeft: "3px solid " + C.gold, borderRadius: 10, marginBottom: 7 }}>
+                      <div style={{ flex: 1 }}>
+                        <div style={{ fontSize: 14, fontWeight: 700, color: C.text, marginBottom: 3 }}>{e.raceName}</div>
+                        <div style={{ fontSize: 12, color: C.textMid }}>
+                          {e.venue}
+                          {e.date && " · " + new Date(e.date).toLocaleDateString("en-IE", { weekday: "short", day: "numeric", month: "short" })}
+                          {e.raceRef && " · " + e.raceRef}
+                          {e.date && daysUntil(e.date) > 0 && (
+                            <span style={{ marginLeft: 6, color: daysUntil(e.date) <= 16 ? C.amber : C.textMid, fontWeight: daysUntil(e.date) <= 16 ? 700 : 400 }}>
+                              {daysUntil(e.date)}d{daysUntil(e.date) <= 16 ? " — start meds" : ""}
+                            </span>
+                          )}
+                        </div>
+                        {e.note && <div style={{ fontSize: 12, color: C.textMid, fontStyle: "italic", marginTop: 3 }}>{e.note}</div>}
+                      </div>
+                      <Btn variant="red" onClick={function() { removeEntry(horse.id, e.id); }} style={{ padding: "3px 8px", fontSize: 11 }}>✕</Btn>
                     </div>
-                  ))}
-                </div>
-                <div style={{ marginBottom: 10 }}>
-                  <div style={{ fontSize: 10, fontWeight: 700, color: C.textMid, marginBottom: 4, textTransform: "uppercase", letterSpacing: 0.5 }}>Trainer Note (visible to owner)</div>
-                  <input type="text" placeholder="e.g. If ground stays soft" value={entry.note} onChange={e => setEntry(p => ({ ...p, note: e.target.value }))} style={{ width: "100%", background: C.card, border: `1px solid ${C.border}`, borderRadius: 8, padding: "8px 12px", color: C.text, fontSize: 13, outline: "none" }} />
-                </div>
-                <div style={{ display: "flex", gap: 8 }}>
-                  <Btn onClick={() => addEntry(horse.id)}>Save Target</Btn>
-                  <Btn variant="ghost" onClick={() => setShowAdd(null)}>Cancel</Btn>
-                </div>
+                  );
+                })}
+              </div>
+            )}
+
+            {/* Expanded race picker */}
+            {isExpanded && (
+              <div style={{ marginTop: 12, borderTop: "1px solid " + C.border, paddingTop: 12 }}>
+                {racePool.length === 0 ? (
+                  <div style={{ fontSize: 13, color: C.textMid, textAlign: "center", padding: "16px 0" }}>
+                    Paste race conditions above and hit Parse Races first
+                  </div>
+                ) : eligible.length === 0 ? (
+                  <div style={{ fontSize: 13, color: C.textMid, textAlign: "center", padding: "16px 0" }}>
+                    No eligible races found for {horse.name} — check discipline, age, sex and rating
+                  </div>
+                ) : (
+                  <div>
+                    <div style={{ fontSize: 12, fontWeight: 700, color: C.textDim, marginBottom: 8, textTransform: "uppercase", letterSpacing: 0.8 }}>
+                      {eligible.length} Eligible races for {horse.name}
+                    </div>
+                    <input
+                      type="text"
+                      placeholder="Search race or venue..."
+                      value={raceSearch}
+                      onChange={function(e) { setRaceSearch(e.target.value); setSelectedRaceId(""); }}
+                      style={{ width: "100%", background: "#fff", border: "1px solid " + C.border, borderRadius: 8, padding: "8px 12px", color: C.text, fontSize: 13, outline: "none", marginBottom: 8 }}
+                    />
+                    <div style={{ maxHeight: 260, overflowY: "auto", border: "1px solid " + C.border, borderRadius: 8, background: "#fff", marginBottom: 10 }}>
+                      {filteredRaces.map(function(r) {
+                        const sel = selectedRaceId === r.id;
+                        return (
+                          <div key={r.id} onClick={function() { setSelectedRaceId(r.id); }} style={{ padding: "10px 14px", cursor: "pointer", background: sel ? C.navy : "none", borderBottom: "1px solid " + C.border }}>
+                            <div style={{ fontSize: 13, fontWeight: 700, color: sel ? "#fff" : C.text, marginBottom: 2 }}>{r.raceName}</div>
+                            <div style={{ fontSize: 11, color: sel ? "rgba(255,255,255,0.6)" : C.textMid }}>
+                              {r.venue}{r.date && " · " + new Date(r.date).toLocaleDateString("en-IE", { day: "numeric", month: "short" })}
+                              {r.distanceFurlongs && " · " + r.distanceFurlongs + "f"}
+                              {r.prizeMoney && " · €" + (r.prizeMoney >= 1000 ? (r.prizeMoney/1000) + "k" : r.prizeMoney)}
+                              {r.forecastGoing && " · " + r.forecastGoing}
+                            </div>
+                          </div>
+                        );
+                      })}
+                    </div>
+                    {selectedRaceId && (
+                      <div>
+                        <input
+                          type="text"
+                          placeholder="Trainer note for owner e.g. If ground stays soft"
+                          value={note}
+                          onChange={function(e) { setNote(e.target.value); }}
+                          style={{ width: "100%", background: "#fff", border: "1px solid " + C.border, borderRadius: 8, padding: "8px 12px", color: C.text, fontSize: 13, outline: "none", marginBottom: 8 }}
+                        />
+                        <Btn onClick={function() { addEntry(horse.id); }} style={{ width: "100%", justifyContent: "center" }}>
+                          Add Target for {horse.name}
+                        </Btn>
+                      </div>
+                    )}
+                  </div>
+                )}
               </div>
             )}
           </div>
         );
       })}
 
-      {allProvisional.length > 0 && (
-        <div style={{ background: C.card, border: `1px solid ${C.border}`, borderRadius: 12, padding: "14px 18px", marginTop: 8, boxShadow: C.shadow }}>
-          <div style={{ fontSize: 13, fontWeight: 700, color: C.text, marginBottom: 12 }}>All Provisional Targets — by date</div>
-          {[...allProvisional].filter(e => e.date).sort((a, b) => new Date(a.date) - new Date(b.date)).map((e, i) => (
-            <div key={i} style={{ display: "flex", alignItems: "center", gap: 12, padding: "8px 0", borderBottom: `1px solid ${C.border}` }}>
-              <Silk silk={e.horse.silk} size={24} />
-              <div style={{ flex: 1, fontSize: 13 }}>
-                <span style={{ fontWeight: 700, color: C.text }}>{e.horse.name}</span>
-                <span style={{ color: C.textMid, marginLeft: 8 }}>{e.raceName} · {e.venue}</span>
-                {e.raceRef && <span style={{ color: C.textDim, marginLeft: 6, fontSize: 11 }}>{e.raceRef}</span>}
+      {/* All targets by date */}
+      {allTargets.length > 0 && (
+        <div style={{ background: C.card, border: "1px solid " + C.border, borderRadius: 12, padding: "14px 18px", marginTop: 8, boxShadow: C.shadow }}>
+          <div style={{ fontSize: 13, fontWeight: 700, color: C.text, marginBottom: 12 }}>All Targets — by date</div>
+          {allTargets.map(function(e, i) {
+            return (
+              <div key={i} style={{ display: "flex", alignItems: "center", gap: 12, padding: "8px 0", borderBottom: "1px solid " + C.border }}>
+                <Silk silk={e.horse.silk} size={22} />
+                <div style={{ flex: 1, fontSize: 13 }}>
+                  <span style={{ fontWeight: 700, color: C.text }}>{e.horse.name}</span>
+                  <span style={{ color: C.textMid, marginLeft: 8 }}>{e.raceName} · {e.venue}</span>
+                </div>
+                <span style={{ fontSize: 12, color: C.textMid }}>{new Date(e.date).toLocaleDateString("en-IE", { day: "numeric", month: "short" })}</span>
+                <span style={{ fontSize: 12, fontWeight: 700, color: daysUntil(e.date) <= 16 ? C.amber : C.textMid }}>
+                  {daysUntil(e.date) > 0 ? daysUntil(e.date) + "d" : "past"}
+                </span>
               </div>
-              <span style={{ fontSize: 12, color: C.textMid }}>{new Date(e.date).toLocaleDateString("en-IE", { day: "numeric", month: "short" })}</span>
-              <span style={{ fontSize: 12, fontWeight: 700, color: daysUntil(e.date) <= 16 ? C.amber : C.textMid }}>{daysUntil(e.date)} days</span>
-            </div>
-          ))}
+            );
+          })}
         </div>
       )}
     </div>
   );
 }
 
-// ─── RACE PLANNER ─────────────────────────────────────────────────────────────
+
 function RacePlanner({ horses, setHorses }) {
   const [selHorse, setSelHorse] = useState(horses[0]);
   const [races, setRaces] = useState([]);
@@ -638,8 +766,69 @@ function RacePlanner({ horses, setHorses }) {
   const [loadStage, setLoadStage] = useState({});
   const [shortlisted, setShortlisted] = useState({});
   const [toast, setToast] = useState(null);
+  const [showPaste, setShowPaste] = useState(false);
+  const [pasteText, setPasteText] = useState("");
 
   const raceKey = (hId, rId) => hId + "_" + rId;
+
+  const parsePastedRaces = function() {
+    if (!pasteText.trim()) return;
+    const parsedRaces = [];
+    const raceBlocks = pasteText.split(/\n(?=Race|RACE|\d+\.|Meeting)/i).filter(function(b) { return b.trim(); });
+    
+    // Try to parse structured format first
+    if (raceBlocks.length > 1) {
+      raceBlocks.forEach(function(block, idx) {
+        const lineArr = block.split("\n").map(function(l) { return l.trim(); }).filter(Boolean);
+        if (!lineArr.length) return;
+        const race = {
+          id: "r_paste_" + idx + "_" + Date.now(),
+          raceName: lineArr[0] || "Race " + (idx+1),
+          venue: "", date: "", distanceFurlongs: 0, prizeMoney: 0,
+          discipline: "Flat", raceType: "Flat", grade: "Ungraded",
+          forecastGoing: "", ageMin: 3, ageMax: null, ratingMax: null,
+          isMaiden: false, isNovice: false, isEBF: false, entryDeadline: ""
+        };
+        lineArr.forEach(function(l) {
+          if (/venue|at |@/i.test(l)) race.venue = l.replace(/venue[:\s]*/i,"").trim();
+          if (/hurdle/i.test(l)) race.discipline = "Hurdle";
+          if (/chase/i.test(l)) race.discipline = "Chase";
+          if (/bumper/i.test(l)) { race.discipline = "Bumper"; race.raceType = "Bumper"; }
+          if (/maiden/i.test(l)) { race.isMaiden = true; race.raceType = "Maiden"; }
+          if (/novice/i.test(l)) { race.isNovice = true; race.raceType = "Novice"; }
+          if (/handicap/i.test(l)) race.raceType = "Handicap";
+          if (/ebf/i.test(l)) race.isEBF = true;
+          const distM = l.match(/(\d+)f/i); if (distM) race.distanceFurlongs = parseInt(distM[1]);
+          const prizeM = l.match(/€([\d,]+)/); if (prizeM) race.prizeMoney = parseInt(prizeM[1].replace(/,/g,""));
+          const ratingM = l.match(/rated? (\d+)/i); if (ratingM) race.ratingMax = parseInt(ratingM[1]);
+          const ageM = l.match(/(\d+)yo?\+?/i); if (ageM) race.ageMin = parseInt(ageM[1]);
+          const goingM = l.match(/(good|yielding|soft|heavy|firm|standard|slow)/i); if (goingM) race.forecastGoing = goingM[1];
+          const dateM = l.match(/(\d{1,2}[\/\-]\d{1,2}[\/\-]\d{2,4})/); if (dateM) race.date = dateM[1];
+          const venueM = l.match(/(Leopardstown|Fairyhouse|Punchestown|Navan|Naas|Curragh|Gowran|Thurles|Clonmel|Cork|Galway|Killarney|Listowel|Roscommon|Sligo|Tramore|Ballinrobe|Bellewstown|Downpatrick|Down Royal|Dundalk|Kilbeggan|Laytown|Limerick|Tipperary|Wexford)/i);
+          if (venueM) race.venue = venueM[1];
+        });
+        parsedRaces.push(race);
+      });
+    } else {
+      // Simple line-by-line format
+      const lineArr = pasteText.split("\n").filter(function(l) { return l.trim(); });
+      lineArr.forEach(function(l, idx) {
+        parsedRaces.push({
+          id: "r_paste_" + idx + "_" + Date.now(),
+          raceName: l.trim(), venue: "", date: "", distanceFurlongs: 0, prizeMoney: 0,
+          discipline: /hurdle/i.test(l) ? "Hurdle" : /chase/i.test(l) ? "Chase" : "Flat",
+          raceType: /maiden/i.test(l) ? "Maiden" : /handicap/i.test(l) ? "Handicap" : /novice/i.test(l) ? "Novice" : "Flat",
+          grade: "Ungraded", forecastGoing: "", ageMin: 3, ageMax: null, ratingMax: null,
+          isMaiden: /maiden/i.test(l), isNovice: /novice/i.test(l), isEBF: /ebf/i.test(l), entryDeadline: ""
+        });
+      });
+    }
+    setRaces(parsedRaces);
+    setLastFetch(Date.now());
+    setPasteText("");
+    setShowPaste(false);
+    showToast(parsedRaces.length + " races loaded from paste");
+  };
 
   const showToast = (msg, color) => {
     setToast({ msg, color: color || C.green });
@@ -766,12 +955,31 @@ function RacePlanner({ horses, setHorses }) {
           })}
         </div>
         <div>
-          <div style={{ background: C.card, border: "1px solid " + C.border, borderRadius: 12, padding: "12px 16px", marginBottom: 12, display: "flex", justifyContent: "space-between", alignItems: "center" }}>
-            <div>
-              <div style={{ fontSize: 13, fontWeight: 700, color: C.text }}>HRI Race Conditions</div>
-              <div style={{ fontSize: 11, color: C.textMid }}>{lastFetch ? "Updated " + new Date(lastFetch).toLocaleString("en-IE") : "Tap to load"}</div>
+          <div style={{ background: C.card, border: "1px solid " + C.border, borderRadius: 12, padding: "12px 16px", marginBottom: 12 }}>
+            <div style={{ display: "flex", justifyContent: "space-between", alignItems: "center", marginBottom: showPaste ? 12 : 0 }}>
+              <div>
+                <div style={{ fontSize: 13, fontWeight: 700, color: C.text }}>HRI Race Conditions</div>
+                <div style={{ fontSize: 11, color: C.textMid }}>{lastFetch ? "Updated " + new Date(lastFetch).toLocaleString("en-IE") : "Fetch or paste race conditions below"}</div>
+              </div>
+              <div style={{ display: "flex", gap: 8 }}>
+                <Btn variant="ghost" onClick={function() { setShowPaste(function(p) { return !p; }); }} style={{ fontSize: 12 }}>{"Paste Conditions"}</Btn>
+                <Btn onClick={fetchRaces} disabled={fetchStatus === "fetching"} style={{ fontSize: 12 }}>{fetchStatus === "fetching" ? "Fetching..." : "Fetch HRI"}</Btn>
+              </div>
             </div>
-            <Btn onClick={fetchRaces} disabled={fetchStatus === "fetching"}>{fetchStatus === "fetching" ? "Fetching..." : "Fetch Now"}</Btn>
+            {showPaste && (
+              <div>
+                <textarea
+                  value={pasteText}
+                  onChange={function(e) { setPasteText(e.target.value); }}
+                  placeholder={"Paste race conditions here — from HRI PDF, email, or any text format. Include race names, distances, grades, venues and the app will parse them automatically."}
+                  style={{ width: "100%", height: 160, padding: "10px 12px", border: "1.5px solid " + C.border, borderRadius: 8, fontSize: 12, color: C.text, background: C.cardOff, resize: "vertical", fontFamily: "monospace", boxSizing: "border-box" }}
+                />
+                <div style={{ display: "flex", gap: 8, marginTop: 8 }}>
+                  <Btn onClick={parsePastedRaces} style={{ fontSize: 12 }}>{"Parse Races"}</Btn>
+                  <Btn variant="ghost" onClick={function() { setShowPaste(false); setPasteText(""); }} style={{ fontSize: 12 }}>{"Cancel"}</Btn>
+                </div>
+              </div>
+            )}
           </div>
           {selHorse && (
             <div style={{ background: C.card, border: "1px solid " + C.border, borderRadius: 12, padding: "12px 16px", marginBottom: 12, display: "flex", alignItems: "center", gap: 12 }}>
@@ -873,68 +1081,166 @@ function RacePlanner({ horses, setHorses }) {
 }
 
 function RacedayPrint({ horses, entries, setEntries }) {
-  const _unused = null; // entries/setEntries now passed from App for persistence
   const [showAdd, setShowAdd] = useState(false);
-  const [ne, setNe] = useState({ horseId: "", meetingNo: "", raceRef: "", venue: "", date: "", raceTime: "", raceName: "", ballotNo: "" });
+  const [csvStatus, setCsvStatus] = useState(null);
+  const emptyNe = { horseId: "", meetingNo: "", raceRef: "", venue: "", date: "", raceTime: "", raceName: "", ballotNo: "", headgear: "", jockey: "" };
+  const [ne, setNe] = useState(emptyNe);
 
-  const add = () => {
-    if (!ne.horseId || !ne.raceName) return;
-    setEntries(p => [...p, { ...ne, id: `e_${Date.now()}` }]);
-    setNe({ horseId: "", meetingNo: "", raceRef: "", venue: "", date: "", raceTime: "", raceName: "", ballotNo: "" });
+  const add = function() {
+    if (!ne.horseId || !ne.venue) return;
+    setEntries(function(p) { return [...p, Object.assign({}, ne, { id: "e_" + Date.now() })]; });
+    setNe(emptyNe);
     setShowAdd(false);
   };
 
+  const removeEntry = function(id) {
+    setEntries(function(p) { return p.filter(function(e) { return e.id !== id; }); });
+  };
+
+  const handleCSV = function(ev) {
+    const file = ev.target.files[0]; if (!file) return;
+    ev.target.value = "";
+    const reader = new FileReader();
+    reader.onload = function(e) {
+      try {
+        const text = e.target.result;
+        const rawLines = text.split("\n").filter(function(l) { return l.trim(); });
+        const sep = rawLines[0].includes("\t") ? "\t" : ",";
+        const headers = rawLines[0].split(sep).map(function(h) { return h.trim().toLowerCase().replace(/\s+/g, "_").replace(/[^a-z0-9_]/g, ""); });
+        const headgearMap = { "H": "Hood", "T": "Tongue Strap", "TT": "Tongue Tie", "B": "Blinkers", "BL": "Blinkers", "C": "Cheekpieces", "CP": "Cheekpieces", "V": "Visor", "EM": "Ear Muffs", "P": "Pacifiers" };
+        const imported = [];
+        for (let i = 1; i < rawLines.length; i++) {
+          const cols = rawLines[i].split(sep).map(function(c) { return c.trim().replace(/^"|"$/g, ""); });
+          if (!cols[0]) continue;
+          const row = {};
+          headers.forEach(function(h, idx) { row[h] = cols[idx] || ""; });
+          const horseName = row.horse || row.horse_name || row.name || cols[0];
+          if (!horseName) continue;
+          const nl = horseName.toLowerCase().trim();
+          const horse = horses.find(function(h) {
+            const hl = h.name.toLowerCase().trim();
+            return hl === nl || hl.includes(nl) || nl.includes(hl);
+          });
+          const rawDate = row.date || row.race_date || row.meeting_date || "";
+          let parsedDate = rawDate;
+          if (rawDate) {
+            const parts = rawDate.split(/[\/\-\.]/);
+            if (parts.length === 3) {
+              if (parts[2] && parts[2].length === 4) {
+                parsedDate = parts[2] + "-" + parts[1].padStart(2, "0") + "-" + parts[0].padStart(2, "0");
+              } else if (parts[2] && parts[2].length === 2) {
+                parsedDate = "20" + parts[2] + "-" + parts[1].padStart(2, "0") + "-" + parts[0].padStart(2, "0");
+              }
+            }
+          }
+          const extrasRaw = (row.extras || row.extra || row.headgear || row.equipment || "").trim().toUpperCase();
+          const headgear = headgearMap[extrasRaw] || (extrasRaw.length > 0 && extrasRaw.length <= 4 ? extrasRaw : "");
+          const statusRaw = row.status || "";
+          const ballotNo = statusRaw.toLowerCase().includes("ballot") ? statusRaw : (row.ballot || row.ballot_no || "");
+          imported.push({
+            id: "e_" + Date.now() + "_" + i,
+            horseId: horse ? horse.id : "",
+            horseName,
+            venue: row.race || row.venue || row.racecourse || row.course || "",
+            date: parsedDate,
+            raceTime: row.time || row.race_time || "",
+            raceName: row.race_name || row.racename || "",
+            meetingNo: row.meeting || row.meeting_no || "",
+            raceRef: row.race_ref || row.raceref || "",
+            ballotNo,
+            headgear,
+            jockey: row.jockey || "",
+          });
+        }
+        setEntries(function(prev) { return [...prev, ...imported]; });
+        const matched = imported.filter(function(e) { return e.horseId; }).length;
+        setCsvStatus(imported.length + " entries imported — " + matched + " horses matched");
+        setTimeout(function() { setCsvStatus(null); }, 5000);
+      } catch (err) {
+        console.error(err);
+        setCsvStatus("Error reading CSV — check file format");
+        setTimeout(function() { setCsvStatus(null); }, 4000);
+      }
+    };
+    reader.readAsText(file);
+  };
+
   const grouped = {};
-  entries.forEach(e => { if (!grouped[e.date]) grouped[e.date] = []; grouped[e.date].push(e); });
+  entries.forEach(function(e) { if (!grouped[e.date]) grouped[e.date] = []; grouped[e.date].push(e); });
 
   return (
     <div>
       <div style={{ display: "flex", justifyContent: "space-between", alignItems: "center", marginBottom: 16 }}>
         <div>
           <div style={{ fontSize: 22, fontWeight: 800, color: C.text }}>Raceday Whiteboard</div>
-          <div style={{ fontSize: 13, color: C.textMid, marginTop: 3 }}>Print and stick on the whiteboard</div>
+          <div style={{ fontSize: 13, color: C.textMid, marginTop: 3 }}>Import pending engagements CSV or add entries manually</div>
         </div>
-        <div style={{ display: "flex", gap: 8 }}>
-          <Btn onClick={() => setShowAdd(true)}>+ Add Entry</Btn>
-          <Btn variant="gold" onClick={() => window.print()}>🖨 Print</Btn>
+        <div style={{ display: "flex", gap: 8, flexWrap: "wrap" }}>
+          <label style={{ background: C.cardOff, border: "1.5px solid " + C.border, color: C.textMid, borderRadius: 9, padding: "9px 14px", fontSize: 13, fontWeight: 700, cursor: "pointer", display: "inline-flex", alignItems: "center", gap: 6 }}>
+            Import CSV <input type="file" accept=".csv,.tsv,.txt" onChange={handleCSV} style={{ display: "none" }} />
+          </label>
+          <Btn onClick={function() { setShowAdd(true); }}>+ Add Entry</Btn>
+          <Btn variant="ghost" onClick={function() { if (window.confirm("Clear all whiteboard entries?")) setEntries(function() { return []; }); }} style={{ color: C.red, borderColor: C.red, fontSize: 12 }}>Clear All</Btn>
+          <Btn variant="gold" onClick={function() { window.print(); }}>Print</Btn>
         </div>
       </div>
 
+      {csvStatus && <div style={{ background: C.cardOff, border: "1px solid " + C.border, borderRadius: 8, padding: "10px 14px", marginBottom: 12, fontSize: 13, color: C.green, fontWeight: 600 }}>{csvStatus}</div>}
+
       <div id="print-area">
-        {Object.entries(grouped).sort(([a], [b]) => new Date(a) - new Date(b)).map(([date, dayEntries]) => (
-          <div key={date} style={{ background: C.card, border: `1px solid ${C.border}`, borderRadius: 12, padding: "18px 20px", marginBottom: 14, boxShadow: C.shadow }}>
-            <div style={{ fontSize: 16, fontWeight: 800, color: C.navy, marginBottom: 12, paddingBottom: 10, borderBottom: `2px solid ${C.navy}` }}>
-              {new Date(date).toLocaleDateString("en-IE", { weekday: "long", day: "numeric", month: "long", year: "numeric" })}
+        {Object.entries(grouped).sort(function(a, b) { return new Date(a[0]) - new Date(b[0]); }).map(function(entry) {
+          const date = entry[0]; const dayEntries = entry[1];
+          return (
+            <div key={date} style={{ background: C.card, border: "1px solid " + C.border, borderRadius: 12, padding: "18px 20px", marginBottom: 14 }}>
+              <div style={{ fontSize: 16, fontWeight: 800, color: C.navy, marginBottom: 12, paddingBottom: 10, borderBottom: "2px solid " + C.border }}>
+                {new Date(date + "T12:00:00").toLocaleDateString("en-IE", { weekday: "long", day: "numeric", month: "long", year: "numeric" })}
+              </div>
+              {dayEntries.map(function(ent) {
+                const horse = horses.find(function(h) { return h.id === ent.horseId; });
+                const displayName = horse ? horse.name : ent.horseName;
+                if (!displayName) return null;
+                const hg = ent.headgear || (horse && horse.headgear) || "";
+                return (
+                  <div key={ent.id} style={{ display: "flex", alignItems: "flex-start", gap: 14, padding: "12px 0", borderBottom: "1px solid " + C.border }}>
+                    <div style={{ minWidth: 130, fontSize: 13, color: C.textMid, fontWeight: 600 }}>
+                      <div style={{ fontWeight: 700, color: C.text }}>{ent.venue}</div>
+                      {ent.meetingNo && <div>Mtg {ent.meetingNo}</div>}
+                      {ent.raceRef && <div>{ent.raceRef}</div>}
+                    </div>
+                    <div style={{ minWidth: 80, fontSize: 14, fontWeight: 700, color: C.navy }}>{ent.raceTime}</div>
+                    <div style={{ flex: 1 }}>
+                      <div style={{ display: "flex", alignItems: "center", gap: 8, flexWrap: "wrap" }}>
+                        <span style={{ fontSize: 17, fontWeight: 800, color: C.text, textTransform: "uppercase" }}>{displayName}</span>
+                        {hg && (
+                          <span style={{ fontSize: 12, color: "#fff", fontWeight: 700, background: C.purple, padding: "2px 8px", borderRadius: 6 }}>{hg}</span>
+                        )}
+                        {ent.ballotNo && (
+                          <span style={{ fontSize: 12, color: "#fff", fontWeight: 700, background: C.amber, padding: "2px 8px", borderRadius: 6 }}>Ballot {ent.ballotNo}</span>
+                        )}
+                      </div>
+                      {ent.jockey && <div style={{ fontSize: 12, color: C.textMid, marginTop: 2 }}>Jockey: <span style={{ fontWeight: 600, color: C.text }}>{ent.jockey}</span></div>}
+                      {ent.raceName && <div style={{ fontSize: 12, color: C.textMid, marginTop: 2 }}>{ent.raceName}</div>}
+                    </div>
+                    <button onClick={function() { removeEntry(ent.id); }} style={{ background: "none", border: "none", color: C.red, cursor: "pointer", fontSize: 18, padding: "0 4px", lineHeight: 1 }}>x</button>
+                  </div>
+                );
+              })}
             </div>
-            {dayEntries.map(entry => {
-              const horse = horses.find(h => h.id === entry.horseId);
-              if (!horse) return null;
-              return (
-                <div key={entry.id} style={{ display: "flex", alignItems: "center", gap: 14, padding: "12px 0", borderBottom: `1px solid ${C.border}` }}>
-                  <div style={{ minWidth: 130, fontSize: 13, color: C.textMid, fontWeight: 600 }}>
-                    {entry.venue} {entry.meetingNo && `Mtg ${entry.meetingNo}`}{entry.raceRef && ` · ${entry.raceRef}`}
-                  </div>
-                  <div style={{ minWidth: 80, fontSize: 14, fontWeight: 700, color: C.navy }}>{entry.raceTime}</div>
-                  <div style={{ flex: 1 }}>
-                    <span style={{ fontSize: 17, fontWeight: 800, color: C.text, textTransform: "uppercase" }}>{horse.name}</span>
-                    {horse.headgear && <span style={{ fontSize: 13, color: C.textMid, marginLeft: 8 }}>({horse.headgear})</span>}
-                    {entry.ballotNo && <span style={{ fontSize: 13, color: C.purple, marginLeft: 8, fontWeight: 700 }}>[Ballot {entry.ballotNo}]</span>}
-                  </div>
-                  <div style={{ fontSize: 12, color: C.textMid }}>{entry.raceName}</div>
-                </div>
-              );
-            })}
+          );
+        })}
+        {entries.length === 0 && (
+          <div style={{ padding: 40, textAlign: "center", border: "1.5px dashed " + C.border, borderRadius: 12, color: C.textMid }}>
+            Import your pending engagements CSV from HRI or add entries manually
           </div>
-        ))}
-        {entries.length === 0 && <div style={{ padding: 40, textAlign: "center", border: `1.5px dashed ${C.border}`, borderRadius: 14, color: C.textMid }}>No entries added yet — tap + Add Entry</div>}
+        )}
       </div>
 
       {showAdd && (
-        <div style={{ position: "fixed", inset: 0, background: "rgba(10,22,40,0.6)", zIndex: 500, display: "flex", alignItems: "center", justifyContent: "center", padding: 20, backdropFilter: "blur(4px)" }}>
-          <div style={{ background: C.card, borderRadius: 16, width: "100%", maxWidth: 440, boxShadow: C.shadowMd, overflow: "hidden" }}>
-            <div style={{ background: C.navy, padding: "16px 20px", display: "flex", justifyContent: "space-between", alignItems: "center" }}>
+        <div style={{ position: "fixed", inset: 0, background: "rgba(10,22,40,0.6)", zIndex: 500, display: "flex", alignItems: "center", justifyContent: "center", padding: 20 }}>
+          <div style={{ background: C.card, borderRadius: 16, width: "100%", maxWidth: 440, boxShadow: C.shadowMd, overflow: "hidden", maxHeight: "90vh", overflowY: "auto" }}>
+            <div style={{ background: C.navy, padding: "16px 20px", display: "flex", justifyContent: "space-between", alignItems: "center", position: "sticky", top: 0 }}>
               <div style={{ fontSize: 15, fontWeight: 700, color: "#fff" }}>Add Raceday Entry</div>
-              <button onClick={() => setShowAdd(false)} style={{ background: "rgba(255,255,255,0.1)", border: "none", color: "#fff", width: 28, height: 28, borderRadius: 6, cursor: "pointer", fontSize: 14 }}>✕</button>
+              <button onClick={function() { setShowAdd(false); }} style={{ background: "rgba(255,255,255,0.1)", border: "none", color: "#fff", width: 28, height: 28, borderRadius: 6, cursor: "pointer", fontSize: 14 }}>x</button>
             </div>
             <div style={{ padding: 20, display: "flex", flexDirection: "column", gap: 10 }}>
               {[
@@ -945,20 +1251,25 @@ function RacedayPrint({ horses, entries, setEntries }) {
                 { key: "raceName", label: "Race Name", placeholder: "e.g. Mares Handicap Hurdle" },
                 { key: "raceTime", label: "Race Time", placeholder: "e.g. 2:28 PM" },
                 { key: "date", label: "Date", type: "date" },
-                { key: "ballotNo", label: "Ballot No. (if applicable)", placeholder: "Leave blank if not balloted" },
-              ].map(({ key, label, placeholder, type }) => (
-                <div key={key}>
-                  <div style={{ fontSize: 10, fontWeight: 700, color: C.textMid, marginBottom: 4, textTransform: "uppercase", letterSpacing: 0.5 }}>{label}</div>
-                  {type === "select" ? (
-                    <select value={ne[key]} onChange={e => setNe(p => ({ ...p, [key]: e.target.value }))} style={{ width: "100%", background: C.cardOff, border: `1px solid ${C.border}`, borderRadius: 8, padding: "8px 12px", color: C.text, fontSize: 13, outline: "none" }}>
-                      <option value="">Select horse</option>
-                      {horses.map(h => <option key={h.id} value={h.id}>{h.name}</option>)}
-                    </select>
-                  ) : (
-                    <input type={type || "text"} placeholder={placeholder} value={ne[key]} onChange={e => setNe(p => ({ ...p, [key]: e.target.value }))} style={{ width: "100%", background: C.cardOff, border: `1px solid ${C.border}`, borderRadius: 8, padding: "8px 12px", color: C.text, fontSize: 13, outline: "none" }} />
-                  )}
-                </div>
-              ))}
+                { key: "ballotNo", label: "Ballot No.", placeholder: "Leave blank if not balloted" },
+                { key: "headgear", label: "Headgear", placeholder: "e.g. Hood, Tongue Strap" },
+                { key: "jockey", label: "Jockey", placeholder: "e.g. D.J. O Keeffe" },
+              ].map(function(field) {
+                const fkey = field.key;
+                return (
+                  <div key={fkey}>
+                    <div style={{ fontSize: 10, fontWeight: 700, color: C.textMid, marginBottom: 4, textTransform: "uppercase", letterSpacing: 0.5 }}>{field.label}</div>
+                    {fkey === "horseId" ? (
+                      <select value={ne[fkey]} onChange={function(e) { setNe(function(p) { return Object.assign({}, p, { horseId: e.target.value }); }); }} style={{ width: "100%", background: C.cardOff, border: "1px solid " + C.border, borderRadius: 8, padding: "8px 12px", color: C.text, fontSize: 13, outline: "none" }}>
+                        <option value="">Select horse</option>
+                        {horses.map(function(h) { return <option key={h.id} value={h.id}>{h.name}</option>; })}
+                      </select>
+                    ) : (
+                      <input type={field.type || "text"} placeholder={field.placeholder} value={ne[fkey] || ""} onChange={function(e) { var v = e.target.value; setNe(function(p) { return Object.assign({}, p, { [fkey]: v }); }); }} style={{ width: "100%", background: C.cardOff, border: "1px solid " + C.border, borderRadius: 8, padding: "8px 12px", color: C.text, fontSize: 13, outline: "none" }} />
+                    )}
+                  </div>
+                );
+              })}
               <Btn onClick={add} style={{ width: "100%", justifyContent: "center", marginTop: 6 }}>Add to Whiteboard</Btn>
             </div>
           </div>
@@ -967,7 +1278,6 @@ function RacedayPrint({ horses, entries, setEntries }) {
     </div>
   );
 }
-
 // ─── YARD VIEW ────────────────────────────────────────────────────────────────
 function YardView({ horses, setHorses }) {
   const [showAdd, setShowAdd] = useState(false);
@@ -997,17 +1307,16 @@ function YardView({ horses, setHorses }) {
           const sexMap = { "M": "Mare", "G": "Gelding", "F": "Filly", "C": "Colt", "H": "Horse", "R": "Gelding",
                            "mare": "Mare", "gelding": "Gelding", "filly": "Filly", "colt": "Colt", "horse": "Horse",
                            "g": "Gelding", "m": "Mare", "f": "Filly", "c": "Colt", "h": "Horse" };
-          // HRI combines colour+sex e.g. "B G" or "CH M" - last word is sex code
-          const colourSexRaw = row.colour_sex || row.coloursex || row.colour || row.color || "";
-          const parts = colourSexRaw.trim().split(/\s+/);
-          const lastPart = parts[parts.length - 1];
-          const sexFromColour = parts.length > 1 ? (sexMap[lastPart] || sexMap[lastPart.toLowerCase()] || "") : "";
-          const sex = sexMap[rawSex] || sexMap[rawSex.toLowerCase()] || sexFromColour || (rawSex.length > 1 ? rawSex : "Gelding");
-          const colour = parts.length > 1 ? parts.slice(0, -1).join(" ") : (colourSexRaw || row.colour || "");
+          // If sex is its own column use it directly, otherwise try to parse from colour
+          const sex = sexMap[rawSex] || sexMap[rawSex.toLowerCase()] || (rawSex.length > 1 ? rawSex : "Gelding");
+          const colour = row.colour || row.color || "";
+          // Map HRI status values
+          const hriStatus = (row.status || "").toLowerCase();
+          const status = hriStatus.includes("inactive") ? "Inactive" : hriStatus.includes("cool") ? "CoolingOff" : "Active";
           imported.push({
             id: "h_" + Date.now() + "_" + i, name,
             dob: yof ? yof + "-01-01" : (row.dob || row.date_of_birth || ""),
-            sex, colour,
+            sex, colour, status,
             trainer: row.trainer || "", owner: row.owner || "",
             ownerPhone: row.owner_phone || row.ownerphone || "",
             ownerEmail: row.owner_email || row.owneremail || "",
@@ -1016,7 +1325,7 @@ function YardView({ horses, setHorses }) {
             hurdleRating: parseInt(row.hurdle_rating || row.hurdle) || null,
             chaseRating: parseInt(row.chase_rating || row.chase) || null,
             headgear: row.headgear || "", jockey: row.jockey || "",
-            notes: row.notes || "", status: "Active", activationDate: null,
+            notes: row.notes || "", activationDate: null,
             silk: SILKS[Math.floor(Math.random() * SILKS.length)],
             form: [], provisionalEntries: []
           });
@@ -1058,12 +1367,13 @@ function YardView({ horses, setHorses }) {
             if (!name) return;
             const idx = horses.findIndex(function(h) { return h.name.toLowerCase().trim() === name.toLowerCase().trim(); });
             if (idx >= 0) {
-              if (row.flat) horses[idx].flatRating = parseInt(row.flat) || horses[idx].flatRating;
-              if (row.hurdle) horses[idx].hurdleRating = parseInt(row.hurdle) || horses[idx].hurdleRating;
-              if (row.chase) horses[idx].chaseRating = parseInt(row.chase) || horses[idx].chaseRating;
-              if (row.nh_rating || row.nhrating) horses[idx].nhRating = parseInt(row.nh_rating || row.nhrating) || horses[idx].nhRating;
+              const flat = parseInt(row.flat || row.flat_rating || row.flatrating || row.turf || "") || null;
+              const hurdle = parseInt(row.hurdle || row.hurdle_rating || row.hurdlerating || row.hdl || "") || null;
+              const chase = parseInt(row.chase || row.chase_rating || row.chaserating || row.chs || "") || null;
+              const nh = parseInt(row.nh_rating || row.nhrating || row.nh || row.national_hunt || row.rating || "") || null;
+              const awt = parseInt(row.awt || row.all_weather || row.allweather || row.aw || "") || null;
+              if (flat) horses[idx].flatRating = flat; if (hurdle) horses[idx].hurdleRating = hurdle; if (chase) horses[idx].chaseRating = chase; if (awt) horses[idx].awtRating = awt; if (nh) horses[idx].nhRating = nh;
               updated++;
-            }
           });
           return horses;
         });
@@ -1512,8 +1822,9 @@ export default function App() {
       if (res.data) {
         const logs = {};
         res.data.forEach(function(row) {
+          // key format matches MedicationTracker: horseId_YYYY-MM-DD_medType
           const key = row.horse_id + "_" + row.log_date + "_" + row.med_type;
-          logs[key] = true;
+          logs[key] = row.value || 1;  // store value (antibiotics can be 1 or 2)
         });
         setMedLogsRaw(logs);
       }
@@ -1523,7 +1834,7 @@ export default function App() {
     supabase.from("whiteboard_entries").select("*").eq("user_id", user.id).then(function(res) {
       if (res.data) {
         setWbEntriesRaw(res.data.map(function(e) {
-          return { id: e.id, horseId: e.horse_id, horseName: e.horse_name, venue: e.venue, date: e.date, raceTime: e.race_time, raceName: e.race_name, meetingNo: e.meeting_no, raceRef: e.race_ref, ballotNo: e.ballot_no };
+          return { id: e.id, horseId: e.horse_id, horseName: e.horse_name, venue: e.venue, date: e.date, raceTime: e.race_time, raceName: e.race_name, meetingNo: e.meeting_no, raceRef: e.race_ref, ballotNo: e.ballot_no, headgear: e.headgear || "", jockey: e.jockey || "" };
         }));
       }
     });
@@ -1570,16 +1881,18 @@ export default function App() {
       // Find changed keys
       Object.keys(next).forEach(function(key) {
         if (!prev[key]) {
-          const parts = key.split("_");
-          // key format: horseId_year_month_day_type
-          // We need to reconstruct: horse_id, log_date, med_type
-          const medType = parts[parts.length - 1];
-          const day = parts[parts.length - 2];
-          const month = parts[parts.length - 3];
-          const year = parts[parts.length - 4];
-          const horseId = parts.slice(0, parts.length - 4).join("_");
-          const logDate = year + "-" + String(parseInt(month)+1).padStart(2,"0") + "-" + String(day).padStart(2,"0");
-          supabase.from("med_logs").upsert({ user_id: user.id, horse_id: horseId, log_date: logDate, med_type: medType }).then(function() {});
+          // key format: horseId_YYYY-MM-DD_medType  (e.g. "h_123_2026-04-23_peptizole")
+          const lastUnderscore = key.lastIndexOf("_");
+          const medType = key.slice(lastUnderscore + 1);
+          const rest = key.slice(0, lastUnderscore);
+          // rest is: horseId_YYYY-MM-DD
+          // find the date part (10 chars YYYY-MM-DD preceded by underscore)
+          const dateMatch = rest.match(/_(\d{4}-\d{2}-\d{2})$/);
+          const logDate = dateMatch ? dateMatch[1] : "";
+          const horseId = dateMatch ? rest.slice(0, rest.length - dateMatch[0].length) : rest;
+          const val = next[key];
+          if (val) {
+            supabase.from("med_logs").upsert({ user_id: user.id, horse_id: horseId, log_date: logDate, med_type: medType, value: val }).then(function() {});
         }
       });
       return next;
@@ -1597,7 +1910,8 @@ export default function App() {
           id: newEntry.id, user_id: user.id, horse_id: newEntry.horseId, horse_name: newEntry.horseName || "",
           venue: newEntry.venue || "", date: newEntry.date || "", race_time: newEntry.raceTime || "",
           race_name: newEntry.raceName || "", meeting_no: newEntry.meetingNo || "",
-          race_ref: newEntry.raceRef || "", ballot_no: newEntry.ballotNo || ""
+          race_ref: newEntry.raceRef || "", ballot_no: newEntry.ballotNo || "",
+          headgear: newEntry.headgear || "", jockey: newEntry.jockey || "", horse_name: newEntry.horseName || ""
         }).then(function() {});
       } else if (next.length < prev.length) {
         const removed = prev.filter(function(e) { return !next.find(function(n) { return n.id === e.id; }); });
