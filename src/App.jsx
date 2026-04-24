@@ -1286,12 +1286,12 @@ function RacedayPrint({ horses, entries, setEntries }) {
     reader.onload = (ev) => {
       try {
         const text = ev.target.result;
-        const rawLines = text.split("\n").filter(l => l.trim());
+        const rawLines = text.split("\n").filter(function(l) { return l.trim(); });
         const sep = rawLines[0].includes("\t") ? "\t" : ",";
-        const headers = rawLines[0].split(sep).map(h => h.trim().toLowerCase().replace(/\s+/g, "_").replace(/[^a-z0-9_]/g, ""));
+        const headers = rawLines[0].split(sep).map(function(h) { return h.trim().toLowerCase().replace(/\s+/g, "_").replace(/[^a-z0-9_]/g, ""); });
         const imported = [];
         for (let i = 1; i < rawLines.length; i++) {
-          const cols = rawLines[i].split(sep).map(c => c.trim().replace(/^"|"$/g, ""));
+          const cols = rawLines[i].split(sep).map(function(c) { return c.trim().replace(/^"|"$/g, ""); });
           if (!cols[0]) continue;
           const row = {};
           headers.forEach((h, idx) => { row[h] = cols[idx] || ""; });
@@ -1462,12 +1462,12 @@ function YardView({ horses, setHorses }) {
     reader.onload = (ev) => {
       try {
         const text = ev.target.result;
-        const lines = text.split("\n").filter(l => l.trim());
+        const lines = text.split("\n").filter(function(l) { return l.trim(); });
         const sep = lines[0].includes("\t") ? "\t" : ",";
-        const headers = lines[0].split(sep).map(h => h.trim().toLowerCase().replace(/\s+/g, "_").replace(/[^a-z0-9_]/g, ""));
+        const headers = lines[0].split(sep).map(function(h) { return h.trim().toLowerCase().replace(/\s+/g, "_").replace(/[^a-z0-9_]/g, ""); });
         const imported = [];
         for (let i = 1; i < lines.length; i++) {
-          const cols = lines[i].split(sep).map(c => c.trim().replace(/^"|"$/g, ""));
+          const cols = lines[i].split(sep).map(function(c) { return c.trim().replace(/^"|"$/g, ""); });
           if (!cols[0]) continue;
           const row = {};
           headers.forEach((h, idx) => { row[h] = cols[idx] || ""; });
@@ -1551,15 +1551,15 @@ function YardView({ horses, setHorses }) {
     reader.onload = (ev) => {
       try {
         const text = ev.target.result;
-        const rawLines = text.split("\n").filter(l => l.trim());
+        const rawLines = text.split("\n").filter(function(l) { return l.trim(); });
         const sep = rawLines[0].includes("\t") ? "\t" : ",";
-        const headers = rawLines[0].split(sep).map(h => h.trim().toLowerCase().replace(/\s+/g, "_").replace(/[^a-z0-9_]/g, ""));
+        const headers = rawLines[0].split(sep).map(function(h) { return h.trim().toLowerCase().replace(/\s+/g, "_").replace(/[^a-z0-9_]/g, ""); });
         let updated = 0;
         const ratingLines = rawLines.slice(1);
         setHorses(prev => {
           const horses = [...prev];
           ratingLines.forEach(line => {
-            const cols = line.split(sep).map(c => c.trim().replace(/^"|"$/g, ""));
+            const cols = line.split(sep).map(function(c) { return c.trim().replace(/^"|"$/g, ""); });
             if (!cols[0]) return;
             const row = {};
             headers.forEach((h, idx) => { row[h] = cols[idx] || ""; });
