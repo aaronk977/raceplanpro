@@ -416,9 +416,9 @@ function MedicationTracker({ horses, medLogs, setMedLogs, trackedIds, setTracked
               <div style={{ padding: "0 16px 16px", borderTop: `1px solid ${C.border}` }}>
                 {/* Legend */}
                 <div style={{ display: "flex", gap: 16, padding: "10px 0", marginBottom: 8, flexWrap: "wrap" }}>
-                  <div style={{ fontSize: 11, color: C.textMid }}><strong style={{ color: C.blue }}>Peptizole</strong>{" — €18/day"}</div>
-                  <div style={{ fontSize: 11, color: C.textMid }}><strong style={{ color: C.purple }}>Antepsin</strong>{" — €25/bottle (1 bottle per 4 days, rounds up)"}</div>
-                  <div style={{ fontSize: 11, color: C.textMid }}><strong style={{ color: C.amber }}>Antibiotics</strong>{" — €15/dose (tap once=1 dose, twice=2 doses)"}</div>
+                  <div style={{ fontSize: 11, color: C.textMid }}><strong style={{ color: C.blue }}>Peptizole</strong> — €18/day</div>
+                  <div style={{ fontSize: 11, color: C.textMid }}><strong style={{ color: C.purple }}>Antepsin</strong> — €25/bottle (1 bottle per 4 days, rounds up)</div>
+                  <div style={{ fontSize: 11, color: C.textMid }}><strong style={{ color: C.amber }}>Antibiotics</strong> — €15/dose (tap once=1 dose, twice=2 doses)</div>
                 </div>
                 <div style={{ overflowX: "auto" }}>
                   <table style={{ borderCollapse: "collapse", width: "100%", minWidth: 1100 }}>
@@ -503,7 +503,7 @@ function MedicationTracker({ horses, medLogs, setMedLogs, trackedIds, setTracked
                     <span style={{ fontSize: 22, fontWeight: 800, color: C.gold }}>€{costs.total}</span>
                   </div>
                 )}
-                <Btn onClick={() => window.print()} style={{ width: "100%", marginTop: 16, justifyContent: "center" }}>{"🖨 Print / Save for Yardman"}</Btn>
+                <Btn onClick={() => window.print()} style={{ width: "100%", marginTop: 16, justifyContent: "center" }}>Print / Save for Yardman</Btn>
               </div>
             </div>
           </div>
@@ -1124,7 +1124,7 @@ function RacePlanner({ horses, setHorses }) {
             <div style={{ padding: 40, textAlign: "center", border: "1.5px dashed " + C.border, borderRadius: 14, color: C.textMid }}>
               <div style={{ fontSize: 26, marginBottom: 10 }}>📄</div>
               <div style={{ fontSize: 14, fontWeight: 700, color: C.text, marginBottom: 6 }}>No race conditions loaded</div>
-              <div style={{ fontSize: 13 }}>{"Paste text from hri-ras.ie/upcoming-race-conditions PDF above"}</div>
+              <div style={{ fontSize: 13 }}>Paste text from hri-ras.ie/upcoming-race-conditions PDF above</div>
             </div>
           ) : eligible.length === 0 ? (
             <div style={{ padding: 32, textAlign: "center", border: "1.5px dashed " + C.border, borderRadius: 14, color: C.textMid }}>
