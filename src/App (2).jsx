@@ -1,0 +1,2285 @@
+import React, { useState, useCallback, useEffect } from "react";
+import { createClient } from "@supabase/supabase-js";
+
+const SUPABASE_URL = import.meta.env.VITE_SUPABASE_URL || "";
+const SUPABASE_ANON_KEY = import.meta.env.VITE_SUPABASE_ANON_KEY || "";
+const supabase = createClient(SUPABASE_URL, SUPABASE_ANON_KEY);
+
+const ANTHROPIC_KEY = import.meta.env.VITE_ANTHROPIC_API_KEY || "";
+
+const C = {
+  bg: "#f0f4f8", navy: "#0a1628", navyMid: "#112240", navyLight: "#1a3360",
+  card: "#ffffff", cardOff: "#f8fafc",
+  gold: "#c9952a", goldLight: "#f5c842", goldBg: "rgba(201,149,42,0.10)",
+  green: "#1a7a4a", greenBg: "rgba(26,122,74,0.09)", greenBorder: "#bbf7d0",
+  red: "#c0392b", redBg: "rgba(192,57,43,0.08)",
+  amber: "#d97706", amberBg: "rgba(217,119,6,0.09)",
+  blue: "#1e6fb5", blueBg: "rgba(30,111,181,0.09)",
+  purple: "#6d3fc0", purpleBg: "rgba(109,63,192,0.09)",
+  text: "#0a1628", textMid: "#4a6080", textDim: "#8fa3bc",
+  border: "#d4dde8", borderMid: "#b8c8da",
+  shadow: "0 1px 4px rgba(10,22,40,0.08)",
+  shadowMd: "0 4px 16px rgba(10,22,40,0.10)",
+  sidebar: "#0e1e38",
+};
+
+const SILKS = [
+  { primary: "#c0392b", secondary: "#ffffff", pattern: "stripes" },
+  { primary: "#0a1628", secondary: "#c9952a", pattern: "spots" },
+  { primary: "#1a7a4a", secondary: "#ffffff", pattern: "plain" },
+  { primary: "#6d3fc0", secondary: "#ffffff", pattern: "chevron" },
+  { primary: "#1e6fb5", secondary: "#f5c842", pattern: "plain" },
+];
+
+function Silk({ silk, size = 40 }) {
+  const s = silk || SILKS[0];
+  return (
+    <svg width={size} height={size} viewBox="0 0 36 36" style={{ flexShrink: 0, filter: "drop-shadow(0 1px 2px rgba(0,0,0,0.12))" }}>
+      <ellipse cx="18" cy="20" rx="13" ry="11" fill={s.primary} />
+      <ellipse cx="18" cy="11" rx="7" ry="8" fill={s.primary} />
+      {s.pattern === "stripes" && <><rect x="5" y="14" width="26" height="3" fill={s.secondary} opacity="0.45" /><rect x="5" y="20" width="26" height="3" fill={s.secondary} opacity="0.45" /></>}
+      {s.pattern === "spots" && <><circle cx="12" cy="22" r="2.5" fill={s.secondary} opacity="0.55" /><circle cx="24" cy="22" r="2.5" fill={s.secondary} opacity="0.55" /><circle cx="18" cy="17" r="2.5" fill={s.secondary} opacity="0.55" /></>}
+      {s.pattern === "chevron" && <polyline points="5,18 18,12 31,18" fill="none" stroke={s.secondary} strokeWidth="3" opacity="0.55" />}
+      <ellipse cx="18" cy="8" rx="5" ry="4" fill={s.secondary} opacity="0.92" />
+      <ellipse cx="18" cy="20" rx="13" ry="11" fill="none" stroke="rgba(0,0,0,0.08)" strokeWidth="1" />
+    </svg>
+  );
+}
+
+// ─── DATA ─────────────────────────────────────────────────────────────────────
+const TODAY = new Date("2026-03-18");
+const todayStr = TODAY.toISOString().split("T")[0];
+
+const INITIAL_HORSES = [
+  {
+    id: "h1", name: "Bob Olinger", dob: "2015-05-11", sex: "Gelding", colour: "Bay",
+    nhRating: 168, flatRating: null, discipline: ["Hurdle"], surface: "Turf",
+    status: "Active", activationDate: null, isEBF: false, isMaiden: false, isNovice: false,
+    owner: "Robcour", ownerPhone: "+353861112222", ownerEmail: "robcour@example.com",
+    trainer: "Henry de Bromhead", jockey: "D.J. O'Keeffe",
+    headgear: "Hood", nextRaceDate: "2026-03-30",
+    goingPref: ["Good to Soft", "Soft", "Yielding"], distanceMin: 20, distanceMax: 28,
+    silk: SILKS[0],
+    notes: "Cheltenham specialist. Keep fresh. De Bromhead says better than ever.",
+    form: [
+      { date: "2025-12-28", venue: "Leopardstown", position: 2, runners: 8, raceClass: "Grade 1", going: "Good to Yielding" },
+      { date: "2025-03-13", venue: "Cheltenham", position: 1, runners: 13, raceClass: "Grade 1", going: "Good to Soft" },
+    ],
+    arrivedDate: "2025-08-01", arrivedFrom: "Summer grass",
+    provisionalEntries: [],
+  },
+  {
+    id: "h2", name: "Dunmore Lady", dob: "2020-04-05", sex: "Mare", colour: "Chestnut",
+    nhRating: 82, flatRating: null, discipline: ["Hurdle"], surface: "Turf",
+    status: "CoolingOff", activationDate: "2026-03-14", isEBF: true, isMaiden: false, isNovice: false,
+    owner: "P. & M. Kelly", ownerPhone: "+353853334444", ownerEmail: "kelly@example.com",
+    trainer: "P.J. Hennessy", jockey: "P. Townend",
+    headgear: "Cheekpieces", nextRaceDate: "2026-04-02",
+    goingPref: ["Soft", "Heavy"], distanceMin: 16, distanceMax: 20,
+    silk: SILKS[1],
+    notes: "Back from wind op. Needs soft. Was flying before the op.",
+    form: [
+      { date: "2026-01-15", venue: "Naas", position: 1, runners: 8, raceClass: "Handicap", going: "Soft" },
+      { date: "2025-11-28", venue: "Thurles", position: 2, runners: 7, raceClass: "Handicap", going: "Heavy" },
+    ],
+    arrivedDate: "2026-02-10", arrivedFrom: "Convalescence",
+    provisionalEntries: [{ id: "pe1", venue: "Navan", date: "2026-04-02", raceName: "Mares Handicap Hurdle", raceRef: "Navan 55 Race B", note: "If ground stays soft" }],
+  },
+  {
+    id: "h3", name: "Ardmore Flash", dob: "2022-05-20", sex: "Colt", colour: "Dark Bay",
+    nhRating: null, flatRating: 74, discipline: ["Flat"], surface: "AWT",
+    status: "Active", activationDate: null, isEBF: true, isMaiden: true, isNovice: false,
+    owner: "Ballykea Syndicate", ownerPhone: "+353835556666", ownerEmail: "ballykea@example.com",
+    trainer: "P.J. Hennessy", jockey: "C. Hayes",
+    headgear: null, nextRaceDate: "2026-03-25",
+    goingPref: ["Standard", "Fast"], distanceMin: 5, distanceMax: 7,
+    silk: SILKS[2],
+    notes: "Keeps finding one. Try cheekpieces. 7f untried but bred for it.",
+    form: [
+      { date: "2026-03-01", venue: "Dundalk", position: 2, runners: 10, raceClass: "Maiden", going: "Standard" },
+      { date: "2026-01-17", venue: "Dundalk", position: 3, runners: 12, raceClass: "Maiden", going: "Standard" },
+    ],
+    arrivedDate: "2025-03-15", arrivedFrom: "Breeder",
+    provisionalEntries: [{ id: "pe2", venue: "Dundalk", date: "2026-03-25", raceName: "EBF Median Auction Maiden 7f", raceRef: "Dundalk 47 Race C", note: "First time at 7f — step up in trip" }],
+  },
+  {
+    id: "h4", name: "Kilmore Star", dob: "2018-02-28", sex: "Gelding", colour: "Grey",
+    nhRating: 118, flatRating: null, discipline: ["Chase"], surface: "Turf",
+    status: "Inactive", activationDate: null, isEBF: false, isMaiden: false, isNovice: false,
+    owner: "T. Brennan", ownerPhone: "+353877778888", ownerEmail: "brennan@example.com",
+    trainer: "P.J. Hennessy", jockey: "D. Russell",
+    headgear: "Blinkers", nextRaceDate: null,
+    goingPref: ["Good to Soft", "Soft"], distanceMin: 20, distanceMax: 28,
+    silk: SILKS[3],
+    notes: "Wind op. Needs time. Don't rush.",
+    form: [{ date: "2025-12-20", venue: "Leopardstown", position: 4, runners: 14, raceClass: "Grade 1", going: "Soft" }],
+    arrivedDate: "2026-01-05", arrivedFrom: "Post-op recovery",
+    provisionalEntries: [],
+  },
+];
+
+// ─── HELPERS ──────────────────────────────────────────────────────────────────
+const getAge = (dob) => TODAY.getFullYear() - new Date(dob).getFullYear();
+const coolingDate = (d) => { if (!d) return null; const x = new Date(d); x.setDate(x.getDate() + 7); return x; };
+const canRace = (h) => { if (h.status === "Inactive") return false; if (h.status === "CoolingOff") { const e = coolingDate(h.activationDate); return e && TODAY >= e; } return true; };
+const daysUntil = (ds) => !ds ? null : Math.ceil((new Date(ds) - TODAY) / 86400000);
+const getDaysInMonth = (y, m) => new Date(y, m + 1, 0).getDate();
+
+// Antepsin: 3 bottles per 12-day course, 1 bottle every 4 days
+// Count ticks and calculate bottles needed (round up to nearest bottle at 4 days each)
+const calcAntepsinCost = (ticks) => {
+  if (!ticks) return 0;
+  const bottles = Math.ceil(ticks / 4);
+  return bottles * 25;
+};
+
+const MED_TYPES = {
+  peptizole: { label: "Peptizole", color: C.blue, bg: C.blueBg, costPerDay: 18, courseDays: 12, withdrawalDays: 4 },
+  antepsin: { label: "Antepsin", color: C.purple, bg: C.purpleBg, courseDays: 12, withdrawalDays: 1 },
+  antibiotics: { label: "Antibiotics", color: C.amber, bg: C.amberBg, withdrawalDays: 0 },
+};
+
+// ─── SHARED UI ────────────────────────────────────────────────────────────────
+function Tag({ children, color, bg }) {
+  return <span style={{ background: bg || `${color}12`, color, border: `1px solid ${color}30`, borderRadius: 20, padding: "2px 9px", fontSize: 11, fontWeight: 600 }}>{children}</span>;
+}
+
+function Btn({ onClick, children, variant = "primary", style: s = {}, disabled = false }) {
+  const base = { border: "none", borderRadius: 9, padding: "9px 18px", fontSize: 13, fontWeight: 700, cursor: disabled ? "not-allowed" : "pointer", opacity: disabled ? 0.5 : 1, display: "inline-flex", alignItems: "center", gap: 6 };
+  const variants = {
+    primary: { background: C.navy, color: "#fff" },
+    gold: { background: C.goldBg, color: C.gold, border: `1.5px solid ${C.gold}50` },
+    green: { background: C.greenBg, color: C.green, border: `1.5px solid ${C.green}40` },
+    ghost: { background: "none", color: C.textMid, border: `1px solid ${C.border}` },
+    red: { background: C.redBg, color: C.red, border: `1px solid ${C.red}30` },
+  };
+  return <button onClick={onClick} disabled={disabled} style={{ ...base, ...variants[variant], ...s }}>{children}</button>;
+}
+
+function FormDots({ form }) {
+  return (
+    <div style={{ display: "flex", gap: 3 }}>
+      {(form || []).slice(0, 5).map((f, i) => {
+        const col = f.position === 1 ? C.green : f.position <= 3 ? C.amber : C.textDim;
+        return <div key={i} style={{ width: 20, height: 20, borderRadius: 4, background: f.position === 1 ? C.greenBg : f.position <= 3 ? C.amberBg : "#f0f4f8", border: `1.5px solid ${col}50`, display: "flex", alignItems: "center", justifyContent: "center", fontSize: 10, fontWeight: 700, color: col }}>{f.position}</div>;
+      })}
+    </div>
+  );
+}
+
+function StatusPill({ status, activationDate }) {
+  const d = coolingDate(activationDate);
+  const days = d ? Math.ceil((d - TODAY) / 86400000) : 0;
+  const cfg = {
+    Active: { bg: C.greenBg, color: C.green, label: "● Active" },
+    CoolingOff: { bg: C.amberBg, color: C.amber, label: `⏳ Cool-off · ${days}d` },
+    Inactive: { bg: C.redBg, color: C.red, label: "✕ Inactive" },
+  }[status];
+  return <span style={{ ...cfg, border: `1px solid ${cfg.color}40`, borderRadius: 20, padding: "3px 10px", fontSize: 11, fontWeight: 700 }}>{cfg.label}</span>;
+}
+
+// ─── AI RACE PLANNER ──────────────────────────────────────────────────────────
+async function getAITake(horse, race) {
+  const lastRun = horse.form?.[0];
+  const daysSince = lastRun ? Math.floor((TODAY - new Date(lastRun.date)) / 86400000) : null;
+  const daysToRace = daysUntil(race.date);
+
+  const system = "You are an experienced Irish racing professional giving a trainer your honest read on a race. The trainer already knows their horse inside out — never tell them their own horse's form, stats, or history. They lived it. Focus ONLY on the race itself — who else is likely in it, how weak or strong the field looks, whether the timing suits a campaign, what the pace scenario might be, and whether this is a race worth targeting. Use web_search to find likely runners and recent form at this venue and trip. Speak like a racing professional — direct, specific, no waffle. Use phrases like: Not a great race, I would be going there to win it. Plenty of dead wood in here. The handicapper has left him alone. This sets Punchestown up perfectly. Ride cold and come through them late. Worth trying cheekpieces here. I would be very tempted at this trip. Do not say things the trainer already knows about their own horse. Never mention days since last run or the horse's rating as if the trainer does not know it. Your job is to give them information about the RACE not about their horse.";
+
+
+  const prompt = "Give me your honest take trainer to trainer. Search first.\n\n"
+    + "HORSE: " + horse.name + " | " + getAge(horse.dob) + "yo " + horse.sex
+    + " | " + horse.trainer + " | Rating: " + (horse.nhRating || horse.flatRating || "unknown")
+    + "\nHeadgear: " + (horse.headgear || "None")
+    + " | " + (daysSince || "?") + " days since last run"
+    + "\nNotes: " + horse.notes
+    + "\n\nRACE: " + race.raceName + " | " + race.venue + " | " + race.date
+    + " | " + race.distanceFurlongs + "f"
+    + " | " + (race.forecastGoing || "") + " | " + daysToRace + " days away"
+    + "\n\nSearch for recent runners in this race and trainer record at this venue."
+    + "\n\nReturn ONLY a raw JSON object with these keys: scores (object with handicap_edge, class_fit, conditions_match, timing, cuteness each scored 1-10), overall (number 0-100), bullets (array of 6 objects each with category, icon, point), conclusion (string 3-4 sentences), recommendation (one of STRONG or CONSIDER or WAIT or PASS). No markdown.";
+
+  const res = await fetch("https://api.anthropic.com/v1/messages", {
+    method: "POST",
+    headers: { "Content-Type": "application/json", "x-api-key": ANTHROPIC_KEY, "anthropic-version": "2023-06-01", "anthropic-dangerous-direct-browser-access": "true" },
+    body: JSON.stringify({ model: "claude-sonnet-4-20250514", max_tokens: 2500, tools: [{ type: "web_search_20250305", name: "web_search" }], system, messages: [{ role: "user", content: prompt }] }),
+  });
+  const data = await res.json();
+  const text = data.content?.filter(b => b.type === "text").map(b => b.text).join("").trim();
+  const match = text.match(/\{[\s\S]*\}/);
+  if (!match) throw new Error("No JSON");
+  return JSON.parse(match[0]);
+}
+
+// ─── MEDICATION TRACKER ───────────────────────────────────────────────────────
+function MedicationTracker({ horses, medLogs, setMedLogs, trackedIds, setTrackedIds }) {
+  const [selMonth, setSelMonth] = useState(TODAY.getMonth());
+  const [selYear, setSelYear] = useState(TODAY.getFullYear());
+  const [openHorse, setOpenHorse] = useState(null);
+  const [showBill, setShowBill] = useState(false);
+  const [billHorse, setBillHorse] = useState(null);
+  const [showAdd, setShowAdd] = useState(false);
+
+  const daysInMonth = getDaysInMonth(selYear, selMonth);
+  const days = Array.from({ length: daysInMonth }, (_, i) => i + 1);
+  const todayD = TODAY.getDate();
+  const isCurrent = selMonth === TODAY.getMonth() && selYear === TODAY.getFullYear();
+  const monthName = new Date(selYear, selMonth).toLocaleString("en-IE", { month: "long", year: "numeric" });
+
+  const k = (hId, d, t) => {
+    const mm = String(selMonth + 1).padStart(2, "0");
+    const dd = String(d).padStart(2, "0");
+    return hId + "_" + selYear + "-" + mm + "-" + dd + "_" + t;
+  };
+  const getMed = (hId, d, t) => medLogs[k(hId, d, t)] || 0;
+  const toggleMed = (hId, d, t) => {
+    setMedLogs(prev => {
+      const cur = prev[k(hId, d, t)] || 0;
+      if (t === "antibiotics") return { ...prev, [k(hId, d, t)]: cur === 0 ? 1 : cur === 1 ? 2 : 0 };
+      return { ...prev, [k(hId, d, t)]: cur ? 0 : 1 };
+    });
+  };
+
+  const calcCost = (hId) => {
+    const peptizoleDays = days.filter(d => getMed(hId, d, "peptizole")).length;
+    const antepsinTicks = days.filter(d => getMed(hId, d, "antepsin")).length;
+    const antibioticDoses = days.reduce((s, d) => s + getMed(hId, d, "antibiotics"), 0);
+    const peptizole = peptizoleDays * 18;
+    const antepsin = calcAntepsinCost(antepsinTicks);
+    const antibiotics = antibioticDoses * 15;
+    return { peptizoleDays, antepsinTicks, antepsinBottles: Math.ceil(antepsinTicks / 4), antibioticDoses, peptizole, antepsin, antibiotics, total: peptizole + antepsin + antibiotics };
+  };
+
+  const [medView, setMedView] = useState("tracker");
+  const trackedHorses = horses.filter(h => trackedIds.includes(h.id));
+  const untrackedHorses = horses.filter(h => h.status !== "Inactive" && !trackedIds.includes(h.id));
+
+  const todayMedKey = function(hId, t) {
+    const mm = String(TODAY.getMonth() + 1).padStart(2, "0");
+    const dd = String(TODAY.getDate()).padStart(2, "0");
+    return hId + "_" + TODAY.getFullYear() + "-" + mm + "-" + dd + "_" + t;
+  };
+  const getMedToday = function(hId, t) { return medLogs[todayMedKey(hId, t)] || 0; };
+  const toggleMedToday = function(hId, t) {
+    setMedLogs(function(prev) {
+      const cur = prev[todayMedKey(hId, t)] || 0;
+      if (t === "antibiotics") return Object.assign({}, prev, { [todayMedKey(hId, t)]: cur === 0 ? 1 : cur === 1 ? 2 : 0 });
+      return Object.assign({}, prev, { [todayMedKey(hId, t)]: cur ? 0 : 1 });
+    });
+  };
+
+  return (
+    <div>
+      {/* Header */}
+      <div style={{ display: "flex", justifyContent: "space-between", alignItems: "center", marginBottom: 12, flexWrap: "wrap", gap: 10 }}>
+        <div>
+          <div style={{ fontSize: 22, fontWeight: 800, color: C.text }}>Medication Tracker</div>
+          <div style={{ fontSize: 13, color: C.textMid, marginTop: 3 }}>Tap each day to log · costs auto-calculated for Yardman</div>
+        </div>
+        <div style={{ display: "flex", gap: 8, alignItems: "center", flexWrap: "wrap" }}>
+          {medView === "tracker" && (
+            <React.Fragment>
+              <Btn variant="ghost" onClick={function() { var d = new Date(selYear, selMonth - 1); setSelMonth(d.getMonth()); setSelYear(d.getFullYear()); }}>{"<"}</Btn>
+              <span style={{ fontSize: 14, fontWeight: 700, color: C.text, minWidth: 150, textAlign: "center" }}>{monthName}</span>
+              <Btn variant="ghost" onClick={function() { var d = new Date(selYear, selMonth + 1); setSelMonth(d.getMonth()); setSelYear(d.getFullYear()); }}>{">"}</Btn>
+              <Btn onClick={function() { setShowAdd(true); }} disabled={untrackedHorses.length === 0}>+ Add Horse</Btn>
+            </React.Fragment>
+          )}
+          <Btn variant={medView === "daily" ? "primary" : "ghost"} onClick={function() { setMedView(medView === "daily" ? "tracker" : "daily"); }}>
+            {medView === "daily" ? "Monthly View" : "Today's Summary"}
+          </Btn>
+        </div>
+      </div>
+
+      {/* DAILY SUMMARY VIEW */}
+      {medView === "daily" && (
+        <div>
+          <div style={{ background: C.card, border: "1px solid " + C.border, borderRadius: 14, padding: "18px 20px", marginBottom: 14 }}>
+            <div style={{ fontSize: 16, fontWeight: 800, color: C.navy, marginBottom: 14, paddingBottom: 10, borderBottom: "2px solid " + C.border }}>
+              {"Today — " + TODAY.toLocaleDateString("en-IE", { weekday: "long", day: "numeric", month: "long", year: "numeric" })}
+            </div>
+            {trackedHorses.length === 0 && (
+              <div style={{ color: C.textMid, fontSize: 13, padding: "20px 0" }}>No horses on tracker. Use Monthly View to add horses.</div>
+            )}
+            {trackedHorses.map(function(horse) {
+              const pep = getMedToday(horse.id, "peptizole");
+              const ant = getMedToday(horse.id, "antepsin");
+              const ab = getMedToday(horse.id, "antibiotics");
+              const anyGiven = pep || ant || ab;
+              return (
+                <div key={horse.id} style={{ display: "flex", alignItems: "center", gap: 12, padding: "12px 0", borderBottom: "1px solid " + C.border }}>
+                  <Silk silk={horse.silk} size={32} />
+                  <div style={{ flex: 1 }}>
+                    <div style={{ fontSize: 14, fontWeight: 700, color: C.text, marginBottom: 6 }}>{horse.name}</div>
+                    <div style={{ display: "flex", gap: 8, flexWrap: "wrap" }}>
+                      {[["peptizole", "Peptizole", C.blue], ["antepsin", "Antepsin", C.purple], ["antibiotics", "Antibiotics", C.amber]].map(function(arr) {
+                        var t = arr[0]; var label = arr[1]; var col = arr[2];
+                        var val = getMedToday(horse.id, t);
+                        return (
+                          <button key={t} onClick={function() { toggleMedToday(horse.id, t); }}
+                            style={{ padding: "6px 14px", borderRadius: 8, border: "2px solid " + col,
+                              background: val ? col : "transparent", color: val ? "#fff" : col,
+                              fontSize: 12, fontWeight: 700, cursor: "pointer" }}>
+                            {val > 1 ? label + " x" + val : label}{val ? " ✓" : ""}
+                          </button>
+                        );
+                      })}
+                    </div>
+                  </div>
+                  <div style={{ fontSize: 12, fontWeight: 700, color: anyGiven ? C.green : C.textMid }}>
+                    {anyGiven ? "Logged" : "None today"}
+                  </div>
+                </div>
+              );
+            })}
+          </div>
+          <div style={{ background: C.cardOff, border: "1px solid " + C.border, borderRadius: 10, padding: "12px 16px", fontSize: 12, color: C.textMid }}>
+            Tap each medication to toggle for today. Changes save automatically.
+          </div>
+        </div>
+      )}
+
+      {medView === "tracker" && (
+        <div>
+
+      {/* Race timing alerts */}
+      {horses.filter(h => { const d = daysUntil(h.nextRaceDate); return d && d >= 12 && d <= 16; }).map(h => (
+        <div key={h.id} style={{ background: C.amberBg, border: `1px solid ${C.amber}40`, borderLeft: `3px solid ${C.amber}`, borderRadius: 10, padding: "10px 14px", marginBottom: 10, display: "flex", alignItems: "center", gap: 12 }}>
+          <Silk silk={h.silk} size={30} />
+          <div>
+            <div style={{ fontSize: 13, fontWeight: 700, color: C.text }}>{h.name} — race in {daysUntil(h.nextRaceDate)} days</div>
+            <div style={{ fontSize: 12, color: C.amber, fontWeight: 600 }}>🏥 Start Peptizole & Antepsin course now (12 days each · Peptizole stop 4 days before · Antepsin stop 1 day before)</div>
+          </div>
+        </div>
+      ))}
+      {horses.filter(h => { const d = daysUntil(h.nextRaceDate); return d && d > 0 && d < 12; }).map(h => (
+        <div key={h.id} style={{ background: C.redBg, border: `1px solid ${C.red}30`, borderLeft: `3px solid ${C.red}`, borderRadius: 10, padding: "10px 14px", marginBottom: 10, display: "flex", alignItems: "center", gap: 12 }}>
+          <Silk silk={h.silk} size={30} />
+          <div>
+            <div style={{ fontSize: 13, fontWeight: 700, color: C.text }}>{h.name} — race in {daysUntil(h.nextRaceDate)} days</div>
+            <div style={{ fontSize: 12, color: C.red, fontWeight: 600 }}>⚠️ Too close to start a full course — check withdrawal periods before administering</div>
+          </div>
+        </div>
+      ))}
+
+      {/* Add horse panel */}
+      {showAdd && (
+        <div style={{ background: C.card, border: `1px solid ${C.border}`, borderRadius: 12, padding: "16px 18px", marginBottom: 16, boxShadow: C.shadow }}>
+          <div style={{ fontSize: 14, fontWeight: 700, color: C.text, marginBottom: 12 }}>Add horse to {monthName} tracker:</div>
+          {untrackedHorses.map(h => (
+            <div key={h.id} style={{ display: "flex", alignItems: "center", gap: 12, padding: "10px 12px", background: C.cardOff, borderRadius: 10, border: `1px solid ${C.border}`, marginBottom: 8 }}>
+              <Silk silk={h.silk} size={30} />
+              <div style={{ flex: 1 }}>
+                <div style={{ fontSize: 14, fontWeight: 700, color: C.text }}>{h.name}</div>
+                <div style={{ fontSize: 11, color: C.textMid }}>{h.owner} · {h.status}{h.nextRaceDate ? ` · Next race: ${new Date(h.nextRaceDate).toLocaleDateString("en-IE", { day: "numeric", month: "short" })}` : ""}</div>
+              </div>
+              <Btn variant="green" onClick={() => { setTrackedIds(p => [...p, h.id]); }} style={{ padding: "6px 14px", fontSize: 12 }}>+ Add</Btn>
+            </div>
+          ))}
+          <Btn variant="ghost" onClick={() => setShowAdd(false)} style={{ marginTop: 8, fontSize: 12, padding: "6px 14px" }}>Close</Btn>
+        </div>
+      )}
+
+      {trackedHorses.length === 0 && (
+        <div style={{ padding: 48, textAlign: "center", border: `1.5px dashed ${C.border}`, borderRadius: 14, color: C.textMid }}>
+          <div style={{ fontSize: 32, marginBottom: 12 }}>🏥</div>
+          <div style={{ fontSize: 15, fontWeight: 700, color: C.text, marginBottom: 6 }}>No horses on the tracker</div>
+          <div style={{ fontSize: 13, marginBottom: 16 }}>Tap <strong>+ Add Horse</strong> to start logging medication for this month</div>
+        </div>
+      )}
+
+      {/* Horse medication rows */}
+      {trackedHorses.map(horse => {
+        const isOpen = openHorse === horse.id;
+        const costs = calcCost(horse.id);
+        return (
+          <div key={horse.id} style={{ background: C.card, border: `1px solid ${C.border}`, borderRadius: 12, marginBottom: 12, overflow: "hidden", boxShadow: C.shadow }}>
+            <div onClick={() => setOpenHorse(isOpen ? null : horse.id)} style={{ padding: "14px 16px", cursor: "pointer", display: "flex", alignItems: "center", gap: 12 }}>
+              <Silk silk={horse.silk} size={36} />
+              <div style={{ flex: 1 }}>
+                <div style={{ fontSize: 15, fontWeight: 700, color: C.text, marginBottom: 3 }}>{horse.name}</div>
+                <div style={{ display: "flex", gap: 6, flexWrap: "wrap" }}>
+                  {costs.peptizoleDays > 0 && <Tag color={C.blue}>{costs.peptizoleDays} days Peptizole · €{costs.peptizole}</Tag>}
+                  {costs.antepsinTicks > 0 && <Tag color={C.purple}>{costs.antepsinTicks} days Antepsin · {costs.antepsinBottles} bottle{costs.antepsinBottles !== 1 ? "s" : ""} · €{costs.antepsin}</Tag>}
+                  {costs.antibioticDoses > 0 && <Tag color={C.amber}>{costs.antibioticDoses} dose{costs.antibioticDoses !== 1 ? "s" : ""} Antibiotics · €{costs.antibiotics}</Tag>}
+                  {costs.total > 0 && <Tag color={C.gold}>Total: €{costs.total}</Tag>}
+                </div>
+              </div>
+              <div style={{ display: "flex", gap: 8, alignItems: "center" }}>
+                <Btn onClick={(e) => { e.stopPropagation(); setBillHorse(horse); setShowBill(true); }} style={{ padding: "5px 12px", fontSize: 11 }}>📋 Bill</Btn>
+                <Btn variant="red" onClick={(e) => { e.stopPropagation(); setTrackedIds(p => p.filter(id => id !== horse.id)); }} style={{ padding: "5px 10px", fontSize: 11 }}>✕</Btn>
+                <span style={{ color: C.textMid, fontSize: 14 }}>{isOpen ? "▲" : "▼"}</span>
+              </div>
+            </div>
+
+            {isOpen && (
+              <div style={{ padding: "0 16px 16px", borderTop: `1px solid ${C.border}` }}>
+                {/* Legend */}
+                <div style={{ display: "flex", gap: 16, padding: "10px 0", marginBottom: 8, flexWrap: "wrap" }}>
+                  <div style={{ fontSize: 11, color: C.textMid }}><strong style={{ color: C.blue }}>Peptizole</strong>{" — €18/day"}</div>
+                  <div style={{ fontSize: 11, color: C.textMid }}><strong style={{ color: C.purple }}>Antepsin</strong>{" — €25/bottle (1 bottle per 4 days, rounds up)"}</div>
+                  <div style={{ fontSize: 11, color: C.textMid }}><strong style={{ color: C.amber }}>Antibiotics</strong>{" — €15/dose (tap once=1 dose, twice=2 doses)"}</div>
+                </div>
+                <div style={{ overflowX: "auto" }}>
+                  <table style={{ borderCollapse: "collapse", width: "100%", minWidth: 1100 }}>
+                    <thead>
+                      <tr>
+                        <th style={{ textAlign: "left", padding: "6px 8px", fontSize: 11, fontWeight: 700, color: C.textMid, width: 110 }}>Treatment</th>
+                        {days.map(d => (
+                          <th key={d} style={{ padding: "3px 2px", fontSize: 10, fontWeight: 700, color: isCurrent && d === todayD ? C.navy : C.textDim, textAlign: "center", minWidth: 26, background: isCurrent && d === todayD ? C.goldBg : "none", borderRadius: 4 }}>{d}</th>
+                        ))}
+                        <th style={{ padding: "6px 8px", fontSize: 11, fontWeight: 700, color: C.textMid, textAlign: "right", minWidth: 80 }}>Total</th>
+                      </tr>
+                    </thead>
+                    <tbody>
+                      {[["peptizole", C.blue], ["antepsin", C.purple], ["antibiotics", C.amber]].map(([type, col]) => (
+                        <tr key={type}>
+                          <td style={{ padding: "5px 8px" }}>
+                            <span style={{ background: `${col}12`, color: col, borderRadius: 6, padding: "3px 8px", fontSize: 11, fontWeight: 600 }}>{MED_TYPES[type].label}</span>
+                          </td>
+                          {days.map(d => {
+                            const val = getMed(horse.id, d, type);
+                            const isFuture = isCurrent && d > todayD;
+                            return (
+                              <td key={d} style={{ padding: "2px 2px", textAlign: "center" }}>
+                                <button onClick={() => !isFuture && toggleMed(horse.id, d, type)} disabled={isFuture} style={{ width: 22, height: 22, borderRadius: 4, background: val > 0 ? col : "#f0f4f8", border: `1px solid ${val > 0 ? col : C.border}`, color: val > 0 ? "#fff" : C.textDim, fontSize: 10, fontWeight: 700, cursor: isFuture ? "default" : "pointer", opacity: isFuture ? 0.25 : 1, display: "flex", alignItems: "center", justifyContent: "center", padding: 0 }}>
+                                  {val > 0 ? val : ""}
+                                </button>
+                              </td>
+                            );
+                          })}
+                          <td style={{ padding: "5px 8px", textAlign: "right", fontSize: 13, fontWeight: 700, color: C.text }}>
+                            {type === "peptizole" && `€${costs.peptizole}`}
+                            {type === "antepsin" && `${costs.antepsinBottles} bot · €${costs.antepsin}`}
+                            {type === "antibiotics" && `€${costs.antibiotics}`}
+                          </td>
+                        </tr>
+                      ))}
+                    </tbody>
+                  </table>
+                </div>
+                {/* Withdrawal deadlines */}
+                {horse.nextRaceDate && (
+                  <div style={{ marginTop: 10, padding: "10px 12px", background: C.cardOff, borderRadius: 8, border: `1px solid ${C.border}`, display: "flex", gap: 20, flexWrap: "wrap" }}>
+                    <div style={{ fontSize: 12, fontWeight: 700, color: C.text }}>⏱ Withdrawal for {new Date(horse.nextRaceDate).toLocaleDateString("en-IE", { day: "numeric", month: "short" })}:</div>
+                    {[{ label: "Stop Peptizole", wd: 4 }, { label: "Stop Antepsin", wd: 1 }].map(({ label, wd }) => {
+                      const stop = new Date(horse.nextRaceDate); stop.setDate(stop.getDate() - wd);
+                      return <div key={label} style={{ fontSize: 12, color: C.textMid }}><span style={{ fontWeight: 600, color: C.red }}>{label}:</span> {stop.toLocaleDateString("en-IE", { weekday: "short", day: "numeric", month: "short" })}</div>;
+                    })}
+                  </div>
+                )}
+              </div>
+            )}
+          </div>
+        );
+      })}
+
+      {/* Bill modal */}
+      {showBill && billHorse && (() => {
+        const costs = calcCost(billHorse.id);
+        return (
+          <div style={{ position: "fixed", inset: 0, background: "rgba(10,22,40,0.6)", zIndex: 500, display: "flex", alignItems: "center", justifyContent: "center", padding: 20, backdropFilter: "blur(4px)" }}>
+            <div style={{ background: C.card, borderRadius: 16, width: "100%", maxWidth: 420, boxShadow: C.shadowMd, overflow: "hidden" }}>
+              <div style={{ background: C.navy, padding: "18px 22px", display: "flex", justifyContent: "space-between", alignItems: "center" }}>
+                <div><div style={{ fontSize: 16, fontWeight: 700, color: "#fff" }}>Monthly Medication Bill</div><div style={{ fontSize: 12, color: "rgba(255,255,255,0.5)", marginTop: 2 }}>{billHorse.name} · {monthName}</div></div>
+                <button onClick={() => setShowBill(false)} style={{ background: "rgba(255,255,255,0.1)", border: "none", color: "#fff", width: 30, height: 30, borderRadius: 7, cursor: "pointer", fontSize: 15 }}>✕</button>
+              </div>
+              <div style={{ padding: 22 }}>
+                <div style={{ fontSize: 12, fontWeight: 700, color: C.textMid, textTransform: "uppercase", letterSpacing: 1, marginBottom: 14 }}>For Yardman — {billHorse.owner}</div>
+                {[
+                  costs.peptizoleDays > 0 && { label: "Peptizole — " + costs.peptizoleDays + " days × €18", amount: costs.peptizole },
+                  costs.antepsinTicks > 0 && { label: "Antepsin — " + costs.antepsinBottles + " bottle" + (costs.antepsinBottles !== 1 ? "s" : "") + " × €25 (" + costs.antepsinTicks + " days)", amount: costs.antepsin },
+                  costs.antibioticDoses > 0 && { label: "Antibiotics — " + costs.antibioticDoses + " dose" + (costs.antibioticDoses !== 1 ? "s" : "") + " × €15", amount: costs.antibiotics },
+                ].filter(Boolean).map((item, i) => (
+                  <div key={i} style={{ display: "flex", justifyContent: "space-between", padding: "10px 0", borderBottom: `1px solid ${C.border}` }}>
+                    <span style={{ fontSize: 14, color: C.text }}>{item.label}</span>
+                    <span style={{ fontSize: 14, fontWeight: 700, color: C.text }}>€{item.amount}</span>
+                  </div>
+                ))}
+                {costs.total === 0 && <div style={{ padding: "20px 0", textAlign: "center", color: C.textMid, fontSize: 13 }}>No medication logged this month</div>}
+                {costs.total > 0 && (
+                  <div style={{ display: "flex", justifyContent: "space-between", padding: "14px 0 0" }}>
+                    <span style={{ fontSize: 16, fontWeight: 800, color: C.text }}>Total</span>
+                    <span style={{ fontSize: 22, fontWeight: 800, color: C.gold }}>€{costs.total}</span>
+                  </div>
+                )}
+                <Btn onClick={() => window.print()} style={{ width: "100%", marginTop: 16, justifyContent: "center" }}>{"🖨 Print / Save for Yardman"}</Btn>
+              </div>
+            </div>
+          </div>
+        );
+      })()}
+        </div>
+      )}
+    </div>
+  );
+}
+
+// ─── PROVISIONAL ENTRIES ──────────────────────────────────────────────────────
+function ProvisionalEntries({ horses, setHorses }) {
+  const [showAdd, setShowAdd] = useState(null); // horseId
+  const [entry, setEntry] = useState({ venue: "", date: "", raceName: "", raceRef: "", note: "" });
+  const [provisionalRaces, setProvisionalRaces] = useState([]);
+  const [fetchStatus, setFetchStatus] = useState("idle");
+  const [lastFetch, setLastFetch] = useState(null);
+  const [showProvPaste, setShowProvPaste] = useState(false);
+  const [provPasteText, setProvPasteText] = useState("");
+
+  const handleProvParseText = async () => {
+    if (!provPasteText.trim()) return;
+    setFetchStatus("fetching");
+    try {
+      const headers = {
+        "Content-Type": "application/json",
+        "x-api-key": ANTHROPIC_KEY,
+        "anthropic-version": "2023-06-01",
+        "anthropic-dangerous-direct-browser-access": "true",
+      };
+      const res = await fetch("https://api.anthropic.com/v1/messages", {
+        method: "POST",
+        headers,
+        body: JSON.stringify({
+          model: "claude-sonnet-4-20250514",
+          max_tokens: 5000,
+          messages: [{ role: "user", content: "Parse every race from this HRI provisional summary text into a JSON array. Return ONLY the raw JSON array with no markdown. Each race needs: id as ps_N, source as provisional, meetingRef like Limerick 55, raceRef like Race A, venue, date in YYYY-MM-DD format, raceName, discipline, grade, distanceFurlongs as number, prizeMoney as number, forecastGoing, entryDeadline in YYYY-MM-DDTHH:MM format.\n\nTEXT:\n" + provPasteText }],
+        }),
+      });
+      const data = await res.json();
+      const txt = (data.content || []).filter(b => b.type === "text").map(b => b.text).join("").trim();
+      const match = txt.match(/\[[\s\S]*\]/);
+      if (!match) throw new Error("No races found");
+      const parsed = JSON.parse(match[0]);
+      setProvisionalRaces(parsed);
+      setLastFetch(new Date().toISOString());
+      setFetchStatus("done");
+      setShowProvPaste(false);
+      setProvPasteText("");
+    } catch (err) {
+      console.error(err);
+      setFetchStatus("error");
+    }
+  };
+
+  const handleProvPDFUpload = async (e) => {
+    const file = e.target.files[0];
+    if (!file) return;
+    setFetchStatus("fetching");
+    e.target.value = "";
+    try {
+      const reader = new FileReader();
+      reader.onload = async (ev) => {
+        const base64 = ev.target.result.split(",")[1];
+        const headers = {
+          "Content-Type": "application/json",
+          "x-api-key": ANTHROPIC_KEY,
+          "anthropic-version": "2023-06-01",
+          "anthropic-dangerous-direct-browser-access": "true",
+        };
+        const res = await fetch("https://api.anthropic.com/v1/messages", {
+          method: "POST",
+          headers,
+          body: JSON.stringify({
+            model: "claude-sonnet-4-20250514",
+            max_tokens: 5000,
+            messages: [{ role: "user", content: [
+              { type: "document", source: { type: "base64", media_type: "application/pdf", data: base64 } },
+              { type: "text", text: "Parse every race from this HRI provisional summary PDF into a JSON array. Return ONLY the raw JSON array. Each race needs: id as ps_N, source as provisional, meetingRef like Limerick 55, raceRef like Race A, venue, date in YYYY-MM-DD format, raceName, discipline, grade, distanceFurlongs as number, prizeMoney as number, forecastGoing, entryDeadline in YYYY-MM-DDTHH:MM format." }
+            ]}],
+          }),
+        });
+        const data = await res.json();
+        const txt = (data.content || []).filter(b => b.type === "text").map(b => b.text).join("").trim();
+        const arr = txt.match(/\[([\s\S]*)\]/);
+        if (!arr) throw new Error("No races found");
+        const parsed = JSON.parse(arr[0]);
+        setProvisionalRaces(parsed);
+        setLastFetch(new Date().toISOString());
+        setFetchStatus("done");
+      };
+      reader.readAsDataURL(file);
+    } catch (err) {
+      console.error(err);
+      setFetchStatus("error");
+    }
+  };
+
+  const fetchProvisional = async () => {
+    setFetchStatus("fetching");
+    try {
+      const res = await fetch("https://api.anthropic.com/v1/messages", {
+        method: "POST",
+        headers: { "Content-Type": "application/json", "x-api-key": ANTHROPIC_KEY, "anthropic-version": "2023-06-01", "anthropic-dangerous-direct-browser-access": "true" },
+        body: JSON.stringify({
+          model: "claude-sonnet-4-20250514",
+          max_tokens: 5000,
+          tools: [{ type: "web_search_20250305", name: "web_search" }],
+          system: "Parse HRI provisional summary PDFs into a JSON array. Return ONLY raw JSON array, no markdown. Each race needs these fields: id, source set to provisional, meetingRef like Limerick 55, raceRef like Race A, venue, date in YYYY-MM-DD format, raceName, discipline, grade, distanceFurlongs as number, prizeMoney as number, forecastGoing, entryDeadline in YYYY-MM-DDTHH:MM format.",
+          messages: [{ role: "user", content: "Search for HRI provisional race summaries at hri-ras.ie/provisional-summaries and find the most recent provisional summary documents. Fetch and parse all races into a JSON array. If you cannot find PDFs directly, search for HRI provisional summaries 2026 Ireland. Return only the JSON array with no markdown." }]
+        })
+      });
+      const data = await res.json();
+      const text = data.content?.filter(b => b.type === "text").map(b => b.text).join("").trim();
+      const match = text.match(/\[[\s\S]*\]/);
+      if (!match) throw new Error("No races");
+      setProvisionalRaces(JSON.parse(match[0]));
+      setLastFetch(new Date().toISOString());
+      setFetchStatus("done");
+    } catch (e) { console.error(e); setFetchStatus("error"); }
+  };
+
+  const addEntry = (horseId) => {
+    if (!entry.venue || !entry.raceName) return;
+    setHorses(prev => prev.map(h => h.id === horseId ? { ...h, provisionalEntries: [...(h.provisionalEntries || []), { ...entry, id: "pe_" + Date.now() }] } : h));
+    setEntry({ venue: "", date: "", raceName: "", raceRef: "", note: "" });
+    setShowAdd(null);
+  };
+
+  const removeEntry = (horseId, entryId) => {
+    setHorses(prev => prev.map(h => h.id === horseId ? { ...h, provisionalEntries: (h.provisionalEntries || []).filter(e => e.id !== entryId) } : h));
+  };
+
+  const allProvisional = horses.flatMap(h => (h.provisionalEntries || []).map(e => ({ ...e, horse: h })));
+
+  return (
+    <div>
+      <div style={{ display: "flex", justifyContent: "space-between", alignItems: "flex-start", marginBottom: 16, flexWrap: "wrap", gap: 10 }}>
+        <div>
+          <div style={{ fontSize: 22, fontWeight: 800, color: C.text }}>Provisional Entries</div>
+          <div style={{ fontSize: 13, color: C.textMid, marginTop: 3 }}>Planning targets before official entries — visible to owners in their portal</div>
+        </div>
+        <div style={{ display: "flex", gap: 8 }}>
+          <Btn variant="ghost" onClick={fetchProvisional} disabled={fetchStatus === "fetching"} style={{ fontSize: 12 }}>
+            {fetchStatus === "fetching" ? "⟳ Fetching…" : "⟳ Fetch HRI Provisional Summaries"}
+          </Btn>
+        </div>
+      </div>
+
+      {/* HRI Provisional Summaries */}
+      <div style={{ background: C.card, border: `1px solid ${C.border}`, borderRadius: 14, padding: "14px 18px", marginBottom: 16, boxShadow: C.shadow }}>
+        <div style={{ display: "flex", justifyContent: "space-between", alignItems: "center", marginBottom: lastFetch || provisionalRaces.length > 0 ? 12 : 0 }}>
+          <div>
+            <div style={{ fontSize: 14, fontWeight: 700, color: C.text, marginBottom: 2 }}>HRI Provisional Summaries</div>
+            <div style={{ fontSize: 12, color: C.textMid }}>
+              {lastFetch ? `Last fetched: ${new Date(lastFetch).toLocaleString("en-IE", { weekday: "short", day: "numeric", month: "short", hour: "2-digit", minute: "2-digit" })}` : "hri-ras.ie/provisional-summaries — use these to plan medication courses in advance"}
+            </div>
+          </div>
+          <Btn onClick={() => setShowProvPaste(!showProvPaste)} disabled={fetchStatus === "fetching"} style={{ fontSize: 12, padding: "8px 16px" }}>
+            {fetchStatus === "fetching" ? "Parsing..." : "📋 Paste Provisional Summary"}
+          </Btn>
+        </div>
+        {showProvPaste && (
+          <div style={{ background: C.card, border: "1px solid " + C.border, borderRadius: 12, padding: "16px 18px", marginBottom: 12 }}>
+            <div style={{ fontSize: 13, fontWeight: 700, color: C.text, marginBottom: 8 }}>Paste Provisional Summary Text</div>
+            <div style={{ fontSize: 12, color: C.textMid, marginBottom: 10, lineHeight: 1.6 }}>Open the HRI provisional summary PDF, press Ctrl+A then Ctrl+C, then paste below.</div>
+            <textarea
+              value={provPasteText}
+              onChange={e => setProvPasteText(e.target.value)}
+              placeholder="Paste provisional summary text here..."
+              rows={6}
+              style={{ width: "100%", background: C.cardOff, border: "1px solid " + C.border, borderRadius: 9, padding: "10px 12px", color: C.text, fontSize: 12, fontFamily: "inherit", lineHeight: 1.6, resize: "vertical", outline: "none", marginBottom: 10 }}
+            />
+            <div style={{ display: "flex", gap: 8 }}>
+              <Btn onClick={handleProvParseText} disabled={!provPasteText.trim() || fetchStatus === "fetching"} style={{ flex: 1, justifyContent: "center" }}>
+                {fetchStatus === "fetching" ? "Parsing..." : "Parse Races"}
+              </Btn>
+              <Btn variant="ghost" onClick={() => { setShowProvPaste(false); setProvPasteText(""); }} style={{ fontSize: 12 }}>Cancel</Btn>
+            </div>
+          </div>
+        )}
+
+        {provisionalRaces.length > 0 && (
+          <div style={{ display: "flex", flexDirection: "column", gap: 6 }}>
+            {provisionalRaces.slice(0, 8).map((r, i) => (
+              <div key={i} style={{ display: "flex", gap: 12, padding: "8px 10px", background: C.cardOff, borderRadius: 8, border: `1px solid ${C.border}`, fontSize: 12, alignItems: "center" }}>
+                <span style={{ fontWeight: 700, color: C.navy, minWidth: 80 }}>{r.meetingRef}</span>
+                <span style={{ color: C.textMid, minWidth: 60 }}>{r.raceRef}</span>
+                <span style={{ fontWeight: 600, color: C.text, flex: 1 }}>{r.raceName}</span>
+                <span style={{ color: C.textMid }}>{r.venue}</span>
+                <span style={{ color: C.gold, fontWeight: 700 }}>€{r.prizeMoney >= 1000 ? (Math.round(r.prizeMoney / 1000)) + "k" : r.prizeMoney}</span>
+                <span style={{ color: C.textMid }}>{new Date(r.date).toLocaleDateString("en-IE", { day: "numeric", month: "short" })}</span>
+              </div>
+            ))}
+            {provisionalRaces.length > 8 && <div style={{ fontSize: 12, color: C.textMid, padding: "4px 0" }}>+ {provisionalRaces.length - 8} more races</div>}
+          </div>
+        )}
+        {fetchStatus === "error" && <div style={{ fontSize: 12, color: C.red, fontWeight: 600, marginTop: 8 }}>✕ Failed to fetch — try again</div>}
+        {fetchStatus === "done" && provisionalRaces.length === 0 && <div style={{ fontSize: 12, color: C.textMid, marginTop: 8 }}>No races found in provisional summaries</div>}
+      </div>
+
+      {/* Per-horse provisional entries */}
+      {horses.filter(h => h.status !== "Inactive").map(horse => {
+        const entries = horse.provisionalEntries || [];
+        const isAdding = showAdd === horse.id;
+        return (
+          <div key={horse.id} style={{ background: C.card, border: `1px solid ${C.border}`, borderRadius: 12, padding: "14px 16px", marginBottom: 12, boxShadow: C.shadow }}>
+            <div style={{ display: "flex", alignItems: "center", gap: 12, marginBottom: entries.length > 0 || isAdding ? 12 : 0 }}>
+              <Silk silk={horse.silk} size={36} />
+              <div style={{ flex: 1 }}>
+                <div style={{ fontSize: 15, fontWeight: 700, color: C.text }}>{horse.name}</div>
+                <div style={{ fontSize: 12, color: C.textMid }}>{horse.owner} · {entries.length} provisional target{entries.length !== 1 ? "s" : ""}</div>
+              </div>
+              <Btn variant="gold" onClick={() => setShowAdd(isAdding ? null : horse.id)} style={{ fontSize: 12, padding: "6px 14px" }}>
+                {isAdding ? "Cancel" : "+ Add Target"}
+              </Btn>
+            </div>
+
+            {/* Existing provisional entries */}
+            {entries.map(e => (
+              <div key={e.id} style={{ display: "flex", alignItems: "center", gap: 10, padding: "10px 12px", background: C.goldBg, border: `1px solid ${C.gold}30`, borderLeft: `3px solid ${C.gold}`, borderRadius: 10, marginBottom: 8 }}>
+                <div style={{ flex: 1 }}>
+                  <div style={{ display: "flex", gap: 8, alignItems: "center", flexWrap: "wrap", marginBottom: 4 }}>
+                    <span style={{ fontSize: 14, fontWeight: 700, color: C.text }}>{e.raceName}</span>
+                    {e.raceRef && <Tag color={C.navy} bg="rgba(10,22,40,0.07)">{e.raceRef}</Tag>}
+                    <Tag color={C.gold}>Provisional</Tag>
+                  </div>
+                  <div style={{ display: "flex", gap: 10, flexWrap: "wrap", fontSize: 12, color: C.textMid }}>
+                    <span>📍 {e.venue}</span>
+                    {e.date && <span>📅 {new Date(e.date).toLocaleDateString("en-IE", { weekday: "short", day: "numeric", month: "short" })}</span>}
+                    {e.date && daysUntil(e.date) && <span style={{ color: daysUntil(e.date) <= 16 ? C.amber : C.textMid, fontWeight: daysUntil(e.date) <= 16 ? 700 : 400 }}>{daysUntil(e.date)} days away</span>}
+                  </div>
+                  {e.note && <div style={{ fontSize: 12, color: C.textMid, fontStyle: "italic", marginTop: 4 }}>💬 {e.note}</div>}
+                </div>
+                <Btn variant="red" onClick={() => removeEntry(horse.id, e.id)} style={{ padding: "5px 10px", fontSize: 11 }}>✕</Btn>
+              </div>
+            ))}
+
+            {/* Add entry form */}
+            {isAdding && (
+              <div style={{ background: C.cardOff, border: `1px solid ${C.border}`, borderRadius: 10, padding: "14px 16px", marginTop: 8 }}>
+                <div style={{ fontSize: 13, fontWeight: 700, color: C.text, marginBottom: 12 }}>Add Provisional Target for {horse.name}</div>
+                <div style={{ display: "grid", gridTemplateColumns: "1fr 1fr", gap: 10, marginBottom: 10 }}>
+                  {[
+                    { key: "raceName", label: "Race Name", placeholder: "e.g. Mares Handicap Hurdle", full: true },
+                    { key: "venue", label: "Venue", placeholder: "e.g. Navan" },
+                    { key: "date", label: "Date", type: "date" },
+                    { key: "raceRef", label: "Meeting Ref", placeholder: "e.g. Limerick 55 Race A" },
+                  ].map(({ key, label, placeholder, type, full }) => (
+                    <div key={key} style={{ gridColumn: full ? "1 / -1" : "auto" }}>
+                      <div style={{ fontSize: 10, fontWeight: 700, color: C.textMid, marginBottom: 4, textTransform: "uppercase", letterSpacing: 0.5 }}>{label}</div>
+                      <input type={type || "text"} placeholder={placeholder} value={entry[key]} onChange={e => setEntry(p => ({ ...p, [key]: e.target.value }))} style={{ width: "100%", background: C.card, border: `1px solid ${C.border}`, borderRadius: 8, padding: "8px 12px", color: C.text, fontSize: 13, outline: "none" }} />
+                    </div>
+                  ))}
+                </div>
+                <div style={{ marginBottom: 10 }}>
+                  <div style={{ fontSize: 10, fontWeight: 700, color: C.textMid, marginBottom: 4, textTransform: "uppercase", letterSpacing: 0.5 }}>Trainer Note (visible to owner)</div>
+                  <input type="text" placeholder="e.g. If ground stays soft" value={entry.note} onChange={e => setEntry(p => ({ ...p, note: e.target.value }))} style={{ width: "100%", background: C.card, border: `1px solid ${C.border}`, borderRadius: 8, padding: "8px 12px", color: C.text, fontSize: 13, outline: "none" }} />
+                </div>
+                <div style={{ display: "flex", gap: 8 }}>
+                  <Btn onClick={() => addEntry(horse.id)}>Save Target</Btn>
+                  <Btn variant="ghost" onClick={() => setShowAdd(null)}>Cancel</Btn>
+                </div>
+              </div>
+            )}
+          </div>
+        );
+      })}
+
+      {allProvisional.length > 0 && (
+        <div style={{ background: C.card, border: `1px solid ${C.border}`, borderRadius: 12, padding: "14px 18px", marginTop: 8, boxShadow: C.shadow }}>
+          <div style={{ fontSize: 13, fontWeight: 700, color: C.text, marginBottom: 12 }}>All Provisional Targets — by date</div>
+          {[...allProvisional].filter(e => e.date).sort((a, b) => new Date(a.date) - new Date(b.date)).map((e, i) => (
+            <div key={i} style={{ display: "flex", alignItems: "center", gap: 12, padding: "8px 0", borderBottom: `1px solid ${C.border}` }}>
+              <Silk silk={e.horse.silk} size={24} />
+              <div style={{ flex: 1, fontSize: 13 }}>
+                <span style={{ fontWeight: 700, color: C.text }}>{e.horse.name}</span>
+                <span style={{ color: C.textMid, marginLeft: 8 }}>{e.raceName} · {e.venue}</span>
+                {e.raceRef && <span style={{ color: C.textDim, marginLeft: 6, fontSize: 11 }}>{e.raceRef}</span>}
+              </div>
+              <span style={{ fontSize: 12, color: C.textMid }}>{new Date(e.date).toLocaleDateString("en-IE", { day: "numeric", month: "short" })}</span>
+              <span style={{ fontSize: 12, fontWeight: 700, color: daysUntil(e.date) <= 16 ? C.amber : C.textMid }}>{daysUntil(e.date)} days</span>
+            </div>
+          ))}
+        </div>
+      )}
+    </div>
+  );
+}
+
+// ─── RACE PLANNER ─────────────────────────────────────────────────────────────
+function RacePlanner({ horses, setHorses }) {
+  const [selHorse, setSelHorse] = useState(horses[0]);
+  const [races, setRaces] = useState([]);
+  const [fetchStatus, setFetchStatus] = useState("idle");
+  const [lastFetch, setLastFetch] = useState(null);
+  const [analyses, setAnalyses] = useState({});
+  const [loading, setLoading] = useState({});
+  const [loadStage, setLoadStage] = useState({});
+  const [shortlisted, setShortlisted] = useState({});
+  const [showShortlist, setShowShortlist] = useState(false);
+  const [toast, setToast] = useState(null);
+
+  const k = (hId, rId) => `${hId}_${rId}`;
+
+  const showToast = (msg, color = C.green) => { setToast({ msg, color }); setTimeout(() => setToast(null), 4000); };
+
+  const [pasteText, setPasteText] = useState("");
+  const [showPaste, setShowPaste] = useState(false);
+
+  const handleParseText = async () => {
+    if (!pasteText.trim()) return;
+    setFetchStatus("fetching");
+    try {
+      const headers = {
+        "Content-Type": "application/json",
+        "x-api-key": ANTHROPIC_KEY,
+        "anthropic-version": "2023-06-01",
+        "anthropic-dangerous-direct-browser-access": "true",
+      };
+      const res = await fetch("https://api.anthropic.com/v1/messages", {
+        method: "POST",
+        headers,
+        body: JSON.stringify({
+          model: "claude-sonnet-4-20250514",
+          max_tokens: 5000,
+          messages: [{ role: "user", content: "Parse every race from this HRI race conditions text into a JSON array. Return ONLY the raw JSON array with no markdown. Each race needs: id as r_N, venue, date in YYYY-MM-DD format, raceName, discipline as Flat or Hurdle or Chase or Bumper, raceType as Maiden or Novice or Handicap or Weight For Age or Beginners or Bumper, grade as Grade 1 or Grade 2 or Grade 3 or Listed or Ungraded, surface as Turf or AWT where Dundalk is AWT, distanceFurlongs as number, prizeMoney as winner prize number, ageMin as number, ageMax as number or null, sexRestriction as Open or Mares or Fillies or Colts and Geldings, ratingMax as number or null, isMaiden as boolean, isNovice as boolean, isEBF as boolean, entryDeadline in YYYY-MM-DDTHH:MM format using closing date at noon, forecastGoing as good or soft etc.\n\nTEXT:\n" + pasteText }],
+        }),
+      });
+      const data = await res.json();
+      const txt = (data.content || []).filter(b => b.type === "text").map(b => b.text).join("").trim();
+      const match = txt.match(/\[([\s\S]*)\]/);
+      if (!match) {
+        console.log("API response:", txt.substring(0, 500));
+        throw new Error("No JSON array found in response");
+      }
+      let parsed;
+      try {
+        parsed = JSON.parse(match[0]);
+      } catch(parseErr) {
+        console.log("Parse error:", parseErr, "JSON:", match[0].substring(0, 200));
+        throw new Error("Invalid JSON returned");
+      }
+      setRaces(parsed);
+      setLastFetch(new Date().toISOString());
+      setFetchStatus("done");
+      setShowPaste(false);
+      setPasteText("");
+      showToast(parsed.length + " races loaded");
+    } catch (err) {
+      console.error(err);
+      setFetchStatus("error");
+      showToast("Failed to parse — try again", C.red);
+    }
+  };
+
+
+  const eligible = races.filter(r => {
+    const age = getAge(selHorse.dob);
+    if (age < r.ageMin) return false;
+    if (r.ageMax && age > r.ageMax) return false;
+    const sexMap = { "Mares": ["Mare", "Filly"], "Fillies": ["Filly"], "Colts & Geldings": ["Colt", "Gelding"] };
+    if (r.sexRestriction !== "Open" && !(sexMap[r.sexRestriction] || []).includes(selHorse.sex)) return false;
+    if (!selHorse.discipline.includes(r.discipline)) return false;
+    if (selHorse.surface !== r.surface) return false;
+    const getRating = () => {
+      if (r.discipline === "Flat" && r.surface === "AWT") return selHorse.awtRating || selHorse.flatRating;
+      if (r.discipline === "Flat") return selHorse.flatRating || selHorse.awtRating;
+      if (r.discipline === "Chase") return selHorse.chaseRating || selHorse.nhRating;
+      if (r.discipline === "Hurdle") return selHorse.hurdleRating || selHorse.nhRating;
+      return selHorse.nhRating || selHorse.flatRating;
+    };
+    const rtg = getRating();
+    if (r.ratingMax && rtg && rtg > r.ratingMax) return false;
+    if (r.ratingMin && rtg && rtg < r.ratingMin) return false;
+    if (r.isMaiden && !selHorse.isMaiden) return false;
+    if (r.isNovice && !selHorse.isNovice) return false;
+    if (r.isEBF && !selHorse.isEBF) return false;
+    return true;
+  });
+
+  const analyse = async (horse, race) => {
+    const key = k(horse.id, race.id);
+    setLoading(l => ({ ...l, [key]: true })); setLoadStage(s => ({ ...s, [key]: 0 }));
+    const timer = setInterval(() => setLoadStage(s => { const c = s[key] ?? 0; if (c < 3) return { ...s, [key]: c + 1 }; clearInterval(timer); return s; }), 2800);
+    try { const r = await getAITake(horse, race); clearInterval(timer); setAnalyses(a => ({ ...a, [key]: r })); }
+    catch (e) { console.error(e); clearInterval(timer); }
+    setLoading(l => ({ ...l, [key]: false }));
+  };
+
+  const handleEntry = (horse, race) => {
+    const msg = encodeURIComponent(`🏇 RacePlan Pro — ${horse.trainer}\n\n${horse.name} has been entered in the ${race.raceName} at ${race.venue} on ${new Date(race.date).toLocaleDateString("en-IE", { weekday: "long", day: "numeric", month: "long" })}.\n\nPrize fund: €${race.prizeMoney?.toLocaleString()}\nForecast going: ${race.forecastGoing}\n\nWe'll be in touch closer to declaration day.`);
+    const phone = (horse.ownerPhone || "").replace(/[^0-9]/g, "");
+    if (phone) window.open("https://wa.me/" + phone + "?text=" + msg, "_blank");
+    showToast(`✓ Entry confirmed — WhatsApp opened for ${horse.owner}`);
+  };
+
+  const handleDeclaration = (horse, race) => {
+    const jockey = horse.jockey || "D.J. O'Keeffe";
+    const msg = encodeURIComponent(`✅ RacePlan Pro — ${horse.trainer}\n\n${horse.name} is declared to run in the ${race.raceName} at ${race.venue}.\n\nJockey: ${jockey}\nForecast going: ${race.forecastGoing}\n\nWe'll keep you updated on race day.`);
+    const phone = (horse.ownerPhone || "").replace(/[^0-9]/g, "");
+    if (phone) window.open("https://wa.me/" + phone + "?text=" + msg, "_blank");
+    showToast(`📋 Declaration confirmed — WhatsApp opened for ${horse.owner}`, C.blue);
+  };
+
+  const sorted = [...eligible].sort((a, b) => (analyses[k(selHorse.id, b.id)]?.overall ?? -1) - (analyses[k(selHorse.id, a.id)]?.overall ?? -1));
+
+  // Calculate medication dates for shortlisted races
+  const shortlistItems = Object.values(shortlisted).filter(Boolean);
+
+  const getMedDates = (raceDate, withdrawalDays, courseDays) => {
+    if (!raceDate) return null;
+    const race = new Date(raceDate);
+    const lastDay = new Date(race);
+    lastDay.setDate(lastDay.getDate() - withdrawalDays);
+    const startDay = new Date(lastDay);
+    startDay.setDate(startDay.getDate() - (courseDays - 1));
+    return {
+      start: startDay.toLocaleDateString("en-IE", { day: "numeric", month: "short" }),
+      stop: lastDay.toLocaleDateString("en-IE", { day: "numeric", month: "short" }),
+      startDate: startDay,
+    };
+  };
+
+  return (
+    <div>
+      {shortlistItems.length > 0 && (
+        <div style={{ background: C.card, border: "1px solid " + C.border, borderRadius: 14, padding: "16px 18px", marginBottom: 16, boxShadow: C.shadow }}>
+          <div style={{ display: "flex", justifyContent: "space-between", alignItems: "center", marginBottom: 12 }}>
+            <div>
+              <div style={{ fontSize: 16, fontWeight: 800, color: C.navy }}>
+                {"★ Shortlist — " + shortlistItems.length + " race" + (shortlistItems.length !== 1 ? "s" : "")}
+              </div>
+              <div style={{ fontSize: 12, color: C.textMid, marginTop: 2 }}>
+                Medication start and stop dates calculated automatically
+              </div>
+            </div>
+            <Btn variant="ghost" onClick={() => setShortlisted({})} style={{ fontSize: 12 }}>Clear All</Btn>
+          </div>
+          {shortlistItems.map((item, idx) => {
+            const peptDates = getMedDates(item.race.date, 4, 12);
+            const antepsinDates = getMedDates(item.race.date, 1, 12);
+            const today = new Date();
+            const peptWarning = peptDates && peptDates.startDate < today;
+            const pm = item.race.prizeMoney;
+            const pmStr = pm ? (" — €" + (pm >= 1000 ? Math.round(pm / 1000) + "k" : pm)) : "";
+            return (
+              <div key={idx} style={{ background: C.cardOff, border: "1px solid " + C.border, borderRadius: 10, padding: "12px 14px", marginBottom: 10 }}>
+                <div style={{ display: "flex", justifyContent: "space-between", alignItems: "flex-start", marginBottom: 8 }}>
+                  <div>
+                    <div style={{ display: "flex", alignItems: "center", gap: 8, marginBottom: 4 }}>
+                      <Silk silk={item.horse.silk} size={24} />
+                      <span style={{ fontSize: 15, fontWeight: 800, color: C.navy }}>{item.horse.name}</span>
+                      <span style={{ fontSize: 12, color: C.textMid }}>—</span>
+                      <span style={{ fontSize: 14, fontWeight: 700, color: C.text }}>{item.race.raceName}</span>
+                    </div>
+                    <div style={{ fontSize: 12, color: C.textMid }}>
+                      {item.race.venue}
+                      {item.race.date ? " — " + new Date(item.race.date).toLocaleDateString("en-IE", { weekday: "short", day: "numeric", month: "short" }) : ""}
+                      {pmStr}
+                    </div>
+                  </div>
+                  <button
+                    onClick={() => setShortlisted(s => ({ ...s, [k(item.horse.id, item.race.id)]: null }))}
+                    style={{ background: "none", border: "none", color: C.textDim, cursor: "pointer", fontSize: 16 }}
+                  >
+                    ✕
+                  </button>
+                </div>
+                <div style={{ display: "grid", gridTemplateColumns: "1fr 1fr", gap: 8 }}>
+                  {peptDates && (
+                    <div style={{ background: peptWarning ? "rgba(192,57,43,0.08)" : "rgba(30,111,181,0.08)", border: "1px solid " + (peptWarning ? C.red : C.blue) + "40", borderRadius: 8, padding: "8px 12px" }}>
+                      <div style={{ fontSize: 11, fontWeight: 700, color: peptWarning ? C.red : C.blue, textTransform: "uppercase", letterSpacing: 0.5, marginBottom: 4 }}>
+                        {peptWarning ? "⚠️ Peptizole — START IMMEDIATELY" : "Peptizole"}
+                      </div>
+                      <div style={{ fontSize: 12, color: C.text }}>Start: <strong>{peptDates.start}</strong></div>
+                      <div style={{ fontSize: 12, color: C.text }}>Stop: <strong>{peptDates.stop}</strong></div>
+                    </div>
+                  )}
+                  {antepsinDates && (
+                    <div style={{ background: "rgba(109,63,192,0.08)", border: "1px solid " + C.purple + "40", borderRadius: 8, padding: "8px 12px" }}>
+                      <div style={{ fontSize: 11, fontWeight: 700, color: C.purple, textTransform: "uppercase", letterSpacing: 0.5, marginBottom: 4 }}>
+                        Antepsin
+                      </div>
+                      <div style={{ fontSize: 12, color: C.text }}>Start: <strong>{antepsinDates.start}</strong></div>
+                      <div style={{ fontSize: 12, color: C.text }}>Stop: <strong>{antepsinDates.stop}</strong></div>
+                    </div>
+                  )}
+                </div>
+                <div style={{ display: "grid", gridTemplateColumns: "1fr 1fr", gap: 7, marginTop: 8 }}>
+                  <Btn variant="green" onClick={() => handleEntry(item.horse, item.race)} style={{ justifyContent: "center" }}>
+                    ✓ Confirm Entry
+                  </Btn>
+                  <button
+                    onClick={() => handleDeclaration(item.horse, item.race)}
+                    style={{ padding: "9px", background: C.blueBg, border: "2px solid " + C.blue + "50", borderRadius: 9, color: C.blue, fontSize: 12, fontWeight: 700, cursor: "pointer" }}
+                  >
+                    📋 Declare to Run
+                  </button>
+                </div>
+              </div>
+            );
+          })}
+        </div>
+      )}
+
+      <div style={{ display: "grid", gridTemplateColumns: "240px 1fr", gap: 16 }}>
+
+        {/* Horse sidebar */}
+        <div>
+          <div style={{ fontSize: 10, fontWeight: 700, color: C.textDim, letterSpacing: 1.5, marginBottom: 10, textTransform: "uppercase" }}>Horses</div>
+          {horses.map(h => {
+            const sel = selHorse.id === h.id;
+            const stCol = h.status === "Active" ? C.green : h.status === "CoolingOff" ? C.amber : C.red;
+            return (
+              <div key={h.id} onClick={() => setSelHorse(h)} style={{ background: sel ? C.navy : C.card, border: "1.5px solid " + (sel ? C.navyLight : C.border), borderLeft: "4px solid " + stCol, borderRadius: 11, padding: "10px 12px", marginBottom: 7, cursor: "pointer" }}>
+                <div style={{ display: "flex", alignItems: "center", gap: 9 }}>
+                  <Silk silk={h.silk} size={32} />
+                  <div style={{ flex: 1, minWidth: 0 }}>
+                    <div style={{ fontSize: 13, fontWeight: 700, color: sel ? "#fff" : C.text, whiteSpace: "nowrap", overflow: "hidden", textOverflow: "ellipsis" }}>{h.name}</div>
+                    <div style={{ fontSize: 10, color: sel ? "rgba(255,255,255,0.5)" : C.textMid, marginTop: 1 }}>
+                      {getAge(h.dob)}yo
+                      {h.nhRating ? " · NH " + h.nhRating : ""}
+                      {h.flatRating ? " · Flat " + h.flatRating : ""}
+                      {h.headgear ? " · " + h.headgear : ""}
+                    </div>
+                    <div style={{ marginTop: 4 }}><FormDots form={h.form} /></div>
+                  </div>
+                </div>
+                {h.status === "CoolingOff" && (
+                  <div style={{ marginTop: 5, padding: "2px 7px", background: "rgba(217,119,6,0.12)", borderRadius: 5, fontSize: 10, color: C.amber, fontWeight: 600 }}>
+                    {"Eligible " + (coolingDate(h.activationDate) ? coolingDate(h.activationDate).toLocaleDateString("en-IE", { day: "numeric", month: "short" }) : "")}
+                  </div>
+                )}
+                {h.status === "Inactive" && (
+                  <div style={{ marginTop: 5, padding: "2px 7px", background: "rgba(192,57,43,0.10)", borderRadius: 5, fontSize: 10, color: C.red, fontWeight: 600 }}>Inactive</div>
+                )}
+              </div>
+            );
+          })}
+        </div>
+
+        {/* Main area */}
+        <div>
+          <div style={{ background: C.card, border: "1px solid " + C.border, borderRadius: 12, padding: "12px 16px", marginBottom: 12, display: "flex", justifyContent: "space-between", alignItems: "center" }}>
+            <div>
+              <div style={{ fontSize: 13, fontWeight: 700, color: C.text }}>HRI Race Conditions</div>
+              <div style={{ fontSize: 11, color: C.textMid, marginTop: 2 }}>
+                {lastFetch ? "Updated " + new Date(lastFetch).toLocaleString("en-IE", { day: "numeric", month: "short", hour: "2-digit", minute: "2-digit" }) : "Paste from hri-ras.ie/upcoming-race-conditions PDF"}
+              </div>
+              {fetchStatus === "done" && (
+                <div style={{ fontSize: 11, color: C.green, fontWeight: 600, marginTop: 2 }}>
+                  {"✓ " + races.length + " races · " + eligible.length + " eligible for " + selHorse.name}
+                </div>
+              )}
+            </div>
+            <Btn onClick={() => setShowPaste(!showPaste)} disabled={fetchStatus === "fetching"} style={{ fontSize: 12, padding: "8px 16px" }}>
+              {fetchStatus === "fetching" ? "Parsing..." : "📋 Paste Race Conditions"}
+            </Btn>
+          </div>
+
+          {showPaste && (
+            <div style={{ background: C.card, border: "1px solid " + C.border, borderRadius: 12, padding: "16px 18px", marginBottom: 16 }}>
+              <div style={{ fontSize: 14, fontWeight: 700, color: C.text, marginBottom: 8 }}>Paste Race Conditions Text</div>
+              <div style={{ fontSize: 12, color: C.textMid, marginBottom: 12, lineHeight: 1.6 }}>
+                Open the HRI PDF, press Ctrl+A then Ctrl+C, paste below. Takes about 10 seconds.
+              </div>
+              <textarea
+                value={pasteText}
+                onChange={e => setPasteText(e.target.value)}
+                placeholder="Paste the race conditions text here..."
+                rows={8}
+                style={{ width: "100%", background: C.cardOff, border: "1px solid " + C.border, borderRadius: 9, padding: "10px 12px", color: C.text, fontSize: 12, fontFamily: "inherit", lineHeight: 1.6, resize: "vertical", outline: "none", marginBottom: 10 }}
+              />
+              <div style={{ display: "flex", gap: 8 }}>
+                <Btn onClick={handleParseText} disabled={!pasteText.trim() || fetchStatus === "fetching"} style={{ flex: 1, justifyContent: "center" }}>
+                  {fetchStatus === "fetching" ? "Parsing races..." : "Parse Races"}
+                </Btn>
+                <Btn variant="ghost" onClick={() => { setShowPaste(false); setPasteText(""); }} style={{ fontSize: 12 }}>Cancel</Btn>
+              </div>
+            </div>
+          )}
+
+          <div style={{ background: C.card, border: "1px solid " + C.border, borderRadius: 12, padding: "12px 16px", marginBottom: 12, display: "flex", alignItems: "center", gap: 12 }}>
+            <Silk silk={selHorse.silk} size={44} />
+            <div style={{ flex: 1 }}>
+              <div style={{ display: "flex", alignItems: "center", gap: 8, marginBottom: 4, flexWrap: "wrap" }}>
+                <span style={{ fontSize: 19, fontWeight: 800, color: C.text }}>{selHorse.name}</span>
+                <StatusPill status={selHorse.status} activationDate={selHorse.activationDate} />
+                {selHorse.headgear && <Tag color={C.purple}>{selHorse.headgear}</Tag>}
+              </div>
+              <div style={{ display: "flex", gap: 10, flexWrap: "wrap", fontSize: 12, color: C.textMid }}>
+                <span>{getAge(selHorse.dob)}yo {selHorse.sex}</span>
+                {selHorse.nhRating && <span>NH {selHorse.nhRating}</span>}
+                {selHorse.flatRating && <span>Flat {selHorse.flatRating}</span>}
+                {selHorse.hurdleRating && <span>Hrd {selHorse.hurdleRating}</span>}
+                {selHorse.chaseRating && <span>Chs {selHorse.chaseRating}</span>}
+                <span>{selHorse.trainer}</span>
+                <span>Owner: {selHorse.owner}</span>
+              </div>
+              {selHorse.notes && (
+                <div style={{ fontSize: 11, color: C.textMid, fontStyle: "italic", marginTop: 4, padding: "4px 8px", background: C.cardOff, borderRadius: 6, borderLeft: "2px solid " + C.borderMid }}>
+                  {selHorse.notes}
+                </div>
+              )}
+            </div>
+            <FormDots form={selHorse.form} />
+          </div>
+
+          {toast && (
+            <div style={{ position: "fixed", bottom: 24, left: "50%", transform: "translateX(-50%)", background: C.navy, color: "#fff", borderRadius: 12, padding: "12px 22px", fontSize: 13, fontWeight: 600, zIndex: 600, whiteSpace: "nowrap" }}>
+              <span style={{ color: toast.color }}>{toast.msg}</span>
+            </div>
+          )}
+
+          {races.length === 0 ? (
+            <div style={{ padding: 40, textAlign: "center", border: "1.5px dashed " + C.border, borderRadius: 14, color: C.textMid }}>
+              <div style={{ fontSize: 26, marginBottom: 10 }}>📄</div>
+              <div style={{ fontSize: 14, fontWeight: 700, color: C.text, marginBottom: 6 }}>No race conditions loaded</div>
+              <div style={{ fontSize: 13 }}>{"Paste text from hri-ras.ie/upcoming-race-conditions PDF above"}</div>
+            </div>
+          ) : eligible.length === 0 ? (
+            <div style={{ padding: 32, textAlign: "center", border: "1.5px dashed " + C.border, borderRadius: 14, color: C.textMid }}>
+              {"No eligible races for " + selHorse.name}
+            </div>
+          ) : (
+            <>
+              <div style={{ fontSize: 10, fontWeight: 700, color: C.textDim, letterSpacing: 1.5, marginBottom: 10, textTransform: "uppercase" }}>
+                {eligible.length + " eligible races for " + selHorse.name}
+              </div>
+              {sorted.map(race => {
+                const key = k(selHorse.id, race.id);
+                const analysis = analyses[key];
+                const isLoading = loading[key];
+                const stage = loadStage[key] || 0;
+                const isSl = !!shortlisted[key];
+                const accent = analysis ? (analysis.overall >= 75 ? C.green : analysis.overall >= 55 ? C.amber : C.red) : C.border;
+                return (
+                  <div key={race.id} style={{ background: C.card, borderRadius: 13, border: "1px solid " + (isSl ? C.gold + "99" : C.border), marginBottom: 12, overflow: "hidden" }}>
+                    <div style={{ height: 3, background: analysis ? accent : isSl ? C.gold : C.border }} />
+                    <div style={{ padding: "14px 16px" }}>
+                      <div style={{ display: "flex", justifyContent: "space-between", alignItems: "flex-start", marginBottom: 8 }}>
+                        <div style={{ flex: 1, marginRight: 12 }}>
+                          <div style={{ display: "flex", gap: 5, flexWrap: "wrap", marginBottom: 5 }}>
+                            {race.grade && race.grade !== "Ungraded" && <Tag color={C.gold}>{race.grade}</Tag>}
+                            {race.isEBF && <Tag color={C.purple}>EBF</Tag>}
+                            {race.discipline && <Tag color={C.textMid} bg="#f0f4f8">{race.discipline + " · " + (race.raceType || "")}</Tag>}
+                          </div>
+                          <div style={{ fontSize: 16, fontWeight: 700, color: C.text, lineHeight: 1.3, marginBottom: 5 }}>{race.raceName}</div>
+                          <div style={{ display: "flex", gap: 10, flexWrap: "wrap", fontSize: 12, color: C.textMid }}>
+                            <span>{"📍 " + race.venue}</span>
+                            {race.date && <span>{"📅 " + new Date(race.date).toLocaleDateString("en-IE", { weekday: "short", day: "numeric", month: "short" })}</span>}
+                            {race.distanceFurlongs && <span>{race.distanceFurlongs + "f"}</span>}
+                            {race.forecastGoing && <span>{race.forecastGoing}</span>}
+                          </div>
+                        </div>
+                        <span style={{ fontSize: 18, fontWeight: 800, color: C.gold, flexShrink: 0 }}>
+                          {race.prizeMoney ? ("€" + (race.prizeMoney >= 1000 ? Math.round(race.prizeMoney / 1000) + "k" : race.prizeMoney)) : ""}
+                        </span>
+                      </div>
+
+                      {race.entryDeadline && (
+                        <div style={{ display: "flex", alignItems: "center", gap: 8, padding: "7px 10px", background: C.cardOff, borderRadius: 8, border: "1px solid " + C.border, marginBottom: 10, fontSize: 12 }}>
+                          <span style={{ color: C.textMid, fontWeight: 600 }}>Entry closes</span>
+                          <span style={{ fontWeight: 700, color: C.amber }}>
+                            {new Date(race.entryDeadline).toLocaleDateString("en-IE", { weekday: "short", day: "numeric", month: "short" }) + " · " + new Date(race.entryDeadline).toLocaleTimeString("en-IE", { hour: "2-digit", minute: "2-digit" })}
+                          </span>
+                        </div>
+                      )}
+
+                      {!analysis && !isLoading && (
+                        <Btn onClick={() => analyse(selHorse, race)} style={{ width: "100%", justifyContent: "center", marginBottom: 10 }}>
+                          🧠 Get My Take on This Race
+                        </Btn>
+                      )}
+
+                      {isLoading && (
+                        <div style={{ padding: "12px 14px", background: C.cardOff, border: "1px solid " + C.border, borderRadius: 9, marginBottom: 10 }}>
+                          <div style={{ fontSize: 12, fontWeight: 700, color: C.navy, marginBottom: 8 }}>🧠 Racing brain at work...</div>
+                          {["Checking who is in this race...", "Looking at the field...", "Checking trainer record...", "Building your analysis..."].map((s, i) => (
+                            <div key={i} style={{ display: "flex", alignItems: "center", gap: 8, marginBottom: 5, opacity: i <= stage ? 1 : 0.25 }}>
+                              <span style={{ fontSize: 12 }}>{i < stage ? "✓" : i === stage ? "⟳" : "○"}</span>
+                              <span style={{ fontSize: 12, color: i <= stage ? C.text : C.textDim }}>{s}</span>
+                            </div>
+                          ))}
+                        </div>
+                      )}
+
+                      {analysis && (
+                        <div style={{ marginBottom: 10 }}>
+                          <div style={{ display: "flex", gap: 5, marginBottom: 10 }}>
+                            {[["HCP", "handicap_edge"], ["Class", "class_fit"], ["Going", "conditions_match"], ["Timing", "timing"], ["Angle", "cuteness"]].map(([label, k2]) => {
+                              const v = (analysis.scores || {})[k2] || 0;
+                              const c = v >= 7 ? C.green : v >= 5 ? C.amber : C.red;
+                              return (
+                                <div key={k2} style={{ flex: 1, textAlign: "center", padding: "6px 2px", background: c + "10", borderRadius: 7, border: "1px solid " + c + "25" }}>
+                                  <div style={{ fontSize: 15, fontWeight: 800, color: c }}>{v}</div>
+                                  <div style={{ fontSize: 8, color: C.textMid, fontWeight: 600 }}>{label}</div>
+                                </div>
+                              );
+                            })}
+                            <div style={{ width: 44, height: 44, borderRadius: "50%", background: accent + "12", border: "3px solid " + accent, display: "flex", flexDirection: "column", alignItems: "center", justifyContent: "center", flexShrink: 0, marginLeft: 4 }}>
+                              <span style={{ fontSize: 15, fontWeight: 800, color: accent, lineHeight: 1 }}>{analysis.overall}</span>
+                              <span style={{ fontSize: 7, color: C.textMid }}> / 100</span>
+                            </div>
+                          </div>
+                          {(analysis.bullets || []).map((b, i) => (
+                            <div key={i} style={{ background: C.cardOff, border: "1px solid " + C.border, borderLeft: "3px solid " + C.navy, borderRadius: 9, padding: "11px 13px", marginBottom: 8 }}>
+                              <div style={{ display: "flex", alignItems: "center", gap: 6, marginBottom: 5 }}>
+                                <span style={{ fontSize: 14 }}>{b.icon}</span>
+                                <span style={{ fontSize: 10, fontWeight: 700, color: C.text, textTransform: "uppercase", letterSpacing: 0.8 }}>{b.category}</span>
+                              </div>
+                              <p style={{ fontSize: 13, color: C.text, lineHeight: 1.75, margin: 0 }}>{b.point}</p>
+                            </div>
+                          ))}
+                          <div style={{ background: C.navy, borderRadius: 10, padding: "16px 18px", marginBottom: 10 }}>
+                            <div style={{ fontSize: 9, fontWeight: 700, color: "rgba(255,255,255,0.4)", letterSpacing: 1.5, textTransform: "uppercase", marginBottom: 8 }}>Bottom Line</div>
+                            <p style={{ fontSize: 14, color: "#e8edf5", lineHeight: 1.8, margin: 0, fontStyle: "italic" }}>{analysis.conclusion}</p>
+                          </div>
+                        </div>
+                      )}
+
+                      {!canRace(selHorse) ? (
+                        <div style={{ padding: "9px 12px", background: C.amberBg, border: "1px solid " + C.amber + "40", borderRadius: 9, fontSize: 12, color: C.amber, fontWeight: 600, textAlign: "center" }}>
+                          {"⏳ Cool-off active · eligible " + (coolingDate(selHorse.activationDate) ? coolingDate(selHorse.activationDate).toLocaleDateString("en-IE", { day: "numeric", month: "short" }) : "") + " · Do not contact owner yet"}
+                        </div>
+                      ) : (
+                        <div style={{ display: "flex", flexDirection: "column", gap: 7 }}>
+                          <Btn variant="gold" onClick={() => {
+                            setShortlisted(s => ({ ...s, [key]: s[key] ? null : { horse: selHorse, race } }));
+                          }} style={{ width: "100%", justifyContent: "center" }}>
+                            {isSl ? "★ On Shortlist" : "☆ Add to Shortlist"}
+                          </Btn>
+                          {isSl && (
+                            <div style={{ display: "grid", gridTemplateColumns: "1fr 1fr", gap: 7 }}>
+                              <Btn variant="green" onClick={() => handleEntry(selHorse, race)} style={{ justifyContent: "center", flexDirection: "column", gap: 2 }}>
+                                <span>✓ Confirm Entry</span>
+                                <span style={{ fontSize: 10, opacity: 0.7, fontWeight: 400 }}>WhatsApp owner</span>
+                              </Btn>
+                              <button onClick={() => handleDeclaration(selHorse, race)} style={{ padding: "9px", background: C.blueBg, border: "2px solid " + C.blue + "50", borderRadius: 9, color: C.blue, fontSize: 12, fontWeight: 700, cursor: "pointer", display: "flex", flexDirection: "column", alignItems: "center", gap: 2 }}>
+                                <span>📋 Declare to Run</span>
+                                <span style={{ fontSize: 10, opacity: 0.7, fontWeight: 400 }}>WhatsApp owner + jockey</span>
+                              </button>
+                            </div>
+                          )}
+                        </div>
+                      )}
+                    </div>
+                  </div>
+                );
+              })}
+            </>
+          )}
+        </div>
+
+      </div>
+    </div>
+  </div>
+  );
+}
+
+function RacedayPrint({ horses, entries, setEntries }) {
+  const [showAdd, setShowAdd] = useState(false);
+  const [csvStatus, setCsvStatus] = useState(null);
+  const [ne, setNe] = useState({ horseId: "", meetingNo: "", raceRef: "", venue: "", date: "", raceTime: "", raceName: "", ballotNo: "" });
+
+  const add = () => {
+    if (!ne.horseId || !ne.raceName) return;
+    setEntries(p => [...p, { ...ne, id: "e_" + Date.now() }]);
+    setNe({ horseId: "", meetingNo: "", raceRef: "", venue: "", date: "", raceTime: "", raceName: "", ballotNo: "" });
+    setShowAdd(false);
+  };
+
+  const handleCSV = (e) => {
+    const file = e.target.files[0];
+    if (!file) return;
+    e.target.value = "";
+    const reader = new FileReader();
+    reader.onload = (ev) => {
+      try {
+        const text = ev.target.result;
+        const rawLines = text.split("\n").filter(l => l.trim());
+        const sep = rawLines[0].includes("\t") ? "\t" : ",";
+        const headers = rawLines[0].split(sep).map(h => h.trim().toLowerCase().replace(/\s+/g, "_").replace(/[^a-z0-9_]/g, ""));
+        const imported = [];
+        for (let i = 1; i < rawLines.length; i++) {
+          const cols = rawLines[i].split(sep).map(c => c.trim().replace(/^"|"$/g, ""));
+          if (!cols[0]) continue;
+          const row = {};
+          headers.forEach((h, idx) => { row[h] = cols[idx] || ""; });
+          const horseName = row.horse || row.horse_name || row.name || cols[0];
+          if (!horseName) continue;
+          const matchHorse = (name) => {
+            if (!name) return null;
+            const nl = name.toLowerCase().trim();
+            return horses.find(h =>
+              h.name.toLowerCase().trim() === nl ||
+              h.name.toLowerCase().trim().includes(nl) ||
+              nl.includes(h.name.toLowerCase().trim())
+            );
+          };
+          const horse = matchHorse(horseName);
+          const rawDate = row.date || row.race_date || row.meeting_date || "";
+          let parsedDate = "";
+          if (rawDate) {
+            const parts = rawDate.replace(/\//g, "-").replace(/\./g, "-").split("-");
+            if (parts.length === 3) {
+              if (parts[2] && parts[2].length === 4) {
+                parsedDate = parts[2] + "-" + parts[1].padStart(2,"0") + "-" + parts[0].padStart(2,"0");
+              } else if (parts[0] && parts[0].length === 4) {
+                parsedDate = rawDate;
+              } else {
+                parsedDate = "20" + parts[2] + "-" + parts[1].padStart(2,"0") + "-" + parts[0].padStart(2,"0");
+              }
+            }
+          }
+          const extras = row.extras || row.extra || row.headgear || row.equipment || "";
+          const headgearMap = { "H": "Hood", "T": "Tongue Strap", "B": "Blinkers", "C": "Cheekpieces", "V": "Visor", "EM": "Ear Muffs", "P": "Pacifiers", "TT": "Tongue Tie", "CP": "Cheekpieces", "BL": "Blinkers" };
+          const headgear = headgearMap[extras.trim().toUpperCase()] || extras || "";
+          const status = row.status || "";
+          const ballotNo = status.toLowerCase().includes("ballot") ? status : (row.ballot || row.ballot_no || "");
+          imported.push({
+            id: "e_" + Date.now() + "_" + i,
+            horseId: horse ? horse.id : "",
+            horseName,
+            venue: row.race || row.venue || row.racecourse || row.course || "",
+            date: parsedDate || rawDate,
+            raceTime: row.time || row.race_time || "",
+            raceName: row.race_name || row.racename || "",
+            meetingNo: row.meeting || row.meeting_no || "",
+            raceRef: row.race_ref || row.raceref || "",
+            ballotNo,
+            headgear,
+            jockey: row.jockey || "",
+          });
+        }
+        setEntries(prev => [...prev, ...imported]);
+        const matched = imported.filter(e => e.horseId).length;
+        setCsvStatus(imported.length + " entries imported — " + matched + " horses matched");
+        setTimeout(() => setCsvStatus(null), 5000);
+      } catch (err) {
+        console.error(err);
+        setCsvStatus("Error reading CSV — check the file format");
+        setTimeout(() => setCsvStatus(null), 5000);
+      }
+    };
+    reader.readAsText(file);
+  };
+
+  const grouped = {};
+  entries.forEach(function(e) { if (!e.date) return; if (!grouped[e.date]) grouped[e.date] = []; grouped[e.date].push(e); });
+
+  return (
+    <div>
+      <div style={{ display: "flex", justifyContent: "space-between", alignItems: "center", marginBottom: 16, flexWrap: "wrap", gap: 10 }}>
+        <div>
+          <div style={{ fontSize: 22, fontWeight: 800, color: C.text }}>Raceday Whiteboard</div>
+          <div style={{ fontSize: 13, color: C.textMid, marginTop: 3 }}>Export pending engagements CSV from HRI RAS and upload here</div>
+        </div>
+        <div style={{ display: "flex", gap: 8, flexWrap: "wrap", alignItems: "center" }}>
+          {csvStatus && (
+            <span style={{ fontSize: 12, fontWeight: 700, color: csvStatus.includes("Error") ? C.red : C.green }}>
+              {csvStatus}
+            </span>
+          )}
+          <label style={{ background: C.blue, color: "#fff", borderRadius: 9, padding: "9px 16px", fontSize: 13, fontWeight: 700, cursor: "pointer", display: "inline-flex", alignItems: "center", gap: 6 }}>
+            📥 Import HRI CSV
+            <input type="file" accept=".csv" onChange={handleCSV} style={{ display: "none" }} />
+          </label>
+          <Btn onClick={() => setShowAdd(true)}>+ Add Manual</Btn>
+          <Btn variant="gold" onClick={() => window.print()}>🖨 Print</Btn>
+        </div>
+      </div>
+
+      <div id="print-area">
+        {Object.entries(grouped).sort(([a], [b]) => new Date(a) - new Date(b)).map(([date, dayEntries]) => (
+          <div key={date} style={{ background: C.card, border: `1px solid ${C.border}`, borderRadius: 12, padding: "18px 20px", marginBottom: 14, boxShadow: C.shadow }}>
+            <div style={{ fontSize: 16, fontWeight: 800, color: C.navy, marginBottom: 12, paddingBottom: 10, borderBottom: `2px solid ${C.navy}` }}>
+              {new Date(date).toLocaleDateString("en-IE", { weekday: "long", day: "numeric", month: "long", year: "numeric" })}
+            </div>
+            {dayEntries.map(entry => {
+              const horse = horses.find(h => h.id === entry.horseId);
+              if (!horse) return null;
+              return (
+                <div key={entry.id} style={{ display: "flex", alignItems: "center", gap: 14, padding: "12px 0", borderBottom: `1px solid ${C.border}` }}>
+                  <div style={{ minWidth: 130, fontSize: 13, color: C.textMid, fontWeight: 600 }}>
+                    {entry.venue} {entry.meetingNo && `Mtg ${entry.meetingNo}`}{entry.raceRef && ` · ${entry.raceRef}`}
+                  </div>
+                  <div style={{ minWidth: 80, fontSize: 14, fontWeight: 700, color: C.navy }}>{entry.raceTime}</div>
+                  <div style={{ flex: 1 }}>
+                    <span style={{ fontSize: 17, fontWeight: 800, color: C.text, textTransform: "uppercase" }}>{horse.name}</span>
+                    {horse.headgear && <span style={{ fontSize: 13, color: C.textMid, marginLeft: 8 }}>({horse.headgear})</span>}
+                    {entry.ballotNo && <span style={{ fontSize: 13, color: C.purple, marginLeft: 8, fontWeight: 700 }}>[Ballot {entry.ballotNo}]</span>}
+                  </div>
+                  <div style={{ fontSize: 12, color: C.textMid }}>{entry.raceName}</div>
+                </div>
+              );
+            })}
+          </div>
+        ))}
+        {entries.length === 0 && <div style={{ padding: 40, textAlign: "center", border: `1.5px dashed ${C.border}`, borderRadius: 14, color: C.textMid }}>No entries added yet — tap + Add Entry</div>}
+      </div>
+
+      {showAdd && (
+        <div style={{ position: "fixed", inset: 0, background: "rgba(10,22,40,0.6)", zIndex: 500, display: "flex", alignItems: "center", justifyContent: "center", padding: 20, backdropFilter: "blur(4px)" }}>
+          <div style={{ background: C.card, borderRadius: 16, width: "100%", maxWidth: 440, boxShadow: C.shadowMd, overflow: "hidden" }}>
+            <div style={{ background: C.navy, padding: "16px 20px", display: "flex", justifyContent: "space-between", alignItems: "center" }}>
+              <div style={{ fontSize: 15, fontWeight: 700, color: "#fff" }}>Add Raceday Entry</div>
+              <button onClick={() => setShowAdd(false)} style={{ background: "rgba(255,255,255,0.1)", border: "none", color: "#fff", width: 28, height: 28, borderRadius: 6, cursor: "pointer", fontSize: 14 }}>✕</button>
+            </div>
+            <div style={{ padding: 20, display: "flex", flexDirection: "column", gap: 10 }}>
+              {[
+                { key: "horseId", label: "Horse", type: "select" },
+                { key: "venue", label: "Racecourse", placeholder: "e.g. Limerick" },
+                { key: "meetingNo", label: "Meeting Number", placeholder: "e.g. 55" },
+                { key: "raceRef", label: "Race Reference", placeholder: "e.g. Race A" },
+                { key: "raceName", label: "Race Name", placeholder: "e.g. Mares Handicap Hurdle" },
+                { key: "raceTime", label: "Race Time", placeholder: "e.g. 2:28 PM" },
+                { key: "date", label: "Date", type: "date" },
+                { key: "ballotNo", label: "Ballot No. (if applicable)", placeholder: "Leave blank if not balloted" },
+              ].map(({ key, label, placeholder, type }) => (
+                <div key={key}>
+                  <div style={{ fontSize: 10, fontWeight: 700, color: C.textMid, marginBottom: 4, textTransform: "uppercase", letterSpacing: 0.5 }}>{label}</div>
+                  {type === "select" ? (
+                    <select value={ne[key]} onChange={e => setNe(p => ({ ...p, [key]: e.target.value }))} style={{ width: "100%", background: C.cardOff, border: `1px solid ${C.border}`, borderRadius: 8, padding: "8px 12px", color: C.text, fontSize: 13, outline: "none" }}>
+                      <option value="">Select horse</option>
+                      {horses.map(h => <option key={h.id} value={h.id}>{h.name}</option>)}
+                    </select>
+                  ) : (
+                    <input type={type || "text"} placeholder={placeholder} value={ne[key]} onChange={e => setNe(p => ({ ...p, [key]: e.target.value }))} style={{ width: "100%", background: C.cardOff, border: `1px solid ${C.border}`, borderRadius: 8, padding: "8px 12px", color: C.text, fontSize: 13, outline: "none" }} />
+                  )}
+                </div>
+              ))}
+              <Btn onClick={add} style={{ width: "100%", justifyContent: "center", marginTop: 6 }}>Add to Whiteboard</Btn>
+            </div>
+          </div>
+        </div>
+      )}
+    </div>
+  );
+}
+
+// ─── YARD VIEW ────────────────────────────────────────────────────────────────
+function YardView({ horses, setHorses }) {
+  const [showAdd, setShowAdd] = useState(false);
+  const [editHorse, setEditHorse] = useState(null);
+  const [csvStatus, setCsvStatus] = useState(null);
+  const [newHorse, setNewHorse] = useState({ name: "", dob: "", sex: "Gelding", colour: "", nhRating: "", flatRating: "", discipline: "Hurdle", surface: "Turf", status: "Active", owner: "", ownerPhone: "", ownerEmail: "", headgear: "", nextRaceDate: "", notes: "" });
+
+  const handleCSV = (e) => {
+    const file = e.target.files[0];
+    if (!file) return;
+    e.target.value = "";
+    const reader = new FileReader();
+    reader.onload = (ev) => {
+      try {
+        const text = ev.target.result;
+        const lines = text.split("\n").filter(l => l.trim());
+        const sep = lines[0].includes("\t") ? "\t" : ",";
+        const headers = lines[0].split(sep).map(h => h.trim().toLowerCase().replace(/\s+/g, "_").replace(/[^a-z0-9_]/g, ""));
+        const imported = [];
+        for (let i = 1; i < lines.length; i++) {
+          const cols = lines[i].split(sep).map(c => c.trim().replace(/^"|"$/g, ""));
+          if (!cols[0]) continue;
+          const row = {};
+          headers.forEach((h, idx) => { row[h] = cols[idx] || ""; });
+          const name = row.horse_name || row.horse || cols[0];
+          if (!name) continue;
+          const yof = parseInt(row.yof) || null;
+          const currentYear = new Date().getFullYear();
+          imported.push({
+            id: "h_" + Date.now() + "_" + i,
+            name,
+            dob: yof ? yof + "-01-01" : "",
+            yof,
+            sex: (function() {
+              const s = (row.sex || "").trim();
+              const m = { "G": "Gelding", "M": "Mare", "F": "Filly", "C": "Colt", "H": "Horse",
+                "g": "Gelding", "m": "Mare", "f": "Filly", "c": "Colt", "h": "Horse",
+                "gelding": "Gelding", "mare": "Mare", "filly": "Filly", "colt": "Colt", "horse": "Horse" };
+              return m[s] || m[s.toLowerCase()] || (s.length > 1 ? s : "Gelding");
+            })(),
+            colour: row.colour || row.color || "",
+            owner: row.owner || "",
+            ownerPhone: "",
+            ownerEmail: "",
+            status: (function() {
+              const st = (row.status || "").toLowerCase();
+              return st.includes("inactive") ? "Inactive" : st.includes("cool") ? "CoolingOff" : "Active";
+            })(),
+            activationDate: null,
+            nhRating: null,
+            flatRating: null,
+            discipline: [],
+            surface: "Turf",
+            headgear: "",
+            jockey: "",
+            trainer: "",
+            nextRaceDate: "",
+            notes: "",
+            isEBF: false,
+            isMaiden: true,
+            isNovice: false,
+            goingPref: [],
+            distanceMin: 16,
+            distanceMax: 24,
+            silk: SILKS[Math.floor(Math.random() * SILKS.length)],
+            form: [],
+            arrivedDate: todayStr,
+            provisionalEntries: [],
+            hcert: row.hcert || "",
+            stalls: row.stalls || "",
+            partnership: row.partnership || "",
+          });
+        }
+        setHorses(prev => {
+          const updated = [...prev];
+          imported.forEach(imp => {
+            const idx = updated.findIndex(h => h.name.toLowerCase() === imp.name.toLowerCase());
+            if (idx >= 0) {
+              updated[idx] = { ...updated[idx], ...imp, id: updated[idx].id, silk: updated[idx].silk, form: updated[idx].form };
+            } else {
+              updated.push(imp);
+            }
+          });
+          return updated;
+        });
+        setCsvStatus(imported.length + " horses imported from HRI");
+        setTimeout(() => setCsvStatus(null), 5000);
+      } catch (err) {
+        console.error(err);
+        setCsvStatus("Error reading file — check format");
+        setTimeout(() => setCsvStatus(null), 5000);
+      }
+    };
+    reader.readAsText(file);
+  };
+
+  const handleRatingsCSV = (e) => {
+    const file = e.target.files[0];
+    if (!file) return;
+    e.target.value = "";
+    const reader = new FileReader();
+    reader.onload = (ev) => {
+      try {
+        const text = ev.target.result;
+        const rawLines = text.split("\n").filter(l => l.trim());
+        const sep = rawLines[0].includes("\t") ? "\t" : ",";
+        const headers = rawLines[0].split(sep).map(h => h.trim().toLowerCase().replace(/\s+/g, "_").replace(/[^a-z0-9_]/g, ""));
+        let updated = 0;
+        const ratingLines = rawLines.slice(1);
+        setHorses(prev => {
+          const horses = [...prev];
+          ratingLines.forEach(line => {
+            const cols = line.split(sep).map(c => c.trim().replace(/^"|"$/g, ""));
+            if (!cols[0]) return;
+            const row = {};
+            headers.forEach((h, idx) => { row[h] = cols[idx] || ""; });
+            const name = row.horse_name || row.horse || cols[0];
+            if (!name) return;
+            const flatRating = parseInt(row.flat || row.flat_rating || row.flatrating || row.turf || row.official_flat || "") || null;
+            const awtRating = parseInt(row.all_weather || row.awt || row.allweather || row.aw || "") || null;
+            const hurdleRating = parseInt(row.hurdle || row.hurdle_rating || row.hurdlerating || row.hdl || row.hurdles || row.nh_hurdle || "") || null;
+            const chaseRating = parseInt(row.chase || row.chase_rating || row.chaserating || row.chs || row.chases || row.nh_chase || "") || null;
+            const nhRating = parseInt(row.nh_rating || row.nhrating || row.nh || row.national_hunt || row.official_nh || "") || null;
+            const genericRating = parseInt(row.rating || row.official_rating || row.mark || row.handicap_mark || row.official || "") || null;
+            const idx = horses.findIndex(h => h.name.toLowerCase().trim() === name.toLowerCase().trim());
+            if (idx >= 0) {
+              horses[idx] = {
+                ...horses[idx],
+                flatRating: flatRating || awtRating || horses[idx].flatRating,
+                awtRating: awtRating || horses[idx].awtRating,
+                nhRating: nhRating || hurdleRating || chaseRating || genericRating || horses[idx].nhRating,
+                hurdleRating: hurdleRating || horses[idx].hurdleRating,
+                chaseRating: chaseRating || horses[idx].chaseRating,
+                isMaiden: !flatRating && !awtRating && !hurdleRating && !chaseRating,
+                discipline: horses[idx].discipline && horses[idx].discipline.length > 0
+                  ? horses[idx].discipline
+                  : hurdleRating && chaseRating ? ["Hurdle", "Chase"]
+                  : hurdleRating ? ["Hurdle"]
+                  : chaseRating ? ["Chase"]
+                  : flatRating || awtRating ? ["Flat"]
+                  : horses[idx].discipline,
+                surface: horses[idx].surface || (awtRating && !flatRating ? "AWT" : "Turf"),
+              };
+              updated++;
+            }
+          });
+          return horses;
+        });
+        setCsvStatus(updated + " horses updated with ratings");
+        setTimeout(() => setCsvStatus(null), 5000);
+      } catch (err) {
+        console.error(err);
+        setCsvStatus("Error reading ratings file");
+        setTimeout(() => setCsvStatus(null), 5000);
+      }
+    };
+    reader.readAsText(file);
+  };
+
+  const addHorse = () => {
+    if (!newHorse.name) return;
+    setHorses(prev => [...prev, { ...newHorse, id: "h_" + Date.now(), silk: SILKS[Math.floor(Math.random() * SILKS.length)], nhRating: newHorse.nhRating ? parseInt(newHorse.nhRating) : null, flatRating: newHorse.flatRating ? parseInt(newHorse.flatRating) : null, discipline: [newHorse.discipline], isEBF: false, isMaiden: false, isNovice: false, distanceMin: 16, distanceMax: 24, goingPref: [], form: [], arrivedDate: todayStr, provisionalEntries: [] }]);
+    setNewHorse({ name: "", dob: "", sex: "Gelding", colour: "", nhRating: "", flatRating: "", discipline: "Hurdle", surface: "Turf", status: "Active", owner: "", ownerPhone: "", ownerEmail: "", headgear: "", nextRaceDate: "", notes: "" });
+    setShowAdd(false);
+  };
+
+  return (
+    <div>
+      <div style={{ display: "flex", justifyContent: "space-between", alignItems: "center", marginBottom: 16, flexWrap: "wrap", gap: 10 }}>
+        <div>
+          <div style={{ fontSize: 22, fontWeight: 800, color: C.text }}>My Yard</div>
+          <div style={{ fontSize: 13, color: C.textMid, marginTop: 3 }}>{horses.length} horses · {horses.filter(h => h.status === "Active").length} active</div>
+        </div>
+        <div style={{ display: "flex", gap: 8, alignItems: "center" }}>
+          {csvStatus && <span style={{ fontSize: 12, fontWeight: 700, color: csvStatus.startsWith("✓") ? C.green : C.red }}>{csvStatus}</span>}
+          <label style={{ background: C.cardOff, border: "1.5px solid " + C.border, color: C.textMid, borderRadius: 9, padding: "9px 16px", fontSize: 13, fontWeight: 700, cursor: "pointer", display: "inline-flex", alignItems: "center", gap: 6 }}>
+            📥 Import Horses CSV <input type="file" accept=".csv,.tsv,.txt" onChange={handleCSV} style={{ display: "none" }} />
+          </label>
+          <label style={{ background: C.cardOff, border: "1.5px solid " + C.border, color: C.textMid, borderRadius: 9, padding: "9px 16px", fontSize: 13, fontWeight: 700, cursor: "pointer", display: "inline-flex", alignItems: "center", gap: 6 }}>
+            📊 Import Ratings CSV <input type="file" accept=".csv,.tsv,.txt" onChange={handleRatingsCSV} style={{ display: "none" }} />
+          </label>
+          <Btn variant="ghost" onClick={() => { if (window.confirm("Remove all horses from the yard? This cannot be undone.")) { setHorses([]); } }} style={{ fontSize: 12, color: C.red, borderColor: C.red }}>Clear Yard</Btn>
+          <Btn onClick={() => setShowAdd(true)}>+ Add Horse</Btn>
+        </div>
+      </div>
+
+      <div style={{ display: "grid", gridTemplateColumns: "repeat(4,1fr)", gap: 10, marginBottom: 18 }}>
+        {[{ l: "Total", v: horses.length, c: C.blue }, { l: "Active", v: horses.filter(h => h.status === "Active").length, c: C.green }, { l: "Cooling Off", v: horses.filter(h => h.status === "CoolingOff").length, c: C.amber }, { l: "Inactive", v: horses.filter(h => h.status === "Inactive").length, c: C.red }].map(s => (
+          <div key={s.l} style={{ background: C.card, borderRadius: 10, padding: "13px 16px", borderTop: `4px solid ${s.c}`, boxShadow: C.shadow }}>
+            <div style={{ fontSize: 28, fontWeight: 800, color: s.c, lineHeight: 1 }}>{s.v}</div>
+            <div style={{ fontSize: 11, color: C.textMid, marginTop: 3, fontWeight: 600 }}>{s.l}</div>
+          </div>
+        ))}
+      </div>
+
+      {horses.map(h => (
+        <div key={h.id} style={{ background: C.card, border: `1px solid ${C.border}`, borderLeft: `4px solid ${h.status === "Active" ? C.green : h.status === "CoolingOff" ? C.amber : C.red}`, borderRadius: 12, padding: "13px 16px", marginBottom: 9, boxShadow: C.shadow }}>
+          <div style={{ display: "flex", alignItems: "center", gap: 12 }}>
+            <Silk silk={h.silk} size={40} />
+            <div style={{ flex: 1 }}>
+              <div style={{ display: "flex", alignItems: "center", gap: 7, marginBottom: 3, flexWrap: "wrap" }}>
+                <span style={{ fontSize: 16, fontWeight: 700, color: C.text }}>{h.name}</span>
+                <StatusPill status={h.status} activationDate={h.activationDate} />
+                {h.headgear && <Tag color={C.purple}>{h.headgear}</Tag>}
+              </div>
+              <div style={{ display: "flex", gap: 10, flexWrap: "wrap", fontSize: 12, color: C.textMid }}>
+                <span>{getAge(h.dob)}yo {h.sex} · {h.colour}</span>
+                {h.flatRating && <span>Flat: {h.flatRating}</span>}
+                {h.awtRating && <span>AWT: {h.awtRating}</span>}
+                {h.hurdleRating && <span>Hrd: {h.hurdleRating}</span>}
+                {h.chaseRating && <span>Chs: {h.chaseRating}</span>}
+                {!h.flatRating && !h.awtRating && !h.hurdleRating && !h.chaseRating && <span style={{ color: C.amber }}>Unrated</span>}
+                <span>Owner: {h.owner}</span>
+                {h.ownerPhone && <a href={"https://wa.me/" + (h.ownerPhone || "").replace(/[^0-9]/g, "")} target="_blank" rel="noopener noreferrer" style={{ color: C.green, fontWeight: 600, textDecoration: "none" }}>💬 WhatsApp</a>}
+              </div>
+              <div style={{ marginTop: 5, display: "flex", gap: 6, alignItems: "center" }}><FormDots form={h.form} />{h.notes && <span style={{ fontSize: 11, color: C.textMid, fontStyle: "italic" }}>💬 {h.notes}</span>}</div>
+            </div>
+            <div style={{ display: "flex", gap: 6, marginTop: 8 }}>
+              <Btn variant="ghost" onClick={() => setEditHorse(h)} style={{ fontSize: 11, padding: "5px 12px" }}>✏️ Edit</Btn>
+              <Btn variant="red" onClick={() => { if (window.confirm("Remove " + h.name + " from the yard?")) { setHorses(prev => prev.filter(x => x.id !== h.id)); } }} style={{ fontSize: 11, padding: "5px 12px" }}>🗑 Remove</Btn>
+            </div>
+          </div>
+        </div>
+      ))}
+
+      {editHorse && (
+        <div style={{ position: "fixed", inset: 0, background: "rgba(10,22,40,0.6)", zIndex: 500, display: "flex", alignItems: "center", justifyContent: "center", padding: 20 }}>
+          <div style={{ background: C.card, borderRadius: 16, width: "100%", maxWidth: 480, maxHeight: "90vh", overflowY: "auto" }}>
+            <div style={{ background: C.navy, padding: "16px 20px", display: "flex", justifyContent: "space-between", alignItems: "center", position: "sticky", top: 0 }}>
+              <div style={{ fontSize: 15, fontWeight: 700, color: "#fff" }}>Edit — {editHorse.name}</div>
+              <button onClick={() => setEditHorse(null)} style={{ background: "rgba(255,255,255,0.1)", border: "none", color: "#fff", width: 28, height: 28, borderRadius: 6, cursor: "pointer", fontSize: 14 }}>✕</button>
+            </div>
+            <div style={{ padding: 20, display: "flex", flexDirection: "column", gap: 11 }}>
+              {[
+                { key: "status", label: "Status", type: "select", options: ["Active", "CoolingOff", "Inactive"] },
+                { key: "sex", label: "Sex", type: "select", options: ["Gelding", "Mare", "Filly", "Colt", "Horse"] },
+                { key: "discipline", label: "Discipline", type: "select", options: ["Hurdle", "Chase", "Flat", "Bumper"] },
+                { key: "headgear", label: "Headgear", placeholder: "e.g. Cheekpieces" },
+                { key: "nhRating", label: "NH Rating", type: "number", placeholder: "e.g. 98" },
+                { key: "flatRating", label: "Flat Rating", type: "number", placeholder: "e.g. 74" },
+                { key: "ownerPhone", label: "Owner WhatsApp", type: "tel", placeholder: "+353 86 000 0000" },
+                { key: "ownerEmail", label: "Owner Email", type: "email", placeholder: "owner@email.com" },
+                { key: "jockey", label: "Jockey", placeholder: "e.g. D.J. OKeeffe" },
+                { key: "notes", label: "Trainer Notes", placeholder: "Any notes" },
+                { key: "nextRaceDate", label: "Next Target Date", type: "date" },
+              ].map(({ key, label, placeholder, type, options }) => (
+                <div key={key}>
+                  <div style={{ fontSize: 10, fontWeight: 700, color: C.textMid, marginBottom: 3, textTransform: "uppercase", letterSpacing: 0.5 }}>{label}</div>
+                  {type === "select" ? (
+                    <select
+                      value={key === "discipline" ? (editHorse.discipline && editHorse.discipline[0]) || "" : editHorse[key] || ""}
+                      onChange={e => setEditHorse(prev => ({ ...prev, [key]: key === "discipline" ? [e.target.value] : e.target.value }))}
+                      style={{ width: "100%", background: C.cardOff, border: "1px solid " + C.border, borderRadius: 8, padding: "8px 12px", color: C.text, fontSize: 13, outline: "none" }}
+                    >
+                      {(options || []).map(o => <option key={o} value={o}>{o}</option>)}
+                    </select>
+                  ) : (
+                    <input
+                      type={type || "text"}
+                      placeholder={placeholder}
+                      value={editHorse[key] || ""}
+                      onChange={e => setEditHorse(prev => ({ ...prev, [key]: e.target.value }))}
+                      style={{ width: "100%", background: C.cardOff, border: "1px solid " + C.border, borderRadius: 8, padding: "8px 12px", color: C.text, fontSize: 13, outline: "none" }}
+                    />
+                  )}
+                </div>
+              ))}
+              <Btn onClick={() => {
+                setHorses(prev => prev.map(h => h.id === editHorse.id ? { ...editHorse, nhRating: editHorse.nhRating ? parseInt(editHorse.nhRating) : null, flatRating: editHorse.flatRating ? parseInt(editHorse.flatRating) : null } : h));
+                setEditHorse(null);
+              }} style={{ width: "100%", justifyContent: "center", marginTop: 4 }}>Save Changes</Btn>
+              <Btn variant="red" onClick={() => { if (window.confirm("Remove " + editHorse.name + " from the yard?")) { setHorses(prev => prev.filter(h => h.id !== editHorse.id)); setEditHorse(null); } }} style={{ width: "100%", justifyContent: "center" }}>Remove Horse from Yard</Btn>
+            </div>
+          </div>
+        </div>
+      )}
+
+      {showAdd && (
+        <div style={{ position: "fixed", inset: 0, background: "rgba(10,22,40,0.6)", zIndex: 500, display: "flex", alignItems: "center", justifyContent: "center", padding: 20, backdropFilter: "blur(4px)" }}>
+          <div style={{ background: C.card, borderRadius: 16, width: "100%", maxWidth: 480, maxHeight: "90vh", overflowY: "auto", boxShadow: C.shadowMd }}>
+            <div style={{ background: C.navy, padding: "16px 20px", display: "flex", justifyContent: "space-between", alignItems: "center", position: "sticky", top: 0 }}>
+              <div style={{ fontSize: 15, fontWeight: 700, color: "#fff" }}>Add Horse</div>
+              <button onClick={() => setShowAdd(false)} style={{ background: "rgba(255,255,255,0.1)", border: "none", color: "#fff", width: 28, height: 28, borderRadius: 6, cursor: "pointer", fontSize: 14 }}>✕</button>
+            </div>
+            <div style={{ padding: 20, display: "flex", flexDirection: "column", gap: 11 }}>
+              {[
+                { key: "name", label: "Horse Name", placeholder: "e.g. Bob Olinger" },
+                { key: "dob", label: "Date of Birth", type: "date" },
+                { key: "sex", label: "Sex", type: "select", options: ["Gelding", "Mare", "Filly", "Colt", "Horse"] },
+                { key: "colour", label: "Colour", placeholder: "e.g. Bay" },
+                { key: "nhRating", label: "NH Rating", type: "number", placeholder: "e.g. 98" },
+                { key: "flatRating", label: "Flat Rating", type: "number", placeholder: "e.g. 74" },
+                { key: "discipline", label: "Discipline", type: "select", options: ["Hurdle", "Chase", "Flat", "Bumper"] },
+                { key: "surface", label: "Surface", type: "select", options: ["Turf", "AWT"] },
+                { key: "status", label: "Status", type: "select", options: ["Active", "CoolingOff", "Inactive"] },
+                { key: "owner", label: "Owner", placeholder: "e.g. J. Murphy" },
+                { key: "ownerPhone", label: "Owner WhatsApp", type: "tel", placeholder: "+353 86 000 0000" },
+                { key: "ownerEmail", label: "Owner Email", type: "email", placeholder: "owner@email.com" },
+                { key: "headgear", label: "Headgear", placeholder: "e.g. Cheekpieces" },
+                { key: "nextRaceDate", label: "Next Target Date", type: "date" },
+                { key: "notes", label: "Trainer Notes", placeholder: "Any notes" },
+              ].map(({ key, label, placeholder, type, options }) => (
+                <div key={key}>
+                  <div style={{ fontSize: 10, fontWeight: 700, color: C.textMid, marginBottom: 3, textTransform: "uppercase", letterSpacing: 0.5 }}>{label}</div>
+                  {type === "select" ? (
+                    <select value={newHorse[key]} onChange={e => setNewHorse(p => ({ ...p, [key]: e.target.value }))} style={{ width: "100%", background: C.cardOff, border: `1px solid ${C.border}`, borderRadius: 8, padding: "8px 12px", color: C.text, fontSize: 13, outline: "none" }}>
+                      {options.map(o => <option key={o} value={o}>{o}</option>)}
+                    </select>
+                  ) : (
+                    <input type={type || "text"} placeholder={placeholder} value={newHorse[key]} onChange={e => setNewHorse(p => ({ ...p, [key]: e.target.value }))} style={{ width: "100%", background: C.cardOff, border: `1px solid ${C.border}`, borderRadius: 8, padding: "8px 12px", color: C.text, fontSize: 13, outline: "none" }} />
+                  )}
+                </div>
+              ))}
+              <Btn onClick={addHorse} style={{ width: "100%", justifyContent: "center", marginTop: 4 }}>Add Horse to Yard</Btn>
+            </div>
+          </div>
+        </div>
+      )}
+    </div>
+  );
+}
+
+// ─── MOVEMENT LOG ─────────────────────────────────────────────────────────────
+function MovementLog({ horses }) {
+  const [movements, setMovements] = useState([
+    { id: "m1", horseId: "h2", type: "arrival", date: "2026-02-10", from: "Convalescence yard", contactName: "Dr. J. Murphy", contactPhone: "+353 86 111 0000", notes: "Post wind op recovery complete" },
+  ]);
+  const [showAdd, setShowAdd] = useState(false);
+  const [nm, setNm] = useState({ horseId: "", type: "arrival", date: todayStr, from: "", to: "", contactName: "", contactPhone: "", notes: "" });
+
+  return (
+    <div>
+      <div style={{ display: "flex", justifyContent: "space-between", alignItems: "center", marginBottom: 16 }}>
+        <div>
+          <div style={{ fontSize: 22, fontWeight: 800, color: C.text }}>Horse Movements</div>
+          <div style={{ fontSize: 13, color: C.textMid, marginTop: 3 }}>All arrivals and departures with contact details</div>
+        </div>
+        <Btn onClick={() => setShowAdd(true)}>+ Log Movement</Btn>
+      </div>
+
+      {movements.sort((a, b) => new Date(b.date) - new Date(a.date)).map(mov => {
+        const horse = horses.find(h => h.id === mov.horseId);
+        if (!horse) return null;
+        return (
+          <div key={mov.id} style={{ background: C.card, border: `1px solid ${mov.type === "arrival" ? C.green + "30" : C.amber + "30"}`, borderLeft: `3px solid ${mov.type === "arrival" ? C.green : C.amber}`, borderRadius: 12, padding: "13px 16px", marginBottom: 10, boxShadow: C.shadow }}>
+            <div style={{ display: "flex", alignItems: "center", gap: 12, marginBottom: 8 }}>
+              <Silk silk={horse.silk} size={34} />
+              <div style={{ flex: 1 }}>
+                <div style={{ display: "flex", alignItems: "center", gap: 8, marginBottom: 2 }}>
+                  <span style={{ fontSize: 15, fontWeight: 700, color: C.text }}>{horse.name}</span>
+                  <Tag color={mov.type === "arrival" ? C.green : C.amber}>{mov.type === "arrival" ? "↓ Arrived" : "↑ Departed"}</Tag>
+                </div>
+                <div style={{ fontSize: 12, color: C.textMid }}>{new Date(mov.date).toLocaleDateString("en-IE", { weekday: "short", day: "numeric", month: "long", year: "numeric" })}</div>
+              </div>
+            </div>
+            <div style={{ display: "grid", gridTemplateColumns: "1fr 1fr", gap: 8 }}>
+              {[{ l: mov.type === "arrival" ? "From" : "To", v: mov.type === "arrival" ? mov.from : mov.to }, { l: "Contact", v: mov.contactName }, { l: "Phone", v: mov.contactPhone }, { l: "Notes", v: mov.notes }].filter(i => i.v).map(({ l, v }) => (
+                <div key={l} style={{ background: C.cardOff, borderRadius: 8, padding: "7px 10px" }}>
+                  <div style={{ fontSize: 9, fontWeight: 600, color: C.textDim, textTransform: "uppercase", letterSpacing: 0.5, marginBottom: 2 }}>{l}</div>
+                  <div style={{ fontSize: 12, color: C.text, fontWeight: 500 }}>{v}</div>
+                </div>
+              ))}
+            </div>
+          </div>
+        );
+      })}
+
+      {showAdd && (
+        <div style={{ position: "fixed", inset: 0, background: "rgba(10,22,40,0.6)", zIndex: 500, display: "flex", alignItems: "center", justifyContent: "center", padding: 20, backdropFilter: "blur(4px)" }}>
+          <div style={{ background: C.card, borderRadius: 16, width: "100%", maxWidth: 440, maxHeight: "90vh", overflowY: "auto", boxShadow: C.shadowMd }}>
+            <div style={{ background: C.navy, padding: "16px 20px", display: "flex", justifyContent: "space-between", alignItems: "center", position: "sticky", top: 0 }}>
+              <div style={{ fontSize: 15, fontWeight: 700, color: "#fff" }}>Log Horse Movement</div>
+              <button onClick={() => setShowAdd(false)} style={{ background: "rgba(255,255,255,0.1)", border: "none", color: "#fff", width: 28, height: 28, borderRadius: 6, cursor: "pointer", fontSize: 14 }}>✕</button>
+            </div>
+            <div style={{ padding: 20, display: "flex", flexDirection: "column", gap: 11 }}>
+              {[
+                { key: "horseId", label: "Horse", type: "select" },
+                { key: "type", label: "Type", type: "select_type" },
+                { key: "date", label: "Date", type: "date" },
+                { key: "from", label: "From (arrival)", placeholder: "e.g. Convalescence yard" },
+                { key: "to", label: "To (departure)", placeholder: "e.g. Summer grass" },
+                { key: "contactName", label: "Contact Name", placeholder: "Person or premises" },
+                { key: "contactPhone", label: "Contact Phone", type: "tel", placeholder: "+353..." },
+                { key: "notes", label: "Notes", placeholder: "Any relevant notes" },
+              ].map(({ key, label, type, placeholder }) => (
+                <div key={key}>
+                  <div style={{ fontSize: 10, fontWeight: 700, color: C.textMid, marginBottom: 3, textTransform: "uppercase", letterSpacing: 0.5 }}>{label}</div>
+                  {type === "select" ? (
+                    <select value={nm[key]} onChange={e => setNm(p => ({ ...p, [key]: e.target.value }))} style={{ width: "100%", background: C.cardOff, border: `1px solid ${C.border}`, borderRadius: 8, padding: "8px 12px", color: C.text, fontSize: 13, outline: "none" }}>
+                      <option value="">Select horse</option>
+                      {horses.map(h => <option key={h.id} value={h.id}>{h.name}</option>)}
+                    </select>
+                  ) : type === "select_type" ? (
+                    <select value={nm[key]} onChange={e => setNm(p => ({ ...p, [key]: e.target.value }))} style={{ width: "100%", background: C.cardOff, border: `1px solid ${C.border}`, borderRadius: 8, padding: "8px 12px", color: C.text, fontSize: 13, outline: "none" }}>
+                      <option value="arrival">Arrival</option>
+                      <option value="departure">Departure</option>
+                    </select>
+                  ) : (
+                    <input type={type || "text"} placeholder={placeholder} value={nm[key]} onChange={e => setNm(p => ({ ...p, [key]: e.target.value }))} style={{ width: "100%", background: C.cardOff, border: `1px solid ${C.border}`, borderRadius: 8, padding: "8px 12px", color: C.text, fontSize: 13, outline: "none" }} />
+                  )}
+                </div>
+              ))}
+              <Btn onClick={() => { if (!nm.horseId) return; setMovements(p => [...p, { ...nm, id: `m_${Date.now()}` }]); setNm({ horseId: "", type: "arrival", date: todayStr, from: "", to: "", contactName: "", contactPhone: "", notes: "" }); setShowAdd(false); }} style={{ width: "100%", justifyContent: "center", marginTop: 4 }}>Save Movement</Btn>
+            </div>
+          </div>
+        </div>
+      )}
+    </div>
+  );
+}
+
+// ─── OWNER PORTAL ─────────────────────────────────────────────────────────────
+function OwnerPortal({ horses }) {
+  const [selOwner, setSelOwner] = useState(null);
+
+  const owners = [...new Set(horses.map(h => h.owner))].map(name => ({
+    name, horses: horses.filter(h => h.owner === name),
+    phone: horses.find(h => h.owner === name)?.ownerPhone,
+    email: horses.find(h => h.owner === name)?.ownerEmail,
+  }));
+
+  if (!selOwner) return (
+    <div>
+      <div style={{ fontSize: 22, fontWeight: 800, color: C.text, marginBottom: 4 }}>Owner Portal</div>
+      <div style={{ fontSize: 13, color: C.textMid, marginBottom: 16 }}>Each owner sees their horses, entries, provisional targets and trainer notes</div>
+      {owners.map(o => (
+        <div key={o.name} onClick={() => setSelOwner(o)} style={{ background: C.card, border: `1px solid ${C.border}`, borderRadius: 12, padding: "13px 16px", marginBottom: 9, cursor: "pointer", boxShadow: C.shadow, display: "flex", alignItems: "center", gap: 13 }}>
+          <div style={{ width: 42, height: 42, borderRadius: "50%", background: C.navy, display: "flex", alignItems: "center", justifyContent: "center", fontSize: 15, fontWeight: 800, color: C.gold, flexShrink: 0 }}>
+            {o.name.split(" ").map(w => w[0]).join("").slice(0, 2)}
+          </div>
+          <div style={{ flex: 1 }}>
+            <div style={{ fontSize: 15, fontWeight: 700, color: C.text, marginBottom: 2 }}>{o.name}</div>
+            <div style={{ fontSize: 12, color: C.textMid }}>{o.horses.length} horse{o.horses.length !== 1 ? "s" : ""} · {o.horses.filter(h => (h.provisionalEntries || []).length > 0).length} with targets</div>
+            <div style={{ display: "flex", gap: 5, marginTop: 4 }}>
+              {o.horses.map(h => <div key={h.id} style={{ display: "flex", alignItems: "center", gap: 3 }}><Silk silk={h.silk} size={14} /><span style={{ fontSize: 10, color: C.textMid }}>{h.name}</span></div>)}
+            </div>
+          </div>
+          <span style={{ color: C.textMid }}>→</span>
+        </div>
+      ))}
+    </div>
+  );
+
+  return (
+    <div>
+      <div style={{ display: "flex", justifyContent: "space-between", alignItems: "center", marginBottom: 14 }}>
+        <Btn variant="ghost" onClick={() => setSelOwner(null)} style={{ fontSize: 12, padding: "6px 14px" }}>← All Owners</Btn>
+        <div style={{ display: "flex", gap: 8 }}>
+          {selOwner.phone && <a href={"https://wa.me/" + (selOwner.phone || "").replace(/[^0-9]/g, "")} target="_blank" rel="noopener noreferrer" style={{ background: "#f0fdf4", border: "1px solid #bbf7d0", color: "#15803d", borderRadius: 8, padding: "7px 14px", fontSize: 12, fontWeight: 700, textDecoration: "none" }}>💬 WhatsApp</a>}
+          {selOwner.phone && <a href={`tel:${selOwner.phone}`} style={{ background: C.blueBg, border: `1px solid ${C.blue}30`, color: C.blue, borderRadius: 8, padding: "7px 14px", fontSize: 12, fontWeight: 700, textDecoration: "none" }}>📞 Call</a>}
+          {selOwner.email && <a href={`mailto:${selOwner.email}`} style={{ background: C.navy, border: "none", color: "#fff", borderRadius: 8, padding: "7px 14px", fontSize: 12, fontWeight: 700, textDecoration: "none" }}>✉ Email</a>}
+        </div>
+      </div>
+      <div style={{ fontSize: 18, fontWeight: 800, color: C.text, marginBottom: 14 }}>{selOwner.name}</div>
+
+      {selOwner.horses.map(horse => {
+        const provisional = horse.provisionalEntries || [];
+        return (
+          <div key={horse.id} style={{ background: C.card, border: `1px solid ${C.border}`, borderRadius: 14, padding: "16px 18px", marginBottom: 14, boxShadow: C.shadow }}>
+            <div style={{ display: "flex", alignItems: "center", gap: 13, marginBottom: 13 }}>
+              <Silk silk={horse.silk} size={46} />
+              <div style={{ flex: 1 }}>
+                <div style={{ fontSize: 19, fontWeight: 800, color: C.text, marginBottom: 4 }}>{horse.name}</div>
+                <div style={{ display: "flex", gap: 8, flexWrap: "wrap", fontSize: 12, color: C.textMid }}>
+                  <span>{getAge(horse.dob)}yo {horse.sex}</span>
+                  <span>Rating: {horse.nhRating || horse.flatRating || "—"}</span>
+                  {horse.headgear && <span>Headgear: {horse.headgear}</span>}
+                </div>
+                <StatusPill status={horse.status} activationDate={horse.activationDate} />
+              </div>
+              <FormDots form={horse.form} />
+            </div>
+
+            {/* Provisional targets */}
+            {provisional.length > 0 && (
+              <div style={{ borderTop: `1px solid ${C.border}`, paddingTop: 12, marginBottom: 12 }}>
+                <div style={{ fontSize: 11, fontWeight: 700, color: C.textDim, textTransform: "uppercase", letterSpacing: 1, marginBottom: 8 }}>Provisional Targets</div>
+                {provisional.map(pe => (
+                  <div key={pe.id} style={{ padding: "10px 12px", background: C.goldBg, border: `1px solid ${C.gold}30`, borderLeft: `3px solid ${C.gold}`, borderRadius: 9, marginBottom: 7 }}>
+                    <div style={{ fontSize: 14, fontWeight: 700, color: C.text, marginBottom: 3 }}>{pe.raceName}</div>
+                    <div style={{ display: "flex", gap: 10, flexWrap: "wrap", fontSize: 12, color: C.textMid }}>
+                      <span>📍 {pe.venue}</span>
+                      {pe.date && <span>📅 {new Date(pe.date).toLocaleDateString("en-IE", { weekday: "short", day: "numeric", month: "long" })}</span>}
+                      {pe.raceRef && <span>{pe.raceRef}</span>}
+                    </div>
+                    {pe.note && <div style={{ fontSize: 12, color: C.textMid, fontStyle: "italic", marginTop: 4 }}>💬 {pe.note}</div>}
+                  </div>
+                ))}
+              </div>
+            )}
+
+            {/* Form */}
+            <div style={{ borderTop: `1px solid ${C.border}`, paddingTop: 12 }}>
+              <div style={{ fontSize: 11, fontWeight: 700, color: C.textDim, textTransform: "uppercase", letterSpacing: 1, marginBottom: 8 }}>Recent Form</div>
+              {(horse.form || []).slice(0, 3).map((f, i) => {
+                const pc = f.position === 1 ? C.green : f.position <= 3 ? C.amber : C.textMid;
+                return (
+                  <div key={i} style={{ display: "flex", alignItems: "center", gap: 10, padding: "8px 10px", background: C.cardOff, borderRadius: 8, border: `1px solid ${C.border}`, marginBottom: 6 }}>
+                    <div style={{ width: 24, height: 24, borderRadius: 6, background: `${pc}12`, border: `1.5px solid ${pc}40`, display: "flex", alignItems: "center", justifyContent: "center", fontSize: 12, fontWeight: 800, color: pc }}>{f.position}</div>
+                    <div style={{ flex: 1 }}><span style={{ fontSize: 13, fontWeight: 600, color: C.text }}>{f.venue}</span><span style={{ fontSize: 11, color: C.textMid, marginLeft: 6 }}>{f.raceClass} · {f.going}</span></div>
+                    <div style={{ fontSize: 11, color: C.textMid }}>{new Date(f.date).toLocaleDateString("en-IE", { day: "numeric", month: "short" })}</div>
+                  </div>
+                );
+              })}
+              {(!horse.form || horse.form.length === 0) && <div style={{ fontSize: 12, color: C.textMid, fontStyle: "italic" }}>No runs recorded yet</div>}
+            </div>
+
+            {horse.notes && (
+              <div style={{ marginTop: 10, padding: "9px 12px", background: C.cardOff, borderRadius: 8, border: `1px solid ${C.border}` }}>
+                <div style={{ fontSize: 9, fontWeight: 700, color: C.textDim, textTransform: "uppercase", letterSpacing: 0.5, marginBottom: 3 }}>Trainer's Note</div>
+                <p style={{ fontSize: 13, color: C.textMid, fontStyle: "italic", margin: 0, lineHeight: 1.5 }}>{horse.notes}</p>
+              </div>
+            )}
+          </div>
+        );
+      })}
+    </div>
+  );
+}
+
+// ─── ROOT ─────────────────────────────────────────────────────────────────────
+export default function App() {
+  const [user, setUser] = useState(null);
+  const [authMode, setAuthMode] = useState("login");
+  const [email, setEmail] = useState("");
+  const [password, setPassword] = useState("");
+  const [authError, setAuthError] = useState("");
+  const [authLoading, setAuthLoading] = useState(false);
+  const [appLoading, setAppLoading] = useState(true);
+
+  const [tab, setTab] = useState("planner");
+  const [horsesRaw, setHorsesRaw] = useState([]);
+  const [medLogsRaw, setMedLogsRaw] = useState({});
+  const [trackedIdsRaw, setTrackedIdsRaw] = useState([]);
+  const [wbEntriesRaw, setWbEntriesRaw] = useState([]);
+  const [sidebarOpen, setSidebarOpen] = useState(true);
+
+  // ── AUTH LISTENER ────────────────────────────────────────────
+  useEffect(function() {
+    supabase.auth.getSession().then(function(res) {
+      setUser(res.data.session ? res.data.session.user : null);
+      setAppLoading(false);
+    });
+    const listener = supabase.auth.onAuthStateChange(function(event, session) {
+      setUser(session ? session.user : null);
+    });
+    return function() { listener.data.subscription.unsubscribe(); };
+  }, []);
+
+  // ── LOAD DATA ────────────────────────────────────────────────
+  useEffect(function() {
+    if (!user) { setHorsesRaw([]); setMedLogsRaw({}); setTrackedIdsRaw([]); setWbEntriesRaw([]); return; }
+    supabase.from("horses").select("*").eq("user_id", user.id).then(function(res) {
+      if (res.data) setHorsesRaw(res.data.map(function(h) {
+        return {
+          id: h.id, name: h.name, sex: h.sex || "Gelding", colour: h.colour || "",
+          dob: h.dob || "", trainer: h.trainer || "", owner: h.owner || "",
+          ownerPhone: h.owner_phone || "", ownerEmail: h.owner_email || "",
+          nhRating: h.nh_rating, flatRating: h.flat_rating, hurdleRating: h.hurdle_rating,
+          chaseRating: h.chase_rating, headgear: h.headgear || "", jockey: h.jockey || "",
+          notes: h.notes || "", status: h.status || "Active", activationDate: h.activation_date || null,
+          silk: h.silk, form: h.form || [], provisionalEntries: h.provisional_entries || [],
+          discipline: h.discipline || [], surface: h.surface || "Turf",
+          isMaiden: h.is_maiden !== false, isNovice: h.is_novice || false,
+          isEBF: h.is_ebf || false, nextRaceDate: h.next_race_date || "",
+          distanceMin: h.distance_min || 10, distanceMax: h.distance_max || 32,
+          goingPref: h.going_pref || [],
+        };
+      }));
+    });
+    supabase.from("med_logs").select("*").eq("user_id", user.id).then(function(res) {
+      if (res.data) {
+        const logs = {};
+        res.data.forEach(function(row) {
+          logs[row.horse_id + "_" + row.log_date + "_" + row.med_type] = row.value || 1;
+        });
+        setMedLogsRaw(logs);
+      }
+    });
+    supabase.from("whiteboard_entries").select("*").eq("user_id", user.id).then(function(res) {
+      if (res.data) setWbEntriesRaw(res.data.map(function(e) {
+        return {
+          id: e.id, horseId: e.horse_id, horseName: e.horse_name || "",
+          venue: e.venue || "", date: e.date || "", raceTime: e.race_time || "",
+          raceName: e.race_name || "", meetingNo: e.meeting_no || "",
+          raceRef: e.race_ref || "", ballotNo: e.ballot_no || "",
+          headgear: e.headgear || "", jockey: e.jockey || "",
+        };
+      }));
+    });
+  }, [user]);
+
+  // ── SAVE HORSES ──────────────────────────────────────────────
+  const setHorses = function(updater) {
+    setHorsesRaw(function(prev) {
+      const next = typeof updater === "function" ? updater(prev) : updater;
+      if (!user) return next;
+      const rows = next.map(function(h) {
+        return {
+          id: h.id, user_id: user.id, name: h.name, sex: h.sex || "Gelding",
+          colour: h.colour || "", dob: h.dob || "", trainer: h.trainer || "",
+          owner: h.owner || "", owner_phone: h.ownerPhone || "", owner_email: h.ownerEmail || "",
+          nh_rating: h.nhRating || null, flat_rating: h.flatRating || null,
+          hurdle_rating: h.hurdleRating || null, chase_rating: h.chaseRating || null,
+          headgear: h.headgear || "", jockey: h.jockey || "", notes: h.notes || "",
+          status: h.status || "Active", activation_date: h.activationDate || null,
+          silk: h.silk || null, form: h.form || [], provisional_entries: h.provisionalEntries || [],
+          next_race_date: h.nextRaceDate || null,
+        };
+      });
+      supabase.from("horses").upsert(rows).then(function(res) {
+        if (res.error) console.error("Horse save error:", res.error);
+      });
+      if (prev.length > next.length) {
+        const removed = prev.filter(function(h) { return !next.find(function(n) { return n.id === h.id; }); });
+        removed.forEach(function(h) { supabase.from("horses").delete().eq("id", h.id).then(function() {}); });
+      }
+      return next;
+    });
+  };
+
+  // ── SAVE MED LOGS ────────────────────────────────────────────
+  const setMedLogs = function(updater) {
+    setMedLogsRaw(function(prev) {
+      const next = typeof updater === "function" ? updater(prev) : updater;
+      if (!user) return next;
+      Object.keys(next).forEach(function(key) {
+        if (next[key] !== prev[key]) {
+          const lastU = key.lastIndexOf("_");
+          const medType = key.slice(lastU + 1);
+          const rest = key.slice(0, lastU);
+          const dateMatch = rest.match(/_(\d{4}-\d{2}-\d{2})$/);
+          if (!dateMatch) return;
+          const logDate = dateMatch[1];
+          const horseId = rest.slice(0, rest.length - dateMatch[0].length);
+          const val = next[key];
+          if (val) {
+            supabase.from("med_logs").upsert({ user_id: user.id, horse_id: horseId, log_date: logDate, med_type: medType, value: val }).then(function() {});
+          } else {
+            supabase.from("med_logs").delete().match({ user_id: user.id, horse_id: horseId, log_date: logDate, med_type: medType }).then(function() {});
+          }
+        }
+      });
+      return next;
+    });
+  };
+
+  // ── SAVE WHITEBOARD ──────────────────────────────────────────
+  const setWbEntries = function(updater) {
+    setWbEntriesRaw(function(prev) {
+      const next = typeof updater === "function" ? updater(prev) : updater;
+      if (!user) return next;
+      if (next.length > prev.length) {
+        const newEntries = next.filter(function(e) { return !prev.find(function(p) { return p.id === e.id; }); });
+        newEntries.forEach(function(e) {
+          supabase.from("whiteboard_entries").upsert({
+            id: e.id, user_id: user.id, horse_id: e.horseId || null,
+            horse_name: e.horseName || "", venue: e.venue || "", date: e.date || "",
+            race_time: e.raceTime || "", race_name: e.raceName || "",
+            meeting_no: e.meetingNo || "", race_ref: e.raceRef || "",
+            ballot_no: e.ballotNo || "", headgear: e.headgear || "", jockey: e.jockey || "",
+          }).then(function() {});
+        });
+      } else if (next.length < prev.length) {
+        const removed = prev.filter(function(e) { return !next.find(function(n) { return n.id === e.id; }); });
+        removed.forEach(function(e) { supabase.from("whiteboard_entries").delete().eq("id", e.id).then(function() {}); });
+      }
+      return next;
+    });
+  };
+
+  // ── AUTH HANDLERS ────────────────────────────────────────────
+  const handleLogin = async function() {
+    setAuthLoading(true); setAuthError("");
+    const res = await supabase.auth.signInWithPassword({ email, password });
+    setAuthLoading(false);
+    if (res.error) setAuthError(res.error.message);
+  };
+  const handleSignup = async function() {
+    setAuthLoading(true); setAuthError("");
+    const res = await supabase.auth.signUp({ email, password });
+    setAuthLoading(false);
+    if (res.error) setAuthError(res.error.message);
+    else setAuthError("Check your email to confirm your account.");
+  };
+  const handleLogout = async function() {
+    await supabase.auth.signOut();
+    setHorsesRaw([]); setMedLogsRaw({}); setTrackedIdsRaw([]); setWbEntriesRaw([]);
+  };
+
+  const horses = horsesRaw;
+  const medLogs = medLogsRaw;
+  const trackedIds = trackedIdsRaw;
+  const setTrackedIds = setTrackedIdsRaw;
+  const wbEntries = wbEntriesRaw;
+  const medAlerts = horses.filter(function(h) { const d = daysUntil(h.nextRaceDate); return d && d >= 12 && d <= 16; }).length;
+
+  const NAV = [
+    { id: "planner", icon: "x", label: "Race Planner" },
+    { id: "provisional", icon: "x", label: "Provisional Entries" },
+    { id: "meds", icon: "x", label: "Medication Tracker", badge: medAlerts },
+    { id: "whiteboard", icon: "x", label: "Raceday Whiteboard" },
+    { id: "yard", icon: "x", label: "My Yard" },
+    { id: "movements", icon: "x", label: "Horse Movements" },
+    { id: "owners", icon: "x", label: "Owner Portal" },
+  ];
+
+  if (appLoading) return (
+    <div style={{ minHeight: "100vh", background: C.bg, display: "flex", alignItems: "center", justifyContent: "center" }}>
+      <div style={{ color: C.textMid, fontSize: 15 }}>Loading...</div>
+    </div>
+  );
+
+  if (!user) return (
+    <div style={{ minHeight: "100vh", background: C.bg, display: "flex", alignItems: "center", justifyContent: "center", padding: 20 }}>
+      <div style={{ background: C.card, borderRadius: 20, width: "100%", maxWidth: 400, boxShadow: C.shadowMd, overflow: "hidden" }}>
+        <div style={{ background: C.navy, padding: "28px 32px" }}>
+          <div style={{ fontSize: 22, fontWeight: 800, color: "#fff", marginBottom: 4 }}>RacePlan Pro</div>
+          <div style={{ fontSize: 13, color: "rgba(255,255,255,0.5)" }}>Yard Management System</div>
+        </div>
+        <div style={{ padding: "28px 32px" }}>
+          <div style={{ display: "flex", gap: 0, marginBottom: 24, background: C.cardOff, borderRadius: 10, padding: 4 }}>
+            {["login", "signup"].map(function(m) {
+              return (
+                <button key={m} onClick={function() { setAuthMode(m); setAuthError(""); }}
+                  style={{ flex: 1, padding: "8px 0", borderRadius: 8, border: "none", fontWeight: 700, fontSize: 13, cursor: "pointer",
+                    background: authMode === m ? C.navy : "transparent", color: authMode === m ? "#fff" : C.textMid }}>
+                  {m === "login" ? "Log In" : "Sign Up"}
+                </button>
+              );
+            })}
+          </div>
+          {["email", "password"].map(function(field) {
+            return (
+              <div key={field} style={{ marginBottom: 14 }}>
+                <div style={{ fontSize: 11, fontWeight: 700, color: C.textMid, marginBottom: 5, textTransform: "uppercase", letterSpacing: 0.5 }}>
+                  {field === "email" ? "Email" : "Password"}
+                </div>
+                <input type={field === "password" ? "password" : "email"} value={field === "email" ? email : password}
+                  onChange={function(e) { field === "email" ? setEmail(e.target.value) : setPassword(e.target.value); }}
+                  onKeyDown={function(e) { if (e.key === "Enter") authMode === "login" ? handleLogin() : handleSignup(); }}
+                  placeholder={field === "email" ? "trainer@example.com" : "Password"}
+                  style={{ width: "100%", padding: "10px 14px", background: C.cardOff, border: "1px solid " + C.border,
+                    borderRadius: 10, fontSize: 14, color: C.text, outline: "none" }} />
+              </div>
+            );
+          })}
+          {authError && (
+            <div style={{ fontSize: 13, color: authError.includes("Check") ? C.green : C.red, marginBottom: 14, fontWeight: 600 }}>
+              {authError}
+            </div>
+          )}
+          <Btn onClick={authMode === "login" ? handleLogin : handleSignup} disabled={authLoading}
+            style={{ width: "100%", justifyContent: "center", marginTop: 4 }}>
+            {authLoading ? "Please wait..." : authMode === "login" ? "Log In" : "Create Account"}
+          </Btn>
+        </div>
+      </div>
+    </div>
+  );
+
+  return (
+    <div style={{ minHeight: "100vh", background: C.bg, fontFamily: "'Inter','Helvetica Neue',sans-serif", display: "flex", flexDirection: "column" }}>
+      <style>{"* { box-sizing: border-box; margin: 0; padding: 0; } p { margin: 0; } button:hover { opacity: 0.88; } a:hover { opacity: 0.88; } input:focus, select:focus { border-color: #0a1628 !important; outline: none; } ::-webkit-scrollbar { width: 4px; } ::-webkit-scrollbar-thumb { background: #b8c8da; border-radius: 2px; } @keyframes spin { to { transform: rotate(360deg); } } @keyframes slideUp { from { transform: translateY(50px); opacity: 0; } to { transform: translateY(0); opacity: 1; } } @media print { body * { visibility: hidden; } #print-area, #print-area * { visibility: visible; } #print-area { position: absolute; left: 0; top: 0; width: 100%; } }"}</style>
+
+      <div style={{ background: C.navy, height: 56, display: "flex", alignItems: "center", padding: "0 16px", boxShadow: "0 2px 12px rgba(0,0,0,0.15)", flexShrink: 0, gap: 10 }}>
+        <button onClick={function() { setSidebarOpen(function(o) { return !o; }); }} style={{ background: "rgba(255,255,255,0.08)", border: "1px solid rgba(255,255,255,0.12)", color: "#fff", width: 32, height: 32, borderRadius: 8, cursor: "pointer", fontSize: 13 }}>
+          {sidebarOpen ? "<" : ">"}
+        </button>
+        <div style={{ display: "flex", alignItems: "center", gap: 9 }}>
+          <div style={{ width: 30, height: 30, background: "linear-gradient(135deg," + C.gold + "," + C.goldLight + ")", borderRadius: 8, display: "flex", alignItems: "center", justifyContent: "center", fontSize: 14 }}>x</div>
+          <div>
+            <div style={{ fontSize: 16, fontWeight: 800, color: "#fff", lineHeight: 1 }}>RacePlan Pro</div>
+            <div style={{ fontSize: 8, color: "rgba(255,255,255,0.35)", letterSpacing: 2 }}>YARD MANAGEMENT</div>
+          </div>
+        </div>
+        <div style={{ marginLeft: 8, padding: "4px 12px", background: "rgba(255,255,255,0.08)", borderRadius: 20, fontSize: 12, color: "rgba(255,255,255,0.7)", fontWeight: 600 }}>
+          {(NAV.find(function(n) { return n.id === tab; }) || {}).label || ""}
+        </div>
+        <div style={{ marginLeft: "auto", display: "flex", alignItems: "center", gap: 10 }}>
+          {medAlerts > 0 && (
+            <button onClick={function() { setTab("meds"); }} style={{ background: C.redBg, border: "1px solid " + C.red + "30", color: C.red, padding: "5px 12px", borderRadius: 20, fontSize: 12, fontWeight: 700, cursor: "pointer" }}>
+              {"Med alerts: " + medAlerts}
+            </button>
+          )}
+          <span style={{ fontSize: 11, color: "rgba(255,255,255,0.4)" }}>{user.email}</span>
+          <button onClick={handleLogout} style={{ background: "rgba(255,255,255,0.08)", border: "1px solid rgba(255,255,255,0.12)", color: "#fff", padding: "5px 12px", borderRadius: 8, fontSize: 12, cursor: "pointer" }}>Sign Out</button>
+        </div>
+      </div>
+
+      <div style={{ display: "flex", flex: 1, minHeight: 0 }}>
+        <div style={{ width: sidebarOpen ? 200 : 52, background: C.sidebar, flexShrink: 0, display: "flex", flexDirection: "column", transition: "width 0.2s", overflow: "hidden" }}>
+          {NAV.map(function(nav) {
+            const active = tab === nav.id;
+            return (
+              <button key={nav.id} onClick={function() { setTab(nav.id); }} title={nav.label}
+                style={{ position: "relative", display: "flex", alignItems: "center", gap: 10, padding: sidebarOpen ? "12px 16px" : "14px 0", justifyContent: sidebarOpen ? "flex-start" : "center", background: active ? "rgba(255,255,255,0.12)" : "transparent", border: "none", borderLeft: active ? "3px solid " + C.gold : "3px solid transparent", color: active ? "#fff" : "rgba(255,255,255,0.55)", fontSize: 13, fontWeight: active ? 700 : 400, cursor: "pointer", width: "100%", textAlign: "left" }}>
+                <span style={{ fontSize: 17, minWidth: 20, textAlign: "center", flexShrink: 0 }}>{nav.id === "planner" ? "x" : nav.id === "provisional" ? "x" : nav.id === "meds" ? "x" : nav.id === "whiteboard" ? "x" : nav.id === "yard" ? "x" : nav.id === "movements" ? "x" : "x"}</span>
+                {sidebarOpen && <span style={{ flex: 1 }}>{nav.label}</span>}
+                {nav.badge > 0 && sidebarOpen && <span style={{ background: C.red, color: "#fff", borderRadius: "50%", width: 18, height: 18, display: "flex", alignItems: "center", justifyContent: "center", fontSize: 10, fontWeight: 700 }}>{nav.badge}</span>}
+                {nav.badge > 0 && !sidebarOpen && <span style={{ position: "absolute", top: 6, right: 6, background: C.red, color: "#fff", borderRadius: "50%", width: 14, height: 14, display: "flex", alignItems: "center", justifyContent: "center", fontSize: 9 }}>{nav.badge}</span>}
+              </button>
+            );
+          })}
+          {sidebarOpen && (
+            <div style={{ marginTop: "auto", padding: "14px 16px", borderTop: "1px solid rgba(255,255,255,0.08)" }}>
+              <div style={{ fontSize: 9, fontWeight: 700, color: "rgba(255,255,255,0.25)", letterSpacing: 1.5, textTransform: "uppercase", marginBottom: 8 }}>Yard</div>
+              {[{ l: "Active", v: horses.filter(function(h) { return h.status === "Active"; }).length, c: C.green }, { l: "Cool-off", v: horses.filter(function(h) { return h.status === "CoolingOff"; }).length, c: C.amber }, { l: "Inactive", v: horses.filter(function(h) { return h.status === "Inactive"; }).length, c: C.textDim }].map(function(s) {
+                return (
+                  <div key={s.l} style={{ display: "flex", justifyContent: "space-between", marginBottom: 5 }}>
+                    <span style={{ fontSize: 11, color: "rgba(255,255,255,0.4)" }}>{s.l}</span>
+                    <span style={{ fontSize: 12, fontWeight: 700, color: s.c }}>{s.v}</span>
+                  </div>
+                );
+              })}
+              <div style={{ display: "flex", justifyContent: "space-between", paddingTop: 5, borderTop: "1px solid rgba(255,255,255,0.08)" }}>
+                <span style={{ fontSize: 11, color: "rgba(255,255,255,0.4)" }}>Total</span>
+                <span style={{ fontSize: 12, fontWeight: 700, color: "#fff" }}>{horses.length}</span>
+              </div>
+            </div>
+          )}
+        </div>
+
+        <div style={{ flex: 1, overflowY: "auto", padding: "20px 24px", minWidth: 0 }}>
+          {tab === "planner" && <RacePlanner horses={horses} setHorses={setHorses} />}
+          {tab === "provisional" && <ProvisionalEntries horses={horses} setHorses={setHorses} />}
+          {tab === "meds" && <MedicationTracker horses={horses} medLogs={medLogs} setMedLogs={setMedLogs} trackedIds={trackedIds} setTrackedIds={setTrackedIds} />}
+          {tab === "whiteboard" && <RacedayPrint horses={horses} entries={wbEntries} setEntries={setWbEntries} />}
+          {tab === "yard" && <YardView horses={horses} setHorses={setHorses} />}
+          {tab === "movements" && <MovementLog horses={horses} />}
+          {tab === "owners" && <OwnerPortal horses={horses} />}
+        </div>
+      </div>
+    </div>
+  );
+}
