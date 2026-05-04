@@ -373,7 +373,7 @@ function MedicationTracker({ horses, medLogs, setMedLogs, trackedIds, setTracked
                 <div style={{ fontSize: 14, fontWeight: 700, color: C.text }}>{h.name}</div>
                 <div style={{ fontSize: 11, color: C.textMid }}>{h.owner} · {h.status}{h.nextRaceDate ? ` · Next race: ${new Date(h.nextRaceDate).toLocaleDateString("en-IE", { day: "numeric", month: "short" })}` : ""}</div>
               </div>
-              <Btn variant="green" onClick={() => { setTrackedIds(p => [...p, h.id]); }} style={{ padding: "6px 14px", fontSize: 12 }}>+ Add</Btn>
+              <Btn variant="green" onClick={() => { setTrackedIds(function(p) { return [...p, h.id]; }); }} style={{ padding: "6px 14px", fontSize: 12 }}>+ Add</Btn>
             </div>
           ))}
           <Btn variant="ghost" onClick={() => setShowAdd(false)} style={{ marginTop: 8, fontSize: 12, padding: "6px 14px" }}>Close</Btn>
@@ -638,7 +638,7 @@ function ProvisionalEntries({ horses, setHorses }) {
     setHorses(prev => prev.map(h => h.id === horseId ? { ...h, provisionalEntries: (h.provisionalEntries || []).filter(e => e.id !== entryId) } : h));
   };
 
-  const allProvisional = horses.flatMap(h => (h.provisionalEntries || []).map(e => ({ ...e, horse: h })));
+  const allProvisional = horses.reduce(function(acc, h) { return acc.concat((h.provisionalEntries || []).map(function(e) { return Object.assign({}, e, { horse: h }); })); }, []);
 
   return (
     <div>
@@ -756,13 +756,13 @@ function ProvisionalEntries({ horses, setHorses }) {
                   ].map(({ key, label, placeholder, type, full }) => (
                     <div key={key} style={{ gridColumn: full ? "1 / -1" : "auto" }}>
                       <div style={{ fontSize: 10, fontWeight: 700, color: C.textMid, marginBottom: 4, textTransform: "uppercase", letterSpacing: 0.5 }}>{label}</div>
-                      <input type={type || "text"} placeholder={placeholder} value={entry[key]} onChange={e => setEntry(p => ({ ...p, [key]: e.target.value }))} style={{ width: "100%", background: C.card, border: `1px solid ${C.border}`, borderRadius: 8, padding: "8px 12px", color: C.text, fontSize: 13, outline: "none" }} />
+                      <input type={type || "text"} placeholder={placeholder} value={entry[key]} onChange={e => setEntry(function(p) { return Object.assign({}, p, { [key]: e.target.value }); })} style={{ width: "100%", background: C.card, border: `1px solid ${C.border}`, borderRadius: 8, padding: "8px 12px", color: C.text, fontSize: 13, outline: "none" }} />
                     </div>
                   ))}
                 </div>
                 <div style={{ marginBottom: 10 }}>
                   <div style={{ fontSize: 10, fontWeight: 700, color: C.textMid, marginBottom: 4, textTransform: "uppercase", letterSpacing: 0.5 }}>Trainer Note (visible to owner)</div>
-                  <input type="text" placeholder="e.g. If ground stays soft" value={entry.note} onChange={e => setEntry(p => ({ ...p, note: e.target.value }))} style={{ width: "100%", background: C.card, border: `1px solid ${C.border}`, borderRadius: 8, padding: "8px 12px", color: C.text, fontSize: 13, outline: "none" }} />
+                  <input type="text" placeholder="e.g. If ground stays soft" value={entry.note} onChange={e => setEntry(function(p) { return Object.assign({}, p, { note: e.target.value }); })} style={{ width: "100%", background: C.card, border: `1px solid ${C.border}`, borderRadius: 8, padding: "8px 12px", color: C.text, fontSize: 13, outline: "none" }} />
                 </div>
                 <div style={{ display: "flex", gap: 8 }}>
                   <Btn onClick={() => addEntry(horse.id)}>Save Target</Btn>
@@ -888,11 +888,11 @@ function RacePlanner({ horses, setHorses }) {
 
   const analyse = async (horse, race) => {
     const key = k(horse.id, race.id);
-    setLoading(l => ({ ...l, [key]: true })); setLoadStage(s => ({ ...s, [key]: 0 }));
-    const timer = setInterval(() => setLoadStage(s => { const c = s[key] ?? 0; if (c < 3) return { ...s, [key]: c + 1 }; clearInterval(timer); return s; }), 2800);
-    try { const r = await getAITake(horse, race); clearInterval(timer); setAnalyses(a => ({ ...a, [key]: r })); }
+    setLoading(function(l) { return Object.assign({}, l, { [key]: true }); }); setLoadStage(function(s) { return Object.assign({}, s, { [key]: 0 }); });
+    const timer = setInterval(function() { setLoadStage(function(s) { var c = s[key] || 0; if (c < 3) { var n = Object.assign({}, s); n[key] = c + 1; return n; } clearInterval(timer); return s; }); }, 2800);
+    try { const r = await getAITake(horse, race); clearInterval(timer); setAnalyses(function(a) { return Object.assign({}, a, { [key]: r }); }); }
     catch (e) { console.error(e); clearInterval(timer); }
-    setLoading(l => ({ ...l, [key]: false }));
+    setLoading(function(l) { return Object.assign({}, l, { [key]: false }); });
   };
 
   const handleEntry = (horse, race) => {
@@ -968,7 +968,7 @@ function RacePlanner({ horses, setHorses }) {
                     </div>
                   </div>
                   <button
-                    onClick={() => setShortlisted(s => ({ ...s, [k(item.horse.id, item.race.id)]: null }))}
+                    onClick={function() { setShortlisted(function(s) { return Object.assign({}, s, { [k(item.horse.id, item.race.id)]: null }); }); }}
                     style={{ background: "none", border: "none", color: C.textDim, cursor: "pointer", fontSize: 16 }}
                   >
                     ✕
@@ -1211,7 +1211,7 @@ function RacePlanner({ horses, setHorses }) {
                               <span style={{ fontSize: 7, color: C.textMid }}> / 100</span>
                             </div>
                           </div>
-                          {(analysis.bullets || []).map((b, i) => (
+                          {(analysis.bullets || []).map(function(b, i) { return (
                             <div key={i} style={{ background: C.cardOff, border: "1px solid " + C.border, borderLeft: "3px solid " + C.navy, borderRadius: 9, padding: "11px 13px", marginBottom: 8 }}>
                               <div style={{ display: "flex", alignItems: "center", gap: 6, marginBottom: 5 }}>
                                 <span style={{ fontSize: 14 }}>{b.icon}</span>
@@ -1219,7 +1219,7 @@ function RacePlanner({ horses, setHorses }) {
                               </div>
                               <p style={{ fontSize: 13, color: C.text, lineHeight: 1.75, margin: 0 }}>{b.point}</p>
                             </div>
-                          ))}
+                          ); })}
                           <div style={{ background: C.navy, borderRadius: 10, padding: "16px 18px", marginBottom: 10 }}>
                             <div style={{ fontSize: 9, fontWeight: 700, color: "rgba(255,255,255,0.4)", letterSpacing: 1.5, textTransform: "uppercase", marginBottom: 8 }}>Bottom Line</div>
                             <p style={{ fontSize: 14, color: "#e8edf5", lineHeight: 1.8, margin: 0, fontStyle: "italic" }}>{analysis.conclusion}</p>
@@ -1233,8 +1233,8 @@ function RacePlanner({ horses, setHorses }) {
                         </div>
                       ) : (
                         <div style={{ display: "flex", flexDirection: "column", gap: 7 }}>
-                          <Btn variant="gold" onClick={() => {
-                            setShortlisted(s => ({ ...s, [key]: s[key] ? null : { horse: selHorse, race } }));
+                          <Btn variant="gold" onClick={function() {
+                            setShortlisted(function(s) { return Object.assign({}, s, { [key]: s[key] ? null : { horse: selHorse, race } }); });
                           }} style={{ width: "100%", justifyContent: "center" }}>
                             {isSl ? "★ On Shortlist" : "☆ Add to Shortlist"}
                           </Btn>
@@ -1429,12 +1429,12 @@ function RacedayPrint({ horses, entries, setEntries }) {
                 <div key={key}>
                   <div style={{ fontSize: 10, fontWeight: 700, color: C.textMid, marginBottom: 4, textTransform: "uppercase", letterSpacing: 0.5 }}>{label}</div>
                   {type === "select" ? (
-                    <select value={ne[key]} onChange={e => setNe(p => ({ ...p, [key]: e.target.value }))} style={{ width: "100%", background: C.cardOff, border: `1px solid ${C.border}`, borderRadius: 8, padding: "8px 12px", color: C.text, fontSize: 13, outline: "none" }}>
+                    <select value={ne[key]} onChange={e => setNe(function(p) { return Object.assign({}, p, { [key]: e.target.value }); })} style={{ width: "100%", background: C.cardOff, border: `1px solid ${C.border}`, borderRadius: 8, padding: "8px 12px", color: C.text, fontSize: 13, outline: "none" }}>
                       <option value="">Select horse</option>
                       {horses.map(h => <option key={h.id} value={h.id}>{h.name}</option>)}
                     </select>
                   ) : (
-                    <input type={type || "text"} placeholder={placeholder} value={ne[key]} onChange={e => setNe(p => ({ ...p, [key]: e.target.value }))} style={{ width: "100%", background: C.cardOff, border: `1px solid ${C.border}`, borderRadius: 8, padding: "8px 12px", color: C.text, fontSize: 13, outline: "none" }} />
+                    <input type={type || "text"} placeholder={placeholder} value={ne[key]} onChange={e => setNe(function(p) { return Object.assign({}, p, { [key]: e.target.value }); })} style={{ width: "100%", background: C.cardOff, border: `1px solid ${C.border}`, borderRadius: 8, padding: "8px 12px", color: C.text, fontSize: 13, outline: "none" }} />
                   )}
                 </div>
               ))}
@@ -1698,7 +1698,7 @@ function YardView({ horses, setHorses }) {
                   {type === "select" ? (
                     <select
                       value={key === "discipline" ? (editHorse.discipline && editHorse.discipline[0]) || "" : editHorse[key] || ""}
-                      onChange={e => setEditHorse(prev => ({ ...prev, [key]: key === "discipline" ? [e.target.value] : e.target.value }))}
+                      onChange={e => setEditHorse(function(prev) { return Object.assign({}, prev, { [key]: key === "discipline" ? [e.target.value] : e.target.value }); })}
                       style={{ width: "100%", background: C.cardOff, border: "1px solid " + C.border, borderRadius: 8, padding: "8px 12px", color: C.text, fontSize: 13, outline: "none" }}
                     >
                       {(options || []).map(o => <option key={o} value={o}>{o}</option>)}
@@ -1708,7 +1708,7 @@ function YardView({ horses, setHorses }) {
                       type={type || "text"}
                       placeholder={placeholder}
                       value={editHorse[key] || ""}
-                      onChange={e => setEditHorse(prev => ({ ...prev, [key]: e.target.value }))}
+                      onChange={e => setEditHorse(function(prev) { return Object.assign({}, prev, { [key]: e.target.value }); })}
                       style={{ width: "100%", background: C.cardOff, border: "1px solid " + C.border, borderRadius: 8, padding: "8px 12px", color: C.text, fontSize: 13, outline: "none" }}
                     />
                   )}
@@ -1752,11 +1752,11 @@ function YardView({ horses, setHorses }) {
                 <div key={key}>
                   <div style={{ fontSize: 10, fontWeight: 700, color: C.textMid, marginBottom: 3, textTransform: "uppercase", letterSpacing: 0.5 }}>{label}</div>
                   {type === "select" ? (
-                    <select value={newHorse[key]} onChange={e => setNewHorse(p => ({ ...p, [key]: e.target.value }))} style={{ width: "100%", background: C.cardOff, border: `1px solid ${C.border}`, borderRadius: 8, padding: "8px 12px", color: C.text, fontSize: 13, outline: "none" }}>
+                    <select value={newHorse[key]} onChange={e => setNewHorse(function(p) { return Object.assign({}, p, { [key]: e.target.value }); })} style={{ width: "100%", background: C.cardOff, border: `1px solid ${C.border}`, borderRadius: 8, padding: "8px 12px", color: C.text, fontSize: 13, outline: "none" }}>
                       {options.map(o => <option key={o} value={o}>{o}</option>)}
                     </select>
                   ) : (
-                    <input type={type || "text"} placeholder={placeholder} value={newHorse[key]} onChange={e => setNewHorse(p => ({ ...p, [key]: e.target.value }))} style={{ width: "100%", background: C.cardOff, border: `1px solid ${C.border}`, borderRadius: 8, padding: "8px 12px", color: C.text, fontSize: 13, outline: "none" }} />
+                    <input type={type || "text"} placeholder={placeholder} value={newHorse[key]} onChange={e => setNewHorse(function(p) { return Object.assign({}, p, { [key]: e.target.value }); })} style={{ width: "100%", background: C.cardOff, border: `1px solid ${C.border}`, borderRadius: 8, padding: "8px 12px", color: C.text, fontSize: 13, outline: "none" }} />
                   )}
                 </div>
               ))}
@@ -1835,21 +1835,21 @@ function MovementLog({ horses }) {
                 <div key={key}>
                   <div style={{ fontSize: 10, fontWeight: 700, color: C.textMid, marginBottom: 3, textTransform: "uppercase", letterSpacing: 0.5 }}>{label}</div>
                   {type === "select" ? (
-                    <select value={nm[key]} onChange={e => setNm(p => ({ ...p, [key]: e.target.value }))} style={{ width: "100%", background: C.cardOff, border: `1px solid ${C.border}`, borderRadius: 8, padding: "8px 12px", color: C.text, fontSize: 13, outline: "none" }}>
+                    <select value={nm[key]} onChange={e => setNm(function(p) { return Object.assign({}, p, { [key]: e.target.value }); })} style={{ width: "100%", background: C.cardOff, border: `1px solid ${C.border}`, borderRadius: 8, padding: "8px 12px", color: C.text, fontSize: 13, outline: "none" }}>
                       <option value="">Select horse</option>
                       {horses.map(h => <option key={h.id} value={h.id}>{h.name}</option>)}
                     </select>
                   ) : type === "select_type" ? (
-                    <select value={nm[key]} onChange={e => setNm(p => ({ ...p, [key]: e.target.value }))} style={{ width: "100%", background: C.cardOff, border: `1px solid ${C.border}`, borderRadius: 8, padding: "8px 12px", color: C.text, fontSize: 13, outline: "none" }}>
+                    <select value={nm[key]} onChange={e => setNm(function(p) { return Object.assign({}, p, { [key]: e.target.value }); })} style={{ width: "100%", background: C.cardOff, border: `1px solid ${C.border}`, borderRadius: 8, padding: "8px 12px", color: C.text, fontSize: 13, outline: "none" }}>
                       <option value="arrival">Arrival</option>
                       <option value="departure">Departure</option>
                     </select>
                   ) : (
-                    <input type={type || "text"} placeholder={placeholder} value={nm[key]} onChange={e => setNm(p => ({ ...p, [key]: e.target.value }))} style={{ width: "100%", background: C.cardOff, border: `1px solid ${C.border}`, borderRadius: 8, padding: "8px 12px", color: C.text, fontSize: 13, outline: "none" }} />
+                    <input type={type || "text"} placeholder={placeholder} value={nm[key]} onChange={e => setNm(function(p) { return Object.assign({}, p, { [key]: e.target.value }); })} style={{ width: "100%", background: C.cardOff, border: `1px solid ${C.border}`, borderRadius: 8, padding: "8px 12px", color: C.text, fontSize: 13, outline: "none" }} />
                   )}
                 </div>
               ))}
-              <Btn onClick={() => { if (!nm.horseId) return; setMovements(p => [...p, { ...nm, id: `m_${Date.now()}` }]); setNm({ horseId: "", type: "arrival", date: todayStr, from: "", to: "", contactName: "", contactPhone: "", notes: "" }); setShowAdd(false); }} style={{ width: "100%", justifyContent: "center", marginTop: 4 }}>Save Movement</Btn>
+              <Btn onClick={() => { if (!nm.horseId) return; setMovements(function(p) { return [...p, Object.assign({}, nm, { id: "m_" + Date.now() })]; }); setNm({ horseId: "", type: "arrival", date: todayStr, from: "", to: "", contactName: "", contactPhone: "", notes: "" }); setShowAdd(false); }} style={{ width: "100%", justifyContent: "center", marginTop: 4 }}>Save Movement</Btn>
             </div>
           </div>
         </div>
@@ -1862,11 +1862,11 @@ function MovementLog({ horses }) {
 function OwnerPortal({ horses }) {
   const [selOwner, setSelOwner] = useState(null);
 
-  const owners = [...new Set(horses.map(h => h.owner))].map(name => ({
-    name, horses: horses.filter(h => h.owner === name),
-    phone: horses.find(h => h.owner === name)?.ownerPhone,
-    email: horses.find(h => h.owner === name)?.ownerEmail,
-  }));
+  const owners = [...new Set(horses.map(function(h) { return h.owner; }))].map(function(name) { return ({
+    name, horses: horses.filter(function(h) { return h.owner === name; }),
+    phone: (horses.find(function(h) { return h.owner === name; }) || {}).ownerPhone,
+    email: (horses.find(function(h) { return h.owner === name; }) || {}).ownerEmail,
+  }); });
 
   if (!selOwner) return (
     <div>
@@ -2281,5 +2281,6 @@ export default function App() {
         </div>
       </div>
     </div>
+  </div>
   );
 }
