@@ -17,10 +17,10 @@ function YardView({ horses, setHorses }) {
         const text = ev.target.result;
         const lines = text.split("\n").filter(function(l) { return l.trim(); });
         const sep = lines[0].includes("\t") ? "\t" : ",";
-        const headers = lines[0].split(sep).map(function(h) { return h.trim().toLowerCase().replace(/\s+/g, "_").replace(/[^a-z0-9_]/g, ""); });
+        const headers = lines[0].split(sep).map(function(h) { return h.trim().toLowerCase().split(" ").join("_").split("\t").join("_").split("").filter(function(c){var n=c.charCodeAt(0);return(n>=97&&n<=122)||(n>=48&&n<=57)||c==="_";}).join(""); });
         const imported = [];
         for (let i = 1; i < lines.length; i++) {
-          const cols = lines[i].split(sep).map(function(c) { return c.trim().replace(/^"|"$/g, ""); });
+          const cols = lines[i].split(sep).map(function(c) { var t=c.trim();if(t.length>1&&t[0]===String.fromCharCode(34)&&t[t.length-1]===String.fromCharCode(34)){return t.slice(1,-1);}return t; });
           if (!cols[0]) continue;
           const row = {};
           headers.forEach((h, idx) => { row[h] = cols[idx] || ""; });
@@ -106,13 +106,13 @@ function YardView({ horses, setHorses }) {
         const text = ev.target.result;
         const rawLines = text.split("\n").filter(function(l) { return l.trim(); });
         const sep = rawLines[0].includes("\t") ? "\t" : ",";
-        const headers = rawLines[0].split(sep).map(function(h) { return h.trim().toLowerCase().replace(/\s+/g, "_").replace(/[^a-z0-9_]/g, ""); });
+        const headers = rawLines[0].split(sep).map(function(h) { return h.trim().toLowerCase().split(" ").join("_").split("\t").join("_").split("").filter(function(c){var n=c.charCodeAt(0);return(n>=97&&n<=122)||(n>=48&&n<=57)||c==="_";}).join(""); });
         let updated = 0;
         const ratingLines = rawLines.slice(1);
         setHorses(prev => {
           const horses = [...prev];
           ratingLines.forEach(line => {
-            const cols = line.split(sep).map(function(c) { return c.trim().replace(/^"|"$/g, ""); });
+            const cols = line.split(sep).map(function(c) { var t=c.trim();if(t.length>1&&t[0]===String.fromCharCode(34)&&t[t.length-1]===String.fromCharCode(34)){return t.slice(1,-1);}return t; });
             if (!cols[0]) return;
             const row = {};
             headers.forEach((h, idx) => { row[h] = cols[idx] || ""; });
@@ -213,7 +213,7 @@ function YardView({ horses, setHorses }) {
                 {h.chaseRating && <span>Chs: {h.chaseRating}</span>}
                 {!h.flatRating && !h.awtRating && !h.hurdleRating && !h.chaseRating && <span style={{ color: C.amber }}>Unrated</span>}
                 <span>Owner: {h.owner}</span>
-                {h.ownerPhone && <a href={"https://wa.me/" + (h.ownerPhone || "").replace(/[^0-9]/g, "")} target="_blank" rel="noopener noreferrer" style={{ color: C.green, fontWeight: 600, textDecoration: "none" }}>💬 WhatsApp</a>}
+                {h.ownerPhone && <a href={"https://wa.me/" + (h.ownerPhone || "").split("").filter(function(d){return d>="0"&&d<="9";}).join("")} target="_blank" rel="noopener noreferrer" style={{ color: C.green, fontWeight: 600, textDecoration: "none" }}>💬 WhatsApp</a>}
               </div>
               <div style={{ marginTop: 5, display: "flex", gap: 6, alignItems: "center" }}><FormDots form={h.form} />{h.notes && <span style={{ fontSize: 11, color: C.textMid, fontStyle: "italic" }}>💬 {h.notes}</span>}</div>
             </div>
