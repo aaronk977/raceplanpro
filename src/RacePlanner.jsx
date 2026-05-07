@@ -41,7 +41,7 @@ function RacePlanner({ horses, setHorses }) {
       });
       const data = await res.json();
       const txt = (data.content || []).filter(b => b.type === "text").map(b => b.text).join("").trim();
-      const match = txt.match(/\[([\s\S]*)\]/);
+      const match = (function(){var s=txt.indexOf("[");var e=txt.lastIndexOf("]");return s>=0&&e>s?[null,txt.slice(s+1,e)]:null;})();
       if (!match) {
         console.log("API response:", txt.substring(0, 500));
         throw new Error("No JSON array found in response");
@@ -102,7 +102,7 @@ function RacePlanner({ horses, setHorses }) {
 
   const handleEntry = (horse, race) => {
     const msg = encodeURIComponent(`🏇 RacePlan Pro — ${horse.trainer}\n\n${horse.name} has been entered in the ${race.raceName} at ${race.venue} on ${new Date(race.date).toLocaleDateString("en-IE", { weekday: "long", day: "numeric", month: "long" })}.\n\nPrize fund: €${race.prizeMoney?.toLocaleString()}\nForecast going: ${race.forecastGoing}\n\nWe'll be in touch closer to declaration day.`);
-    const phone = (horse.ownerPhone || "").replace(/[^0-9]/g, "");
+    const phone = (horse.ownerPhone || "").split("").filter(function(d){return d>="0"&&d<="9";}).join("");
     if (phone) window.open("https://wa.me/" + phone + "?text=" + msg, "_blank");
     showToast(`✓ Entry confirmed — WhatsApp opened for ${horse.owner}`);
   };
@@ -110,7 +110,7 @@ function RacePlanner({ horses, setHorses }) {
   const handleDeclaration = (horse, race) => {
     const jockey = horse.jockey || "D.J. O'Keeffe";
     const msg = encodeURIComponent(`✅ RacePlan Pro — ${horse.trainer}\n\n${horse.name} is declared to run in the ${race.raceName} at ${race.venue}.\n\nJockey: ${jockey}\nForecast going: ${race.forecastGoing}\n\nWe'll keep you updated on race day.`);
-    const phone = (horse.ownerPhone || "").replace(/[^0-9]/g, "");
+    const phone = (horse.ownerPhone || "").split("").filter(function(d){return d>="0"&&d<="9";}).join("");
     if (phone) window.open("https://wa.me/" + phone + "?text=" + msg, "_blank");
     showToast(`📋 Declaration confirmed — WhatsApp opened for ${horse.owner}`, C.blue);
   };
