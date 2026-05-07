@@ -13,14 +13,14 @@ function RacePlanner({ horses, setHorses }) {
   const [showShortlist, setShowShortlist] = useState(false);
   const [toast, setToast] = useState(null);
 
-  const k = (hId, rId) => `${hId}_${rId}`;
+  const k = function(hId,rId){return hId+"_"+rId;};
 
-  const showToast = (msg, color = C.green) => { setToast({ msg, color }); setTimeout(() => setToast(null), 4000); };
+  const showToast = function(msg,color){color=color||C.green; setToast({ msg, color }); setTimeout(function(){return setToast(null;}), 4000); };
 
   const [pasteText, setPasteText] = useState("");
   const [showPaste, setShowPaste] = useState(false);
 
-  const handleParseText = async () => {
+  const handleParseText = async function(){return {;}
     if (!pasteText.trim()) return;
     setFetchStatus("fetching");
     try {
@@ -40,7 +40,7 @@ function RacePlanner({ horses, setHorses }) {
         }),
       });
       const data = await res.json();
-      const txt = (data.content || []).filter(b => b.type === "text").map(b => b.text).join("").trim();
+      const txt = (data.content || []).filter(function(b){return b.type==="text";}).map(function(b){return b.text;}).join("").trim();
       const match = (function(){var s=txt.indexOf("[");var e=txt.lastIndexOf("]");return s>=0&&e>s?[null,txt.slice(s+1,e)]:null;})();
       if (!match) {
         console.log("API response:", txt.substring(0, 500));
@@ -67,7 +67,7 @@ function RacePlanner({ horses, setHorses }) {
   };
 
 
-  const eligible = races.filter(r => {
+  const eligible = races.filter(function(r) {
     const age = getAge(selHorse.dob);
     if (age < r.ageMin) return false;
     if (r.ageMax && age > r.ageMax) return false;
@@ -75,7 +75,7 @@ function RacePlanner({ horses, setHorses }) {
     if (r.sexRestriction !== "Open" && !(sexMap[r.sexRestriction] || []).includes(selHorse.sex)) return false;
     if (!selHorse.discipline.includes(r.discipline)) return false;
     if (selHorse.surface !== r.surface) return false;
-    const getRating = () => {
+    const getRating = function(){return {;}
       if (r.discipline === "Flat" && r.surface === "AWT") return selHorse.awtRating || selHorse.flatRating;
       if (r.discipline === "Flat") return selHorse.flatRating || selHorse.awtRating;
       if (r.discipline === "Chase") return selHorse.chaseRating || selHorse.nhRating;
@@ -91,7 +91,7 @@ function RacePlanner({ horses, setHorses }) {
     return true;
   });
 
-  const analyse = async (horse, race) => {
+  const analyse = async function(horse, race) {
     const key = k(horse.id, race.id);
     setLoading(function(l) { return Object.assign({}, l, { [key]: true }); }); setLoadStage(function(s) { return Object.assign({}, s, { [key]: 0 }); });
     const timer = setInterval(function() { setLoadStage(function(s) { var c = s[key] || 0; if (c < 3) { var n = Object.assign({}, s); n[key] = c + 1; return n; } clearInterval(timer); return s; }); }, 2800);
@@ -100,27 +100,27 @@ function RacePlanner({ horses, setHorses }) {
     setLoading(function(l) { return Object.assign({}, l, { [key]: false }); });
   };
 
-  const handleEntry = (horse, race) => {
-    const msg = encodeURIComponent(`🏇 RacePlan Pro — ${horse.trainer}\n\n${horse.name} has been entered in the ${race.raceName} at ${race.venue} on ${new Date(race.date).toLocaleDateString("en-IE", { weekday: "long", day: "numeric", month: "long" })}.\n\nPrize fund: €${race.prizeMoney?.toLocaleString()}\nForecast going: ${race.forecastGoing}\n\nWe'll be in touch closer to declaration day.`);
+  const handleEntry = function(horse, race) {
+    const msg = encodeURIComponent(("🏇 RacePlan Pro — "+horse.trainer+"\n\n"+horse.name+" has been entered in the "+race.raceName+" at "+race.venue+" on "+new Date(race.date).toLocaleDateString("en-IE", { weekday: "long", day: "numeric", month: "long" +")}.\n\nPrize fund: €"+race.prizeMoney?.toLocaleString()+"\nForecast going: "+race.forecastGoing+"\n\nWe'll be in touch closer to declaration day."));
     const phone = (horse.ownerPhone || "").split("").filter(function(d){return d>="0"&&d<="9";}).join("");
     if (phone) window.open("https://wa.me/" + phone + "?text=" + msg, "_blank");
-    showToast(`✓ Entry confirmed — WhatsApp opened for ${horse.owner}`);
+    showToast(("✓ Entry confirmed — WhatsApp opened for "+horse.owner));
   };
 
-  const handleDeclaration = (horse, race) => {
+  const handleDeclaration = function(horse, race) {
     const jockey = horse.jockey || "D.J. O'Keeffe";
-    const msg = encodeURIComponent(`✅ RacePlan Pro — ${horse.trainer}\n\n${horse.name} is declared to run in the ${race.raceName} at ${race.venue}.\n\nJockey: ${jockey}\nForecast going: ${race.forecastGoing}\n\nWe'll keep you updated on race day.`);
+    const msg = encodeURIComponent(("✅ RacePlan Pro — "+horse.trainer+"\n\n"+horse.name+" is declared to run in the "+race.raceName+" at "+race.venue+".\n\nJockey: "+jockey+"\nForecast going: "+race.forecastGoing+"\n\nWe'll keep you updated on race day."));
     const phone = (horse.ownerPhone || "").split("").filter(function(d){return d>="0"&&d<="9";}).join("");
     if (phone) window.open("https://wa.me/" + phone + "?text=" + msg, "_blank");
-    showToast(`📋 Declaration confirmed — WhatsApp opened for ${horse.owner}`, C.blue);
+    showToast(("📋 Declaration confirmed — WhatsApp opened for "+horse.owner), C.blue);
   };
 
-  const sorted = [...eligible].sort((a, b) => (analyses[k(selHorse.id, b.id)]?.overall ?? -1) - (analyses[k(selHorse.id, a.id)]?.overall ?? -1));
+  const sorted = [...eligible].sort(function(a,b){var ba=(analyses[k(selHorse.id,b.id)]||{}).overall;var aa=(analyses[k(selHorse.id,a.id)]||{}).overall;return (ba!=null?ba:-1)-(aa!=null?aa:-1);});
 
   // Calculate medication dates for shortlisted races
   const shortlistItems = Object.values(shortlisted).filter(Boolean);
 
-  const getMedDates = (raceDate, withdrawalDays, courseDays) => {
+  const getMedDates = function(raceDate, withdrawalDays, courseDays) {
     if (!raceDate) return null;
     const race = new Date(raceDate);
     const lastDay = new Date(race);
@@ -147,9 +147,9 @@ function RacePlanner({ horses, setHorses }) {
                 Medication start and stop dates calculated automatically
               </div>
             </div>
-            <Btn variant="ghost" onClick={() => setShortlisted({})} style={{ fontSize: 12 }}>Clear All</Btn>
+            <Btn variant="ghost" onClick={function(){return setShortlisted({};})} style={{ fontSize: 12 }}>Clear All</Btn>
           </div>
-          {shortlistItems.map((item, idx) => {
+          {shortlistItems.map(function(item,idx) {
             const peptDates = getMedDates(item.race.date, 4, 12);
             const antepsinDates = getMedDates(item.race.date, 1, 12);
             const today = new Date();
@@ -200,11 +200,11 @@ function RacePlanner({ horses, setHorses }) {
                   )}
                 </div>
                 <div style={{ display: "grid", gridTemplateColumns: "1fr 1fr", gap: 7, marginTop: 8 }}>
-                  <Btn variant="green" onClick={() => handleEntry(item.horse, item.race)} style={{ justifyContent: "center" }}>
+                  <Btn variant="green" onClick={function(){return handleEntry(item.horse;}, item.race)} style={{ justifyContent: "center" }}>
                     ✓ Confirm Entry
                   </Btn>
                   <button
-                    onClick={() => handleDeclaration(item.horse, item.race)}
+                    onClick={function(){return handleDeclaration(item.horse;}, item.race)}
                     style={{ padding: "9px", background: C.blueBg, border: "2px solid " + C.blue + "50", borderRadius: 9, color: C.blue, fontSize: 12, fontWeight: 700, cursor: "pointer" }}
                   >
                     📋 Declare to Run
@@ -221,11 +221,11 @@ function RacePlanner({ horses, setHorses }) {
         {/* Horse sidebar */}
         <div>
           <div style={{ fontSize: 10, fontWeight: 700, color: C.textDim, letterSpacing: 1.5, marginBottom: 10, textTransform: "uppercase" }}>Horses</div>
-          {horses.map(h => {
+          {horses.map(function(h) {
             const sel = selHorse.id === h.id;
             const stCol = h.status === "Active" ? C.green : h.status === "CoolingOff" ? C.amber : C.red;
             return (
-              <div key={h.id} onClick={() => setSelHorse(h)} style={{ background: sel ? C.navy : C.card, border: "1.5px solid " + (sel ? C.navyLight : C.border), borderLeft: "4px solid " + stCol, borderRadius: 11, padding: "10px 12px", marginBottom: 7, cursor: "pointer" }}>
+              <div key={h.id} onClick={function(){return setSelHorse(h;})} style={{ background: sel ? C.navy : C.card, border: "1.5px solid " + (sel ? C.navyLight : C.border), borderLeft: "4px solid " + stCol, borderRadius: 11, padding: "10px 12px", marginBottom: 7, cursor: "pointer" }}>
                 <div style={{ display: "flex", alignItems: "center", gap: 9 }}>
                   <Silk silk={h.silk} size={32} />
                   <div style={{ flex: 1, minWidth: 0 }}>
@@ -266,7 +266,7 @@ function RacePlanner({ horses, setHorses }) {
                 </div>
               )}
             </div>
-            <Btn onClick={() => setShowPaste(!showPaste)} disabled={fetchStatus === "fetching"} style={{ fontSize: 12, padding: "8px 16px" }}>
+            <Btn onClick={function(){return setShowPaste(!showPaste;})} disabled={fetchStatus === "fetching"} style={{ fontSize: 12, padding: "8px 16px" }}>
               {fetchStatus === "fetching" ? "Parsing..." : "📋 Paste Race Conditions"}
             </Btn>
           </div>
@@ -279,7 +279,7 @@ function RacePlanner({ horses, setHorses }) {
               </div>
               <textarea
                 value={pasteText}
-                onChange={e => setPasteText(e.target.value)}
+                onChange={function(e){setPasteText(e.target.value);}}
                 placeholder="Paste the race conditions text here..."
                 rows={8}
                 style={{ width: "100%", background: C.cardOff, border: "1px solid " + C.border, borderRadius: 9, padding: "10px 12px", color: C.text, fontSize: 12, fontFamily: "inherit", lineHeight: 1.6, resize: "vertical", outline: "none", marginBottom: 10 }}
@@ -288,7 +288,7 @@ function RacePlanner({ horses, setHorses }) {
                 <Btn onClick={handleParseText} disabled={!pasteText.trim() || fetchStatus === "fetching"} style={{ flex: 1, justifyContent: "center" }}>
                   {fetchStatus === "fetching" ? "Parsing races..." : "Parse Races"}
                 </Btn>
-                <Btn variant="ghost" onClick={() => { setShowPaste(false); setPasteText(""); }} style={{ fontSize: 12 }}>Cancel</Btn>
+                <Btn variant="ghost" onClick={function(){ setShowPaste(false); setPasteText(""); }} style={{ fontSize: 12 }}>Cancel</Btn>
               </div>
             </div>
           )}
@@ -340,7 +340,7 @@ function RacePlanner({ horses, setHorses }) {
               <div style={{ fontSize: 10, fontWeight: 700, color: C.textDim, letterSpacing: 1.5, marginBottom: 10, textTransform: "uppercase" }}>
                 {eligible.length + " eligible races for " + selHorse.name}
               </div>
-              {sorted.map(race => {
+              {sorted.map(function(race) {
                 const key = k(selHorse.id, race.id);
                 const analysis = analyses[key];
                 const isLoading = loading[key];
@@ -381,7 +381,7 @@ function RacePlanner({ horses, setHorses }) {
                       )}
 
                       {!analysis && !isLoading && (
-                        <Btn onClick={() => analyse(selHorse, race)} style={{ width: "100%", justifyContent: "center", marginBottom: 10 }}>
+                        <Btn onClick={function(){return analyse(selHorse;}, race)} style={{ width: "100%", justifyContent: "center", marginBottom: 10 }}>
                           🧠 Get My Take on This Race
                         </Btn>
                       )}
@@ -389,19 +389,19 @@ function RacePlanner({ horses, setHorses }) {
                       {isLoading && (
                         <div style={{ padding: "12px 14px", background: C.cardOff, border: "1px solid " + C.border, borderRadius: 9, marginBottom: 10 }}>
                           <div style={{ fontSize: 12, fontWeight: 700, color: C.navy, marginBottom: 8 }}>🧠 Racing brain at work...</div>
-                          {["Checking who is in this race...", "Looking at the field...", "Checking trainer record...", "Building your analysis..."].map((s, i) => (
+                          {["Checking who is in this race...", "Looking at the field...", "Checking trainer record...", "Building your analysis..."].map(function(s,i){return (
                             <div key={i} style={{ display: "flex", alignItems: "center", gap: 8, marginBottom: 5, opacity: i <= stage ? 1 : 0.25 }}>
                               <span style={{ fontSize: 12 }}>{i < stage ? "✓" : i === stage ? "⟳" : "○"}</span>
                               <span style={{ fontSize: 12, color: i <= stage ? C.text : C.textDim }}>{s}</span>
                             </div>
-                          ))}
+                          ); })}
                         </div>
                       )}
 
                       {analysis && (
                         <div style={{ marginBottom: 10 }}>
                           <div style={{ display: "flex", gap: 5, marginBottom: 10 }}>
-                            {[["HCP", "handicap_edge"], ["Class", "class_fit"], ["Going", "conditions_match"], ["Timing", "timing"], ["Angle", "cuteness"]].map(([label, k2]) => {
+                            {[["HCP", "handicap_edge"], ["Class", "class_fit"], ["Going", "conditions_match"], ["Timing", "timing"], ["Angle", "cuteness"]].map(function(arr2){var label=arr2[0];var k2=arr2[1];
                               const v = (analysis.scores || {})[k2] || 0;
                               const c = v >= 7 ? C.green : v >= 5 ? C.amber : C.red;
                               return (
@@ -445,11 +445,11 @@ function RacePlanner({ horses, setHorses }) {
                           </Btn>
                           {isSl && (
                             <div style={{ display: "grid", gridTemplateColumns: "1fr 1fr", gap: 7 }}>
-                              <Btn variant="green" onClick={() => handleEntry(selHorse, race)} style={{ justifyContent: "center", flexDirection: "column", gap: 2 }}>
+                              <Btn variant="green" onClick={function(){return handleEntry(selHorse;}, race)} style={{ justifyContent: "center", flexDirection: "column", gap: 2 }}>
                                 <span>✓ Confirm Entry</span>
                                 <span style={{ fontSize: 10, opacity: 0.7, fontWeight: 400 }}>WhatsApp owner</span>
                               </Btn>
-                              <button onClick={() => handleDeclaration(selHorse, race)} style={{ padding: "9px", background: C.blueBg, border: "2px solid " + C.blue + "50", borderRadius: 9, color: C.blue, fontSize: 12, fontWeight: 700, cursor: "pointer", display: "flex", flexDirection: "column", alignItems: "center", gap: 2 }}>
+                              <button onClick={function(){return handleDeclaration(selHorse;}, race)} style={{ padding: "9px", background: C.blueBg, border: "2px solid " + C.blue + "50", borderRadius: 9, color: C.blue, fontSize: 12, fontWeight: 700, cursor: "pointer", display: "flex", flexDirection: "column", alignItems: "center", gap: 2 }}>
                                 <span>📋 Declare to Run</span>
                                 <span style={{ fontSize: 10, opacity: 0.7, fontWeight: 400 }}>WhatsApp owner + jockey</span>
                               </button>
