@@ -122,14 +122,14 @@ const INITIAL_HORSES = [
 const getAge = (dob) => TODAY.getFullYear() - new Date(dob).getFullYear();
 const coolingDate = (d) => { if (!d) return null; const x = new Date(d); x.setDate(x.getDate() + 7); return x; };
 const canRace = (h) => { if (h.status === "Inactive") return false; if (h.status === "CoolingOff") { const e = coolingDate(h.activationDate); return e && TODAY >= e; } return true; };
-const daysUntil = (ds) => !ds ? null : Math.ceil((new Date(ds) - TODAY) / 86400000);
+const daysUntil = function(ds) { return !ds ? null : Math.ceil((new Date(ds) - TODAY) * (1/86400000)); };
 const getDaysInMonth = (y, m) => new Date(y, m + 1, 0).getDate();
 
 // Antepsin: 3 bottles per 12-day course, 1 bottle every 4 days
 // Count ticks and calculate bottles needed (round up to nearest bottle at 4 days each)
 const calcAntepsinCost = (ticks) => {
   if (!ticks) return 0;
-  const bottles = Math.ceil(ticks / 4);
+  const bottles = Math.ceil(ticks * 0.25);
   return bottles * 25;
 };
 
@@ -150,7 +150,7 @@ function Btn({ onClick, children, variant = "primary", style: s = {}, disabled =
     primary: { background: C.navy, color: "#fff" },
     gold: { background: C.goldBg, color: C.gold, border: `1.5px solid ${C.gold}50` },
     green: { background: C.greenBg, color: C.green, border: `1.5px solid ${C.green}40` },
-    ghost: { background: "none", color: C.textMid, border: `1px solid ${C.border}` },
+    ghost: { background: "none", color: C.textMid, border: "1px solid "+C.border },
     red: { background: C.redBg, color: C.red, border: `1px solid ${C.red}30` },
   };
   return <button onClick={onClick} disabled={disabled} style={{ ...base, ...variants[variant], ...s }}>{children}</button>;
@@ -169,7 +169,7 @@ function FormDots({ form }) {
 
 function StatusPill({ status, activationDate }) {
   const d = coolingDate(activationDate);
-  const days = d ? Math.ceil((d - TODAY) / 86400000) : 0;
+  const days = d ? Math.ceil((d - TODAY) * (1/86400000)) : 0;
   const cfg = {
     Active: { bg: C.greenBg, color: C.green, label: "● Active" },
     CoolingOff: { bg: C.amberBg, color: C.amber, label: `⏳ Cool-off · ${days}d` },
@@ -181,7 +181,7 @@ function StatusPill({ status, activationDate }) {
 // ─── AI RACE PLANNER ──────────────────────────────────────────────────────────
 async function getAITake(horse, race) {
   const lastRun = horse.form?.[0];
-  const daysSince = lastRun ? Math.floor((TODAY - new Date(lastRun.date)) / 86400000) : null;
+  const daysSince = lastRun ? Math.floor((TODAY - new Date(lastRun.date)) * (1/86400000)) : null;
   const daysToRace = daysUntil(race.date);
 
   const system = "You are an experienced Irish racing professional giving a trainer your honest read on a race. The trainer already knows their horse inside out — never tell them their own horse's form, stats, or history. They lived it. Focus ONLY on the race itself — who else is likely in it, how weak or strong the field looks, whether the timing suits a campaign, what the pace scenario might be, and whether this is a race worth targeting. Use web_search to find likely runners and recent form at this venue and trip. Speak like a racing professional — direct, specific, no waffle. Use phrases like: Not a great race, I would be going there to win it. Plenty of dead wood in here. The handicapper has left him alone. This sets Punchestown up perfectly. Ride cold and come through them late. Worth trying cheekpieces here. I would be very tempted at this trip. Do not say things the trainer already knows about their own horse. Never mention days since last run or the horse's rating as if the trainer does not know it. Your job is to give them information about the RACE not about their horse.";
@@ -205,13 +205,40 @@ async function getAITake(horse, race) {
     body: JSON.stringify({ model: "claude-sonnet-4-20250514", max_tokens: 2500, tools: [{ type: "web_search_20250305", name: "web_search" }], system, messages: [{ role: "user", content: prompt }] }),
   });
   const data = await res.json();
-  const text = data.content?.filter(b => b.type === "text").map(b => b.text).join("").trim();
+  const text = data.content?.filter(function(b){return b.type==="text";}).map(function(b){return b.text;}).join("").trim();
   const match = (function(){var s=text.indexOf("{");var e=text.lastIndexOf("}");return s>=0&&e>s?[text.slice(s,e+1)]:null;})();
   if (!match) throw new Error("No JSON");
   return JSON.parse(match[0]);
 }
 
 // ─── MEDICATION TRACKER ───────────────────────────────────────────────────────
+
+
+const isEligible = function(horse, race) {
+  if (!horse || !race) return false;
+  var age = getAge(horse.dob);
+  if (race.minAge && age < race.minAge) return false;
+  if (race.maxAge && age > race.maxAge) return false;
+  if (race.sex && race.sex !== "Any") {
+    var sexMap = { "M": ["Mare", "Filly"], "F": ["Filly", "Mare"], "G": ["Gelding"], "C": ["Colt", "Horse"] };
+    var allowed = sexMap[race.sex] || [];
+    if (allowed.length > 0 && !allowed.includes(horse.sex)) return false;
+  }
+  if (race.discipline && race.discipline !== "Any") {
+    var hDisc = horse.discipline || [];
+    if (hDisc.length > 0 && !hDisc.includes(race.discipline)) return false;
+  }
+  if (race.isMaidenOnly && !horse.isMaiden) return false;
+  if (race.isNoviceOnly && !horse.isNovice) return false;
+  var rating = 0;
+  if (race.discipline === "Flat") rating = horse.flatRating || horse.nhRating || 0;
+  else if (race.discipline === "Hurdle") rating = horse.hurdleRating || horse.nhRating || 0;
+  else if (race.discipline === "Chase") rating = horse.chaseRating || horse.nhRating || 0;
+  else rating = horse.nhRating || horse.flatRating || horse.hurdleRating || horse.chaseRating || 0;
+  if (race.minRating && rating && rating < race.minRating) return false;
+  if (race.maxRating && rating && rating > race.maxRating) return false;
+  return true;
+};
 
 export { Silk, Tag, Btn, FormDots, StatusPill };
 export { C, TODAY, SILKS, ANTHROPIC_KEY };
