@@ -31,7 +31,7 @@ function ProvisionalEntries({ horses, setHorses }) {
       });
       const data = await res.json();
       const txt = (data.content || []).filter(b => b.type === "text").map(b => b.text).join("").trim();
-      const match = txt.match(/\[[\s\S]*\]/);
+      var s=txt.indexOf("["),e=txt.lastIndexOf("]");var match=s>=0&&e>s?[txt.slice(s,e+1)]:null;
       if (!match) throw new Error("No races found");
       const parsed = JSON.parse(match[0]);
       setProvisionalRaces(parsed);
@@ -74,7 +74,7 @@ function ProvisionalEntries({ horses, setHorses }) {
         });
         const data = await res.json();
         const txt = (data.content || []).filter(b => b.type === "text").map(b => b.text).join("").trim();
-        const arr = txt.match(/\[([\s\S]*)\]/);
+        const arr = (function(){var s=txt.indexOf("[");var e=txt.lastIndexOf("]");return s>=0&&e>s?[null,txt.slice(s+1,e)]:null;})();
         if (!arr) throw new Error("No races found");
         const parsed = JSON.parse(arr[0]);
         setProvisionalRaces(parsed);
@@ -104,7 +104,7 @@ function ProvisionalEntries({ horses, setHorses }) {
       });
       const data = await res.json();
       const text = data.content?.filter(b => b.type === "text").map(b => b.text).join("").trim();
-      const match = text.match(/\[[\s\S]*\]/);
+      var s=text.indexOf("["),e=text.lastIndexOf("]");var match=s>=0&&e>s?[text.slice(s,e+1)]:null;
       if (!match) throw new Error("No races");
       setProvisionalRaces(JSON.parse(match[0]));
       setLastFetch(new Date().toISOString());
