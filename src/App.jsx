@@ -121,10 +121,19 @@ export default function App() {
           const lastU = key.lastIndexOf("_");
           const medType = key.slice(lastU + 1);
           const rest = key.slice(0, lastU);
-          const dateMatch = rest.match(/_(\d{4}-\d{2}-\d{2})$/);
-          if (!dateMatch) return;
-          const logDate = dateMatch[1];
-          const horseId = rest.slice(0, rest.length - dateMatch[0].length);
+      // Extract date: find last _YYYY-MM-DD pattern
+    var restParts = rest.split("_");
+    var logDate = "";
+    var horseIdParts = [];
+    for (var rpi = 0; rpi < restParts.length; rpi++) {
+      var part = restParts[rpi];
+      if (part.length === 10 && part[4] === "-" && part[7] === "-") {
+        logDate = part;
+        horseIdParts = restParts.slice(0, rpi);
+      }
+    }
+    var horseId = horseIdParts.join("_");
+          if (!logDate) return;
           const val = next[key];
           if (val) {
             supabase.from("med_logs").upsert({ user_id: user.id, horse_id: horseId, log_date: logDate, med_type: medType, value: val }).then(function() {});
