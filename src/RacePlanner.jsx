@@ -20,7 +20,7 @@ function RacePlanner({ horses, setHorses }) {
   const [pasteText, setPasteText] = useState("");
   const [showPaste, setShowPaste] = useState(false);
 
-  const handleParseText = async function(){return {;}
+  const handleParseText = async function() {
     if (!pasteText.trim()) return;
     setFetchStatus("fetching");
     try {
@@ -75,7 +75,7 @@ function RacePlanner({ horses, setHorses }) {
     if (r.sexRestriction !== "Open" && !(sexMap[r.sexRestriction] || []).includes(selHorse.sex)) return false;
     if (!selHorse.discipline.includes(r.discipline)) return false;
     if (selHorse.surface !== r.surface) return false;
-    const getRating = function(){return {;}
+    const getRating = function() {
       if (r.discipline === "Flat" && r.surface === "AWT") return selHorse.awtRating || selHorse.flatRating;
       if (r.discipline === "Flat") return selHorse.flatRating || selHorse.awtRating;
       if (r.discipline === "Chase") return selHorse.chaseRating || selHorse.nhRating;
@@ -147,7 +147,7 @@ function RacePlanner({ horses, setHorses }) {
                 Medication start and stop dates calculated automatically
               </div>
             </div>
-            <Btn variant="ghost" onClick={function(){return setShortlisted({};})} style={{ fontSize: 12 }}>Clear All</Btn>
+            <Btn variant="ghost" onClick={function(){setShortlisted({});}} style={{ fontSize: 12 }}>Clear All</Btn>
           </div>
           {shortlistItems.map(function(item,idx) {
             const peptDates = getMedDates(item.race.date, 4, 12);
@@ -200,11 +200,11 @@ function RacePlanner({ horses, setHorses }) {
                   )}
                 </div>
                 <div style={{ display: "grid", gridTemplateColumns: "1fr 1fr", gap: 7, marginTop: 8 }}>
-                  <Btn variant="green" onClick={function(){return handleEntry(item.horse;}, item.race)} style={{ justifyContent: "center" }}>
+                  <Btn variant="green" onClick={function(){handleEntry(item.horse, item.race);}} style={{ justifyContent: "center" }}>
                     ✓ Confirm Entry
                   </Btn>
                   <button
-                    onClick={function(){return handleDeclaration(item.horse;}, item.race)}
+                    onClick={function(){handleDeclaration(item.horse, item.race);}}
                     style={{ padding: "9px", background: C.blueBg, border: "2px solid " + C.blue + "50", borderRadius: 9, color: C.blue, fontSize: 12, fontWeight: 700, cursor: "pointer" }}
                   >
                     📋 Declare to Run
@@ -225,7 +225,7 @@ function RacePlanner({ horses, setHorses }) {
             const sel = selHorse.id === h.id;
             const stCol = h.status === "Active" ? C.green : h.status === "CoolingOff" ? C.amber : C.red;
             return (
-              <div key={h.id} onClick={function(){return setSelHorse(h;})} style={{ background: sel ? C.navy : C.card, border: "1.5px solid " + (sel ? C.navyLight : C.border), borderLeft: "4px solid " + stCol, borderRadius: 11, padding: "10px 12px", marginBottom: 7, cursor: "pointer" }}>
+              <div key={h.id} onClick={function(){setSelHorse(h);}} style={{ background: sel ? C.navy : C.card, border: "1.5px solid " + (sel ? C.navyLight : C.border), borderLeft: "4px solid " + stCol, borderRadius: 11, padding: "10px 12px", marginBottom: 7, cursor: "pointer" }}>
                 <div style={{ display: "flex", alignItems: "center", gap: 9 }}>
                   <Silk silk={h.silk} size={32} />
                   <div style={{ flex: 1, minWidth: 0 }}>
@@ -266,7 +266,7 @@ function RacePlanner({ horses, setHorses }) {
                 </div>
               )}
             </div>
-            <Btn onClick={function(){return setShowPaste(!showPaste;})} disabled={fetchStatus === "fetching"} style={{ fontSize: 12, padding: "8px 16px" }}>
+            <Btn onClick={function(){setShowPaste(!showPaste);}} disabled={fetchStatus === "fetching"} style={{ fontSize: 12, padding: "8px 16px" }}>
               {fetchStatus === "fetching" ? "Parsing..." : "📋 Paste Race Conditions"}
             </Btn>
           </div>
@@ -381,7 +381,7 @@ function RacePlanner({ horses, setHorses }) {
                       )}
 
                       {!analysis && !isLoading && (
-                        <Btn onClick={function(){return analyse(selHorse;}, race)} style={{ width: "100%", justifyContent: "center", marginBottom: 10 }}>
+                        <Btn onClick={function(){analyse(selHorse, race);}} style={{ width: "100%", justifyContent: "center", marginBottom: 10 }}>
                           🧠 Get My Take on This Race
                         </Btn>
                       )}
@@ -445,11 +445,11 @@ function RacePlanner({ horses, setHorses }) {
                           </Btn>
                           {isSl && (
                             <div style={{ display: "grid", gridTemplateColumns: "1fr 1fr", gap: 7 }}>
-                              <Btn variant="green" onClick={function(){return handleEntry(selHorse;}, race)} style={{ justifyContent: "center", flexDirection: "column", gap: 2 }}>
+                              <Btn variant="green" onClick={function(){handleEntry(selHorse, race);}} style={{ justifyContent: "center", flexDirection: "column", gap: 2 }}>
                                 <span>✓ Confirm Entry</span>
                                 <span style={{ fontSize: 10, opacity: 0.7, fontWeight: 400 }}>WhatsApp owner</span>
                               </Btn>
-                              <button onClick={function(){return handleDeclaration(selHorse;}, race)} style={{ padding: "9px", background: C.blueBg, border: "2px solid " + C.blue + "50", borderRadius: 9, color: C.blue, fontSize: 12, fontWeight: 700, cursor: "pointer", display: "flex", flexDirection: "column", alignItems: "center", gap: 2 }}>
+                              <button onClick={function(){handleDeclaration(selHorse, race);}} style={{ padding: "9px", background: C.blueBg, border: "2px solid " + C.blue + "50", borderRadius: 9, color: C.blue, fontSize: 12, fontWeight: 700, cursor: "pointer", display: "flex", flexDirection: "column", alignItems: "center", gap: 2 }}>
                                 <span>📋 Declare to Run</span>
                                 <span style={{ fontSize: 10, opacity: 0.7, fontWeight: 400 }}>WhatsApp owner + jockey</span>
                               </button>
