@@ -206,7 +206,7 @@ async function getAITake(horse, race) {
   });
   const data = await res.json();
   const text = data.content?.filter(b => b.type === "text").map(b => b.text).join("").trim();
-  const match = text.match(/\{[\s\S]*\}/);
+  const match = (function(){var s=text.indexOf("{");var e=text.lastIndexOf("}");return s>=0&&e>s?[text.slice(s,e+1)]:null;})();
   if (!match) throw new Error("No JSON");
   return JSON.parse(match[0]);
 }
