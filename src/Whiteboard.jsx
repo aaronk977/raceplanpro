@@ -23,10 +23,10 @@ function RacedayPrint({ horses, entries, setEntries }) {
         const text = ev.target.result;
         const rawLines = text.split("\n").filter(function(l) { return l.trim(); });
         const sep = rawLines[0].includes("\t") ? "\t" : ",";
-        const headers = rawLines[0].split(sep).map(function(h) { return h.trim().toLowerCase().replace(/\s+/g, "_").replace(/[^a-z0-9_]/g, ""); });
+        const headers = rawLines[0].split(sep).map(function(h) { return h.trim().toLowerCase().split(" ").join("_").split("\t").join("_").split("").filter(function(c){var n=c.charCodeAt(0);return(n>=97&&n<=122)||(n>=48&&n<=57)||c==="_";}).join(""); });
         const imported = [];
         for (let i = 1; i < rawLines.length; i++) {
-          const cols = rawLines[i].split(sep).map(function(c) { return c.trim().replace(/^"|"$/g, ""); });
+          const cols = rawLines[i].split(sep).map(function(c) { var t=c.trim();if(t.length>1&&t[0]===String.fromCharCode(34)&&t[t.length-1]===String.fromCharCode(34)){return t.slice(1,-1);}return t; });
           if (!cols[0]) continue;
           const row = {};
           headers.forEach((h, idx) => { row[h] = cols[idx] || ""; });
@@ -45,7 +45,7 @@ function RacedayPrint({ horses, entries, setEntries }) {
           const rawDate = row.date || row.race_date || row.meeting_date || "";
           let parsedDate = "";
           if (rawDate) {
-            const parts = rawDate.replace(/\//g, "-").replace(/\./g, "-").split("-");
+            const parts = rawDate.split("/").join("-").split(".").join("-").split("-");
             if (parts.length === 3) {
               if (parts[2] && parts[2].length === 4) {
                 parsedDate = parts[2] + "-" + parts[1].padStart(2,"0") + "-" + parts[0].padStart(2,"0");
