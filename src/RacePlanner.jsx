@@ -101,7 +101,7 @@ function RacePlanner({ horses, setHorses }) {
   };
 
   const handleEntry = function(horse, race) {
-    const msg = encodeURIComponent(("🏇 RacePlan Pro — "+horse.trainer+"\n\n"+horse.name+" has been entered in the "+race.raceName+" at "+race.venue+" on "+new Date(race.date).toLocaleDateString("en-IE", { weekday: "long", day: "numeric", month: "long" +")}.\n\nPrize fund: €"+race.prizeMoney?.toLocaleString()+"\nForecast going: "+race.forecastGoing+"\n\nWe'll be in touch closer to declaration day."));
+    var raceDate = new Date(race.date).toLocaleDateString("en-IE", { weekday: "long", day: "numeric", month: "long" }); var msgText = horse.name + " entered in " + race.raceName + " at " + race.venue + " on " + raceDate + ". Prize: " + (race.prizeMoney || "TBC") + ". Going: " + (race.forecastGoing || "TBC") + ". More details to follow."; var msg = encodeURIComponent(msgText);
     const phone = (horse.ownerPhone || "").split("").filter(function(d){return d>="0"&&d<="9";}).join("");
     if (phone) window.open("https://wa.me/" + phone + "?text=" + msg, "_blank");
     showToast(("✓ Entry confirmed — WhatsApp opened for "+horse.owner));
