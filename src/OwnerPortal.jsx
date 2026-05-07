@@ -37,7 +37,7 @@ function OwnerPortal({ horses }) {
       <div style={{ display: "flex", justifyContent: "space-between", alignItems: "center", marginBottom: 14 }}>
         <Btn variant="ghost" onClick={() => setSelOwner(null)} style={{ fontSize: 12, padding: "6px 14px" }}>← All Owners</Btn>
         <div style={{ display: "flex", gap: 8 }}>
-          {selOwner.phone && <a href={"https://wa.me/" + (selOwner.phone || "").replace(/[^0-9]/g, "")} target="_blank" rel="noopener noreferrer" style={{ background: "#f0fdf4", border: "1px solid #bbf7d0", color: "#15803d", borderRadius: 8, padding: "7px 14px", fontSize: 12, fontWeight: 700, textDecoration: "none" }}>💬 WhatsApp</a>}
+          {selOwner.phone && <a href={"https://wa.me/" + (selOwner.phone || "").split("").filter(function(d){return d>="0"&&d<="9";}).join("")} target="_blank" rel="noopener noreferrer" style={{ background: "#f0fdf4", border: "1px solid #bbf7d0", color: "#15803d", borderRadius: 8, padding: "7px 14px", fontSize: 12, fontWeight: 700, textDecoration: "none" }}>💬 WhatsApp</a>}
           {selOwner.phone && <a href={`tel:${selOwner.phone}`} style={{ background: C.blueBg, border: `1px solid ${C.blue}30`, color: C.blue, borderRadius: 8, padding: "7px 14px", fontSize: 12, fontWeight: 700, textDecoration: "none" }}>📞 Call</a>}
           {selOwner.email && <a href={`mailto:${selOwner.email}`} style={{ background: C.navy, border: "none", color: "#fff", borderRadius: 8, padding: "7px 14px", fontSize: 12, fontWeight: 700, textDecoration: "none" }}>✉ Email</a>}
         </div>
