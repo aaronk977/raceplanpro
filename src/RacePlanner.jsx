@@ -15,7 +15,7 @@ function RacePlanner({ horses, setHorses }) {
 
   const k = function(hId,rId){return hId+"_"+rId;};
 
-  const showToast = function(msg,color){color=color||C.green; setToast({ msg, color }); setTimeout(function(){return setToast(null;}), 4000); };
+  const showToast = function(msg,color){color=color||C.green; setToast({ msg, color }); setTimeout(function(){setToast(null);}, 4000); };
 
   const [pasteText, setPasteText] = useState("");
   const [showPaste, setShowPaste] = useState(false);
