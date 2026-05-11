@@ -10,7 +10,7 @@ function ProvisionalEntries({ horses, setHorses }) {
   const [showProvPaste, setShowProvPaste] = useState(false);
   const [provPasteText, setProvPasteText] = useState("");
 
-  const handleProvParseText = async function() {}
+  const handleProvParseText = async function() {
     if (!provPasteText.trim()) return;
     setFetchStatus("fetching");
     try {
@@ -88,7 +88,7 @@ function ProvisionalEntries({ horses, setHorses }) {
     }
   };
 
-  const fetchProvisional = async function() {}
+  const fetchProvisional = async function() {
     setFetchStatus("fetching");
     try {
       const res = await fetch("https://api.anthropic.com/v1/messages", {
