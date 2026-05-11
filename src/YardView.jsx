@@ -7,12 +7,12 @@ function YardView({ horses, setHorses }) {
   const [csvStatus, setCsvStatus] = useState(null);
   const [newHorse, setNewHorse] = useState({ name: "", dob: "", sex: "Gelding", colour: "", nhRating: "", flatRating: "", discipline: "Hurdle", surface: "Turf", status: "Active", owner: "", ownerPhone: "", ownerEmail: "", headgear: "", nextRaceDate: "", notes: "" });
 
-  const handleCSV = (e) => {
+  const handleCSV = function(e) {
     const file = e.target.files[0];
     if (!file) return;
     e.target.value = "";
     const reader = new FileReader();
-    reader.onload = (ev) => {
+    reader.onload = function(ev) {
       try {
         const text = ev.target.result;
         const lines = text.split("\n").filter(function(l) { return l.trim(); });
@@ -73,9 +73,9 @@ function YardView({ horses, setHorses }) {
             partnership: row.partnership || "",
           });
         }
-        setHorses(prev => {
+        setHorses(function(prev) {
           const updated = [...prev];
-          imported.forEach(imp => {
+          imported.forEach(function(imp){
             const idx = updated.findIndex(function(h){return h.name;}.toLowerCase() === imp.name.toLowerCase());
             if (idx >= 0) {
               updated[idx] = { ...updated[idx], ...imp, id: updated[idx].id, silk: updated[idx].silk, form: updated[idx].form };
@@ -96,12 +96,12 @@ function YardView({ horses, setHorses }) {
     reader.readAsText(file);
   };
 
-  const handleRatingsCSV = (e) => {
+  const handleRatingsCSV = function(e) {
     const file = e.target.files[0];
     if (!file) return;
     e.target.value = "";
     const reader = new FileReader();
-    reader.onload = (ev) => {
+    reader.onload = function(ev) {
       try {
         const text = ev.target.result;
         const rawLines = text.split("\n").filter(function(l) { return l.trim(); });
@@ -109,9 +109,9 @@ function YardView({ horses, setHorses }) {
         const headers = rawLines[0].split(sep).map(function(h) { return h.trim().toLowerCase().split(" ").join("_").split("\t").join("_").split("").filter(function(c){var n=c.charCodeAt(0);return(n>=97&&n<=122)||(n>=48&&n<=57)||c==="_";}).join(""); });
         let updated = 0;
         const ratingLines = rawLines.slice(1);
-        setHorses(prev => {
+        setHorses(function(prev) {
           const horses = [...prev];
-          ratingLines.forEach(line => {
+          ratingLines.forEach(function(line){
             const cols = line.split(sep).map(function(c) { var t=c.trim();if(t.length>1&&t[0]===String.fromCharCode(34)&&t[t.length-1]===String.fromCharCode(34)){return t.slice(1,-1);}return t; });
             if (!cols[0]) return;
             const row = {};
@@ -161,7 +161,7 @@ function YardView({ horses, setHorses }) {
 
   const addHorse = function() {}
     if (!newHorse.name) return;
-    setHorses(prev => [...prev, { ...newHorse, id: "h_" + Date.now(), silk: SILKS[Math.floor(Math.random() * SILKS.length)], nhRating: newHorse.nhRating ? parseInt(newHorse.nhRating) : null, flatRating: newHorse.flatRating ? parseInt(newHorse.flatRating) : null, discipline: [newHorse.discipline], isEBF: false, isMaiden: false, isNovice: false, distanceMin: 16, distanceMax: 24, goingPref: [], form: [], arrivedDate: todayStr, provisionalEntries: [] }]);
+    setHorses(function(prev) { return [...prev, { ...newHorse, id: "h_" + Date.now(), silk: SILKS[Math.floor(Math.random() * SILKS.length)], nhRating: newHorse.nhRating ? parseInt(newHorse.nhRating) : null, flatRating: newHorse.flatRating ? parseInt(newHorse.flatRating) : null, discipline: [newHorse.discipline], isEBF: false, isMaiden: false, isNovice: false, distanceMin: 16, distanceMax: 24, goingPref: [], form: [], arrivedDate: todayStr, provisionalEntries: [] }]);
     setNewHorse({ name: "", dob: "", sex: "Gelding", colour: "", nhRating: "", flatRating: "", discipline: "Hurdle", surface: "Turf", status: "Active", owner: "", ownerPhone: "", ownerEmail: "", headgear: "", nextRaceDate: "", notes: "" });
     setShowAdd(false);
   };
@@ -187,7 +187,7 @@ function YardView({ horses, setHorses }) {
       </div>
 
       <div style={{ display: "grid", gridTemplateColumns: "repeat(4,1fr)", gap: 10, marginBottom: 18 }}>
-        {[{ l: "Total", v: horses.length, c: C.blue }, { l: "Active", v: horses.filter(function(h){return h.status;} === "Active").length, c: C.green }, { l: "Cooling Off", v: horses.filter(function(h){return h.status;} === "CoolingOff").length, c: C.amber }, { l: "Inactive", v: horses.filter(function(h){return h.status;} === "Inactive").length, c: C.red }].map(s => (
+        {[{ l: "Total", v: horses.length, c: C.blue }, { l: "Active", v: horses.filter(function(h){return h.status;} === "Active").length, c: C.green }, { l: "Cooling Off", v: horses.filter(function(h){return h.status;} === "CoolingOff").length, c: C.amber }, { l: "Inactive", v: horses.filter(function(h){return h.status;} === "Inactive").length, c: C.red }].map(function(s){return(
           <div key={s.l} style={{ background: C.card, borderRadius: 10, padding: "13px 16px", borderTop: `4px solid ${s.c}`, boxShadow: C.shadow }}>
             <div style={{ fontSize: 28, fontWeight: 800, color: s.c, lineHeight: 1 }}>{s.v}</div>
             <div style={{ fontSize: 11, color: C.textMid, marginTop: 3, fontWeight: 600 }}>{s.l}</div>
@@ -195,7 +195,7 @@ function YardView({ horses, setHorses }) {
         ))}
       </div>
 
-      {horses.map(h => (
+      {horses.map(function(h){return(
         <div key={h.id} style={{ background: C.card, border: "1px solid "+C.border, borderLeft: `4px solid ${h.status === "Active" ? C.green : h.status === "CoolingOff" ? C.amber : C.red}`, borderRadius: 12, padding: "13px 16px", marginBottom: 9, boxShadow: C.shadow }}>
           <div style={{ display: "flex", alignItems: "center", gap: 12 }}>
             <Silk silk={h.silk} size={40} />
@@ -245,23 +245,23 @@ function YardView({ horses, setHorses }) {
                 { key: "jockey", label: "Jockey", placeholder: "e.g. D.J. OKeeffe" },
                 { key: "notes", label: "Trainer Notes", placeholder: "Any notes" },
                 { key: "nextRaceDate", label: "Next Target Date", type: "date" },
-              ].map(({ key, label, placeholder, type, options }) => (
+              ].map(function(item){var key=item.key,label=item.label,placeholder=item.placeholder,type=item.type,options=item.options;return(
                 <div key={key}>
                   <div style={{ fontSize: 10, fontWeight: 700, color: C.textMid, marginBottom: 3, textTransform: "uppercase", letterSpacing: 0.5 }}>{label}</div>
                   {type === "select" ? (
                     <select
                       value={key === "discipline" ? (editHorse.discipline && editHorse.discipline[0]) || "" : editHorse[key] || ""}
-                      onChange={e => setEditHorse(function(prev) { return Object.assign({}, prev, { [key]: key === "discipline" ? [e.target.value] : e.target.value }); })}
+                      onChange={function(e){setEditHorse(function(prev) { return Object.assign({;}}, prev, { [key]: key === "discipline" ? [e.target.value] : e.target.value }); })}
                       style={{ width: "100%", background: C.cardOff, border: "1px solid " + C.border, borderRadius: 8, padding: "8px 12px", color: C.text, fontSize: 13, outline: "none" }}
                     >
-                      {(options || []).map(o => <option key={o} value={o}>{o}</option>)}
+                      {(options||[]).map(function(o){return <option key={o} value={o}>{o}</option>;})}
                     </select>
                   ) : (
                     <input
                       type={type || "text"}
                       placeholder={placeholder}
                       value={editHorse[key] || ""}
-                      onChange={e => setEditHorse(function(prev) { return Object.assign({}, prev, { [key]: e.target.value }); })}
+                      onChange={function(e){setEditHorse(function(prev) { return Object.assign({;}}, prev, { [key]: e.target.value }); })}
                       style={{ width: "100%", background: C.cardOff, border: "1px solid " + C.border, borderRadius: 8, padding: "8px 12px", color: C.text, fontSize: 13, outline: "none" }}
                     />
                   )}
@@ -301,15 +301,15 @@ function YardView({ horses, setHorses }) {
                 { key: "headgear", label: "Headgear", placeholder: "e.g. Cheekpieces" },
                 { key: "nextRaceDate", label: "Next Target Date", type: "date" },
                 { key: "notes", label: "Trainer Notes", placeholder: "Any notes" },
-              ].map(({ key, label, placeholder, type, options }) => (
+              ].map(function(item){var key=item.key,label=item.label,placeholder=item.placeholder,type=item.type,options=item.options;return(
                 <div key={key}>
                   <div style={{ fontSize: 10, fontWeight: 700, color: C.textMid, marginBottom: 3, textTransform: "uppercase", letterSpacing: 0.5 }}>{label}</div>
                   {type === "select" ? (
-                    <select value={newHorse[key]} onChange={e => setNewHorse(function(p) { return Object.assign({}, p, { [key]: e.target.value }); })} style={{ width: "100%", background: C.cardOff, border: "1px solid "+C.border, borderRadius: 8, padding: "8px 12px", color: C.text, fontSize: 13, outline: "none" }}>
-                      {options.map(o => <option key={o} value={o}>{o}</option>)}
+                    <select value={newHorse[key]} onChange={function(e){setNewHorse(function(p) { return Object.assign({}, p, { [key]: e.target.value }); })} style={{ width: "100%", background: C.cardOff, border: "1px solid "+C.border, borderRadius: 8, padding: "8px 12px", color: C.text, fontSize: 13, outline: "none" }}>
+                      {options.map(function(o){return <option key={o} value={o}>{o}</option>;})}
                     </select>
                   ) : (
-                    <input type={type || "text"} placeholder={placeholder} value={newHorse[key]} onChange={e => setNewHorse(function(p) { return Object.assign({}, p, { [key]: e.target.value }); })} style={{ width: "100%", background: C.cardOff, border: "1px solid "+C.border, borderRadius: 8, padding: "8px 12px", color: C.text, fontSize: 13, outline: "none" }} />
+                    <input type={type || "text"} placeholder={placeholder} value={newHorse[key]} onChange={function(e){setNewHorse(function(p) { return Object.assign({}, p, { [key]: e.target.value }); })} style={{ width: "100%", background: C.cardOff, border: "1px solid "+C.border, borderRadius: 8, padding: "8px 12px", color: C.text, fontSize: 13, outline: "none" }} />
                   )}
                 </div>
               ))}
