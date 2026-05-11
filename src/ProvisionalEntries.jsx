@@ -45,14 +45,14 @@ function ProvisionalEntries({ horses, setHorses }) {
     }
   };
 
-  const handleProvPDFUpload = async (e) => {
+  const handleProvPDFUpload = async function(e) {
     const file = e.target.files[0];
     if (!file) return;
     setFetchStatus("fetching");
     e.target.value = "";
     try {
       const reader = new FileReader();
-      reader.onload = async (ev) => {
+      reader.onload = async function(ev) {
         const base64 = ev.target.result.split(",")[1];
         const headers = {
           "Content-Type": "application/json",
@@ -112,14 +112,14 @@ function ProvisionalEntries({ horses, setHorses }) {
     } catch (e) { console.error(e); setFetchStatus("error"); }
   };
 
-  const addEntry = (horseId) => {
+  const addEntry = function(horseId) {
     if (!entry.venue || !entry.raceName) return;
     setHorses(function(prev){return prev.map;}(function(h){return h.id;} === horseId ? { ...h, provisionalEntries: [...(h.provisionalEntries || []), { ...entry, id: "pe_" + Date.now() }] } : h));
     setEntry({ venue: "", date: "", raceName: "", raceRef: "", note: "" });
     setShowAdd(null);
   };
 
-  const removeEntry = (horseId, entryId) => {
+  const removeEntry = function(horseId,entryId) {
     setHorses(function(prev){return prev.map;}(function(h){return h.id;} === horseId ? { ...h, provisionalEntries: (h.provisionalEntries || []).filter(function(e){return e.id;} !== entryId) } : h));
   };
 
@@ -158,7 +158,7 @@ function ProvisionalEntries({ horses, setHorses }) {
             <div style={{ fontSize: 12, color: C.textMid, marginBottom: 10, lineHeight: 1.6 }}>Open the HRI provisional summary PDF, press Ctrl+A then Ctrl+C, then paste below.</div>
             <textarea
               value={provPasteText}
-              onChange={e => setProvPasteText(e.target.value)}
+              onChange={function(e){setProvPasteText(e.target.value);}}
               placeholder="Paste provisional summary text here..."
               rows={6}
               style={{ width: "100%", background: C.cardOff, border: "1px solid " + C.border, borderRadius: 9, padding: "10px 12px", color: C.text, fontSize: 12, fontFamily: "inherit", lineHeight: 1.6, resize: "vertical", outline: "none", marginBottom: 10 }}
@@ -174,7 +174,7 @@ function ProvisionalEntries({ horses, setHorses }) {
 
         {provisionalRaces.length > 0 && (
           <div style={{ display: "flex", flexDirection: "column", gap: 6 }}>
-            {provisionalRaces.slice(0, 8).map((r, i) => (
+            {provisionalRaces.slice(0, 8).map(function(r,i){return(
               <div key={i} style={{ display: "flex", gap: 12, padding: "8px 10px", background: C.cardOff, borderRadius: 8, border: "1px solid "+C.border, fontSize: 12, alignItems: "center" }}>
                 <span style={{ fontWeight: 700, color: C.navy, minWidth: 80 }}>{r.meetingRef}</span>
                 <span style={{ color: C.textMid, minWidth: 60 }}>{r.raceRef}</span>
@@ -192,7 +192,7 @@ function ProvisionalEntries({ horses, setHorses }) {
       </div>
 
       
-      {horses.filter(function(h){return h.status;} !== "Inactive").map(horse => {
+      {horses.filter(function(h){return h.status;} !== "Inactive").map(function(horse){
         const entries = horse.provisionalEntries || [];
         const isAdding = showAdd === horse.id;
         return (
@@ -209,7 +209,7 @@ function ProvisionalEntries({ horses, setHorses }) {
             </div>
 
             
-            {entries.map(e => (
+            {entries.map(function(e){return(
               <div key={e.id} style={{ display: "flex", alignItems: "center", gap: 10, padding: "10px 12px", background: C.goldBg, border: `1px solid ${C.gold}30`, borderLeft: `3px solid ${C.gold}`, borderRadius: 10, marginBottom: 8 }}>
                 <div style={{ flex: 1 }}>
                   <div style={{ display: "flex", gap: 8, alignItems: "center", flexWrap: "wrap", marginBottom: 4 }}>
@@ -238,16 +238,16 @@ function ProvisionalEntries({ horses, setHorses }) {
                     { key: "venue", label: "Venue", placeholder: "e.g. Navan" },
                     { key: "date", label: "Date", type: "date" },
                     { key: "raceRef", label: "Meeting Ref", placeholder: "e.g. Limerick 55 Race A" },
-                  ].map(({ key, label, placeholder, type, full }) => (
+                  ].map(function(item){var key=item.key,label=item.label,placeholder=item.placeholder,type=item.type,full=item.full;return(
                     <div key={key} style={{ gridColumn: full ? "1 / -1" : "auto" }}>
                       <div style={{ fontSize: 10, fontWeight: 700, color: C.textMid, marginBottom: 4, textTransform: "uppercase", letterSpacing: 0.5 }}>{label}</div>
-                      <input type={type || "text"} placeholder={placeholder} value={entry[key]} onChange={e => setEntry(function(p) { return Object.assign({}, p, { [key]: e.target.value }); })} style={{ width: "100%", background: C.card, border: "1px solid "+C.border, borderRadius: 8, padding: "8px 12px", color: C.text, fontSize: 13, outline: "none" }} />
+                      <input type={type || "text"} placeholder={placeholder} value={entry[key]} onChange={function(e){setEntry(function(p) { return Object.assign({}, p, { [key]: e.target.value }); })} style={{ width: "100%", background: C.card, border: "1px solid "+C.border, borderRadius: 8, padding: "8px 12px", color: C.text, fontSize: 13, outline: "none" }} />
                     </div>
                   ))}
                 </div>
                 <div style={{ marginBottom: 10 }}>
                   <div style={{ fontSize: 10, fontWeight: 700, color: C.textMid, marginBottom: 4, textTransform: "uppercase", letterSpacing: 0.5 }}>Trainer Note (visible to owner)</div>
-                  <input type="text" placeholder="e.g. If ground stays soft" value={entry.note} onChange={e => setEntry(function(p) { return Object.assign({}, p, { note: e.target.value }); })} style={{ width: "100%", background: C.card, border: "1px solid "+C.border, borderRadius: 8, padding: "8px 12px", color: C.text, fontSize: 13, outline: "none" }} />
+                  <input type="text" placeholder="e.g. If ground stays soft" value={entry.note} onChange={function(e){setEntry(function(p) { return Object.assign({}, p, { note: e.target.value }); })} style={{ width: "100%", background: C.card, border: "1px solid "+C.border, borderRadius: 8, padding: "8px 12px", color: C.text, fontSize: 13, outline: "none" }} />
                 </div>
                 <div style={{ display: "flex", gap: 8 }}>
                   <Btn onClick={function(){return addEntry(horse.id;})}>Save Target</Btn>
@@ -262,7 +262,7 @@ function ProvisionalEntries({ horses, setHorses }) {
       {allProvisional.length > 0 && (
         <div style={{ background: C.card, border: "1px solid "+C.border, borderRadius: 12, padding: "14px 18px", marginTop: 8, boxShadow: C.shadow }}>
           <div style={{ fontSize: 13, fontWeight: 700, color: C.text, marginBottom: 12 }}>All Provisional Targets — by date</div>
-          {[...allProvisional].filter(function(e){return e.date;}).sort((a, b) => new Date(a.date) - new Date(b.date)).map((e, i) => (
+          {[...allProvisional].filter(function(e){return e.date;}).sort(function(a,b){return new Date(a.date) - new Date(b.date)).map(function(e,i){return(
             <div key={i} style={{ display: "flex", alignItems: "center", gap: 12, padding: "8px 0", borderBottom: `1px solid ${C.border}` }}>
               <Silk silk={e.horse.silk} size={24} />
               <div style={{ flex: 1, fontSize: 13 }}>
