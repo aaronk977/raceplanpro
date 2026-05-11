@@ -15,9 +15,9 @@ function OwnerPortal({ horses }) {
       <div style={{ fontSize: 22, fontWeight: 800, color: C.text, marginBottom: 4 }}>Owner Portal</div>
       <div style={{ fontSize: 13, color: C.textMid, marginBottom: 16 }}>Each owner sees their horses, entries, provisional targets and trainer notes</div>
       {owners.map(o => (
-        <div key={o.name} onClick={() => setSelOwner(o)} style={{ background: C.card, border: `1px solid ${C.border}`, borderRadius: 12, padding: "13px 16px", marginBottom: 9, cursor: "pointer", boxShadow: C.shadow, display: "flex", alignItems: "center", gap: 13 }}>
+        <div key={o.name} onClick={function(){setSelOwner(o);}} style={{ background: C.card, border: "1px solid "+C.border, borderRadius: 12, padding: "13px 16px", marginBottom: 9, cursor: "pointer", boxShadow: C.shadow, display: "flex", alignItems: "center", gap: 13 }}>
           <div style={{ width: 42, height: 42, borderRadius: "50%", background: C.navy, display: "flex", alignItems: "center", justifyContent: "center", fontSize: 15, fontWeight: 800, color: C.gold, flexShrink: 0 }}>
-            {o.name.split(" ").map(w => w[0]).join("").slice(0, 2)}
+            {o.name.split(" ").map(function(w){return w[0];}).join("").slice(0,2)}
           </div>
           <div style={{ flex: 1 }}>
             <div style={{ fontSize: 15, fontWeight: 700, color: C.text, marginBottom: 2 }}>{o.name}</div>
@@ -35,7 +35,7 @@ function OwnerPortal({ horses }) {
   return (
     <div>
       <div style={{ display: "flex", justifyContent: "space-between", alignItems: "center", marginBottom: 14 }}>
-        <Btn variant="ghost" onClick={() => setSelOwner(null)} style={{ fontSize: 12, padding: "6px 14px" }}>← All Owners</Btn>
+        <Btn variant="ghost" onClick={function(){setSelOwner(null);}} style={{ fontSize: 12, padding: "6px 14px" }}>← All Owners</Btn>
         <div style={{ display: "flex", gap: 8 }}>
           {selOwner.phone && <a href={"https://wa.me/" + (selOwner.phone || "").split("").filter(function(d){return d>="0"&&d<="9";}).join("")} target="_blank" rel="noopener noreferrer" style={{ background: "#f0fdf4", border: "1px solid #bbf7d0", color: "#15803d", borderRadius: 8, padding: "7px 14px", fontSize: 12, fontWeight: 700, textDecoration: "none" }}>💬 WhatsApp</a>}
           {selOwner.phone && <a href={`tel:${selOwner.phone}`} style={{ background: C.blueBg, border: `1px solid ${C.blue}30`, color: C.blue, borderRadius: 8, padding: "7px 14px", fontSize: 12, fontWeight: 700, textDecoration: "none" }}>📞 Call</a>}
@@ -47,7 +47,7 @@ function OwnerPortal({ horses }) {
       {selOwner.horses.map(horse => {
         const provisional = horse.provisionalEntries || [];
         return (
-          <div key={horse.id} style={{ background: C.card, border: `1px solid ${C.border}`, borderRadius: 14, padding: "16px 18px", marginBottom: 14, boxShadow: C.shadow }}>
+          <div key={horse.id} style={{ background: C.card, border: "1px solid "+C.border, borderRadius: 14, padding: "16px 18px", marginBottom: 14, boxShadow: C.shadow }}>
             <div style={{ display: "flex", alignItems: "center", gap: 13, marginBottom: 13 }}>
               <Silk silk={horse.silk} size={46} />
               <div style={{ flex: 1 }}>
@@ -62,7 +62,7 @@ function OwnerPortal({ horses }) {
               <FormDots form={horse.form} />
             </div>
 
-            {/* Provisional targets */}
+            
             {provisional.length > 0 && (
               <div style={{ borderTop: `1px solid ${C.border}`, paddingTop: 12, marginBottom: 12 }}>
                 <div style={{ fontSize: 11, fontWeight: 700, color: C.textDim, textTransform: "uppercase", letterSpacing: 1, marginBottom: 8 }}>Provisional Targets</div>
@@ -80,13 +80,13 @@ function OwnerPortal({ horses }) {
               </div>
             )}
 
-            {/* Form */}
+            
             <div style={{ borderTop: `1px solid ${C.border}`, paddingTop: 12 }}>
               <div style={{ fontSize: 11, fontWeight: 700, color: C.textDim, textTransform: "uppercase", letterSpacing: 1, marginBottom: 8 }}>Recent Form</div>
               {(horse.form || []).slice(0, 3).map((f, i) => {
                 const pc = f.position === 1 ? C.green : f.position <= 3 ? C.amber : C.textMid;
                 return (
-                  <div key={i} style={{ display: "flex", alignItems: "center", gap: 10, padding: "8px 10px", background: C.cardOff, borderRadius: 8, border: `1px solid ${C.border}`, marginBottom: 6 }}>
+                  <div key={i} style={{ display: "flex", alignItems: "center", gap: 10, padding: "8px 10px", background: C.cardOff, borderRadius: 8, border: "1px solid "+C.border, marginBottom: 6 }}>
                     <div style={{ width: 24, height: 24, borderRadius: 6, background: `${pc}12`, border: `1.5px solid ${pc}40`, display: "flex", alignItems: "center", justifyContent: "center", fontSize: 12, fontWeight: 800, color: pc }}>{f.position}</div>
                     <div style={{ flex: 1 }}><span style={{ fontSize: 13, fontWeight: 600, color: C.text }}>{f.venue}</span><span style={{ fontSize: 11, color: C.textMid, marginLeft: 6 }}>{f.raceClass} · {f.going}</span></div>
                     <div style={{ fontSize: 11, color: C.textMid }}>{new Date(f.date).toLocaleDateString("en-IE", { day: "numeric", month: "short" })}</div>
@@ -97,7 +97,7 @@ function OwnerPortal({ horses }) {
             </div>
 
             {horse.notes && (
-              <div style={{ marginTop: 10, padding: "9px 12px", background: C.cardOff, borderRadius: 8, border: `1px solid ${C.border}` }}>
+              <div style={{ marginTop: 10, padding: "9px 12px", background: C.cardOff, borderRadius: 8, border: "1px solid "+C.border }}>
                 <div style={{ fontSize: 9, fontWeight: 700, color: C.textDim, textTransform: "uppercase", letterSpacing: 0.5, marginBottom: 3 }}>Trainer's Note</div>
                 <p style={{ fontSize: 13, color: C.textMid, fontStyle: "italic", margin: 0, lineHeight: 1.5 }}>{horse.notes}</p>
               </div>
