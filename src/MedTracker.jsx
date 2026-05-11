@@ -260,7 +260,7 @@ function MedicationTracker({ horses, medLogs, setMedLogs, trackedIds, setTracked
       })}
 
       
-      {showBill && billHorse && (function(){return {;}
+      {showBill && billHorse && (function() {}
         const costs = calcCost(billHorse.id);
         return (
           <div style={{ position: "fixed", inset: 0, background: "rgba(10,22,40,0.6)", zIndex: 500, display: "flex", alignItems: "center", justifyContent: "center", padding: 20, backdropFilter: "blur(4px)" }}>
