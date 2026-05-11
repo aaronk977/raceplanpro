@@ -155,7 +155,7 @@ function RacePlanner({ horses, setHorses }) {
             const today = new Date();
             const peptWarning = peptDates && peptDates.startDate < today;
             const pm = item.race.prizeMoney;
-            const pmStr = pm ? (" — €" + (pm >= 1000 ? Math.round(pm / 1000) + "k" : pm)) : "";
+            const pmStr = pm ? (" — €" + (pm >= 1000 ? Math.round(pm * 0.001) + "k" : pm)) : "";
             return (
               <div key={idx} style={{ background: C.cardOff, border: "1px solid " + C.border, borderRadius: 10, padding: "12px 14px", marginBottom: 10 }}>
                 <div style={{ display: "flex", justifyContent: "space-between", alignItems: "flex-start", marginBottom: 8 }}>
@@ -218,7 +218,7 @@ function RacePlanner({ horses, setHorses }) {
 
       <div style={{ display: "grid", gridTemplateColumns: "240px 1fr", gap: 16 }}>
 
-        {/* Horse sidebar */}
+        
         <div>
           <div style={{ fontSize: 10, fontWeight: 700, color: C.textDim, letterSpacing: 1.5, marginBottom: 10, textTransform: "uppercase" }}>Horses</div>
           {horses.map(function(h) {
@@ -252,7 +252,7 @@ function RacePlanner({ horses, setHorses }) {
           })}
         </div>
 
-        {/* Main area */}
+        
         <div>
           <div style={{ background: C.card, border: "1px solid " + C.border, borderRadius: 12, padding: "12px 16px", marginBottom: 12, display: "flex", justifyContent: "space-between", alignItems: "center" }}>
             <div>
@@ -367,7 +367,7 @@ function RacePlanner({ horses, setHorses }) {
                           </div>
                         </div>
                         <span style={{ fontSize: 18, fontWeight: 800, color: C.gold, flexShrink: 0 }}>
-                          {race.prizeMoney ? ("€" + (race.prizeMoney >= 1000 ? Math.round(race.prizeMoney / 1000) + "k" : race.prizeMoney)) : ""}
+                          {race.prizeMoney ? ("€" + (race.prizeMoney >= 1000 ? Math.round(race.prizeMoney * 0.001) + "k" : race.prizeMoney)) : ""}
                         </span>
                       </div>
 
@@ -413,7 +413,7 @@ function RacePlanner({ horses, setHorses }) {
                             })}
                             <div style={{ width: 44, height: 44, borderRadius: "50%", background: accent + "12", border: "3px solid " + accent, display: "flex", flexDirection: "column", alignItems: "center", justifyContent: "center", flexShrink: 0, marginLeft: 4 }}>
                               <span style={{ fontSize: 15, fontWeight: 800, color: accent, lineHeight: 1 }}>{analysis.overall}</span>
-                              <span style={{ fontSize: 7, color: C.textMid }}> / 100</span>
+                              <span style={{ fontSize: 7, color: C.textMid }}> out of 100</span>
                             </div>
                           </div>
                           {(analysis.bullets || []).map(function(b, i) { return (
