@@ -291,12 +291,25 @@ function RacePlanner({ horses, setHorses }) {
                   {race.isNovice && <Tag color={C.purple}>Novice</Tag>}
                   {race.isEBF && <Tag color={C.amber}>EBF</Tag>}
                 </div>
+                {(race.meetingName || race.meetingRef) && (
+                  <div style={{ fontSize: 11, fontWeight: 700, color: C.textMid, textTransform: "uppercase", letterSpacing: 1, marginBottom: 4 }}>
+                    {race.meetingName || race.meetingRef}
+                  </div>
+                )}
                 <div style={{ fontSize: 16, fontWeight: 700, color: C.text, marginBottom: 4 }}>{race.raceName}</div>
-                <div style={{ display: "flex", gap: 10, flexWrap: "wrap", fontSize: 12, color: C.textMid }}>
+                <div style={{ display: "flex", gap: 10, flexWrap: "wrap", fontSize: 12, color: C.textMid, marginBottom: 4 }}>
                   <span>{"📍 " + race.venue}</span>
                   {race.date && <span>{"📅 " + new Date(race.date + "T12:00:00").toLocaleDateString("en-IE", { weekday: "short", day: "numeric", month: "short" })}</span>}
                   {race.forecastGoing && <span>{race.forecastGoing}</span>}
-                  {race.entryDeadline && <span style={{ color: C.amber, fontWeight: 600 }}>{"Entry by " + new Date(race.entryDeadline + "T12:00:00").toLocaleDateString("en-IE", { day: "numeric", month: "short" })}</span>}
+                  {race.entryDeadline && <span style={{ color: C.amber, fontWeight: 600 }}>{"Entry closes " + new Date(race.entryDeadline + "T12:00:00").toLocaleDateString("en-IE", { day: "numeric", month: "short" })}</span>}
+                </div>
+                <div style={{ fontSize: 11, color: C.textDim, display: "flex", gap: 8, flexWrap: "wrap" }}>
+                  {race.ageMin && <span>{race.ageMin + (race.ageMax ? "-" + race.ageMax : "+") + " yo"}</span>}
+                  {race.sexRestriction && race.sexRestriction !== "Open" && race.sexRestriction !== "" && <span>{race.sexRestriction}</span>}
+                  {race.ratingMin || race.ratingMax ? <span>{"Rating: " + (race.ratingMin || 0) + "-" + (race.ratingMax || "open")}</span> : null}
+                  {race.distanceFurlongs && <span>{race.distanceFurlongs + "f"}</span>}
+                  {race.surface && race.surface !== "Turf" && <span>{race.surface}</span>}
+                  {race.raceRef && <span>{race.raceRef}</span>}
                 </div>
               </div>
               <div style={{ display: "flex", flexDirection: "column", alignItems: "flex-end", gap: 6 }}>
