@@ -74,7 +74,6 @@ function RacedayPrint({ horses, entries, setEntries }) {
               }
             }
           }
-          }
           var extrasRaw = (row.extras || row.extra || row.headgear || "").trim().toUpperCase();
           var headgear = HEADGEAR[extrasRaw] || (extrasRaw.length > 0 && extrasRaw.length <= 4 ? extrasRaw : "");
           var statusRaw = row.status || "";
