@@ -6,19 +6,19 @@ function RacedayPrint({ horses, entries, setEntries }) {
   const [csvStatus, setCsvStatus] = useState(null);
   const [ne, setNe] = useState({ horseId: "", meetingNo: "", raceRef: "", venue: "", date: "", raceTime: "", raceName: "", ballotNo: "" });
 
-  const add = () => {
+  const add = function(){
     if (!ne.horseId || !ne.raceName) return;
-    setEntries(p => [...p, { ...ne, id: "e_" + Date.now() }]);
+    setEntries(function(p){return [...p,Object.assign({},ne,{id:"e_"+Date.now()})];});setNe(emptyNe);
     setNe({ horseId: "", meetingNo: "", raceRef: "", venue: "", date: "", raceTime: "", raceName: "", ballotNo: "" });
     setShowAdd(false);
   };
 
-  const handleCSV = (e) => {
+  const handleCSV = function(e) {
     const file = e.target.files[0];
     if (!file) return;
     e.target.value = "";
     const reader = new FileReader();
-    reader.onload = (ev) => {
+    reader.onload = function(ev) {
       try {
         const text = ev.target.result;
         const rawLines = text.split("\n").filter(function(l) { return l.trim(); });
@@ -29,14 +29,14 @@ function RacedayPrint({ horses, entries, setEntries }) {
           const cols = rawLines[i].split(sep).map(function(c) { var t=c.trim();if(t.length>1&&t[0]===String.fromCharCode(34)&&t[t.length-1]===String.fromCharCode(34)){return t.slice(1,-1);}return t; });
           if (!cols[0]) continue;
           const row = {};
-          headers.forEach((h, idx) => { row[h] = cols[idx] || ""; });
+          headers.forEach(function(h,idx){row[h]=cols[idx]||"";});;
           const horseName = row.horse || row.horse_name || row.name || cols[0];
           if (!horseName) continue;
-          const matchHorse = (name) => {
+          const matchHorse = function(name) {
             if (!name) return null;
             const nl = name.toLowerCase().trim();
-            return horses.find(h =>
-              h.name.toLowerCase().trim() === nl ||
+            return horses.find(function(h){return 
+              h.name.toLowerCase(;}).trim() === nl ||
               h.name.toLowerCase().trim().includes(nl) ||
               nl.includes(h.name.toLowerCase().trim())
             );
@@ -76,14 +76,14 @@ function RacedayPrint({ horses, entries, setEntries }) {
             jockey: row.jockey || "",
           });
         }
-        setEntries(prev => [...prev, ...imported]);
-        const matched = imported.filter(e => e.horseId).length;
+        setEntries(function(prev) { return [...prev, ...imported]);
+        const matched = imported.filter(function(e){return e.horseId;}).length;
         setCsvStatus(imported.length + " entries imported — " + matched + " horses matched");
-        setTimeout(() => setCsvStatus(null), 5000);
+        setTimeout(function(){return setCsvStatus(null;}), 5000);
       } catch (err) {
         console.error(err);
         setCsvStatus("Error reading CSV — check the file format");
-        setTimeout(() => setCsvStatus(null), 5000);
+        setTimeout(function(){return setCsvStatus(null;}), 5000);
       }
     };
     reader.readAsText(file);
@@ -109,19 +109,19 @@ function RacedayPrint({ horses, entries, setEntries }) {
             📥 Import HRI CSV
             <input type="file" accept=".csv" onChange={handleCSV} style={{ display: "none" }} />
           </label>
-          <Btn onClick={() => setShowAdd(true)}>+ Add Manual</Btn>
-          <Btn variant="gold" onClick={() => window.print()}>🖨 Print</Btn>
+          <Btn onClick={function(){setShowAdd(true);}}>+ Add Manual</Btn>
+          <Btn variant="gold" onClick={function(){return window.print(;})}>🖨 Print</Btn>
         </div>
       </div>
 
       <div id="print-area">
-        {Object.entries(grouped).sort(([a], [b]) => new Date(a) - new Date(b)).map(([date, dayEntries]) => (
-          <div key={date} style={{ background: C.card, border: `1px solid ${C.border}`, borderRadius: 12, padding: "18px 20px", marginBottom: 14, boxShadow: C.shadow }}>
+        {Object.entries(grouped).sort(function(x,y){return new Date(x[0])-new Date(y[0]);}).map(function(arr){var date=arr[0];var dayEntries=arr[1];return(
+          <div key={date} style={{ background: C.card, border: "1px solid "+C.border, borderRadius: 12, padding: "18px 20px", marginBottom: 14, boxShadow: C.shadow }}>
             <div style={{ fontSize: 16, fontWeight: 800, color: C.navy, marginBottom: 12, paddingBottom: 10, borderBottom: `2px solid ${C.navy}` }}>
               {new Date(date).toLocaleDateString("en-IE", { weekday: "long", day: "numeric", month: "long", year: "numeric" })}
             </div>
-            {dayEntries.map(entry => {
-              const horse = horses.find(h => h.id === entry.horseId);
+            {dayEntries.map(function(entry){
+              const horse = horses.find(function(h){return h.id;} === entry.horseId);
               if (!horse) return null;
               return (
                 <div key={entry.id} style={{ display: "flex", alignItems: "center", gap: 14, padding: "12px 0", borderBottom: `1px solid ${C.border}` }}>
@@ -148,7 +148,7 @@ function RacedayPrint({ horses, entries, setEntries }) {
           <div style={{ background: C.card, borderRadius: 16, width: "100%", maxWidth: 440, boxShadow: C.shadowMd, overflow: "hidden" }}>
             <div style={{ background: C.navy, padding: "16px 20px", display: "flex", justifyContent: "space-between", alignItems: "center" }}>
               <div style={{ fontSize: 15, fontWeight: 700, color: "#fff" }}>Add Raceday Entry</div>
-              <button onClick={() => setShowAdd(false)} style={{ background: "rgba(255,255,255,0.1)", border: "none", color: "#fff", width: 28, height: 28, borderRadius: 6, cursor: "pointer", fontSize: 14 }}>✕</button>
+              <button onClick={function(){setShowAdd(false);}} style={{ background: "rgba(255,255,255,0.1)", border: "none", color: "#fff", width: 28, height: 28, borderRadius: 6, cursor: "pointer", fontSize: 14 }}>✕</button>
             </div>
             <div style={{ padding: 20, display: "flex", flexDirection: "column", gap: 10 }}>
               {[
@@ -160,16 +160,16 @@ function RacedayPrint({ horses, entries, setEntries }) {
                 { key: "raceTime", label: "Race Time", placeholder: "e.g. 2:28 PM" },
                 { key: "date", label: "Date", type: "date" },
                 { key: "ballotNo", label: "Ballot No. (if applicable)", placeholder: "Leave blank if not balloted" },
-              ].map(({ key, label, placeholder, type }) => (
+              ].map(function(item){var key=item.key;var label=item.label;var placeholder=item.placeholder;var type=item.type;return(
                 <div key={key}>
                   <div style={{ fontSize: 10, fontWeight: 700, color: C.textMid, marginBottom: 4, textTransform: "uppercase", letterSpacing: 0.5 }}>{label}</div>
                   {type === "select" ? (
-                    <select value={ne[key]} onChange={e => setNe(function(p) { return Object.assign({}, p, { [key]: e.target.value }); })} style={{ width: "100%", background: C.cardOff, border: `1px solid ${C.border}`, borderRadius: 8, padding: "8px 12px", color: C.text, fontSize: 13, outline: "none" }}>
+                    <select value={ne[key]} onChange={function(e){setNe(function(p) { return Object.assign({}, p, { [key]: e.target.value }); })} style={{ width: "100%", background: C.cardOff, border: "1px solid "+C.border, borderRadius: 8, padding: "8px 12px", color: C.text, fontSize: 13, outline: "none" }}>
                       <option value="">Select horse</option>
-                      {horses.map(h => <option key={h.id} value={h.id}>{h.name}</option>)}
+                      {horses.map(function(h){return <option key={h.id} value={h.id}>{h.name}</option>)}
                     </select>
                   ) : (
-                    <input type={type || "text"} placeholder={placeholder} value={ne[key]} onChange={e => setNe(function(p) { return Object.assign({}, p, { [key]: e.target.value }); })} style={{ width: "100%", background: C.cardOff, border: `1px solid ${C.border}`, borderRadius: 8, padding: "8px 12px", color: C.text, fontSize: 13, outline: "none" }} />
+                    <input type={type || "text"} placeholder={placeholder} value={ne[key]} onChange={function(e){setNe(function(p) { return Object.assign({}, p, { [key]: e.target.value }); })} style={{ width: "100%", background: C.cardOff, border: "1px solid "+C.border, borderRadius: 8, padding: "8px 12px", color: C.text, fontSize: 13, outline: "none" }} />
                   )}
                 </div>
               ))}
