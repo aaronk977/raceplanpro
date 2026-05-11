@@ -119,15 +119,15 @@ const INITIAL_HORSES = [
 ];
 
 // ─── HELPERS ──────────────────────────────────────────────────────────────────
-const getAge = (dob) => TODAY.getFullYear() - new Date(dob).getFullYear();
-const coolingDate = (d) => { if (!d) return null; const x = new Date(d); x.setDate(x.getDate() + 7); return x; };
-const canRace = (h) => { if (h.status === "Inactive") return false; if (h.status === "CoolingOff") { const e = coolingDate(h.activationDate); return e && TODAY >= e; } return true; };
+const getAge = function(dob) { return TODAY.getFullYear() - new Date(dob).getFullYear(); };
+const coolingDate = function(d) { if (!d) return null; const x = new Date(d); x.setDate(x.getDate() + 7); return x; };
+const canRace = function(h) { if (h.status === "Inactive") return false; if (h.status === "CoolingOff") { const e = coolingDate(h.activationDate); return e && TODAY >= e; } return true; };
 const daysUntil = function(ds) { return !ds ? null : Math.ceil((new Date(ds) - TODAY) * (1/86400000)); };
-const getDaysInMonth = (y, m) => new Date(y, m + 1, 0).getDate();
+const getDaysInMonth = function(y,m) { return new Date(y, m + 1, 0).getDate(); };
 
 // Antepsin: 3 bottles per 12-day course, 1 bottle every 4 days
 // Count ticks and calculate bottles needed (round up to nearest bottle at 4 days each)
-const calcAntepsinCost = (ticks) => {
+const calcAntepsinCost = function(ticks) {
   if (!ticks) return 0;
   const bottles = Math.ceil(ticks * 0.25);
   return bottles * 25;
@@ -159,7 +159,7 @@ function Btn({ onClick, children, variant = "primary", style: s = {}, disabled =
 function FormDots({ form }) {
   return (
     <div style={{ display: "flex", gap: 3 }}>
-      {(form || []).slice(0, 5).map((f, i) => {
+      {(form || []).slice(0,5).map(function(f,i){
         const col = f.position === 1 ? C.green : f.position <= 3 ? C.amber : C.textDim;
         return <div key={i} style={{ width: 20, height: 20, borderRadius: 4, background: f.position === 1 ? C.greenBg : f.position <= 3 ? C.amberBg : "#f0f4f8", border: `1.5px solid ${col}50`, display: "flex", alignItems: "center", justifyContent: "center", fontSize: 10, fontWeight: 700, color: col }}>{f.position}</div>;
       })}
