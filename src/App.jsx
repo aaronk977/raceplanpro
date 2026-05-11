@@ -92,8 +92,16 @@ export default function App() {
           form: h.form || [], provisional_entries: h.provisionalEntries || [],
           next_race_date: h.nextRaceDate || null };
       });
-      supabase.from("horses").upsert(rows).then(function(res) {
-        if (res.error) console.error("Horse save:", res.error);
+      supabase.from("horses").upsert(rows, { onConflict: "id" }).then(function(res) {
+        if (res.error) {
+          console.error("Horse save error:", res.error);
+          // Try inserting one by one if bulk upsert fails
+          rows.forEach(function(row) {
+            supabase.from("horses").upsert(row, { onConflict: "id" }).then(function(r2) {
+              if (r2.error) console.error("Single horse save error:", r2.error, row.name);
+            });
+          });
+        }
       });
       if (prev.length > next.length) {
         var removed = prev.filter(function(h) { return !next.find(function(n) { return n.id === h.id; }); });
