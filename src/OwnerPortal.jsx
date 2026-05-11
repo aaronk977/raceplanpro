@@ -14,16 +14,16 @@ function OwnerPortal({ horses }) {
     <div>
       <div style={{ fontSize: 22, fontWeight: 800, color: C.text, marginBottom: 4 }}>Owner Portal</div>
       <div style={{ fontSize: 13, color: C.textMid, marginBottom: 16 }}>Each owner sees their horses, entries, provisional targets and trainer notes</div>
-      {owners.map(o => (
+      {owners.map(function(o){return(
         <div key={o.name} onClick={function(){setSelOwner(o);}} style={{ background: C.card, border: "1px solid "+C.border, borderRadius: 12, padding: "13px 16px", marginBottom: 9, cursor: "pointer", boxShadow: C.shadow, display: "flex", alignItems: "center", gap: 13 }}>
           <div style={{ width: 42, height: 42, borderRadius: "50%", background: C.navy, display: "flex", alignItems: "center", justifyContent: "center", fontSize: 15, fontWeight: 800, color: C.gold, flexShrink: 0 }}>
             {o.name.split(" ").map(function(w){return w[0];}).join("").slice(0,2)}
           </div>
           <div style={{ flex: 1 }}>
             <div style={{ fontSize: 15, fontWeight: 700, color: C.text, marginBottom: 2 }}>{o.name}</div>
-            <div style={{ fontSize: 12, color: C.textMid }}>{o.horses.length} horse{o.horses.length !== 1 ? "s" : ""} · {o.horses.filter(h => (h.provisionalEntries || []).length > 0).length} with targets</div>
+            <div style={{ fontSize: 12, color: C.textMid }}>{o.horses.length} horse{o.horses.length !== 1 ? "s" : ""} · {o.horses.filter(function(h){return (h.provisionalEntries || []).length > 0).length} with targets</div>
             <div style={{ display: "flex", gap: 5, marginTop: 4 }}>
-              {o.horses.map(h => <div key={h.id} style={{ display: "flex", alignItems: "center", gap: 3 }}><Silk silk={h.silk} size={14} /><span style={{ fontSize: 10, color: C.textMid }}>{h.name}</span></div>)}
+              {o.horses.map(function(h){return <div key={h.id} style={{ display: "flex", alignItems: "center", gap: 3 }}><Silk silk={h.silk} size={14} /><span style={{ fontSize: 10, color: C.textMid }}>{h.name}</span></div>)}
             </div>
           </div>
           <span style={{ color: C.textMid }}>→</span>
@@ -44,7 +44,7 @@ function OwnerPortal({ horses }) {
       </div>
       <div style={{ fontSize: 18, fontWeight: 800, color: C.text, marginBottom: 14 }}>{selOwner.name}</div>
 
-      {selOwner.horses.map(horse => {
+      {selOwner.horses.map(function(horse){
         const provisional = horse.provisionalEntries || [];
         return (
           <div key={horse.id} style={{ background: C.card, border: "1px solid "+C.border, borderRadius: 14, padding: "16px 18px", marginBottom: 14, boxShadow: C.shadow }}>
@@ -66,7 +66,7 @@ function OwnerPortal({ horses }) {
             {provisional.length > 0 && (
               <div style={{ borderTop: `1px solid ${C.border}`, paddingTop: 12, marginBottom: 12 }}>
                 <div style={{ fontSize: 11, fontWeight: 700, color: C.textDim, textTransform: "uppercase", letterSpacing: 1, marginBottom: 8 }}>Provisional Targets</div>
-                {provisional.map(pe => (
+                {provisional.map(function(pe){return(
                   <div key={pe.id} style={{ padding: "10px 12px", background: C.goldBg, border: `1px solid ${C.gold}30`, borderLeft: `3px solid ${C.gold}`, borderRadius: 9, marginBottom: 7 }}>
                     <div style={{ fontSize: 14, fontWeight: 700, color: C.text, marginBottom: 3 }}>{pe.raceName}</div>
                     <div style={{ display: "flex", gap: 10, flexWrap: "wrap", fontSize: 12, color: C.textMid }}>
@@ -83,7 +83,7 @@ function OwnerPortal({ horses }) {
             
             <div style={{ borderTop: `1px solid ${C.border}`, paddingTop: 12 }}>
               <div style={{ fontSize: 11, fontWeight: 700, color: C.textDim, textTransform: "uppercase", letterSpacing: 1, marginBottom: 8 }}>Recent Form</div>
-              {(horse.form || []).slice(0, 3).map((f, i) => {
+              {(horse.form || []).slice(0, 3).map(function(f,i){
                 const pc = f.position === 1 ? C.green : f.position <= 3 ? C.amber : C.textMid;
                 return (
                   <div key={i} style={{ display: "flex", alignItems: "center", gap: 10, padding: "8px 10px", background: C.cardOff, borderRadius: 8, border: "1px solid "+C.border, marginBottom: 6 }}>
