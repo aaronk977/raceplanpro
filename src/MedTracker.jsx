@@ -18,17 +18,17 @@ function MedicationTracker({ horses, medLogs, setMedLogs, trackedIds, setTracked
   const k = function(hId,d,t){var mm=String(selMonth+1).padStart(2,"0");var dd=String(d).padStart(2,"0");return hId+"_"+selYear+"-"+mm+"-"+dd+"_"+t;};
   const getMed = function(hId,d,t){return medLogs[k(hId,d,t)]||0;};
   const toggleMed = function(hId,d,t){
-    setMedLogs(function(prev){return ( {
-      const cur = prev[k(hId, d, t)] || 0;
-      if (t === "antibiotics") return { ...prev, [k(hId, d, t)]: cur === 0 ? 1 : cur === 1 ? 2 : 0 };
-      return { ...prev, [k(hId, d, t)]: cur ? 0 : 1 };
+    setMedLogs(function(prev){
+      var cur = prev[k(hId, d, t)] || 0;
+      if (t === "antibiotics") return Object.assign({}, prev, { [k(hId, d, t)]: cur === 0 ? 1 : cur === 1 ? 2 : 0 });
+      return Object.assign({}, prev, { [k(hId, d, t)]: cur ? 0 : 1 });
     });
   };
 
-  const calcCost = (hId) => {
-    const peptizoleDays = days.filter(d => getMed(hId, d, "peptizole")).length;
-    const antepsinTicks = days.filter(d => getMed(hId, d, "antepsin")).length;
-    const antibioticDoses = days.reduce((s, d) => s + getMed(hId, d, "antibiotics"), 0);
+  const calcCost = function(hId) {
+    const peptizoleDays = days.filter(function(d){return getMed(hId,d,"peptizole");}).length;
+    const antepsinTicks = days.filter(function(d){return getMed(hId,d,"antepsin");}).length;
+    const antibioticDoses = days.reduce(function(s,d){return s+getMed(hId,d,"antibiotics");},0);
     const peptizole = peptizoleDays * 18;
     const antepsin = calcAntepsinCost(antepsinTicks);
     const antibiotics = antibioticDoses * 15;
@@ -128,7 +128,7 @@ function MedicationTracker({ horses, medLogs, setMedLogs, trackedIds, setTracked
         <div>
 
       
-      {horses.filter(h => { const d = daysUntil(h.nextRaceDate); return d && d >= 12 && d <= 16; }).map(h => (
+      {horses.filter(function(h){var d=daysUntil(h.nextRaceDate);return d&&d>=12&&d<=16;}).map(function(h){return( (
         <div key={h.id} style={{ background: C.amberBg, border: `1px solid ${C.amber}40`, borderLeft: `3px solid ${C.amber}`, borderRadius: 10, padding: "10px 14px", marginBottom: 10, display: "flex", alignItems: "center", gap: 12 }}>
           <Silk silk={h.silk} size={30} />
           <div>
@@ -137,7 +137,7 @@ function MedicationTracker({ horses, medLogs, setMedLogs, trackedIds, setTracked
           </div>
         </div>
       ))}
-      {horses.filter(h => { const d = daysUntil(h.nextRaceDate); return d && d > 0 && d < 12; }).map(h => (
+      {horses.filter(function(h){var d=daysUntil(h.nextRaceDate);return d&&d>0&&d<12;}).map(function(h){return( (
         <div key={h.id} style={{ background: C.redBg, border: `1px solid ${C.red}30`, borderLeft: `3px solid ${C.red}`, borderRadius: 10, padding: "10px 14px", marginBottom: 10, display: "flex", alignItems: "center", gap: 12 }}>
           <Silk silk={h.silk} size={30} />
           <div>
@@ -151,7 +151,7 @@ function MedicationTracker({ horses, medLogs, setMedLogs, trackedIds, setTracked
       {showAdd && (
         <div style={{ background: C.card, border: "1px solid "+C.border, borderRadius: 12, padding: "16px 18px", marginBottom: 16, boxShadow: C.shadow }}>
           <div style={{ fontSize: 14, fontWeight: 700, color: C.text, marginBottom: 12 }}>Add horse to {monthName} tracker:</div>
-          {untrackedHorses.map(h => (
+          {untrackedHorses.map(function(h){return(
             <div key={h.id} style={{ display: "flex", alignItems: "center", gap: 12, padding: "10px 12px", background: C.cardOff, borderRadius: 10, border: "1px solid "+C.border, marginBottom: 8 }}>
               <Silk silk={h.silk} size={30} />
               <div style={{ flex: 1 }}>
@@ -174,7 +174,7 @@ function MedicationTracker({ horses, medLogs, setMedLogs, trackedIds, setTracked
       )}
 
       
-      {trackedHorses.map(horse => {
+      {trackedHorses.map(function(horse){
         const isOpen = openHorse === horse.id;
         const costs = calcCost(horse.id);
         return (
@@ -191,8 +191,8 @@ function MedicationTracker({ horses, medLogs, setMedLogs, trackedIds, setTracked
                 </div>
               </div>
               <div style={{ display: "flex", gap: 8, alignItems: "center" }}>
-                <Btn onClick={(e) => { e.stopPropagation(); setBillHorse(horse); setShowBill(true); }} style={{ padding: "5px 12px", fontSize: 11 }}>📋 Bill</Btn>
-                <Btn variant="red" onClick={(e) => { e.stopPropagation(); setTrackedIds(function(p){return p.filter;}(id => id !== horse.id)); }} style={{ padding: "5px 10px", fontSize: 11 }}>✕</Btn>
+                <Btn onClick={function(e){e.stopPropagation();setBillHorse(horse);setShowBill(true);}} style={{ padding: "5px 12px", fontSize: 11 }}>📋 Bill</Btn>
+                <Btn variant="red" onClick={function(e){e.stopPropagation();setTrackedIds(function(p){return p.filter(function(id){return id !== horse.id;});}); }} style={{ padding: "5px 10px", fontSize: 11 }}>✕</Btn>
                 <span style={{ color: C.textMid, fontSize: 14 }}>{isOpen ? "▲" : "▼"}</span>
               </div>
             </div>
@@ -210,19 +210,19 @@ function MedicationTracker({ horses, medLogs, setMedLogs, trackedIds, setTracked
                     <thead>
                       <tr>
                         <th style={{ textAlign: "left", padding: "6px 8px", fontSize: 11, fontWeight: 700, color: C.textMid, width: 110 }}>Treatment</th>
-                        {days.map(d => (
+                        {days.map(function(d){return(
                           <th key={d} style={{ padding: "3px 2px", fontSize: 10, fontWeight: 700, color: isCurrent && d === todayD ? C.navy : C.textDim, textAlign: "center", minWidth: 26, background: isCurrent && d === todayD ? C.goldBg : "none", borderRadius: 4 }}>{d}</th>
                         ))}
                         <th style={{ padding: "6px 8px", fontSize: 11, fontWeight: 700, color: C.textMid, textAlign: "right", minWidth: 80 }}>Total</th>
                       </tr>
                     </thead>
                     <tbody>
-                      {[["peptizole", C.blue], ["antepsin", C.purple], ["antibiotics", C.amber]].map(([type, col]) => (
+                      {[["peptizole", C.blue], ["antepsin", C.purple], ["antibiotics", C.amber]].map(function(arr){var type=arr[0];var col=arr[1];return(
                         <tr key={type}>
                           <td style={{ padding: "5px 8px" }}>
                             <span style={{ background: `${col}12`, color: col, borderRadius: 6, padding: "3px 8px", fontSize: 11, fontWeight: 600 }}>{MED_TYPES[type].label}</span>
                           </td>
-                          {days.map(d => {
+                          {days.map(function(d){
                             const val = getMed(horse.id, d, type);
                             const isFuture = isCurrent && d > todayD;
                             return (
@@ -247,7 +247,7 @@ function MedicationTracker({ horses, medLogs, setMedLogs, trackedIds, setTracked
                 {horse.nextRaceDate && (
                   <div style={{ marginTop: 10, padding: "10px 12px", background: C.cardOff, borderRadius: 8, border: "1px solid "+C.border, display: "flex", gap: 20, flexWrap: "wrap" }}>
                     <div style={{ fontSize: 12, fontWeight: 700, color: C.text }}>⏱ Withdrawal for {new Date(horse.nextRaceDate).toLocaleDateString("en-IE", { day: "numeric", month: "short" })}:</div>
-                    {[{ label: "Stop Peptizole", wd: 4 }, { label: "Stop Antepsin", wd: 1 }].map(({ label, wd }) => {
+                    {[{ label: "Stop Peptizole", wd: 4 }, { label: "Stop Antepsin", wd: 1 }].map(function(item){var label=item.label;var wd=item.wd;
                       const stop = new Date(horse.nextRaceDate); stop.setDate(stop.getDate() - wd);
                       return <div key={label} style={{ fontSize: 12, color: C.textMid }}><span style={{ fontWeight: 600, color: C.red }}>{label}:</span> {stop.toLocaleDateString("en-IE", { weekday: "short", day: "numeric", month: "short" })}</div>;
                     })}
@@ -275,7 +275,7 @@ function MedicationTracker({ horses, medLogs, setMedLogs, trackedIds, setTracked
                   costs.peptizoleDays > 0 && { label: "Peptizole — " + costs.peptizoleDays + " days × €18", amount: costs.peptizole },
                   costs.antepsinTicks > 0 && { label: "Antepsin — " + costs.antepsinBottles + " bottle" + (costs.antepsinBottles !== 1 ? "s" : "") + " × €25 (" + costs.antepsinTicks + " days)", amount: costs.antepsin },
                   costs.antibioticDoses > 0 && { label: "Antibiotics — " + costs.antibioticDoses + " dose" + (costs.antibioticDoses !== 1 ? "s" : "") + " × €15", amount: costs.antibiotics },
-                ].filter(Boolean).map((item, i) => (
+                ].filter(Boolean).map(function(item,i){return(
                   <div key={i} style={{ display: "flex", justifyContent: "space-between", padding: "10px 0", borderBottom: `1px solid ${C.border}` }}>
                     <span style={{ fontSize: 14, color: C.text }}>{item.label}</span>
                     <span style={{ fontSize: 14, fontWeight: 700, color: C.text }}>€{item.amount}</span>
