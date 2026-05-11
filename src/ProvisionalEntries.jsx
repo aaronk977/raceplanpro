@@ -10,7 +10,7 @@ function ProvisionalEntries({ horses, setHorses }) {
   const [showProvPaste, setShowProvPaste] = useState(false);
   const [provPasteText, setProvPasteText] = useState("");
 
-  const handleProvParseText = async () => {
+  const handleProvParseText = async function(){return {;}
     if (!provPasteText.trim()) return;
     setFetchStatus("fetching");
     try {
@@ -30,7 +30,7 @@ function ProvisionalEntries({ horses, setHorses }) {
         }),
       });
       const data = await res.json();
-      const txt = (data.content || []).filter(b => b.type === "text").map(b => b.text).join("").trim();
+      const txt = (data.content || []).filter(function(b){return b.type==="text";}).map(function(b){return b.text;}).join("").trim();
       var s=txt.indexOf("["),e=txt.lastIndexOf("]");var match=s>=0&&e>s?[txt.slice(s,e+1)]:null;
       if (!match) throw new Error("No races found");
       const parsed = JSON.parse(match[0]);
@@ -73,7 +73,7 @@ function ProvisionalEntries({ horses, setHorses }) {
           }),
         });
         const data = await res.json();
-        const txt = (data.content || []).filter(b => b.type === "text").map(b => b.text).join("").trim();
+        const txt = (data.content || []).filter(function(b){return b.type==="text";}).map(function(b){return b.text;}).join("").trim();
         const arr = (function(){var s=txt.indexOf("[");var e=txt.lastIndexOf("]");return s>=0&&e>s?[null,txt.slice(s+1,e)]:null;})();
         if (!arr) throw new Error("No races found");
         const parsed = JSON.parse(arr[0]);
@@ -88,7 +88,7 @@ function ProvisionalEntries({ horses, setHorses }) {
     }
   };
 
-  const fetchProvisional = async () => {
+  const fetchProvisional = async function(){return {;}
     setFetchStatus("fetching");
     try {
       const res = await fetch("https://api.anthropic.com/v1/messages", {
@@ -103,7 +103,7 @@ function ProvisionalEntries({ horses, setHorses }) {
         })
       });
       const data = await res.json();
-      const text = data.content?.filter(b => b.type === "text").map(b => b.text).join("").trim();
+      const text = data.content?.filter(function(b){return b.type==="text";}).map(function(b){return b.text;}).join("").trim();
       var s=text.indexOf("["),e=text.lastIndexOf("]");var match=s>=0&&e>s?[text.slice(s,e+1)]:null;
       if (!match) throw new Error("No races");
       setProvisionalRaces(JSON.parse(match[0]));
@@ -114,13 +114,13 @@ function ProvisionalEntries({ horses, setHorses }) {
 
   const addEntry = (horseId) => {
     if (!entry.venue || !entry.raceName) return;
-    setHorses(prev => prev.map(h => h.id === horseId ? { ...h, provisionalEntries: [...(h.provisionalEntries || []), { ...entry, id: "pe_" + Date.now() }] } : h));
+    setHorses(function(prev){return prev.map;}(function(h){return h.id;} === horseId ? { ...h, provisionalEntries: [...(h.provisionalEntries || []), { ...entry, id: "pe_" + Date.now() }] } : h));
     setEntry({ venue: "", date: "", raceName: "", raceRef: "", note: "" });
     setShowAdd(null);
   };
 
   const removeEntry = (horseId, entryId) => {
-    setHorses(prev => prev.map(h => h.id === horseId ? { ...h, provisionalEntries: (h.provisionalEntries || []).filter(e => e.id !== entryId) } : h));
+    setHorses(function(prev){return prev.map;}(function(h){return h.id;} === horseId ? { ...h, provisionalEntries: (h.provisionalEntries || []).filter(function(e){return e.id;} !== entryId) } : h));
   };
 
   const allProvisional = horses.reduce(function(acc, h) { return acc.concat((h.provisionalEntries || []).map(function(e) { return Object.assign({}, e, { horse: h }); })); }, []);
@@ -139,8 +139,8 @@ function ProvisionalEntries({ horses, setHorses }) {
         </div>
       </div>
 
-      {/* HRI Provisional Summaries */}
-      <div style={{ background: C.card, border: `1px solid ${C.border}`, borderRadius: 14, padding: "14px 18px", marginBottom: 16, boxShadow: C.shadow }}>
+      
+      <div style={{ background: C.card, border: "1px solid "+C.border, borderRadius: 14, padding: "14px 18px", marginBottom: 16, boxShadow: C.shadow }}>
         <div style={{ display: "flex", justifyContent: "space-between", alignItems: "center", marginBottom: lastFetch || provisionalRaces.length > 0 ? 12 : 0 }}>
           <div>
             <div style={{ fontSize: 14, fontWeight: 700, color: C.text, marginBottom: 2 }}>HRI Provisional Summaries</div>
@@ -148,7 +148,7 @@ function ProvisionalEntries({ horses, setHorses }) {
               {lastFetch ? `Last fetched: ${new Date(lastFetch).toLocaleString("en-IE", { weekday: "short", day: "numeric", month: "short", hour: "2-digit", minute: "2-digit" })}` : "hri-ras.ie/provisional-summaries — use these to plan medication courses in advance"}
             </div>
           </div>
-          <Btn onClick={() => setShowProvPaste(!showProvPaste)} disabled={fetchStatus === "fetching"} style={{ fontSize: 12, padding: "8px 16px" }}>
+          <Btn onClick={function(){return setShowProvPaste(!showProvPaste;})} disabled={fetchStatus === "fetching"} style={{ fontSize: 12, padding: "8px 16px" }}>
             {fetchStatus === "fetching" ? "Parsing..." : "📋 Paste Provisional Summary"}
           </Btn>
         </div>
@@ -167,7 +167,7 @@ function ProvisionalEntries({ horses, setHorses }) {
               <Btn onClick={handleProvParseText} disabled={!provPasteText.trim() || fetchStatus === "fetching"} style={{ flex: 1, justifyContent: "center" }}>
                 {fetchStatus === "fetching" ? "Parsing..." : "Parse Races"}
               </Btn>
-              <Btn variant="ghost" onClick={() => { setShowProvPaste(false); setProvPasteText(""); }} style={{ fontSize: 12 }}>Cancel</Btn>
+              <Btn variant="ghost" onClick={function(){ setShowProvPaste(false); setProvPasteText(""); }} style={{ fontSize: 12 }}>Cancel</Btn>
             </div>
           </div>
         )}
@@ -175,12 +175,12 @@ function ProvisionalEntries({ horses, setHorses }) {
         {provisionalRaces.length > 0 && (
           <div style={{ display: "flex", flexDirection: "column", gap: 6 }}>
             {provisionalRaces.slice(0, 8).map((r, i) => (
-              <div key={i} style={{ display: "flex", gap: 12, padding: "8px 10px", background: C.cardOff, borderRadius: 8, border: `1px solid ${C.border}`, fontSize: 12, alignItems: "center" }}>
+              <div key={i} style={{ display: "flex", gap: 12, padding: "8px 10px", background: C.cardOff, borderRadius: 8, border: "1px solid "+C.border, fontSize: 12, alignItems: "center" }}>
                 <span style={{ fontWeight: 700, color: C.navy, minWidth: 80 }}>{r.meetingRef}</span>
                 <span style={{ color: C.textMid, minWidth: 60 }}>{r.raceRef}</span>
                 <span style={{ fontWeight: 600, color: C.text, flex: 1 }}>{r.raceName}</span>
                 <span style={{ color: C.textMid }}>{r.venue}</span>
-                <span style={{ color: C.gold, fontWeight: 700 }}>€{r.prizeMoney >= 1000 ? (Math.round(r.prizeMoney / 1000)) + "k" : r.prizeMoney}</span>
+                <span style={{ color: C.gold, fontWeight: 700 }}>€{r.prizeMoney >= 1000 ? (Math.round(r.Math.floor(prizeMoney * 0.001))) + "k" : r.prizeMoney}</span>
                 <span style={{ color: C.textMid }}>{new Date(r.date).toLocaleDateString("en-IE", { day: "numeric", month: "short" })}</span>
               </div>
             ))}
@@ -191,24 +191,24 @@ function ProvisionalEntries({ horses, setHorses }) {
         {fetchStatus === "done" && provisionalRaces.length === 0 && <div style={{ fontSize: 12, color: C.textMid, marginTop: 8 }}>No races found in provisional summaries</div>}
       </div>
 
-      {/* Per-horse provisional entries */}
-      {horses.filter(h => h.status !== "Inactive").map(horse => {
+      
+      {horses.filter(function(h){return h.status;} !== "Inactive").map(horse => {
         const entries = horse.provisionalEntries || [];
         const isAdding = showAdd === horse.id;
         return (
-          <div key={horse.id} style={{ background: C.card, border: `1px solid ${C.border}`, borderRadius: 12, padding: "14px 16px", marginBottom: 12, boxShadow: C.shadow }}>
+          <div key={horse.id} style={{ background: C.card, border: "1px solid "+C.border, borderRadius: 12, padding: "14px 16px", marginBottom: 12, boxShadow: C.shadow }}>
             <div style={{ display: "flex", alignItems: "center", gap: 12, marginBottom: entries.length > 0 || isAdding ? 12 : 0 }}>
               <Silk silk={horse.silk} size={36} />
               <div style={{ flex: 1 }}>
                 <div style={{ fontSize: 15, fontWeight: 700, color: C.text }}>{horse.name}</div>
                 <div style={{ fontSize: 12, color: C.textMid }}>{horse.owner} · {entries.length} provisional target{entries.length !== 1 ? "s" : ""}</div>
               </div>
-              <Btn variant="gold" onClick={() => setShowAdd(isAdding ? null : horse.id)} style={{ fontSize: 12, padding: "6px 14px" }}>
+              <Btn variant="gold" onClick={function(){return setShowAdd(isAdding ? null : horse.id;})} style={{ fontSize: 12, padding: "6px 14px" }}>
                 {isAdding ? "Cancel" : "+ Add Target"}
               </Btn>
             </div>
 
-            {/* Existing provisional entries */}
+            
             {entries.map(e => (
               <div key={e.id} style={{ display: "flex", alignItems: "center", gap: 10, padding: "10px 12px", background: C.goldBg, border: `1px solid ${C.gold}30`, borderLeft: `3px solid ${C.gold}`, borderRadius: 10, marginBottom: 8 }}>
                 <div style={{ flex: 1 }}>
@@ -224,13 +224,13 @@ function ProvisionalEntries({ horses, setHorses }) {
                   </div>
                   {e.note && <div style={{ fontSize: 12, color: C.textMid, fontStyle: "italic", marginTop: 4 }}>💬 {e.note}</div>}
                 </div>
-                <Btn variant="red" onClick={() => removeEntry(horse.id, e.id)} style={{ padding: "5px 10px", fontSize: 11 }}>✕</Btn>
+                <Btn variant="red" onClick={function(){return removeEntry(horse.id;}, e.id)} style={{ padding: "5px 10px", fontSize: 11 }}>✕</Btn>
               </div>
             ))}
 
-            {/* Add entry form */}
+            
             {isAdding && (
-              <div style={{ background: C.cardOff, border: `1px solid ${C.border}`, borderRadius: 10, padding: "14px 16px", marginTop: 8 }}>
+              <div style={{ background: C.cardOff, border: "1px solid "+C.border, borderRadius: 10, padding: "14px 16px", marginTop: 8 }}>
                 <div style={{ fontSize: 13, fontWeight: 700, color: C.text, marginBottom: 12 }}>Add Provisional Target for {horse.name}</div>
                 <div style={{ display: "grid", gridTemplateColumns: "1fr 1fr", gap: 10, marginBottom: 10 }}>
                   {[
@@ -241,17 +241,17 @@ function ProvisionalEntries({ horses, setHorses }) {
                   ].map(({ key, label, placeholder, type, full }) => (
                     <div key={key} style={{ gridColumn: full ? "1 / -1" : "auto" }}>
                       <div style={{ fontSize: 10, fontWeight: 700, color: C.textMid, marginBottom: 4, textTransform: "uppercase", letterSpacing: 0.5 }}>{label}</div>
-                      <input type={type || "text"} placeholder={placeholder} value={entry[key]} onChange={e => setEntry(function(p) { return Object.assign({}, p, { [key]: e.target.value }); })} style={{ width: "100%", background: C.card, border: `1px solid ${C.border}`, borderRadius: 8, padding: "8px 12px", color: C.text, fontSize: 13, outline: "none" }} />
+                      <input type={type || "text"} placeholder={placeholder} value={entry[key]} onChange={e => setEntry(function(p) { return Object.assign({}, p, { [key]: e.target.value }); })} style={{ width: "100%", background: C.card, border: "1px solid "+C.border, borderRadius: 8, padding: "8px 12px", color: C.text, fontSize: 13, outline: "none" }} />
                     </div>
                   ))}
                 </div>
                 <div style={{ marginBottom: 10 }}>
                   <div style={{ fontSize: 10, fontWeight: 700, color: C.textMid, marginBottom: 4, textTransform: "uppercase", letterSpacing: 0.5 }}>Trainer Note (visible to owner)</div>
-                  <input type="text" placeholder="e.g. If ground stays soft" value={entry.note} onChange={e => setEntry(function(p) { return Object.assign({}, p, { note: e.target.value }); })} style={{ width: "100%", background: C.card, border: `1px solid ${C.border}`, borderRadius: 8, padding: "8px 12px", color: C.text, fontSize: 13, outline: "none" }} />
+                  <input type="text" placeholder="e.g. If ground stays soft" value={entry.note} onChange={e => setEntry(function(p) { return Object.assign({}, p, { note: e.target.value }); })} style={{ width: "100%", background: C.card, border: "1px solid "+C.border, borderRadius: 8, padding: "8px 12px", color: C.text, fontSize: 13, outline: "none" }} />
                 </div>
                 <div style={{ display: "flex", gap: 8 }}>
-                  <Btn onClick={() => addEntry(horse.id)}>Save Target</Btn>
-                  <Btn variant="ghost" onClick={() => setShowAdd(null)}>Cancel</Btn>
+                  <Btn onClick={function(){return addEntry(horse.id;})}>Save Target</Btn>
+                  <Btn variant="ghost" onClick={function(){return setShowAdd(null;})}>Cancel</Btn>
                 </div>
               </div>
             )}
@@ -260,9 +260,9 @@ function ProvisionalEntries({ horses, setHorses }) {
       })}
 
       {allProvisional.length > 0 && (
-        <div style={{ background: C.card, border: `1px solid ${C.border}`, borderRadius: 12, padding: "14px 18px", marginTop: 8, boxShadow: C.shadow }}>
+        <div style={{ background: C.card, border: "1px solid "+C.border, borderRadius: 12, padding: "14px 18px", marginTop: 8, boxShadow: C.shadow }}>
           <div style={{ fontSize: 13, fontWeight: 700, color: C.text, marginBottom: 12 }}>All Provisional Targets — by date</div>
-          {[...allProvisional].filter(e => e.date).sort((a, b) => new Date(a.date) - new Date(b.date)).map((e, i) => (
+          {[...allProvisional].filter(function(e){return e.date;}).sort((a, b) => new Date(a.date) - new Date(b.date)).map((e, i) => (
             <div key={i} style={{ display: "flex", alignItems: "center", gap: 12, padding: "8px 0", borderBottom: `1px solid ${C.border}` }}>
               <Silk silk={e.horse.silk} size={24} />
               <div style={{ flex: 1, fontSize: 13 }}>
