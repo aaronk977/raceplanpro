@@ -86,11 +86,11 @@ function YardView({ horses, setHorses }) {
           return updated;
         });
         setCsvStatus(imported.length + " horses imported from HRI");
-        setTimeout(function(){return setCsvStatus(null;}), 5000);
+        setTimeout(function(){setCsvStatus(null);}, 5000);
       } catch (err) {
         console.error(err);
         setCsvStatus("Error reading file — check format");
-        setTimeout(function(){return setCsvStatus(null;}), 5000);
+        setTimeout(function(){setCsvStatus(null);}, 5000);
       }
     };
     reader.readAsText(file);
@@ -149,17 +149,17 @@ function YardView({ horses, setHorses }) {
           return horses;
         });
         setCsvStatus(updated + " horses updated with ratings");
-        setTimeout(function(){return setCsvStatus(null;}), 5000);
+        setTimeout(function(){setCsvStatus(null);}, 5000);
       } catch (err) {
         console.error(err);
         setCsvStatus("Error reading ratings file");
-        setTimeout(function(){return setCsvStatus(null;}), 5000);
+        setTimeout(function(){setCsvStatus(null);}, 5000);
       }
     };
     reader.readAsText(file);
   };
 
-  const addHorse = function() {
+  var addHorse = function() {
     if (!newHorse.name) return;
     setHorses(function(prev) { return [...prev, { ...newHorse, id: "h_" + Date.now(), silk: SILKS[Math.floor(Math.random() * SILKS.length)], nhRating: newHorse.nhRating ? parseInt(newHorse.nhRating) : null, flatRating: newHorse.flatRating ? parseInt(newHorse.flatRating) : null, discipline: [newHorse.discipline], isEBF: false, isMaiden: false, isNovice: false, distanceMin: 16, distanceMax: 24, goingPref: [], form: [], arrivedDate: todayStr, provisionalEntries: [] }]);
     setNewHorse({ name: "", dob: "", sex: "Gelding", colour: "", nhRating: "", flatRating: "", discipline: "Hurdle", surface: "Turf", status: "Active", owner: "", ownerPhone: "", ownerEmail: "", headgear: "", nextRaceDate: "", notes: "" });
@@ -218,7 +218,7 @@ function YardView({ horses, setHorses }) {
               <div style={{ marginTop: 5, display: "flex", gap: 6, alignItems: "center" }}><FormDots form={h.form} />{h.notes && <span style={{ fontSize: 11, color: C.textMid, fontStyle: "italic" }}>💬 {h.notes}</span>}</div>
             </div>
             <div style={{ display: "flex", gap: 6, marginTop: 8 }}>
-              <Btn variant="ghost" onClick={function(){return setEditHorse(h;})} style={{ fontSize: 11, padding: "5px 12px" }}>✏️ Edit</Btn>
+              <Btn variant="ghost" onClick={function(){setEditHorse(h);}} style={{ fontSize: 11, padding: "5px 12px" }}>✏️ Edit</Btn>
               <Btn variant="red" onClick={function(){ if (window.confirm("Remove " + h.name + " from the yard?")) { setHorses(function(prev){return prev.filter;}(function(x){return x.id;} !== h.id)); } }} style={{ fontSize: 11, padding: "5px 12px" }}>🗑 Remove</Btn>
             </div>
           </div>
@@ -230,7 +230,7 @@ function YardView({ horses, setHorses }) {
           <div style={{ background: C.card, borderRadius: 16, width: "100%", maxWidth: 480, maxHeight: "90vh", overflowY: "auto" }}>
             <div style={{ background: C.navy, padding: "16px 20px", display: "flex", justifyContent: "space-between", alignItems: "center", position: "sticky", top: 0 }}>
               <div style={{ fontSize: 15, fontWeight: 700, color: "#fff" }}>Edit — {editHorse.name}</div>
-              <button onClick={function(){return setEditHorse(null;})} style={{ background: "rgba(255,255,255,0.1)", border: "none", color: "#fff", width: 28, height: 28, borderRadius: 6, cursor: "pointer", fontSize: 14 }}>✕</button>
+              <button onClick={function(){setEditHorse(null);}} style={{ background: "rgba(255,255,255,0.1)", border: "none", color: "#fff", width: 28, height: 28, borderRadius: 6, cursor: "pointer", fontSize: 14 }}>✕</button>
             </div>
             <div style={{ padding: 20, display: "flex", flexDirection: "column", gap: 11 }}>
               {[
