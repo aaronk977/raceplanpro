@@ -1,6 +1,8 @@
 import React, { useState } from "react";
 import { Btn, Silk, C } from "./shared";
 
+var PRINT_STYLE = "@media print { body * { visibility: hidden !important; } #print-area, #print-area * { visibility: visible !important; } #print-area { position: fixed; left: 0; top: 0; width: 100%; padding: 20px; font-size: 16pt !important; } #print-area .horse-name { font-size: 22pt !important; font-weight: 900 !important; } #print-area .badge { font-size: 14pt !important; padding: 4pt 12pt !important; } }";
+
 function RacedayPrint({ horses, entries, setEntries }) {
   var showAddState = useState(false);
   var showAdd = showAddState[0]; var setShowAdd = showAddState[1];
@@ -59,12 +61,19 @@ function RacedayPrint({ horses, entries, setEntries }) {
             if (hl === nl || hl.indexOf(nl) >= 0 || nl.indexOf(hl) >= 0) { horse = horses[hi]; break; }
           }
           var rawDate = row.date || row.race_date || "";
-          var parsedDate = rawDate;
+          var parsedDate = "";
           if (rawDate) {
-            var parts = rawDate.replace(/\//g, "-").replace(/\./g, "-").split("-");
+            var rd = rawDate.trim().split("/").join("-").split(".").join("-");
+            var parts = rd.split("-");
             if (parts.length === 3) {
-              if (parts[2] && parts[2].length === 4) parsedDate = parts[2] + "-" + parts[1].padStart(2, "0") + "-" + parts[0].padStart(2, "0");
+              var p0 = parts[0].trim(); var p1 = parts[1].trim(); var p2 = parts[2].trim();
+              if (p2.length === 4) {
+                parsedDate = p2 + "-" + p1.padStart(2,"0") + "-" + p0.padStart(2,"0");
+              } else if (p0.length === 4) {
+                parsedDate = p0 + "-" + p1.padStart(2,"0") + "-" + p2.padStart(2,"0");
+              }
             }
+          }
           }
           var extrasRaw = (row.extras || row.extra || row.headgear || "").trim().toUpperCase();
           var headgear = HEADGEAR[extrasRaw] || (extrasRaw.length > 0 && extrasRaw.length <= 4 ? extrasRaw : "");
@@ -110,6 +119,7 @@ function RacedayPrint({ horses, entries, setEntries }) {
 
   return (
     <div>
+      <style dangerouslySetInnerHTML={{ __html: PRINT_STYLE }} />
       <div style={{ display: "flex", justifyContent: "space-between", alignItems: "center", marginBottom: 16, flexWrap: "wrap", gap: 8 }}>
         <div>
           <div style={{ fontSize: 22, fontWeight: 800, color: C.text }}>Raceday Whiteboard</div>
@@ -155,9 +165,9 @@ function RacedayPrint({ horses, entries, setEntries }) {
                     <div style={{ minWidth: 80, fontSize: 14, fontWeight: 700, color: C.navy }}>{entry.raceTime}</div>
                     <div style={{ flex: 1 }}>
                       <div style={{ display: "flex", alignItems: "center", gap: 8, flexWrap: "wrap" }}>
-                        <span style={{ fontSize: 17, fontWeight: 800, color: C.text, textTransform: "uppercase" }}>{displayName}</span>
-                        {hg && <span style={{ fontSize: 12, color: "#fff", fontWeight: 700, background: C.purple, padding: "2px 8px", borderRadius: 6 }}>{hg}</span>}
-                        {entry.ballotNo && <span style={{ fontSize: 12, color: "#fff", fontWeight: 700, background: C.amber, padding: "2px 8px", borderRadius: 6 }}>{"Ballot " + entry.ballotNo}</span>}
+                        <span className="horse-name" style={{ fontSize: 17, fontWeight: 800, color: C.text, textTransform: "uppercase" }}>{displayName}</span>
+                        {hg && <span className="badge" style={{ fontSize: 12, color: "#fff", fontWeight: 700, background: C.purple, padding: "2px 8px", borderRadius: 6 }}>{hg}</span>}
+                        {entry.ballotNo && <span className="badge" style={{ fontSize: 12, color: "#fff", fontWeight: 700, background: C.amber, padding: "2px 8px", borderRadius: 6 }}>{"Ballot " + entry.ballotNo}</span>}
                       </div>
                       {entry.jockey && <div style={{ fontSize: 12, color: C.textMid, marginTop: 2 }}>{"Jockey: " + entry.jockey}</div>}
                       {entry.raceName && <div style={{ fontSize: 12, color: C.textMid, marginTop: 2 }}>{entry.raceName}</div>}
