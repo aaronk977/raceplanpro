@@ -60,19 +60,59 @@ function RacePlanner({ horses, setHorses }) {
 
   function getEligible(race) {
     return activeHorses.filter(function(horse) {
+
+      // Age check — horse must have a dob to pass age-restricted races
       var age = getAge(horse.dob);
-      if (race.ageMin && age < race.ageMin) return false;
-      if (race.ageMax && age > race.ageMax) return false;
-      var disc = horse.discipline || [];
-      if (race.discipline && disc.length > 0 && disc.indexOf(race.discipline) < 0) return false;
+      if (race.ageMin && race.ageMin > 0) {
+        if (!horse.dob) return false;
+        if (age < race.ageMin) return false;
+      }
+      if (race.ageMax && race.ageMax > 0) {
+        if (!horse.dob) return false;
+        if (age > race.ageMax) return false;
+      }
+
+      // Discipline check — if race has a discipline, horse must match it
+      // If horse has no discipline set, only allow if it could plausibly run
+      if (race.discipline) {
+        var disc = horse.discipline || [];
+        if (disc.length > 0 && disc.indexOf(race.discipline) < 0) return false;
+        // If horse has no discipline set, require relevant rating to exist
+        if (disc.length === 0) {
+          if (race.discipline === "Flat" && !horse.flatRating && !horse.awtRating) return false;
+          if (race.discipline === "Hurdle" && !horse.hurdleRating && !horse.nhRating) return false;
+          if (race.discipline === "Chase" && !horse.chaseRating && !horse.nhRating) return false;
+        }
+      }
+
+      // Sex restriction
+      if (race.sexRestriction && race.sexRestriction !== "Open" && race.sexRestriction !== "") {
+        var mares = ["Mare", "Filly"];
+        var males = ["Gelding", "Colt", "Horse"];
+        if (race.sexRestriction === "Mares" && mares.indexOf(horse.sex) < 0) return false;
+        if (race.sexRestriction === "Fillies" && horse.sex !== "Filly") return false;
+        if (race.sexRestriction === "Colts & Geldings" && males.indexOf(horse.sex) < 0) return false;
+      }
+
+      // Maiden / Novice — only show if race flag matches horse flag
       if (race.isMaiden && !horse.isMaiden) return false;
       if (race.isNovice && !horse.isNovice) return false;
-      var rtg = race.discipline === "Flat" ? (horse.flatRating || horse.awtRating) :
-                race.discipline === "Chase" ? (horse.chaseRating || horse.nhRating) :
-                race.discipline === "Hurdle" ? (horse.hurdleRating || horse.nhRating) :
-                (horse.nhRating || horse.flatRating);
-      if (race.ratingMax && rtg && rtg > race.ratingMax) return false;
-      if (race.ratingMin && rtg && rtg < race.ratingMin) return false;
+
+      // Rating check
+      var rtg = null;
+      if (race.discipline === "Flat") rtg = horse.flatRating || horse.awtRating || null;
+      else if (race.discipline === "Chase") rtg = horse.chaseRating || horse.nhRating || null;
+      else if (race.discipline === "Hurdle") rtg = horse.hurdleRating || horse.nhRating || null;
+      else rtg = horse.nhRating || horse.flatRating || null;
+
+      // If race has rating limits and horse has a rating, enforce them
+      if (race.ratingMax && race.ratingMax > 0 && rtg && rtg > race.ratingMax) return false;
+      if (race.ratingMin && race.ratingMin > 0 && rtg && rtg < race.ratingMin) return false;
+
+      // If race has a rating ceiling and horse has NO rating, exclude
+      // (unrated horses can only run in maiden/novice or open handicaps)
+      if (race.ratingMax && race.ratingMax > 0 && !rtg && !race.isMaiden) return false;
+
       return true;
     });
   }
