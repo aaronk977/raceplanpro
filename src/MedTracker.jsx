@@ -10,19 +10,15 @@ function MedicationTracker({ horses, medLogs, setMedLogs, trackedIds, setTracked
   const [showAdd, setShowAdd] = useState(false);
 
   const daysInMonth = getDaysInMonth(selYear, selMonth);
-  const days = Array.from({ length: daysInMonth }, (_, i) => i + 1);
+  const days = Array.from({ length: daysInMonth }, function(_,i){return i+1;});
   const todayD = TODAY.getDate();
   const isCurrent = selMonth === TODAY.getMonth() && selYear === TODAY.getFullYear();
   const monthName = new Date(selYear, selMonth).toLocaleString("en-IE", { month: "long", year: "numeric" });
 
-  const k = (hId, d, t) => {
-    const mm = String(selMonth + 1).padStart(2, "0");
-    const dd = String(d).padStart(2, "0");
-    return hId + "_" + selYear + "-" + mm + "-" + dd + "_" + t;
-  };
-  const getMed = (hId, d, t) => medLogs[k(hId, d, t)] || 0;
-  const toggleMed = (hId, d, t) => {
-    setMedLogs(prev => {
+  const k = function(hId,d,t){var mm=String(selMonth+1).padStart(2,"0");var dd=String(d).padStart(2,"0");return hId+"_"+selYear+"-"+mm+"-"+dd+"_"+t;};
+  const getMed = function(hId,d,t){return medLogs[k(hId,d,t)]||0;};
+  const toggleMed = function(hId,d,t){
+    setMedLogs(function(prev){return ( {
       const cur = prev[k(hId, d, t)] || 0;
       if (t === "antibiotics") return { ...prev, [k(hId, d, t)]: cur === 0 ? 1 : cur === 1 ? 2 : 0 };
       return { ...prev, [k(hId, d, t)]: cur ? 0 : 1 };
@@ -36,12 +32,12 @@ function MedicationTracker({ horses, medLogs, setMedLogs, trackedIds, setTracked
     const peptizole = peptizoleDays * 18;
     const antepsin = calcAntepsinCost(antepsinTicks);
     const antibiotics = antibioticDoses * 15;
-    return { peptizoleDays, antepsinTicks, antepsinBottles: Math.ceil(antepsinTicks / 4), antibioticDoses, peptizole, antepsin, antibiotics, total: peptizole + antepsin + antibiotics };
+    return { peptizoleDays, antepsinTicks, antepsinBottles: Math.ceil(antepsinTicks * 0.25), antibioticDoses, peptizole, antepsin, antibiotics, total: peptizole + antepsin + antibiotics };
   };
 
   const [medView, setMedView] = useState("tracker");
-  const trackedHorses = horses.filter(h => trackedIds.includes(h.id));
-  const untrackedHorses = horses.filter(h => h.status !== "Inactive" && !trackedIds.includes(h.id));
+  const trackedHorses = horses.filter(function(h){return trackedIds.includes;}(h.id));
+  const untrackedHorses = horses.filter(function(h){return h.status;} !== "Inactive" && !trackedIds.includes(h.id));
 
   const todayMedKey = function(hId, t) {
     const mm = String(TODAY.getMonth() + 1).padStart(2, "0");
@@ -59,7 +55,7 @@ function MedicationTracker({ horses, medLogs, setMedLogs, trackedIds, setTracked
 
   return (
     <div>
-      {/* Header */}
+      
       <div style={{ display: "flex", justifyContent: "space-between", alignItems: "center", marginBottom: 12, flexWrap: "wrap", gap: 10 }}>
         <div>
           <div style={{ fontSize: 22, fontWeight: 800, color: C.text }}>Medication Tracker</div>
@@ -80,7 +76,7 @@ function MedicationTracker({ horses, medLogs, setMedLogs, trackedIds, setTracked
         </div>
       </div>
 
-      {/* DAILY SUMMARY VIEW */}
+      
       {medView === "daily" && (
         <div>
           <div style={{ background: C.card, border: "1px solid " + C.border, borderRadius: 14, padding: "18px 20px", marginBottom: 14 }}>
@@ -131,7 +127,7 @@ function MedicationTracker({ horses, medLogs, setMedLogs, trackedIds, setTracked
       {medView === "tracker" && (
         <div>
 
-      {/* Race timing alerts */}
+      
       {horses.filter(h => { const d = daysUntil(h.nextRaceDate); return d && d >= 12 && d <= 16; }).map(h => (
         <div key={h.id} style={{ background: C.amberBg, border: `1px solid ${C.amber}40`, borderLeft: `3px solid ${C.amber}`, borderRadius: 10, padding: "10px 14px", marginBottom: 10, display: "flex", alignItems: "center", gap: 12 }}>
           <Silk silk={h.silk} size={30} />
@@ -151,21 +147,21 @@ function MedicationTracker({ horses, medLogs, setMedLogs, trackedIds, setTracked
         </div>
       ))}
 
-      {/* Add horse panel */}
+      
       {showAdd && (
-        <div style={{ background: C.card, border: `1px solid ${C.border}`, borderRadius: 12, padding: "16px 18px", marginBottom: 16, boxShadow: C.shadow }}>
+        <div style={{ background: C.card, border: "1px solid "+C.border, borderRadius: 12, padding: "16px 18px", marginBottom: 16, boxShadow: C.shadow }}>
           <div style={{ fontSize: 14, fontWeight: 700, color: C.text, marginBottom: 12 }}>Add horse to {monthName} tracker:</div>
           {untrackedHorses.map(h => (
-            <div key={h.id} style={{ display: "flex", alignItems: "center", gap: 12, padding: "10px 12px", background: C.cardOff, borderRadius: 10, border: `1px solid ${C.border}`, marginBottom: 8 }}>
+            <div key={h.id} style={{ display: "flex", alignItems: "center", gap: 12, padding: "10px 12px", background: C.cardOff, borderRadius: 10, border: "1px solid "+C.border, marginBottom: 8 }}>
               <Silk silk={h.silk} size={30} />
               <div style={{ flex: 1 }}>
                 <div style={{ fontSize: 14, fontWeight: 700, color: C.text }}>{h.name}</div>
                 <div style={{ fontSize: 11, color: C.textMid }}>{h.owner} · {h.status}{h.nextRaceDate ? ` · Next race: ${new Date(h.nextRaceDate).toLocaleDateString("en-IE", { day: "numeric", month: "short" })}` : ""}</div>
               </div>
-              <Btn variant="green" onClick={() => { setTrackedIds(function(p) { return [...p, h.id]; }); }} style={{ padding: "6px 14px", fontSize: 12 }}>+ Add</Btn>
+              <Btn variant="green" onClick={function(){ setTrackedIds(function(p) { return [...p, h.id]; }); }} style={{ padding: "6px 14px", fontSize: 12 }}>+ Add</Btn>
             </div>
           ))}
-          <Btn variant="ghost" onClick={() => setShowAdd(false)} style={{ marginTop: 8, fontSize: 12, padding: "6px 14px" }}>Close</Btn>
+          <Btn variant="ghost" onClick={function(){setShowAdd(false);}} style={{ marginTop: 8, fontSize: 12, padding: "6px 14px" }}>Close</Btn>
         </div>
       )}
 
@@ -177,13 +173,13 @@ function MedicationTracker({ horses, medLogs, setMedLogs, trackedIds, setTracked
         </div>
       )}
 
-      {/* Horse medication rows */}
+      
       {trackedHorses.map(horse => {
         const isOpen = openHorse === horse.id;
         const costs = calcCost(horse.id);
         return (
-          <div key={horse.id} style={{ background: C.card, border: `1px solid ${C.border}`, borderRadius: 12, marginBottom: 12, overflow: "hidden", boxShadow: C.shadow }}>
-            <div onClick={() => setOpenHorse(isOpen ? null : horse.id)} style={{ padding: "14px 16px", cursor: "pointer", display: "flex", alignItems: "center", gap: 12 }}>
+          <div key={horse.id} style={{ background: C.card, border: "1px solid "+C.border, borderRadius: 12, marginBottom: 12, overflow: "hidden", boxShadow: C.shadow }}>
+            <div onClick={function(){return setOpenHorse(isOpen ? null : horse.id;})} style={{ padding: "14px 16px", cursor: "pointer", display: "flex", alignItems: "center", gap: 12 }}>
               <Silk silk={horse.silk} size={36} />
               <div style={{ flex: 1 }}>
                 <div style={{ fontSize: 15, fontWeight: 700, color: C.text, marginBottom: 3 }}>{horse.name}</div>
@@ -196,14 +192,14 @@ function MedicationTracker({ horses, medLogs, setMedLogs, trackedIds, setTracked
               </div>
               <div style={{ display: "flex", gap: 8, alignItems: "center" }}>
                 <Btn onClick={(e) => { e.stopPropagation(); setBillHorse(horse); setShowBill(true); }} style={{ padding: "5px 12px", fontSize: 11 }}>📋 Bill</Btn>
-                <Btn variant="red" onClick={(e) => { e.stopPropagation(); setTrackedIds(p => p.filter(id => id !== horse.id)); }} style={{ padding: "5px 10px", fontSize: 11 }}>✕</Btn>
+                <Btn variant="red" onClick={(e) => { e.stopPropagation(); setTrackedIds(function(p){return p.filter;}(id => id !== horse.id)); }} style={{ padding: "5px 10px", fontSize: 11 }}>✕</Btn>
                 <span style={{ color: C.textMid, fontSize: 14 }}>{isOpen ? "▲" : "▼"}</span>
               </div>
             </div>
 
             {isOpen && (
               <div style={{ padding: "0 16px 16px", borderTop: `1px solid ${C.border}` }}>
-                {/* Legend */}
+                
                 <div style={{ display: "flex", gap: 16, padding: "10px 0", marginBottom: 8, flexWrap: "wrap" }}>
                   <div style={{ fontSize: 11, color: C.textMid }}><strong style={{ color: C.blue }}>Peptizole</strong> — €18/day</div>
                   <div style={{ fontSize: 11, color: C.textMid }}><strong style={{ color: C.purple }}>Antepsin</strong> — €25/bottle (1 bottle per 4 days, rounds up)</div>
@@ -231,7 +227,7 @@ function MedicationTracker({ horses, medLogs, setMedLogs, trackedIds, setTracked
                             const isFuture = isCurrent && d > todayD;
                             return (
                               <td key={d} style={{ padding: "2px 2px", textAlign: "center" }}>
-                                <button onClick={() => !isFuture && toggleMed(horse.id, d, type)} disabled={isFuture} style={{ width: 22, height: 22, borderRadius: 4, background: val > 0 ? col : "#f0f4f8", border: `1px solid ${val > 0 ? col : C.border}`, color: val > 0 ? "#fff" : C.textDim, fontSize: 10, fontWeight: 700, cursor: isFuture ? "default" : "pointer", opacity: isFuture ? 0.25 : 1, display: "flex", alignItems: "center", justifyContent: "center", padding: 0 }}>
+                                <button onClick={function(){return !isFuture && toggleMed(horse.id;}, d, type)} disabled={isFuture} style={{ width: 22, height: 22, borderRadius: 4, background: val > 0 ? col : "#f0f4f8", border: `1px solid ${val > 0 ? col : C.border}`, color: val > 0 ? "#fff" : C.textDim, fontSize: 10, fontWeight: 700, cursor: isFuture ? "default" : "pointer", opacity: isFuture ? 0.25 : 1, display: "flex", alignItems: "center", justifyContent: "center", padding: 0 }}>
                                   {val > 0 ? val : ""}
                                 </button>
                               </td>
@@ -247,9 +243,9 @@ function MedicationTracker({ horses, medLogs, setMedLogs, trackedIds, setTracked
                     </tbody>
                   </table>
                 </div>
-                {/* Withdrawal deadlines */}
+                
                 {horse.nextRaceDate && (
-                  <div style={{ marginTop: 10, padding: "10px 12px", background: C.cardOff, borderRadius: 8, border: `1px solid ${C.border}`, display: "flex", gap: 20, flexWrap: "wrap" }}>
+                  <div style={{ marginTop: 10, padding: "10px 12px", background: C.cardOff, borderRadius: 8, border: "1px solid "+C.border, display: "flex", gap: 20, flexWrap: "wrap" }}>
                     <div style={{ fontSize: 12, fontWeight: 700, color: C.text }}>⏱ Withdrawal for {new Date(horse.nextRaceDate).toLocaleDateString("en-IE", { day: "numeric", month: "short" })}:</div>
                     {[{ label: "Stop Peptizole", wd: 4 }, { label: "Stop Antepsin", wd: 1 }].map(({ label, wd }) => {
                       const stop = new Date(horse.nextRaceDate); stop.setDate(stop.getDate() - wd);
@@ -263,15 +259,15 @@ function MedicationTracker({ horses, medLogs, setMedLogs, trackedIds, setTracked
         );
       })}
 
-      {/* Bill modal */}
-      {showBill && billHorse && (() => {
+      
+      {showBill && billHorse && (function(){return {;}
         const costs = calcCost(billHorse.id);
         return (
           <div style={{ position: "fixed", inset: 0, background: "rgba(10,22,40,0.6)", zIndex: 500, display: "flex", alignItems: "center", justifyContent: "center", padding: 20, backdropFilter: "blur(4px)" }}>
             <div style={{ background: C.card, borderRadius: 16, width: "100%", maxWidth: 420, boxShadow: C.shadowMd, overflow: "hidden" }}>
               <div style={{ background: C.navy, padding: "18px 22px", display: "flex", justifyContent: "space-between", alignItems: "center" }}>
                 <div><div style={{ fontSize: 16, fontWeight: 700, color: "#fff" }}>Monthly Medication Bill</div><div style={{ fontSize: 12, color: "rgba(255,255,255,0.5)", marginTop: 2 }}>{billHorse.name} · {monthName}</div></div>
-                <button onClick={() => setShowBill(false)} style={{ background: "rgba(255,255,255,0.1)", border: "none", color: "#fff", width: 30, height: 30, borderRadius: 7, cursor: "pointer", fontSize: 15 }}>✕</button>
+                <button onClick={function(){return setShowBill(false;})} style={{ background: "rgba(255,255,255,0.1)", border: "none", color: "#fff", width: 30, height: 30, borderRadius: 7, cursor: "pointer", fontSize: 15 }}>✕</button>
               </div>
               <div style={{ padding: 22 }}>
                 <div style={{ fontSize: 12, fontWeight: 700, color: C.textMid, textTransform: "uppercase", letterSpacing: 1, marginBottom: 14 }}>For Yardman — {billHorse.owner}</div>
@@ -292,7 +288,7 @@ function MedicationTracker({ horses, medLogs, setMedLogs, trackedIds, setTracked
                     <span style={{ fontSize: 22, fontWeight: 800, color: C.gold }}>€{costs.total}</span>
                   </div>
                 )}
-                <Btn onClick={() => window.print()} style={{ width: "100%", marginTop: 16, justifyContent: "center" }}>Print / Save for Yardman</Btn>
+                <Btn onClick={function(){window.print();}} style={{ width: "100%", marginTop: 16, justifyContent: "center" }}>Print / Save for Yardman</Btn>
               </div>
             </div>
           </div>
