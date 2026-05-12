@@ -35,6 +35,8 @@ function WeightsTracker({ horses, weights, setWeights, settings }) {
         delete next[key];
       } else {
         next[key] = val;
+        // Show save indicator
+        showToast("Saved", C.green);
       }
       return next;
     });
@@ -187,7 +189,10 @@ function WeightsTracker({ horses, weights, setWeights, settings }) {
 
       {view === "history" && (
         <div>
-          {filteredHorses.map(function(horse) {
+          <div style={{ background: C.card, border: "1px solid " + C.border, borderRadius: 10, padding: "12px 16px", marginBottom: 12, fontSize: 12, color: C.textMid }}>
+          Click on a horse to see full weight history. Weights auto-save as you enter them.
+        </div>
+      {filteredHorses.map(function(horse) {
             var history = getHistory(horse.id);
             var trend = getTrend(horse.id);
             if (!history.length) return null;
