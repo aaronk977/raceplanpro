@@ -32,7 +32,28 @@ export default function App() {
   const [authError, setAuthError] = useState("");
   const [appLoading, setAppLoading] = useState(true);
   const [tab, setTab] = useState("yard");
-  const [settings, setSettings] = useState({ yardName: "", trainerName: "", weighDay: "Monday", notifyContacts: [], tier: "Professional", costPeptizole: 18, costAntepsin: 25, costAntibiotics: 15 });
+  const [settings, setSettings] = useState({ yardName: "", trainerName: "", weighDay: "Monday", notifyContacts: [], ownerContacts: [], tier: "Professional", costPeptizole: 18, costAntepsin: 25, costAntibiotics: 15 });
+
+  var saveSettings = function(newSettings) {
+    setSettings(newSettings);
+    // Sync owner contacts to horses by name match
+    var ownerContacts = newSettings.ownerContacts || [];
+    if (ownerContacts.length > 0) {
+      setHorses(function(prev) {
+        return prev.map(function(horse) {
+          var ownerName = (horse.owner || "").toLowerCase().trim();
+          var match = ownerContacts.find(function(oc) {
+            return oc.name.toLowerCase().trim() === ownerName;
+          });
+          if (!match) return horse;
+          var updated = Object.assign({}, horse);
+          if (match.phone) updated.ownerPhone = match.phone;
+          if (match.email) updated.ownerEmail = match.email;
+          return updated;
+        });
+      });
+    }
+  };
   const [weightsRaw, setWeightsRaw] = useState({});
   const [ordersRaw, setOrdersRaw] = useState([]);
   const [sidebarOpen, setSidebarOpen] = useState(true);
@@ -369,7 +390,7 @@ export default function App() {
           {tab === "movements" && <MovementLog horses={horses} />}
           {tab === "owners" && <OwnerPortal horses={horses} />}
           {tab === "staff" && <StaffNotify user={user} supabase={supabase} settings={settings} />}
-          {tab === "settings" && <YardSettings settings={settings} setSettings={setSettings} />}
+          {tab === "settings" && <YardSettings settings={settings} setSettings={saveSettings} />}
           {tab === "weights" && <WeightsTracker horses={horses} weights={weightsRaw} setWeights={setWeights} settings={settings} />}
           {tab === "assistant" && <YardAssistant horses={horses} weights={weightsRaw} medLogs={medLogs} settings={settings} />}
           {tab === "content" && <ContentScheduler horses={horses} settings={settings} />}
