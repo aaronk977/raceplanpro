@@ -1,6 +1,184 @@
 import React, { useState } from "react";
 import { Btn, C } from "./shared";
 
+function OwnerContactsPanel({ edit, update }) {
+  var owners = edit.ownerContacts || [];
+  var showAddState = React.useState(false);
+  var showAdd = showAddState[0]; var setShowAdd = showAddState[1];
+  var newOwnerState = React.useState({ name: "", phone: "", email: "", horses: "" });
+  var newOwner = newOwnerState[0]; var setNewOwner = newOwnerState[1];
+  var editIdxState = React.useState(null);
+  var editIdx = editIdxState[0]; var setEditIdx = editIdxState[1];
+
+  function addOwner() {
+    if (!newOwner.name.trim()) return;
+    var updated = owners.slice();
+    updated.push({ id: "own_" + Date.now(), name: newOwner.name.trim(), phone: newOwner.phone.trim(), email: newOwner.email.trim(), notes: "" });
+    update("ownerContacts", updated);
+    setNewOwner({ name: "", phone: "", email: "", horses: "" });
+    setShowAdd(false);
+  }
+
+  function updateOwner(idx, key, val) {
+    var updated = owners.slice();
+    updated[idx] = Object.assign({}, updated[idx], { [key]: val });
+    update("ownerContacts", updated);
+  }
+
+  function removeOwner(idx) {
+    if (!window.confirm("Remove this owner?")) return;
+    var updated = owners.slice();
+    updated.splice(idx, 1);
+    update("ownerContacts", updated);
+  }
+
+  function openWhatsApp(phone) {
+    if (!phone) return;
+    var p = phone.split("").filter(function(d) { return (d >= "0" && d <= "9") || d === "+"; }).join("");
+    window.open("https://wa.me/" + p, "_blank");
+  }
+
+  function sendEmail(email) {
+    if (!email) return;
+    window.open("mailto:" + email);
+  }
+
+  return (
+    <div>
+      <div style={{ display: "flex", justifyContent: "space-between", alignItems: "center", marginBottom: 14 }}>
+        <div style={{ fontSize: 13, color: C.textMid }}>{owners.length + " owner" + (owners.length !== 1 ? "s" : "") + " saved"}</div>
+        <Btn onClick={function() { setShowAdd(!showAdd); }} style={{ fontSize: 12, padding: "8px 16px" }}>
+          {showAdd ? "Cancel" : "+ Add Owner"}
+        </Btn>
+      </div>
+
+      {showAdd && (
+        <div style={{ background: C.cardOff, border: "1.5px dashed " + C.navy, borderRadius: 12, padding: "16px 18px", marginBottom: 14 }}>
+          <div style={{ fontSize: 14, fontWeight: 700, color: C.navy, marginBottom: 12 }}>Add Owner</div>
+          <div style={{ display: "grid", gridTemplateColumns: "1fr 1fr", gap: 10, marginBottom: 12 }}>
+            <div style={{ gridColumn: "1 / -1" }}>
+              <div style={{ fontSize: 10, fontWeight: 700, color: C.textMid, marginBottom: 3, textTransform: "uppercase", letterSpacing: 0.5 }}>Owner Name</div>
+              <input type="text" value={newOwner.name} onChange={function(e) { setNewOwner(function(p) { return Object.assign({}, p, { name: e.target.value }); }); }}
+                placeholder="e.g. John Murphy"
+                style={{ width: "100%", padding: "10px 14px", background: "#fff", border: "1px solid " + C.border, borderRadius: 9, fontSize: 14, color: C.text }} />
+            </div>
+            <div>
+              <div style={{ fontSize: 10, fontWeight: 700, color: C.textMid, marginBottom: 3, textTransform: "uppercase", letterSpacing: 0.5 }}>WhatsApp Number</div>
+              <input type="tel" value={newOwner.phone} onChange={function(e) { setNewOwner(function(p) { return Object.assign({}, p, { phone: e.target.value }); }); }}
+                placeholder="+353 86 000 0000"
+                style={{ width: "100%", padding: "10px 14px", background: "#fff", border: "1px solid " + C.border, borderRadius: 9, fontSize: 13, color: C.text }} />
+            </div>
+            <div>
+              <div style={{ fontSize: 10, fontWeight: 700, color: C.textMid, marginBottom: 3, textTransform: "uppercase", letterSpacing: 0.5 }}>Email Address</div>
+              <input type="email" value={newOwner.email} onChange={function(e) { setNewOwner(function(p) { return Object.assign({}, p, { email: e.target.value }); }); }}
+                placeholder="john@example.com"
+                style={{ width: "100%", padding: "10px 14px", background: "#fff", border: "1px solid " + C.border, borderRadius: 9, fontSize: 13, color: C.text }} />
+            </div>
+          </div>
+          <div style={{ display: "flex", gap: 8 }}>
+            <Btn onClick={addOwner} disabled={!newOwner.name.trim()}>Save Owner</Btn>
+            <Btn variant="ghost" onClick={function() { setShowAdd(false); }}>Cancel</Btn>
+          </div>
+        </div>
+      )}
+
+      {owners.length === 0 && !showAdd && (
+        <div style={{ padding: 32, textAlign: "center", border: "1.5px dashed " + C.border, borderRadius: 12, color: C.textMid }}>
+          <div style={{ fontSize: 28, marginBottom: 8 }}>👤</div>
+          <div style={{ fontSize: 14, fontWeight: 700, color: C.text, marginBottom: 6 }}>No owners saved yet</div>
+          <div style={{ fontSize: 13, marginBottom: 16 }}>Add owner contact details here — WhatsApp and email buttons across the app use these numbers</div>
+          <Btn onClick={function() { setShowAdd(true); }}>Add First Owner</Btn>
+        </div>
+      )}
+
+      {owners.map(function(owner, idx) {
+        var isEditing = editIdx === idx;
+        var initials = owner.name.split(" ").map(function(w) { return w[0] || ""; }).join("").slice(0, 2).toUpperCase();
+        return (
+          <div key={owner.id || idx} style={{ background: C.card, border: "1px solid " + C.border, borderRadius: 12, padding: "14px 16px", marginBottom: 10 }}>
+            {!isEditing ? (
+              <div style={{ display: "flex", alignItems: "center", gap: 12 }}>
+                <div style={{ width: 44, height: 44, borderRadius: "50%", background: C.navy, display: "flex", alignItems: "center", justifyContent: "center", fontSize: 16, fontWeight: 800, color: "#fff", flexShrink: 0 }}>
+                  {initials}
+                </div>
+                <div style={{ flex: 1 }}>
+                  <div style={{ fontSize: 15, fontWeight: 700, color: C.text, marginBottom: 4 }}>{owner.name}</div>
+                  <div style={{ display: "flex", gap: 10, flexWrap: "wrap", fontSize: 12 }}>
+                    {owner.phone ? (
+                      <span style={{ color: C.green, fontWeight: 600 }}>{"📱 " + owner.phone}</span>
+                    ) : (
+                      <span style={{ color: C.red, fontWeight: 600 }}>📱 No WhatsApp</span>
+                    )}
+                    {owner.email ? (
+                      <span style={{ color: C.blue, fontWeight: 600 }}>{"📧 " + owner.email}</span>
+                    ) : (
+                      <span style={{ color: C.textDim }}>No email</span>
+                    )}
+                  </div>
+                </div>
+                <div style={{ display: "flex", gap: 6, flexWrap: "wrap", justifyContent: "flex-end" }}>
+                  {owner.phone && (
+                    <button onClick={function() { openWhatsApp(owner.phone); }}
+                      style={{ padding: "6px 12px", borderRadius: 8, border: "none", background: "#25D366", color: "#fff", fontSize: 12, fontWeight: 700, cursor: "pointer" }}>
+                      WhatsApp
+                    </button>
+                  )}
+                  {owner.email && (
+                    <button onClick={function() { sendEmail(owner.email); }}
+                      style={{ padding: "6px 12px", borderRadius: 8, border: "1.5px solid " + C.blue + "40", background: C.blueBg, color: C.blue, fontSize: 12, fontWeight: 700, cursor: "pointer" }}>
+                      Email
+                    </button>
+                  )}
+                  <button onClick={function() { setEditIdx(idx); }}
+                    style={{ padding: "6px 12px", borderRadius: 8, border: "1px solid " + C.border, background: C.cardOff, color: C.textMid, fontSize: 12, fontWeight: 700, cursor: "pointer" }}>
+                    Edit
+                  </button>
+                  <button onClick={function() { removeOwner(idx); }}
+                    style={{ padding: "6px 12px", borderRadius: 8, border: "1px solid " + C.red + "40", background: "none", color: C.red, fontSize: 12, fontWeight: 700, cursor: "pointer" }}>
+                    Remove
+                  </button>
+                </div>
+              </div>
+            ) : (
+              <div>
+                <div style={{ display: "grid", gridTemplateColumns: "1fr 1fr 1fr", gap: 10, marginBottom: 12 }}>
+                  <div style={{ gridColumn: "1 / -1" }}>
+                    <div style={{ fontSize: 10, fontWeight: 700, color: C.textMid, marginBottom: 3, textTransform: "uppercase" }}>Name</div>
+                    <input type="text" value={owner.name} onChange={function(e) { updateOwner(idx, "name", e.target.value); }}
+                      style={{ width: "100%", padding: "9px 12px", background: C.cardOff, border: "1px solid " + C.border, borderRadius: 8, fontSize: 13, color: C.text }} />
+                  </div>
+                  <div>
+                    <div style={{ fontSize: 10, fontWeight: 700, color: C.textMid, marginBottom: 3, textTransform: "uppercase" }}>WhatsApp</div>
+                    <input type="tel" value={owner.phone} onChange={function(e) { updateOwner(idx, "phone", e.target.value); }}
+                      placeholder="+353 86 000 0000"
+                      style={{ width: "100%", padding: "9px 12px", background: C.cardOff, border: "1px solid " + C.border, borderRadius: 8, fontSize: 13, color: C.text }} />
+                  </div>
+                  <div>
+                    <div style={{ fontSize: 10, fontWeight: 700, color: C.textMid, marginBottom: 3, textTransform: "uppercase" }}>Email</div>
+                    <input type="email" value={owner.email} onChange={function(e) { updateOwner(idx, "email", e.target.value); }}
+                      placeholder="owner@email.com"
+                      style={{ width: "100%", padding: "9px 12px", background: C.cardOff, border: "1px solid " + C.border, borderRadius: 8, fontSize: 13, color: C.text }} />
+                  </div>
+                  <div>
+                    <div style={{ fontSize: 10, fontWeight: 700, color: C.textMid, marginBottom: 3, textTransform: "uppercase" }}>Notes</div>
+                    <input type="text" value={owner.notes || ""} onChange={function(e) { updateOwner(idx, "notes", e.target.value); }}
+                      placeholder="Any notes"
+                      style={{ width: "100%", padding: "9px 12px", background: C.cardOff, border: "1px solid " + C.border, borderRadius: 8, fontSize: 13, color: C.text }} />
+                  </div>
+                </div>
+                <div style={{ display: "flex", gap: 8 }}>
+                  <Btn onClick={function() { setEditIdx(null); }} style={{ fontSize: 12 }}>Done</Btn>
+                  <Btn variant="ghost" onClick={function() { setEditIdx(null); }} style={{ fontSize: 12 }}>Cancel</Btn>
+                </div>
+              </div>
+            )}
+          </div>
+        );
+      })}
+    </div>
+  );
+}
+
 var STRIPE_LINKS = {
   Basic: "https://buy.stripe.com/basic_raceplanpro",
   Professional: "https://buy.stripe.com/pro_raceplanpro",
@@ -231,6 +409,19 @@ function YardSettings({ settings, setSettings }) {
               </select>
             </div>
           </div>
+        </div>
+      )}
+
+      {activeTab === "owners" && (
+        <div>
+          <div style={{ background: C.card, border: "1px solid " + C.border, borderRadius: 14, padding: "18px 20px", marginBottom: 14 }}>
+            <div style={{ fontSize: 15, fontWeight: 800, color: C.navy, marginBottom: 4 }}>Owner Contacts</div>
+            <div style={{ fontSize: 12, color: C.textMid, marginBottom: 0, lineHeight: 1.6 }}>
+              Add your owners here with their WhatsApp number and email. When you update an owner here it automatically updates across all their horses. WhatsApp and email buttons in the app pull from this list.
+            </div>
+          </div>
+
+          <OwnerContactsPanel edit={edit} update={update} />
         </div>
       )}
 
