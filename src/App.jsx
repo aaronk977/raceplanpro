@@ -10,10 +10,16 @@ import MovementLog from "./MovementLog";
 import OwnerPortal from "./OwnerPortal";
 import StaffNotify from "./StaffNotify";
 import YardSettings from "./YardSettings";
+import WeightsTracker from "./WeightsTracker";
+import YardAssistant from "./YardAssistant";
+import ContentScheduler from "./ContentScheduler";
+import DailySummary from "./DailySummary";
+import Procurement from "./Procurement";
 
 const SUPABASE_URL = import.meta.env.VITE_SUPABASE_URL || "";
 const SUPABASE_ANON_KEY = import.meta.env.VITE_SUPABASE_ANON_KEY || "";
 const supabase = createClient(SUPABASE_URL, SUPABASE_ANON_KEY);
+
 
 const globalCSS = "* { box-sizing: border-box; margin: 0; padding: 0; } body { font-family: Inter, Helvetica Neue, sans-serif; } button:hover { opacity: 0.88; } input:focus, select:focus { outline: none; } ::-webkit-scrollbar { width: 4px; } ::-webkit-scrollbar-thumb { background: #b8c8da; border-radius: 2px; } @media print { body * { visibility: hidden; } #print-area, #print-area * { visibility: visible; } #print-area { position: absolute; left: 0; top: 0; } }";
 
@@ -27,6 +33,8 @@ export default function App() {
   const [appLoading, setAppLoading] = useState(true);
   const [tab, setTab] = useState("yard");
   const [settings, setSettings] = useState({ yardName: "", trainerName: "", weighDay: "Monday", notifyContacts: [], tier: "Professional", costPeptizole: 18, costAntepsin: 25, costAntibiotics: 15 });
+  const [weightsRaw, setWeightsRaw] = useState({});
+  const [ordersRaw, setOrdersRaw] = useState([]);
   const [sidebarOpen, setSidebarOpen] = useState(true);
 
   const [horsesRaw, setHorsesRaw] = useState([]);
@@ -67,6 +75,13 @@ export default function App() {
         var logs = {};
         res.data.forEach(function(row) { logs[row.horse_id + "_" + row.log_date + "_" + row.med_type] = row.value || 1; });
         setMedLogsRaw(logs);
+      }
+    });
+    supabase.from("horse_weights").select("*").eq("user_id", user.id).then(function(res) {
+      if (res.data) {
+        var w = {};
+        res.data.forEach(function(row) { w[row.horse_id + "_" + row.weigh_date + "_" + row.weight_type] = row.weight_kg; });
+        setWeightsRaw(w);
       }
     });
     supabase.from("whiteboard_entries").select("*").eq("user_id", user.id).then(function(res) {
@@ -147,6 +162,35 @@ export default function App() {
     });
   };
 
+  var setWeights = function(updater) {
+    setWeightsRaw(function(prev) {
+      var next = typeof updater === "function" ? updater(prev) : updater;
+      if (!user) return next;
+      var changed = [];
+      Object.keys(next).forEach(function(key) {
+        if (next[key] !== prev[key]) changed.push(key);
+      });
+      changed.forEach(function(key) {
+        var parts = key.split("_");
+        var horseId = parts[0];
+        var date = parts[1];
+        var type = parts[2] || "weekly";
+        var val = next[key];
+        if (val) {
+          supabase.from("horse_weights").upsert({ user_id: user.id, horse_id: horseId, weigh_date: date, weight_type: type, weight_kg: val }).then(function() {});
+        }
+      });
+      return next;
+    });
+  };
+
+  var setOrders = function(updater) {
+    setOrdersRaw(function(prev) {
+      var next = typeof updater === "function" ? updater(prev) : updater;
+      return next;
+    });
+  };
+
   var setWbEntries = function(updater) {
     setWbEntriesRaw(function(prev) {
       var next = typeof updater === "function" ? updater(prev) : updater;
@@ -204,6 +248,11 @@ export default function App() {
     { id: "owners", label: "Owner Portal" },
     { id: "staff", label: "Staff Hours" },
     { id: "settings", label: "Yard Settings" },
+    { id: "weights", label: "Weights" },
+    { id: "assistant", label: "AI Assistant" },
+    { id: "content", label: "Content" },
+    { id: "summary", label: "Daily Summary" },
+    { id: "procurement", label: "Procurement" },
   ];
 
   if (appLoading) return (
@@ -321,6 +370,11 @@ export default function App() {
           {tab === "owners" && <OwnerPortal horses={horses} />}
           {tab === "staff" && <StaffNotify user={user} supabase={supabase} settings={settings} />}
           {tab === "settings" && <YardSettings settings={settings} setSettings={setSettings} />}
+          {tab === "weights" && <WeightsTracker horses={horses} weights={weightsRaw} setWeights={setWeights} settings={settings} />}
+          {tab === "assistant" && <YardAssistant horses={horses} weights={weightsRaw} medLogs={medLogs} settings={settings} />}
+          {tab === "content" && <ContentScheduler horses={horses} settings={settings} />}
+          {tab === "summary" && <DailySummary horses={horses} medLogs={medLogs} weights={weightsRaw} wbEntries={wbEntries} settings={settings} />}
+          {tab === "procurement" && <Procurement user={user} supabase={supabase} orders={ordersRaw} setOrders={setOrders} settings={settings} />}
         </div>
       </div>
     </div>
