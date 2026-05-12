@@ -8,6 +8,7 @@ import RacedayPrint from "./Whiteboard";
 import YardView from "./YardView";
 import MovementLog from "./MovementLog";
 import OwnerPortal from "./OwnerPortal";
+import StaffNotify from "./StaffNotify";
 
 const SUPABASE_URL = import.meta.env.VITE_SUPABASE_URL || "";
 const SUPABASE_ANON_KEY = import.meta.env.VITE_SUPABASE_ANON_KEY || "";
@@ -199,6 +200,7 @@ export default function App() {
     { id: "whiteboard", label: "Raceday Whiteboard" },
     { id: "movements", label: "Horse Movements" },
     { id: "owners", label: "Owner Portal" },
+    { id: "staff", label: "Staff Hours" },
   ];
 
   if (appLoading) return (
@@ -314,6 +316,7 @@ export default function App() {
           {tab === "whiteboard" && <RacedayPrint horses={horses} entries={wbEntries} setEntries={setWbEntries} />}
           {tab === "movements" && <MovementLog horses={horses} />}
           {tab === "owners" && <OwnerPortal horses={horses} />}
+          {tab === "staff" && <StaffNotify user={user} supabase={supabase} />}
         </div>
       </div>
     </div>
