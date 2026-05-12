@@ -74,12 +74,12 @@ var PLANS = [
 ];
 
 var FEATURES = [
-  ["📋", "Race Planner", "Paste HRI conditions once. Every race shows which of your horses are eligible by age, sex, rating and discipline. AI analysis per combination with shortlisting and medication date calculation."],
+  ["📋", "Race Planner", "Paste race conditions once. Every race shows which of your horses are eligible by age, sex, rating and discipline. AI analysis per combination. Automatically calculates Peptizole and Antepsin withdrawal periods when you shortlist a horse — so you always know when to start medication."],
   ["💊", "Medication Tracker", "10am WhatsApp alert when Peptizole ends on an entry day — 2 hours before the 12pm deadline. Monthly grid, cost tracking, multi-horse."],
   ["🖨️", "Raceday Whiteboard", "Import HRI pending engagements CSV. Headgear and ballot number badges print in full colour. Used every race day."],
   ["⚖️", "Weights Tracker", "Staff enter weights on their phones as they go around the yard. Trend tracking, history, race day weights. Auto-saves to the cloud."],
   ["🤖", "AI Yard Assistant", "Voice or text. Knows your yard and your horses. Log tasks, book appointments, ask anything. Today's conversation saves automatically."],
-  ["👤", "Owner Communications", "Schedule videos, race reports and health updates. WhatsApp and email with one tap. Recurring schedules — weekly, bi-weekly, monthly."],
+  ["👤", "Owner Communications", "Confirm entries and declarations to owners instantly with one tap — pre-filled WhatsApp or email with race details. Schedule training videos, race reports and health updates. Recurring weekly or monthly owner updates."],
   ["🛒", "Procurement", "Staff request from TRI Equestrian, RED MILLS and Vet Supplies catalogues. Secretary approves. Order emails directly to supplier."],
   ["🌙", "Staff Hours", "Staff log late returns from racing. App calculates rest hours and sends WhatsApp alert to trainer or head lad instantly."],
   ["📊", "Daily Summary", "Log gallops, vet visits, farrier, racing results. AI generates a daily summary report. Headgear stats and upcoming race view."]
@@ -139,13 +139,13 @@ function LandingPage({ onLogin, onSignup }) {
         <div style={{ maxWidth: 1100, margin: "0 auto", width: "100%", display: "grid", gridTemplateColumns: "1fr 1fr", gap: 60, alignItems: "center" }}>
           <div>
             <div style={{ display: "inline-flex", alignItems: "center", gap: 8, background: "rgba(201,149,42,0.12)", border: "1px solid rgba(201,149,42,0.3)", color: GOLD, fontSize: 12, fontWeight: 700, padding: "5px 14px", borderRadius: 20, marginBottom: 22, textTransform: "uppercase", letterSpacing: "0.5px" }}>
-              🇮🇪 Built for Irish Racing
+              🏇 Built for Racing Trainers
             </div>
             <div style={{ fontSize: "clamp(34px,4.5vw,54px)", fontWeight: 900, color: "#fff", lineHeight: 1.1, marginBottom: 20 }}>
               The yard management app your <span style={{ color: GOLD }}>trainer has been waiting for</span>
             </div>
             <div style={{ fontSize: 18, color: "rgba(255,255,255,0.6)", lineHeight: 1.75, marginBottom: 32, maxWidth: 460 }}>
-              Race planning, medication tracking, owner communications, whiteboard and AI analysis — all in one app. Built for Irish racing yards.
+              Race planning, medication tracking, owner communications, whiteboard and AI analysis — all in one app. Built for professional racing trainers.
             </div>
             <div style={{ display: "flex", gap: 12, flexWrap: "wrap", marginBottom: 40 }}>
               <button onClick={onSignup} style={{ padding: "14px 28px", borderRadius: 10, border: "none", background: GOLD, color: NAVY, fontSize: 15, fontWeight: 800, cursor: "pointer" }}>
@@ -156,7 +156,7 @@ function LandingPage({ onLogin, onSignup }) {
               </button>
             </div>
             <div style={{ display: "flex", gap: 28, paddingTop: 28, borderTop: "1px solid rgba(255,255,255,0.08)" }}>
-              {[["200+","Horses managed"],["€249","Most popular plan"],["5 min","Setup time"],["14 day","Free trial"]].map(function(s) {
+              {[["200+","Horses managed"],["£/€249","Most popular plan"],["5 min","Setup time"],["14 day","Free trial"]].map(function(s) {
                 return (
                   <div key={s[0]}>
                     <div style={{ fontSize: 24, fontWeight: 900, color: GOLD, lineHeight: 1 }}>{s[0]}</div>
@@ -177,8 +177,8 @@ function LandingPage({ onLogin, onSignup }) {
             </div>
             <div style={{ fontSize: 10, color: "rgba(255,255,255,0.3)", marginBottom: 10, fontWeight: 700, textTransform: "uppercase", letterSpacing: "1px" }}>14 races loaded · 8 horses eligible</div>
             {[
-              { venue: "LEOPARDSTOWN · SATURDAY", race: "Mares Novice Hurdle 2m", prize: "EUR 18,000", count: "3 eligible", c: "#4ade80" },
-              { venue: "NAVAN · SUNDAY", race: "Handicap Chase 2m4f", prize: "EUR 12,000", count: "2 eligible", c: "#f59e0b" }
+              { venue: "RACECOURSE A · SATURDAY", race: "Mares Novice Hurdle 2m", prize: "EUR 18,000", count: "3 eligible", c: "#4ade80" },
+              { venue: "RACECOURSE B · SUNDAY", race: "Handicap Chase 2m4f", prize: "EUR 12,000", count: "2 eligible", c: "#f59e0b" }
             ].map(function(r) {
               return (
                 <div key={r.race} style={{ background: "rgba(255,255,255,0.05)", border: "1px solid rgba(255,255,255,0.05)", borderRadius: 10, padding: "12px 14px", marginBottom: 8 }}>
@@ -206,7 +206,7 @@ function LandingPage({ onLogin, onSignup }) {
         <div style={{ maxWidth: 1100, margin: "0 auto" }}>
           <div style={{ fontSize: 12, fontWeight: 700, color: GOLD, textTransform: "uppercase", letterSpacing: "1.5px", marginBottom: 10 }}>Everything you need</div>
           <div style={{ fontSize: "clamp(26px,3.5vw,42px)", fontWeight: 900, color: NAVY, marginBottom: 12 }}>Built around how a racing yard actually works</div>
-          <div style={{ fontSize: 17, color: MID, marginBottom: 48, maxWidth: 560 }}>Not a generic farm management app. Every feature was built specifically for Irish National Hunt and Flat trainers.</div>
+          <div style={{ fontSize: 17, color: MID, marginBottom: 48, maxWidth: 560 }}>Not a generic farm management app. Every feature was built specifically for National Hunt and Flat trainers in Ireland and the UK.</div>
           <div style={{ display: "grid", gridTemplateColumns: "repeat(3,1fr)", gap: 20 }}>
             {FEATURES.map(function(f) {
               return (
@@ -276,9 +276,9 @@ function LandingPage({ onLogin, onSignup }) {
       <div style={{ background: NAVY, padding: "80px 24px", textAlign: "center" }}>
         <div style={{ maxWidth: 700, margin: "0 auto" }}>
           <div style={{ fontSize: "clamp(24px,3.5vw,38px)", fontWeight: 900, color: "#fff", lineHeight: 1.3, marginBottom: 16, fontStyle: "italic" }}>
-            "Finally an app that understands what actually goes on in a racing yard. The medication alerts alone save us missing entries every week."
+            "Finally an app that understands what actually goes on in a racing yard. The medication withdrawal calculator and entry alerts alone are worth every penny."
           </div>
-          <div style={{ fontSize: 13, color: "rgba(255,255,255,0.35)", fontWeight: 700, textTransform: "uppercase", letterSpacing: "1px" }}>Pilot Trainer · Ireland · 150+ horse yard</div>
+          <div style={{ fontSize: 13, color: "rgba(255,255,255,0.35)", fontWeight: 700, textTransform: "uppercase", letterSpacing: "1px" }}>Pilot Trainer · 150+ horse yard</div>
         </div>
       </div>
 
@@ -294,13 +294,13 @@ function LandingPage({ onLogin, onSignup }) {
               Book a Demo
             </button>
           </div>
-          <div style={{ fontSize: 13, color: "rgba(255,255,255,0.25)", marginTop: 16 }}>€249/month after trial · Cancel anytime · No setup fees</div>
+          <div style={{ fontSize: 13, color: "rgba(255,255,255,0.25)", marginTop: 16 }}>From €149/month after trial · Cancel anytime · No setup fees</div>
         </div>
       </div>
 
       <div style={{ background: "#091830", padding: "28px 24px" }}>
         <div style={{ maxWidth: 1100, margin: "0 auto", display: "flex", justifyContent: "space-between", alignItems: "center", flexWrap: "wrap", gap: 14 }}>
-          <div style={{ fontSize: 14, fontWeight: 800, color: "rgba(255,255,255,0.45)" }}>🏇 RacePlan Pro — Built in Ireland 🇮🇪 · © 2026</div>
+          <div style={{ fontSize: 14, fontWeight: 800, color: "rgba(255,255,255,0.45)" }}>🏇 RacePlan Pro · © 2026</div>
           <div style={{ display: "flex", gap: 24, flexWrap: "wrap" }}>
             {[["Terms of Service","#terms"],["Privacy Policy","#privacy"],["GDPR","#gdpr"],["hello@raceplanpro.com","mailto:hello@raceplanpro.com"]].map(function(l) {
               return <a key={l[0]} href={l[1]} style={{ fontSize: 13, color: "rgba(255,255,255,0.35)", textDecoration: "none" }}>{l[0]}</a>;
