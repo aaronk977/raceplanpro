@@ -26,6 +26,7 @@ const globalCSS = "* { box-sizing: border-box; margin: 0; padding: 0; } body { f
 export default function App() {
   const [user, setUser] = useState(null);
   const [authMode, setAuthMode] = useState("login");
+  const [showAuth, setShowAuth] = useState(false);
   const [email, setEmail] = useState("");
   const [password, setPassword] = useState("");
   const [authLoading, setAuthLoading] = useState(false);
