@@ -338,8 +338,8 @@ function YardSettings({ settings, setSettings }) {
     setTimeout(function() { setSaved(false); }, 3000);
   }
 
-  var TABS = ["yard", "contacts", "medications", "notifications", "subscription"];
-  var TAB_LABELS = { yard: "Yard Details", contacts: "Contacts", medications: "Medications", notifications: "Notifications", subscription: "Subscription" };
+  var TABS = ["yard", "owners", "contacts", "medications", "notifications", "subscription"];
+  var TAB_LABELS = { yard: "Yard Details", owners: "Owner Contacts", contacts: "Staff Contacts", medications: "Medications", notifications: "Notifications", subscription: "Subscription" };
   var ROLES = ["Trainer", "Head Lad", "Assistant Trainer", "Head Girl", "HR", "Secretary", "Owner Manager", "Vet"];
   var NOTIFY_TYPES = [
     { key: "late_returns", label: "Late returns" },
