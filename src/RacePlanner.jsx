@@ -9,7 +9,7 @@ var API_HEADERS = {
 };
 
 async function getAITake(horse, race) {
-  var prompt = "You are an expert Irish horse racing analyst. Use your knowledge of this horse from records, breeding and news. Be specific about this actual horse." + " Horse: " + horse.name + " Age: " + getAge(horse.dob) + "yo " + horse.sex + " Ratings: NH=" + (horse.nhRating||"unrated") + " Flat=" + (horse.flatRating||"-") + " Hurdle=" + (horse.hurdleRating||"-") + " Chase=" + (horse.chaseRating||"-") + " Headgear: " + (horse.headgear||"none") + " Discipline: " + (horse.discipline||[]).join("/") + " Owner: " + (horse.owner||"unknown") + " Race: " + race.raceName + " Meeting: " + (race.meetingName||race.venue||"") + " Date: " + (race.date||"") + " Type: " + (race.discipline||"") + " " + (race.distanceFurlongs||"") + "f" + " Going: " + (race.forecastGoing||"unknown") + " Prize: EUR" + (race.prizeMoney||0) + " Rating: " + (race.ratingMin||0) + "-" + (race.ratingMax||"open") + " Age: " + (race.ageMin||3) + "-" + (race.ageMax||"any") + "yo" + " Analyse this horse for this race. Consider distance preference, going, course form, breeding, handicap mark vs ceiling, trainer patterns. Name actual details you know." + " Return ONLY JSON: { overall: 0-100, verdict: string, scores: { handicap_edge: 0-10, class_fit: 0-10, conditions_match: 0-10, timing: 0-10, cuteness: 0-10 }, bullets: [{icon: emoji, title: string, point: string}] }";
+  var prompt = "You are an expert horse racing analyst advising a trainer. Use your knowledge of this horse from racing records and form. Be specific and accurate." + " Horse: " + horse.name + " Age: " + getAge(horse.dob) + "yo " + horse.sex + " Ratings: NH=" + (horse.nhRating||"unrated") + " Flat=" + (horse.flatRating||"-") + " Hurdle=" + (horse.hurdleRating||"-") + " Chase=" + (horse.chaseRating||"-") + " Headgear: " + (horse.headgear||"none") + " Discipline: " + (horse.discipline||[]).join("/") + " Owner: " + (horse.owner||"unknown") + " Race: " + race.raceName + " Meeting: " + (race.meetingName||race.venue||"") + " Date: " + (race.date||"") + " Type: " + (race.discipline||"") + " " + (race.distanceFurlongs||"") + "f" + " Going: " + (race.forecastGoing||"unknown") + " Prize: EUR" + (race.prizeMoney||0) + " Rating: " + (race.ratingMin||0) + "-" + (race.ratingMax||"open") + " Age: " + (race.ageMin||3) + "-" + (race.ageMax||"any") + "yo" + " Conditions: " + (race.isMaiden ? "MAIDEN - horse must not have won" : "") + (race.isNovice ? "NOVICE - horse must have run 3 or fewer times over this discipline" : "") + (race.grade ? " Grade/Class: " + race.grade : "") + (race.sexRestriction && race.sexRestriction !== "Open" ? " Restricted to: " + race.sexRestriction : "") + (race.ratingMin ? " Min rating: " + race.ratingMin : "") + (race.ratingMax ? " Max rating: " + race.ratingMax : "") + " Going: " + (race.forecastGoing||"unknown") + "." Check if this horse is eligible for the conditions - maiden means no wins, novice means limited runs. Consider: distance preference, going preference, course record, breeding for conditions, current OR vs race ceiling, whether horse has won at this grade before. Flag any eligibility concerns clearly."" + " Return ONLY JSON: { overall: 0-100, verdict: string, scores: { handicap_edge: 0-10, class_fit: 0-10, conditions_match: 0-10, timing: 0-10, cuteness: 0-10 }, bullets: [{icon: emoji, title: string, point: string}], warnings: [string] }";
   var res = await fetch("https://api.anthropic.com/v1/messages", {
     method: "POST", headers: API_HEADERS,
     body: JSON.stringify({ model: "claude-sonnet-4-20250514", max_tokens: 800, messages: [{ role: "user", content: prompt }] })
@@ -77,10 +77,23 @@ function RacePlanner({ horses, setHorses }) {
       // Discipline check — if race has a discipline, horse must match it
       // If horse has no discipline set, only allow if it could plausibly run
       if (race.discipline) {
-        var disc = horse.discipline || [];
-        if (disc.length > 0 && disc.indexOf(race.discipline) < 0) return false;
-        // If horse has no discipline set, require relevant rating to exist
-        if (disc.length === 0) {
+        var rawDisc = horse.discipline || [];
+        // Normalise - could be array, string, or "Hurdle/Chase" etc
+        var disc = [];
+        if (Array.isArray(rawDisc)) {
+          disc = rawDisc;
+        } else if (typeof rawDisc === "string" && rawDisc.length > 0) {
+          // Handle "Hurdle/Chase" style strings
+          disc = rawDisc.split("/").map(function(d) { return d.trim(); });
+        }
+        // Expand "Hurdle/Chase" entries
+        var expandedDisc = [];
+        disc.forEach(function(d) {
+          var parts = d.split("/").map(function(p) { return p.trim(); });
+          parts.forEach(function(p) { if (expandedDisc.indexOf(p) < 0) expandedDisc.push(p); });
+        });
+        if (expandedDisc.length > 0 && expandedDisc.indexOf(race.discipline) < 0) return false;
+        if (expandedDisc.length === 0) {
           if (race.discipline === "Flat" && !horse.flatRating && !horse.awtRating) return false;
           if (race.discipline === "Hurdle" && !horse.hurdleRating && !horse.nhRating) return false;
           if (race.discipline === "Chase" && !horse.chaseRating && !horse.nhRating) return false;
@@ -422,6 +435,14 @@ function RacePlanner({ horses, setHorses }) {
                               );
                             })}
                           </div>
+                          {(analysis.warnings && analysis.warnings.length > 0) && (
+                            <div style={{ background: C.red + "10", border: "1px solid " + C.red + "30", borderRadius: 9, padding: "10px 14px", marginBottom: 8 }}>
+                              <div style={{ fontSize: 10, fontWeight: 700, color: C.red, textTransform: "uppercase", letterSpacing: 0.5, marginBottom: 6 }}>⚠️ Eligibility Flags</div>
+                              {analysis.warnings.map(function(w, wi) {
+                                return <div key={wi} style={{ fontSize: 13, color: C.red, marginBottom: 3 }}>{"• " + w}</div>;
+                              })}
+                            </div>
+                          )}
                           {analysis.verdict && (
                             <div style={{ background: C.navy, borderRadius: 9, padding: "12px 14px", marginBottom: 8 }}>
                               <p style={{ fontSize: 13, color: "#e8edf5", lineHeight: 1.7, margin: 0, fontStyle: "italic" }}>{analysis.verdict}</p>
