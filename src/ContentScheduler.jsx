@@ -14,7 +14,7 @@ function ContentScheduler({ horses, settings }) {
   var viewItemState = useState(null);
   var viewItem = viewItemState[0]; var setViewItem = viewItemState[1];
 
-  var emptyItem = { type: "video", horseId: "", title: "", caption: "", dueDate: "", channel: "whatsapp", notes: "", status: "scheduled", mediaFiles: [] };
+  var emptyItem = { type: "video", horseId: "", title: "", caption: "", dueDate: "", channel: "whatsapp", notes: "", status: "scheduled", mediaFiles: [], recurring: "none" };
   var newItemState = useState(emptyItem);
   var newItem = newItemState[0]; var setNewItem = newItemState[1];
   var mediaPreviewsState = useState([]);
@@ -34,6 +34,24 @@ function ContentScheduler({ horses, settings }) {
     { id: "email", label: "Email", icon: "📧" },
     { id: "both", label: "Both", icon: "📲" }
   ];
+
+  var RECURRING = [
+    { id: "none", label: "One-off" },
+    { id: "weekly", label: "Weekly" },
+    { id: "biweekly", label: "Every 2 weeks" },
+    { id: "monthly", label: "Monthly" },
+    { id: "race_day", label: "Every race day" }
+  ];
+
+  function getNextDate(date, recurringId) {
+    if (!date || !recurringId || recurringId === "none") return null;
+    var d = new Date(date + "T12:00:00");
+    if (recurringId === "weekly") d.setDate(d.getDate() + 7);
+    else if (recurringId === "biweekly") d.setDate(d.getDate() + 14);
+    else if (recurringId === "monthly") d.setMonth(d.getMonth() + 1);
+    else return null;
+    return d.toISOString().slice(0, 10);
+  }
 
   function updateNew(key, val) {
     setNewItem(function(p) { return Object.assign({}, p, { [key]: val }); });
@@ -81,10 +99,29 @@ function ContentScheduler({ horses, settings }) {
 
   function updateStatus(id, status) {
     setItems(function(prev) {
-      return prev.map(function(item) {
+      var updated = prev.map(function(item) {
         if (item.id !== id) return item;
         return Object.assign({}, item, { status: status, completedAt: status === "sent" ? new Date().toISOString() : item.completedAt });
       });
+      // Auto-create next occurrence if recurring
+      if (status === "sent") {
+        var item = prev.find(function(i) { return i.id === id; });
+        if (item && item.recurring && item.recurring !== "none") {
+          var nextDate = getNextDate(item.dueDate, item.recurring);
+          if (nextDate) {
+            var nextItem = Object.assign({}, item, {
+              id: "cs_" + Date.now(),
+              dueDate: nextDate,
+              status: "scheduled",
+              completedAt: null,
+              mediaFiles: [],
+              createdAt: new Date().toISOString()
+            });
+            updated = updated.concat([nextItem]);
+          }
+        }
+      }
+      return updated;
     });
   }
 
@@ -100,6 +137,9 @@ function ContentScheduler({ horses, settings }) {
     if (item.mediaFiles && item.mediaFiles.length > 0) msgParts.push("[" + item.mediaFiles.length + " attachment(s) — send separately]");
     window.open("https://wa.me/" + phone + "?text=" + encodeURIComponent(msgParts.join("\n")), "_blank");
     updateStatus(item.id, "sent");
+    if (item.recurring && item.recurring !== "none") {
+      showToast("Sent — next scheduled for " + (getNextDate(item.dueDate, item.recurring) || ""), C.green);
+    }
   }
 
   function sendEmail(item) {
@@ -191,6 +231,13 @@ function ContentScheduler({ horses, settings }) {
               <select value={newItem.channel} onChange={function(e) { updateNew("channel", e.target.value); }}
                 style={{ width: "100%", padding: "9px 12px", background: C.cardOff, border: "1px solid " + C.border, borderRadius: 8, fontSize: 13, color: C.text }}>
                 {CHANNELS.map(function(c) { return <option key={c.id} value={c.id}>{c.icon + " " + c.label}</option>; })}
+              </select>
+            </div>
+            <div>
+              <div style={{ fontSize: 10, fontWeight: 700, color: C.textMid, marginBottom: 3, textTransform: "uppercase" }}>Repeat</div>
+              <select value={newItem.recurring || "none"} onChange={function(e) { updateNew("recurring", e.target.value); }}
+                style={{ width: "100%", padding: "9px 12px", background: C.cardOff, border: "1px solid " + C.border, borderRadius: 8, fontSize: 13, color: C.text }}>
+                {RECURRING.map(function(r) { return <option key={r.id} value={r.id}>{r.label}</option>; })}
               </select>
             </div>
             <div style={{ gridColumn: "1 / -1" }}>
@@ -325,6 +372,9 @@ function ContentScheduler({ horses, settings }) {
                   {item.ownerName && <span>{"👤 " + item.ownerName}</span>}
                   {channelInfo && <span>{channelInfo.icon + " " + channelInfo.label}</span>}
                   <span>{"📅 " + new Date(item.dueDate + "T12:00:00").toLocaleDateString("en-IE", { weekday: "short", day: "numeric", month: "short" })}</span>
+                  {item.recurring && item.recurring !== "none" && (
+                    <span style={{ color: C.purple, fontWeight: 700 }}>{"🔄 " + (RECURRING.find(function(r) { return r.id === item.recurring; }) || {}).label}</span>
+                  )}
                 </div>
                 {item.caption && <div style={{ fontSize: 12, color: C.textMid, marginTop: 4, fontStyle: "italic", overflow: "hidden", textOverflow: "ellipsis", whiteSpace: "nowrap", maxWidth: "60%" }}>{item.caption}</div>}
               </div>
