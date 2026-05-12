@@ -297,9 +297,9 @@ function YardSettings({ settings, setSettings }) {
     discipline: "National Hunt", weighDay: "Monday",
     notifyContacts: [],
     medications: [
-      { id: "pep", name: "Peptizole", costPerUnit: 18, unit: "per day", color: "#1e6fb5" },
-      { id: "ant", name: "Antepsin", costPerUnit: 25, unit: "per bottle (4 days)", color: "#6d3fc0" },
-      { id: "ab", name: "Antibiotics", costPerUnit: 15, unit: "per dose", color: "#d97706" }
+      { id: "pep", name: "Peptizole", costPerUnit: 18, unit: "per day", color: "#1e6fb5", courseDays: 12, withdrawalDays: 4 },
+      { id: "ant", name: "Antepsin", costPerUnit: 6.25, unit: "per day", color: "#6d3fc0", courseDays: 12, withdrawalDays: 1 },
+      { id: "ab", name: "Antibiotics", costPerUnit: 15, unit: "per dose", color: "#d97706", courseDays: 5, withdrawalDays: 0 }
     ],
     anthropicKey: "",
     tier: "Professional",
@@ -590,22 +590,32 @@ function YardSettings({ settings, setSettings }) {
                   </div>
                 ) : (
                   <div>
-                    <div style={{ display: "grid", gridTemplateColumns: "1fr 1fr 1fr", gap: 10, marginBottom: 12 }}>
-                      <div>
+                    <div style={{ display: "grid", gridTemplateColumns: "1fr 1fr 1fr 1fr 1fr", gap: 10, marginBottom: 12 }}>
+                      <div style={{ gridColumn: "1 / 2" }}>
                         <div style={{ fontSize: 10, fontWeight: 700, color: C.textMid, marginBottom: 3, textTransform: "uppercase" }}>Name</div>
                         <input type="text" value={med.name} onChange={function(e) { updateMed(idx, "name", e.target.value); }}
                           style={{ width: "100%", padding: "8px 12px", background: C.cardOff, border: "1px solid " + C.border, borderRadius: 8, fontSize: 13, color: C.text }} />
                       </div>
                       <div>
-                        <div style={{ fontSize: 10, fontWeight: 700, color: C.textMid, marginBottom: 3, textTransform: "uppercase" }}>Cost (EUR)</div>
+                        <div style={{ fontSize: 10, fontWeight: 700, color: C.textMid, marginBottom: 3, textTransform: "uppercase" }}>Cost/day (EUR)</div>
                         <input type="number" value={med.costPerUnit} onChange={function(e) { updateMed(idx, "costPerUnit", parseFloat(e.target.value)); }}
+                          style={{ width: "100%", padding: "8px 12px", background: C.cardOff, border: "1px solid " + C.border, borderRadius: 8, fontSize: 13, color: C.text }} />
+                      </div>
+                      <div>
+                        <div style={{ fontSize: 10, fontWeight: 700, color: C.textMid, marginBottom: 3, textTransform: "uppercase" }}>Course (days)</div>
+                        <input type="number" value={med.courseDays || 12} onChange={function(e) { updateMed(idx, "courseDays", parseInt(e.target.value)); }}
+                          style={{ width: "100%", padding: "8px 12px", background: C.cardOff, border: "1px solid " + C.border, borderRadius: 8, fontSize: 13, color: C.text }} />
+                      </div>
+                      <div>
+                        <div style={{ fontSize: 10, fontWeight: 700, color: C.textMid, marginBottom: 3, textTransform: "uppercase" }}>Withdrawal (days)</div>
+                        <input type="number" value={med.withdrawalDays || 0} onChange={function(e) { updateMed(idx, "withdrawalDays", parseInt(e.target.value)); }}
                           style={{ width: "100%", padding: "8px 12px", background: C.cardOff, border: "1px solid " + C.border, borderRadius: 8, fontSize: 13, color: C.text }} />
                       </div>
                       <div>
                         <div style={{ fontSize: 10, fontWeight: 700, color: C.textMid, marginBottom: 3, textTransform: "uppercase" }}>Unit</div>
                         <select value={med.unit} onChange={function(e) { updateMed(idx, "unit", e.target.value); }}
                           style={{ width: "100%", padding: "8px 12px", background: C.cardOff, border: "1px solid " + C.border, borderRadius: 8, fontSize: 13, color: C.text }}>
-                          {["per day", "per dose", "per bottle (4 days)", "per course", "per injection"].map(function(u) { return <option key={u} value={u}>{u}</option>; })}
+                          {["per day", "per dose", "per bottle", "per course", "per injection"].map(function(u) { return <option key={u} value={u}>{u}</option>; })}
                         </select>
                       </div>
                     </div>
@@ -622,24 +632,36 @@ function YardSettings({ settings, setSettings }) {
           {showAddMed && (
             <div style={{ background: C.cardOff, border: "1.5px dashed " + C.navy, borderRadius: 12, padding: "16px 18px", marginBottom: 10 }}>
               <div style={{ fontSize: 14, fontWeight: 700, color: C.navy, marginBottom: 12 }}>Add Medication</div>
-              <div style={{ display: "grid", gridTemplateColumns: "1fr 1fr 1fr", gap: 10, marginBottom: 12 }}>
-                <div>
+              <div style={{ display: "grid", gridTemplateColumns: "1fr 1fr 1fr 1fr 1fr", gap: 10, marginBottom: 12 }}>
+                <div style={{ gridColumn: "1 / 2" }}>
                   <div style={{ fontSize: 10, fontWeight: 700, color: C.textMid, marginBottom: 3, textTransform: "uppercase" }}>Name</div>
                   <input type="text" value={newMed.name} onChange={function(e) { setNewMed(function(p) { return Object.assign({}, p, { name: e.target.value }); }); }}
                     placeholder="e.g. Omeprazole"
                     style={{ width: "100%", padding: "8px 12px", background: "#fff", border: "1px solid " + C.border, borderRadius: 8, fontSize: 13, color: C.text }} />
                 </div>
                 <div>
-                  <div style={{ fontSize: 10, fontWeight: 700, color: C.textMid, marginBottom: 3, textTransform: "uppercase" }}>Cost (EUR)</div>
+                  <div style={{ fontSize: 10, fontWeight: 700, color: C.textMid, marginBottom: 3, textTransform: "uppercase" }}>Cost/day</div>
                   <input type="number" value={newMed.costPerUnit} onChange={function(e) { setNewMed(function(p) { return Object.assign({}, p, { costPerUnit: e.target.value }); }); }}
                     placeholder="0.00"
+                    style={{ width: "100%", padding: "8px 12px", background: "#fff", border: "1px solid " + C.border, borderRadius: 8, fontSize: 13, color: C.text }} />
+                </div>
+                <div>
+                  <div style={{ fontSize: 10, fontWeight: 700, color: C.textMid, marginBottom: 3, textTransform: "uppercase" }}>Course (days)</div>
+                  <input type="number" value={newMed.courseDays || ""} onChange={function(e) { setNewMed(function(p) { return Object.assign({}, p, { courseDays: parseInt(e.target.value) }); }); }}
+                    placeholder="12"
+                    style={{ width: "100%", padding: "8px 12px", background: "#fff", border: "1px solid " + C.border, borderRadius: 8, fontSize: 13, color: C.text }} />
+                </div>
+                <div>
+                  <div style={{ fontSize: 10, fontWeight: 700, color: C.textMid, marginBottom: 3, textTransform: "uppercase" }}>Withdrawal (days)</div>
+                  <input type="number" value={newMed.withdrawalDays || ""} onChange={function(e) { setNewMed(function(p) { return Object.assign({}, p, { withdrawalDays: parseInt(e.target.value) }); }); }}
+                    placeholder="4"
                     style={{ width: "100%", padding: "8px 12px", background: "#fff", border: "1px solid " + C.border, borderRadius: 8, fontSize: 13, color: C.text }} />
                 </div>
                 <div>
                   <div style={{ fontSize: 10, fontWeight: 700, color: C.textMid, marginBottom: 3, textTransform: "uppercase" }}>Unit</div>
                   <select value={newMed.unit} onChange={function(e) { setNewMed(function(p) { return Object.assign({}, p, { unit: e.target.value }); }); }}
                     style={{ width: "100%", padding: "8px 12px", background: "#fff", border: "1px solid " + C.border, borderRadius: 8, fontSize: 13, color: C.text }}>
-                    {["per day", "per dose", "per bottle (4 days)", "per course", "per injection"].map(function(u) { return <option key={u} value={u}>{u}</option>; })}
+                    {["per day", "per dose", "per bottle", "per course", "per injection"].map(function(u) { return <option key={u} value={u}>{u}</option>; })}
                   </select>
                 </div>
               </div>
