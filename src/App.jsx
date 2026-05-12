@@ -192,13 +192,21 @@ export default function App() {
         if (next[key] !== prev[key]) changed.push(key);
       });
       changed.forEach(function(key) {
-        var parts = key.split("_");
-        var horseId = parts[0];
-        var date = parts[1];
-        var type = parts[2] || "weekly";
+        // key format: horseId_YYYY-MM-DD_type (horseId may contain underscores)
+        var lastUnd = key.lastIndexOf("_");
+        var weightType = key.slice(lastUnd + 1);
+        var rest = key.slice(0, lastUnd);
+        var dateUnd = rest.lastIndexOf("_");
+        var weighDate = rest.slice(dateUnd + 1);
+        var horseId = rest.slice(0, dateUnd);
         var val = next[key];
-        if (val) {
-          supabase.from("horse_weights").upsert({ user_id: user.id, horse_id: horseId, weigh_date: date, weight_type: type, weight_kg: val }).then(function() {});
+        if (val && weighDate && weighDate.length === 10) {
+          supabase.from("horse_weights").upsert({
+            user_id: user.id, horse_id: horseId, weigh_date: weighDate,
+            weight_type: weightType || "weekly", weight_kg: parseFloat(val)
+          }, { onConflict: "user_id,horse_id,weigh_date,weight_type" }).then(function(r) {
+            if (r.error) console.error("Weight save:", r.error);
+          });
         }
       });
       return next;
@@ -392,7 +400,7 @@ export default function App() {
           {tab === "staff" && <StaffNotify user={user} supabase={supabase} settings={settings} />}
           {tab === "settings" && <YardSettings settings={settings} setSettings={saveSettings} />}
           {tab === "weights" && <WeightsTracker horses={horses} weights={weightsRaw} setWeights={setWeights} settings={settings} />}
-          {tab === "assistant" && <YardAssistant horses={horses} weights={weightsRaw} medLogs={medLogs} settings={settings} />}
+          {tab === "assistant" && <YardAssistant horses={horses} weights={weightsRaw} medLogs={medLogs} settings={settings} user={user} supabase={supabase} />}
           {tab === "content" && <ContentScheduler horses={horses} settings={settings} />}
           {tab === "summary" && <DailySummary horses={horses} medLogs={medLogs} weights={weightsRaw} wbEntries={wbEntries} settings={settings} />}
           {tab === "procurement" && <Procurement user={user} supabase={supabase} orders={ordersRaw} setOrders={setOrders} settings={settings} />}
