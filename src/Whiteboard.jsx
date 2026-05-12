@@ -29,6 +29,63 @@ function RacedayPrint({ horses, entries, setEntries }) {
 
   var HEADGEAR = { "H": "Hood", "T": "Tongue Strap", "TT": "Tongue Tie", "B": "Blinkers", "BL": "Blinkers", "C": "Cheekpieces", "CP": "Cheekpieces", "V": "Visor", "EM": "Ear Muffs" };
 
+  var MONTH_MAP = { jan:1,feb:2,mar:3,apr:4,may:5,jun:6,jul:7,aug:8,sep:9,oct:10,nov:11,dec:12,
+    january:1,february:2,march:3,april:4,june:6,july:7,august:8,september:9,october:10,november:11,december:12 };
+
+  function parseDate(raw) {
+    if (!raw) return "";
+    var s = raw.trim();
+    if (!s) return "";
+    // Already YYYY-MM-DD
+    if (s.length === 10 && s[4] === "-" && s[7] === "-") return s;
+    // Try native Date parse for formats like "14 May 2025" or "May 14, 2025"
+    var native = new Date(s);
+    if (!isNaN(native.getTime())) {
+      var y = native.getFullYear();
+      var mo = String(native.getMonth() + 1).padStart(2, "0");
+      var d = String(native.getDate()).padStart(2, "0");
+      return y + "-" + mo + "-" + d;
+    }
+    // Normalise separators
+    var norm = s.split("/").join("-").split(".").join("-").split(" ").join("-");
+    var parts = norm.split("-").filter(function(p) { return p.length > 0; });
+    if (parts.length < 3) return "";
+    var p0 = parts[0]; var p1 = parts[1]; var p2 = parts[2];
+    // Check for month name in any position
+    var m0 = MONTH_MAP[p0.toLowerCase()];
+    var m1 = MONTH_MAP[p1.toLowerCase()];
+    var m2 = MONTH_MAP[p2.toLowerCase()];
+    var year, month, day;
+    if (m1) {
+      // DD-MonthName-YY or DD-MonthName-YYYY
+      day = parseInt(p0); month = m1;
+      year = parseInt(p2);
+      if (year < 100) year += 2000;
+    } else if (m0) {
+      // MonthName-DD-YYYY
+      month = m0; day = parseInt(p1);
+      year = parseInt(p2);
+      if (year < 100) year += 2000;
+    } else {
+      // All numeric
+      var n0 = parseInt(p0); var n1 = parseInt(p1); var n2 = parseInt(p2);
+      if (p2.length === 4 || n2 > 31) {
+        // DD-MM-YYYY
+        day = n0; month = n1; year = n2;
+      } else if (p0.length === 4 || n0 > 31) {
+        // YYYY-MM-DD
+        year = n0; month = n1; day = n2;
+      } else {
+        // Assume DD-MM-YY
+        day = n0; month = n1; year = n2 + 2000;
+      }
+    }
+    if (!year || !month || !day) return "";
+    if (month < 1 || month > 12) return "";
+    if (day < 1 || day > 31) return "";
+    return year + "-" + String(month).padStart(2,"0") + "-" + String(day).padStart(2,"0");
+  }
+
   function addEntry() {
     if (!ne.horseId || !ne.venue) return;
     setEntries(function(p) { return p.concat([Object.assign({}, ne, { id: "e_" + Date.now() })]); });
@@ -78,16 +135,7 @@ function RacedayPrint({ horses, entries, setEntries }) {
           var rawDate = row.date || row.race_date || "";
           var parsedDate = "";
           if (rawDate) {
-            var rd = rawDate.trim().split("/").join("-").split(".").join("-");
-            var parts = rd.split("-");
-            if (parts.length === 3) {
-              var p0 = parts[0].trim(); var p1 = parts[1].trim(); var p2 = parts[2].trim();
-              if (p2.length === 4) {
-                parsedDate = p2 + "-" + p1.padStart(2,"0") + "-" + p0.padStart(2,"0");
-              } else if (p0.length === 4) {
-                parsedDate = p0 + "-" + p1.padStart(2,"0") + "-" + p2.padStart(2,"0");
-              }
-            }
+            parsedDate = parseDate(rawDate);
           }
           var extrasRaw = (row.extras || row.extra || row.headgear || "").trim().toUpperCase();
           var headgear = HEADGEAR[extrasRaw] || (extrasRaw.length > 0 && extrasRaw.length <= 4 ? extrasRaw : "");
