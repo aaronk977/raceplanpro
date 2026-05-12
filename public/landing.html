@@ -1,0 +1,356 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0">
+<title>RacePlan Pro — Yard Management for Irish Racing Trainers</title>
+<meta name="description" content="The all-in-one yard management platform built for Irish horse racing trainers. Race planning, medication tracking, owner communications and AI analysis.">
+<style>
+*,*::before,*::after{box-sizing:border-box;margin:0;padding:0}
+:root{--navy:#0a1628;--navy2:#112240;--gold:#c9952a;--gold2:#f5c842;--green:#1a7a4a;--blue:#1e6fb5;--text:#0a1628;--mid:#4a6080;--dim:#8fa3bc;--border:#d4dde8;--off:#f0f4f8}
+html{scroll-behavior:smooth}
+body{font-family:-apple-system,BlinkMacSystemFont,"Inter","Segoe UI",sans-serif;color:var(--text);background:#fff;line-height:1.6}
+nav{position:fixed;top:0;left:0;right:0;z-index:100;background:rgba(10,22,40,0.97);backdrop-filter:blur(12px);border-bottom:1px solid rgba(255,255,255,0.06)}
+.nav-i{max-width:1140px;margin:0 auto;padding:0 24px;height:64px;display:flex;align-items:center;justify-content:space-between}
+.logo{font-size:20px;font-weight:900;color:#fff;text-decoration:none;display:flex;align-items:center;gap:10px}
+.logo-b{background:var(--gold);color:var(--navy);font-size:11px;font-weight:800;padding:2px 8px;border-radius:20px;letter-spacing:.5px}
+.nav-links{display:flex;align-items:center;gap:28px}
+.nav-links a{color:rgba(255,255,255,0.6);text-decoration:none;font-size:14px;font-weight:500;transition:color .2s}
+.nav-links a:hover{color:#fff}
+.nav-cta{background:var(--gold);color:var(--navy)!important;padding:9px 20px;border-radius:8px;font-weight:800!important;font-size:14px}
+.hero{min-height:100vh;background:linear-gradient(135deg,var(--navy) 0%,#0d2040 60%,#091830 100%);display:flex;align-items:center;padding:100px 24px 80px;position:relative;overflow:hidden}
+.hero::before{content:"";position:absolute;inset:0;background-image:radial-gradient(circle at 20% 80%,rgba(201,149,42,.06) 0%,transparent 50%),radial-gradient(circle at 80% 20%,rgba(30,111,181,.06) 0%,transparent 50%)}
+.hero-i{max-width:1140px;margin:0 auto;width:100%;display:grid;grid-template-columns:1fr 1fr;gap:64px;align-items:center;position:relative}
+.hero-tag{display:inline-flex;align-items:center;gap:8px;background:rgba(201,149,42,.12);border:1px solid rgba(201,149,42,.3);color:var(--gold);font-size:12px;font-weight:700;padding:5px 14px;border-radius:20px;margin-bottom:22px;letter-spacing:.5px;text-transform:uppercase}
+.hero h1{font-size:clamp(34px,4.5vw,58px);font-weight:900;color:#fff;line-height:1.1;margin-bottom:20px}
+.hero h1 span{color:var(--gold)}
+.hero p{font-size:18px;color:rgba(255,255,255,0.6);line-height:1.75;margin-bottom:32px;max-width:480px}
+.hero-btns{display:flex;gap:14px;flex-wrap:wrap}
+.btn-p{background:var(--gold);color:var(--navy);padding:14px 28px;border-radius:10px;font-weight:800;font-size:15px;text-decoration:none;transition:all .2s;display:inline-flex;align-items:center;gap:8px}
+.btn-p:hover{background:var(--gold2);transform:translateY(-2px);box-shadow:0 8px 24px rgba(201,149,42,.3)}
+.btn-s{background:rgba(255,255,255,.08);color:#fff;padding:14px 28px;border-radius:10px;font-weight:700;font-size:15px;text-decoration:none;border:1px solid rgba(255,255,255,.15);transition:all .2s}
+.btn-s:hover{background:rgba(255,255,255,.14)}
+.hero-stats{display:flex;gap:32px;margin-top:40px;padding-top:32px;border-top:1px solid rgba(255,255,255,.08)}
+.stat-n{font-size:28px;font-weight:900;color:var(--gold);line-height:1}
+.stat-l{font-size:11px;color:rgba(255,255,255,.35);margin-top:4px;text-transform:uppercase;letter-spacing:.5px}
+.mock{background:rgba(255,255,255,.04);border:1px solid rgba(255,255,255,.08);border-radius:20px;padding:22px}
+.mock-hdr{background:rgba(255,255,255,.06);border-radius:10px;padding:11px 14px;margin-bottom:14px;display:flex;align-items:center;gap:8px}
+.md{width:8px;height:8px;border-radius:50%}
+.mt{background:rgba(255,255,255,.07);border-radius:6px;padding:4px 11px;font-size:11px;color:rgba(255,255,255,.4)}
+.mt.a{background:var(--gold);color:var(--navy);font-weight:700}
+.mc{background:rgba(255,255,255,.05);border-radius:10px;padding:13px 15px;margin-bottom:9px;border:1px solid rgba(255,255,255,.05)}
+.mb{font-size:10px;padding:2px 8px;border-radius:20px;font-weight:700}
+.bg{background:rgba(26,122,74,.2);color:#4ade80;border:1px solid rgba(74,222,128,.2)}
+.ba{background:rgba(201,149,42,.2);color:var(--gold2);border:1px solid rgba(201,149,42,.2)}
+.bb{background:rgba(30,111,181,.2);color:#60a5fa;border:1px solid rgba(96,165,250,.2)}
+section{padding:96px 24px}
+.si{max-width:1140px;margin:0 auto}
+.stag{font-size:12px;font-weight:700;color:var(--gold);text-transform:uppercase;letter-spacing:1.5px;margin-bottom:10px}
+.stitle{font-size:clamp(26px,3.5vw,44px);font-weight:900;color:var(--text);margin-bottom:14px;line-height:1.15}
+.ssub{font-size:18px;color:var(--mid);max-width:560px;line-height:1.7}
+.cen{text-align:center}.cen .ssub{margin:0 auto}
+.fg{display:grid;grid-template-columns:repeat(3,1fr);gap:22px;margin-top:52px}
+.fc{background:var(--off);border-radius:16px;padding:26px;border:1px solid var(--border);transition:all .2s}
+.fc:hover{transform:translateY(-3px);box-shadow:0 12px 32px rgba(10,22,40,.1);border-color:var(--gold)}
+.fi{font-size:34px;margin-bottom:14px}
+.ft{font-size:17px;font-weight:800;color:var(--text);margin-bottom:7px}
+.fd{font-size:14px;color:var(--mid);line-height:1.65}
+.ftags{display:flex;gap:5px;flex-wrap:wrap;margin-top:12px}
+.ftag{font-size:11px;padding:3px 9px;border-radius:20px;background:rgba(10,22,40,.07);color:var(--mid);font-weight:600}
+.hg{display:grid;grid-template-columns:repeat(4,1fr);gap:20px;margin-top:52px}
+.hs{text-align:center;position:relative}
+.hs:not(:last-child)::after{content:"→";position:absolute;right:-14px;top:26px;font-size:18px;color:var(--border)}
+.hn{width:54px;height:54px;border-radius:50%;background:var(--navy);color:var(--gold);font-size:20px;font-weight:900;display:flex;align-items:center;justify-content:center;margin:0 auto 14px}
+.htitle{font-size:15px;font-weight:700;color:var(--text);margin-bottom:7px}
+.hdesc{font-size:13px;color:var(--mid);line-height:1.6}
+.pg{display:grid;grid-template-columns:repeat(3,1fr);gap:22px;margin-top:52px}
+.pc{border-radius:20px;padding:30px 26px;border:2px solid var(--border);background:#fff;position:relative;transition:all .2s}
+.pc:hover{transform:translateY(-4px);box-shadow:0 16px 40px rgba(10,22,40,.1)}
+.pc.feat{border-color:var(--gold);background:var(--navy);transform:scale(1.04)}
+.pc.feat:hover{transform:scale(1.04) translateY(-4px)}
+.pop{position:absolute;top:-12px;left:50%;transform:translateX(-50%);background:var(--gold);color:var(--navy);font-size:11px;font-weight:800;padding:4px 16px;border-radius:20px;text-transform:uppercase;white-space:nowrap}
+.pn{font-size:12px;font-weight:700;text-transform:uppercase;letter-spacing:1px;color:var(--mid);margin-bottom:7px}
+.feat .pn{color:rgba(255,255,255,.45)}
+.pa{font-size:46px;font-weight:900;color:var(--text);line-height:1}
+.feat .pa{color:var(--gold)}
+.pp{font-size:14px;color:var(--mid);margin-bottom:22px}
+.feat .pp{color:rgba(255,255,255,.35)}
+.pf{list-style:none;margin-bottom:26px}
+.pf li{font-size:13px;color:var(--mid);padding:6px 0;border-bottom:1px solid var(--border);display:flex;align-items:flex-start;gap:8px;line-height:1.4}
+.feat .pf li{color:rgba(255,255,255,.65);border-bottom-color:rgba(255,255,255,.07)}
+.pf li::before{content:"✓";color:var(--green);font-weight:800;flex-shrink:0;margin-top:1px}
+.feat .pf li::before{color:var(--gold2)}
+.pf li.no::before{content:"✗";color:var(--border)}
+.pcta{display:block;text-align:center;padding:13px;border-radius:10px;font-weight:800;font-size:14px;text-decoration:none;transition:all .2s}
+.pcta-d{background:var(--off);color:var(--text);border:2px solid var(--border)}
+.pcta-d:hover{border-color:var(--navy);background:var(--navy);color:#fff}
+.pcta-f{background:var(--gold);color:var(--navy)}
+.pcta-f:hover{background:var(--gold2)}
+.tsec{background:var(--navy)}
+.ti{max-width:780px;margin:0 auto;text-align:center}
+.tq{font-size:clamp(19px,2.5vw,27px);font-weight:700;color:#fff;line-height:1.55;margin-bottom:26px;font-style:italic}
+.tq::before{content:"\201C";color:var(--gold);font-size:56px;line-height:0;vertical-align:-.4em;margin-right:4px}
+.tq::after{content:"\201D";color:var(--gold);font-size:56px;line-height:0;vertical-align:-.4em;margin-left:4px}
+.ta{font-size:13px;color:rgba(255,255,255,.35);font-weight:600;text-transform:uppercase;letter-spacing:1px}
+.csec{background:linear-gradient(135deg,var(--navy),#0d2040)}
+.ci{max-width:660px;margin:0 auto;text-align:center}
+.ci h2{font-size:clamp(26px,3.5vw,42px);font-weight:900;color:#fff;margin-bottom:14px}
+.ci p{font-size:17px;color:rgba(255,255,255,.5);margin-bottom:32px}
+.cform{display:flex;gap:10px;max-width:460px;margin:0 auto}
+.cinput{flex:1;padding:13px 17px;border-radius:10px;border:none;font-size:15px;outline:none}
+.cbtn{background:var(--gold);color:var(--navy);padding:13px 22px;border:none;border-radius:10px;font-weight:800;font-size:15px;cursor:pointer;white-space:nowrap;transition:background .2s}
+.cbtn:hover{background:var(--gold2)}
+.cnote{font-size:12px;color:rgba(255,255,255,.25);margin-top:12px}
+footer{background:var(--navy);border-top:1px solid rgba(255,255,255,.06);padding:48px 24px 28px}
+.fi2{max-width:1140px;margin:0 auto;display:grid;grid-template-columns:2fr 1fr 1fr 1fr;gap:36px;margin-bottom:36px}
+.fb p{font-size:13px;color:rgba(255,255,255,.35);margin-top:9px;line-height:1.6;max-width:260px}
+.fcol h4{font-size:11px;font-weight:700;color:rgba(255,255,255,.25);text-transform:uppercase;letter-spacing:1px;margin-bottom:12px}
+.fcol a{display:block;font-size:13px;color:rgba(255,255,255,.5);text-decoration:none;margin-bottom:7px;transition:color .2s}
+.fcol a:hover{color:#fff}
+.fbot{border-top:1px solid rgba(255,255,255,.06);padding-top:22px;display:flex;justify-content:space-between;align-items:center}
+.fbot p{font-size:12px;color:rgba(255,255,255,.2)}
+@media(max-width:900px){
+  .hero-i{grid-template-columns:1fr}
+  .mock{display:none}
+  .fg,.pg{grid-template-columns:1fr}
+  .hg{grid-template-columns:1fr 1fr}
+  .hs::after{display:none}
+  .fi2{grid-template-columns:1fr 1fr}
+  .pc.feat{transform:none}
+  .cform{flex-direction:column}
+}
+</style>
+</head>
+<body>
+
+<nav>
+  <div class="nav-i">
+    <a href="#" class="logo">🏇 RacePlan Pro <span class="logo-b">BETA</span></a>
+    <div class="nav-links">
+      <a href="#features">Features</a>
+      <a href="#how">How it works</a>
+      <a href="#pricing">Pricing</a>
+      <a href="https://raceplanpro.vercel.app" class="nav-cta">Login →</a>
+    </div>
+  </div>
+</nav>
+
+<section class="hero">
+  <div class="hero-i">
+    <div>
+      <div class="hero-tag">🇮🇪 Built for Irish Racing</div>
+      <h1>The yard management app your <span>trainer has been waiting for</span></h1>
+      <p>Race planning, medication tracking, owner communications, whiteboard, AI analysis and more. Built by people who understand the yard.</p>
+      <div class="hero-btns">
+        <a href="https://raceplanpro.vercel.app" class="btn-p">Start Free Trial →</a>
+        <a href="#features" class="btn-s">See all features</a>
+      </div>
+      <div class="hero-stats">
+        <div><div class="stat-n">200+</div><div class="stat-l">Horses managed</div></div>
+        <div><div class="stat-n">12pm</div><div class="stat-l">Entry deadline alerts</div></div>
+        <div><div class="stat-n">5 min</div><div class="stat-l">Setup time</div></div>
+      </div>
+    </div>
+    <div class="mock">
+      <div class="mock-hdr">
+        <div class="md" style="background:#ef4444"></div>
+        <div class="md" style="background:#f59e0b"></div>
+        <div class="md" style="background:#22c55e"></div>
+        <div style="flex:1"></div>
+        <div class="mt a">Race Planner</div>
+        <div class="mt">Whiteboard</div>
+        <div class="mt">Meds</div>
+      </div>
+      <div style="font-size:10px;color:rgba(255,255,255,.3);margin-bottom:11px;font-weight:700;text-transform:uppercase;letter-spacing:1px">14 races loaded · 8 horses eligible</div>
+      <div class="mc">
+        <div style="font-size:10px;color:rgba(255,255,255,.3);font-weight:700;text-transform:uppercase;letter-spacing:1px;margin-bottom:5px">LEOPARDSTOWN · SATURDAY</div>
+        <div style="font-size:14px;font-weight:800;color:#fff;margin-bottom:8px">Mares Novice Hurdle 2m</div>
+        <div style="display:flex;gap:5px;flex-wrap:wrap;margin-bottom:10px">
+          <span class="mb bb">Hurdle · 2m</span>
+          <span class="mb ba">EUR 18,000</span>
+          <span class="mb bg">3 eligible</span>
+        </div>
+        <div style="display:flex;align-items:center;gap:9px;padding:7px 0;border-top:1px solid rgba(255,255,255,.06)">
+          <div style="width:22px;height:22px;border-radius:50%;background:linear-gradient(135deg,#c0392b,#fff);flex-shrink:0"></div>
+          <div><div style="font-size:12px;font-weight:700;color:#fff">Galopin Des Champs</div><div style="font-size:10px;color:rgba(255,255,255,.35)">10yo · OR 168</div></div>
+        </div>
+        <div style="display:flex;align-items:center;gap:9px;padding:7px 0;border-top:1px solid rgba(255,255,255,.06)">
+          <div style="width:22px;height:22px;border-radius:50%;background:linear-gradient(135deg,#1e6fb5,#f5c842);flex-shrink:0"></div>
+          <div><div style="font-size:12px;font-weight:700;color:#fff">Bob Olinger</div><div style="font-size:10px;color:rgba(255,255,255,.35)">9yo · OR 156</div></div>
+        </div>
+      </div>
+      <div class="mc" style="border-color:rgba(201,149,42,.25);background:rgba(201,149,42,.05)">
+        <div style="display:flex;justify-content:space-between;align-items:center">
+          <div>
+            <div style="font-size:10px;color:rgba(255,255,255,.3);margin-bottom:3px">💊 PEPTIZOLE ALERT · 10:00AM</div>
+            <div style="font-size:13px;font-weight:700;color:#fff">2 horses finishing course today</div>
+            <div style="font-size:11px;color:rgba(255,255,255,.35);margin-top:2px">Entry deadline 12:00 — act now</div>
+          </div>
+          <div style="font-size:22px">⚠️</div>
+        </div>
+      </div>
+    </div>
+  </div>
+</section>
+
+<section id="features" style="background:var(--off)">
+  <div class="si">
+    <div class="stag">Everything you need</div>
+    <h2 class="stitle">Built around how a racing yard actually works</h2>
+    <p class="ssub">Not a generic farm management app. Every feature was built specifically for Irish National Hunt and Flat trainers.</p>
+    <div class="fg">
+      <div class="fc"><div class="fi">📋</div><div class="ft">Race Planner</div><div class="fd">Paste HRI conditions once. Every race shows which of your horses are eligible based on age, sex, rating and discipline. AI analysis per horse-race combination. Shortlist with one tap.</div><div class="ftags"><span class="ftag">HRI PDF</span><span class="ftag">AI Analysis</span><span class="ftag">Shortlisting</span></div></div>
+      <div class="fc"><div class="fi">💊</div><div class="ft">Medication Tracker</div><div class="fd">Monthly grid for Peptizole, Antepsin and antibiotics. 10am WhatsApp alert when a horse's course ends on an entry day — 2 hours before the 12pm deadline. Medication costs tracked automatically.</div><div class="ftags"><span class="ftag">10am alerts</span><span class="ftag">Cost tracking</span><span class="ftag">Multi-horse</span></div></div>
+      <div class="fc"><div class="fi">🖨️</div><div class="ft">Raceday Whiteboard</div><div class="fd">Import your HRI pending engagements CSV. Headgear, ballot numbers and jockeys display clearly. Print for the yard — full colour badges print correctly on paper.</div><div class="ftags"><span class="ftag">CSV import</span><span class="ftag">Print-ready</span><span class="ftag">Colour badges</span></div></div>
+      <div class="fc"><div class="fi">⚖️</div><div class="ft">Weights Tracker</div><div class="fd">Staff enter weights on their phone as they go around the yard. Configurable weekly weigh day. Trend tracking per horse. Race day weights stored separately. Auto-saves to the cloud.</div><div class="ftags"><span class="ftag">Mobile entry</span><span class="ftag">Trend alerts</span><span class="ftag">Auto-save</span></div></div>
+      <div class="fc"><div class="fi">🤖</div><div class="ft">AI Yard Assistant</div><div class="fd">Voice or text. Knows your yard, your horses and your owners. Log tasks, book appointments, ask questions about any horse. Today's full conversation saves automatically.</div><div class="ftags"><span class="ftag">Voice input</span><span class="ftag">Saves daily</span><span class="ftag">Yard-aware</span></div></div>
+      <div class="fc"><div class="fi">👤</div><div class="ft">Owner Communications</div><div class="fd">Schedule training videos, race reports and health updates per owner. WhatsApp and email with one tap. Recurring schedules — weekly, bi-weekly, monthly. Photo and video upload.</div><div class="ftags"><span class="ftag">WhatsApp</span><span class="ftag">Recurring</span><span class="ftag">Video upload</span></div></div>
+      <div class="fc"><div class="fi">🛒</div><div class="ft">Procurement</div><div class="fd">Staff request supplies from integrated catalogues — TRI Equestrian, RED MILLS, Vet Supplies. Secretary approves, order emails directly to supplier. Full audit trail.</div><div class="ftags"><span class="ftag">TRI Equestrian</span><span class="ftag">RED MILLS</span><span class="ftag">Approval flow</span></div></div>
+      <div class="fc"><div class="fi">🌙</div><div class="ft">Staff Hours</div><div class="fd">Staff returning late from racing log their return time and next shift. App calculates rest hours and sends WhatsApp alert to the trainer or head lad instantly. Red alert under 6 hours.</div><div class="ftags"><span class="ftag">Late returns</span><span class="ftag">Rest calculation</span><span class="ftag">Instant alert</span></div></div>
+      <div class="fc"><div class="fi">📊</div><div class="ft">Daily Summary</div><div class="fd">Log gallops, vet visits, farrier, racing results each day. AI generates a daily summary report. Headgear stats, medication ending today, upcoming races — all in one view.</div><div class="ftags"><span class="ftag">AI summary</span><span class="ftag">Activity log</span><span class="ftag">Stats</span></div></div>
+    </div>
+  </div>
+</section>
+
+<section id="how">
+  <div class="si">
+    <div class="stag cen">Simple setup</div>
+    <h2 class="stitle cen">Up and running in under 5 minutes</h2>
+    <p class="ssub cen">No IT team needed. If you can use WhatsApp, you can use RacePlan Pro.</p>
+    <div class="hg">
+      <div class="hs"><div class="hn">1</div><div class="htitle">Create your account</div><div class="hdesc">Sign up with your email. Enter your yard name, trainer details and weigh day.</div></div>
+      <div class="hs"><div class="hn">2</div><div class="htitle">Import your horses</div><div class="hdesc">Upload your HRI horse list CSV. All ratings and details carry over automatically.</div></div>
+      <div class="hs"><div class="hn">3</div><div class="htitle">Add your owners</div><div class="hdesc">Import owner contacts from CSV or add individually with WhatsApp numbers.</div></div>
+      <div class="hs"><div class="hn">4</div><div class="htitle">Start planning</div><div class="hdesc">Paste race conditions, get AI analysis, track medications, print your whiteboard.</div></div>
+    </div>
+  </div>
+</section>
+
+<section class="tsec">
+  <div class="si">
+    <div class="ti">
+      <p class="tq">Finally an app that understands what actually goes on in a racing yard. The medication alerts alone save us missing entries every week. The whiteboard print is something we use every single race day.</p>
+      <div class="ta">Pilot Trainer · Ireland · 150+ horse yard</div>
+    </div>
+  </div>
+</section>
+
+<section id="pricing" style="background:var(--off)">
+  <div class="si">
+    <div class="stag cen">Simple pricing</div>
+    <h2 class="stitle cen">Pay monthly, cancel anytime</h2>
+    <p class="ssub cen">No setup fees. No long contracts. Every plan includes unlimited users within your yard.</p>
+    <div class="pg">
+      <div class="pc">
+        <div class="pn">Basic</div>
+        <div class="pa">€99</div>
+        <div class="pp">per month</div>
+        <ul class="pf">
+          <li>Up to 50 horses</li>
+          <li>My Yard — CSV import</li>
+          <li>Raceday Whiteboard + print</li>
+          <li>Medication Tracker</li>
+          <li>Horse Movements log</li>
+          <li>Owner Portal</li>
+          <li>Staff Hours alerts</li>
+          <li>Weights Tracker</li>
+          <li class="no">AI Race Analysis</li>
+          <li class="no">Content Scheduler</li>
+          <li class="no">Procurement</li>
+          <li class="no">AI Yard Assistant</li>
+        </ul>
+        <a href="https://raceplanpro.vercel.app" class="pcta pcta-d">Get Started</a>
+      </div>
+      <div class="pc feat">
+        <div class="pop">Most Popular</div>
+        <div class="pn">Professional</div>
+        <div class="pa">€169</div>
+        <div class="pp">per month</div>
+        <ul class="pf">
+          <li>Up to 150 horses</li>
+          <li>Everything in Basic</li>
+          <li>AI Race Analysis</li>
+          <li>Race Conditions PDF parsing</li>
+          <li>Race Planner + Shortlisting</li>
+          <li>Content Scheduler + recurring</li>
+          <li>WhatsApp notifications</li>
+          <li>10am Medication alerts</li>
+          <li>Procurement module</li>
+          <li>Daily Summary + AI report</li>
+          <li>Owner CSV import</li>
+          <li class="no">AI Yard Assistant</li>
+        </ul>
+        <a href="https://raceplanpro.vercel.app" class="pcta pcta-f">Start Free Trial</a>
+      </div>
+      <div class="pc">
+        <div class="pn">Gold</div>
+        <div class="pa">€249</div>
+        <div class="pp">per month</div>
+        <ul class="pf">
+          <li>Unlimited horses</li>
+          <li>Everything in Professional</li>
+          <li>AI Yard Assistant (voice + text)</li>
+          <li>Full conversation history</li>
+          <li>Multi-yard management</li>
+          <li>Custom branding</li>
+          <li>Priority support</li>
+          <li>Dedicated account manager</li>
+          <li>Phone support</li>
+          <li>Early access to new features</li>
+          <li>API access</li>
+          <li>Custom integrations</li>
+        </ul>
+        <a href="https://raceplanpro.vercel.app" class="pcta pcta-d">Get Started</a>
+      </div>
+    </div>
+  </div>
+</section>
+
+<section class="csec">
+  <div class="si">
+    <div class="ci">
+      <h2>Ready to modernise your yard?</h2>
+      <p>Join Irish trainers already using RacePlan Pro. Free trial — no credit card required.</p>
+      <div class="cform">
+        <input class="cinput" type="email" placeholder="Your email address" id="emailInput" />
+        <button class="cbtn" onclick="window.location.href='https://raceplanpro.vercel.app'">Get Early Access</button>
+      </div>
+      <p class="cnote">14-day free trial · No credit card · Cancel anytime</p>
+    </div>
+  </div>
+</section>
+
+<footer>
+  <div class="fi2">
+    <div class="fb">
+      <div style="font-size:18px;font-weight:900;color:#fff">🏇 RacePlan Pro</div>
+      <p>The all-in-one yard management platform built for Irish horse racing trainers. Developed in Ireland.</p>
+    </div>
+    <div class="fcol">
+      <h4>Product</h4>
+      <a href="#features">Features</a>
+      <a href="#pricing">Pricing</a>
+      <a href="https://raceplanpro.vercel.app">Login</a>
+      <a href="https://raceplanpro.vercel.app">Sign Up</a>
+    </div>
+    <div class="fcol">
+      <h4>Legal</h4>
+      <a href="/terms">Terms of Service</a>
+      <a href="/privacy">Privacy Policy</a>
+      <a href="/gdpr">GDPR</a>
+      <a href="/cookies">Cookies</a>
+    </div>
+    <div class="fcol">
+      <h4>Contact</h4>
+      <a href="mailto:hello@raceplanpro.com">hello@raceplanpro.com</a>
+      <a href="mailto:support@raceplanpro.com">support@raceplanpro.com</a>
+    </div>
+  </div>
+  <div class="fbot">
+    <p>© 2026 RacePlan Pro. All rights reserved. Built in Ireland 🇮🇪</p>
+    <p>raceplanpro.com</p>
+  </div>
+</footer>
+
+</body>
+</html>
