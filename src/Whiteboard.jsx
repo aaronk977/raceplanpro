@@ -1,7 +1,22 @@
 import React, { useState } from "react";
 import { Btn, Silk, C } from "./shared";
 
-var PRINT_STYLE = "@media print { body * { visibility: hidden !important; } #print-area, #print-area * { visibility: visible !important; } #print-area { position: fixed; left: 0; top: 0; width: 100%; padding: 20px; font-size: 16pt !important; } #print-area .horse-name { font-size: 22pt !important; font-weight: 900 !important; } #print-area .badge { font-size: 14pt !important; padding: 4pt 12pt !important; } }";
+var PRINT_STYLE = [
+  "@media print {",
+  "  * { -webkit-print-color-adjust: exact !important; print-color-adjust: exact !important; color-adjust: exact !important; }",
+  "  body * { visibility: hidden !important; }",
+  "  #print-area, #print-area * { visibility: visible !important; }",
+  "  #print-area { position: fixed; left: 0; top: 0; width: 100%; padding: 24px; background: white; }",
+  "  #print-area .horse-row { border-bottom: 2px solid #333 !important; padding: 16px 0 !important; }",
+  "  #print-area .horse-name { font-size: 20pt !important; font-weight: 900 !important; color: #000 !important; text-transform: uppercase; }",
+  "  #print-area .badge-hg { font-size: 13pt !important; padding: 4pt 14pt !important; background: #6d3fc0 !important; color: white !important; border-radius: 6px !important; font-weight: 800 !important; }",
+  "  #print-area .badge-ballot { font-size: 13pt !important; padding: 4pt 14pt !important; background: #d97706 !important; color: white !important; border-radius: 6px !important; font-weight: 800 !important; }",
+  "  #print-area .meeting-header { font-size: 16pt !important; font-weight: 900 !important; color: #000 !important; border-bottom: 3px solid #000 !important; padding-bottom: 8pt !important; margin-bottom: 12pt !important; }",
+  "  #print-area .race-time { font-size: 15pt !important; font-weight: 700 !important; color: #000 !important; min-width: 80pt; }",
+  "  #print-area .venue-ref { font-size: 11pt !important; color: #333 !important; }",
+  "  @page { margin: 1.5cm; size: A4; }",
+  "}"
+].join(" ");
 
 function RacedayPrint({ horses, entries, setEntries }) {
   var showAddState = useState(false);
@@ -146,7 +161,7 @@ function RacedayPrint({ horses, entries, setEntries }) {
           var dayEntries = grouped[date];
           return (
             <div key={date} style={{ background: C.card, border: "1px solid " + C.border, borderRadius: 12, padding: "18px 20px", marginBottom: 14 }}>
-              <div style={{ fontSize: 16, fontWeight: 800, color: C.navy, marginBottom: 12, paddingBottom: 10, borderBottom: "2px solid " + C.border }}>
+              <div className="meeting-header" style={{ fontSize: 16, fontWeight: 800, color: C.navy, marginBottom: 12, paddingBottom: 10, borderBottom: "2px solid " + C.border }}>
                 {new Date(date + "T12:00:00").toLocaleDateString("en-IE", { weekday: "long", day: "numeric", month: "long", year: "numeric" })}
               </div>
               {dayEntries.map(function(entry) {
@@ -155,18 +170,18 @@ function RacedayPrint({ horses, entries, setEntries }) {
                 if (!displayName) return null;
                 var hg = entry.headgear || (horse && horse.headgear) || "";
                 return (
-                  <div key={entry.id} style={{ display: "flex", alignItems: "flex-start", gap: 14, padding: "12px 0", borderBottom: "1px solid " + C.border }}>
-                    <div style={{ minWidth: 130, fontSize: 13, color: C.textMid, fontWeight: 600 }}>
+                  <div key={entry.id} className="horse-row" style={{ display: "flex", alignItems: "flex-start", gap: 14, padding: "12px 0", borderBottom: "1px solid " + C.border }}>
+                    <div className="venue-ref" style={{ minWidth: 130, fontSize: 13, color: C.textMid, fontWeight: 600 }}>
                       <div style={{ fontWeight: 700, color: C.text }}>{entry.venue}</div>
                       {entry.meetingNo && <div>{"Mtg " + entry.meetingNo}</div>}
                       {entry.raceRef && <div>{entry.raceRef}</div>}
                     </div>
-                    <div style={{ minWidth: 80, fontSize: 14, fontWeight: 700, color: C.navy }}>{entry.raceTime}</div>
+                    <div className="race-time" style={{ minWidth: 80, fontSize: 14, fontWeight: 700, color: C.navy }}>{entry.raceTime}</div>
                     <div style={{ flex: 1 }}>
                       <div style={{ display: "flex", alignItems: "center", gap: 8, flexWrap: "wrap" }}>
                         <span className="horse-name" style={{ fontSize: 17, fontWeight: 800, color: C.text, textTransform: "uppercase" }}>{displayName}</span>
-                        {hg && <span className="badge" style={{ fontSize: 12, color: "#fff", fontWeight: 700, background: C.purple, padding: "2px 8px", borderRadius: 6 }}>{hg}</span>}
-                        {entry.ballotNo && <span className="badge" style={{ fontSize: 12, color: "#fff", fontWeight: 700, background: C.amber, padding: "2px 8px", borderRadius: 6 }}>{"Ballot " + entry.ballotNo}</span>}
+                        {hg && <span className="badge-hg" style={{ fontSize: 12, color: "#fff", fontWeight: 700, background: C.purple, padding: "2px 8px", borderRadius: 6, WebkitPrintColorAdjust: "exact", printColorAdjust: "exact" }}>{hg}</span>}
+                        {entry.ballotNo && <span className="badge-ballot" style={{ fontSize: 12, color: "#fff", fontWeight: 700, background: C.amber, padding: "2px 8px", borderRadius: 6, WebkitPrintColorAdjust: "exact", printColorAdjust: "exact" }}>{"Ballot " + entry.ballotNo}</span>}
                       </div>
                       {entry.jockey && <div style={{ fontSize: 12, color: C.textMid, marginTop: 2 }}>{"Jockey: " + entry.jockey}</div>}
                       {entry.raceName && <div style={{ fontSize: 12, color: C.textMid, marginTop: 2 }}>{entry.raceName}</div>}
