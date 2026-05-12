@@ -2,8 +2,9 @@ import React, { useState } from "react";
 import { Silk, Btn, C, TODAY, getDaysInMonth, daysUntil } from "./shared";
 
 function MedicationTracker({ horses, medLogs, setMedLogs, trackedIds, setTrackedIds }) {
-  var [selMonth, setSelMonth] = useState(TODAY.getMonth());
-  var [selYear, setSelYear] = useState(TODAY.getFullYear());
+  var nowInit = new Date();
+  var [selMonth, setSelMonth] = useState(nowInit.getMonth());
+  var [selYear, setSelYear] = useState(nowInit.getFullYear());
   var [openHorse, setOpenHorse] = useState(null);
   var [showBill, setShowBill] = useState(false);
   var [billHorse, setBillHorse] = useState(null);
@@ -13,8 +14,9 @@ function MedicationTracker({ horses, medLogs, setMedLogs, trackedIds, setTracked
   var daysInMonth = getDaysInMonth(selYear, selMonth);
   var days = [];
   for (var di = 1; di <= daysInMonth; di++) { days.push(di); }
-  var todayD = TODAY.getDate();
-  var isCurrent = selMonth === TODAY.getMonth() && selYear === TODAY.getFullYear();
+  var now = new Date();
+  var todayD = now.getDate();
+  var isCurrent = selMonth === now.getMonth() && selYear === now.getFullYear();
   var monthName = new Date(selYear, selMonth).toLocaleString("en-IE", { month: "long", year: "numeric" });
 
   function k(hId, d, t) {
@@ -90,9 +92,9 @@ function MedicationTracker({ horses, medLogs, setMedLogs, trackedIds, setTracked
         <div style={{ display: "flex", gap: 8, alignItems: "center", flexWrap: "wrap" }}>
           {medView === "tracker" && (
             <React.Fragment>
-              <Btn variant="ghost" onClick={function() { var d = new Date(selYear, selMonth - 1); setSelMonth(d.getMonth()); setSelYear(d.getFullYear()); }} style={{ padding: "7px 12px" }}>{"<"}</Btn>
+              <Btn variant="ghost" onClick={function() { var d = new Date(selYear, selMonth - 1, 1); setSelMonth(d.getMonth()); setSelYear(d.getFullYear()); }} style={{ padding: "7px 12px" }}>{"<"}</Btn>
               <span style={{ fontSize: 14, fontWeight: 700, color: C.text, minWidth: 150, textAlign: "center" }}>{monthName}</span>
-              <Btn variant="ghost" onClick={function() { var d = new Date(selYear, selMonth + 1); setSelMonth(d.getMonth()); setSelYear(d.getFullYear()); }} style={{ padding: "7px 12px" }}>{">"}</Btn>
+              <Btn variant="ghost" onClick={function() { var d = new Date(selYear, selMonth + 1, 1); setSelMonth(d.getMonth()); setSelYear(d.getFullYear()); }} style={{ padding: "7px 12px" }}>{">"}</Btn>
               <Btn onClick={function() { setShowAdd(true); }} disabled={untrackedHorses.length === 0}>+ Add Horse</Btn>
             </React.Fragment>
           )}
