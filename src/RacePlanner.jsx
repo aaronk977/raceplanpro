@@ -9,7 +9,26 @@ var API_HEADERS = {
 };
 
 async function getAITake(horse, race) {
-  var prompt = "You are an expert horse racing analyst advising a trainer. Use your knowledge of this horse from racing records and form. Be specific and accurate." + " Horse: " + horse.name + " Age: " + getAge(horse.dob) + "yo " + horse.sex + " Ratings: NH=" + (horse.nhRating||"unrated") + " Flat=" + (horse.flatRating||"-") + " Hurdle=" + (horse.hurdleRating||"-") + " Chase=" + (horse.chaseRating||"-") + " Headgear: " + (horse.headgear||"none") + " Discipline: " + (horse.discipline||[]).join("/") + " Owner: " + (horse.owner||"unknown") + " Race: " + race.raceName + " Meeting: " + (race.meetingName||race.venue||"") + " Date: " + (race.date||"") + " Type: " + (race.discipline||"") + " " + (race.distanceFurlongs||"") + "f" + " Going: " + (race.forecastGoing||"unknown") + " Prize: EUR" + (race.prizeMoney||0) + " Rating: " + (race.ratingMin||0) + "-" + (race.ratingMax||"open") + " Age: " + (race.ageMin||3) + "-" + (race.ageMax||"any") + "yo" + " Conditions: " + (race.isMaiden ? "MAIDEN - horse must not have won" : "") + (race.isNovice ? "NOVICE - horse must have run 3 or fewer times over this discipline" : "") + (race.grade ? " Grade/Class: " + race.grade : "") + (race.sexRestriction && race.sexRestriction !== "Open" ? " Restricted to: " + race.sexRestriction : "") + (race.ratingMin ? " Min rating: " + race.ratingMin : "") + (race.ratingMax ? " Max rating: " + race.ratingMax : "") + " Going: " + (race.forecastGoing||"unknown") + "." Check if this horse is eligible for the conditions - maiden means no wins, novice means limited runs. Consider: distance preference, going preference, course record, breeding for conditions, current OR vs race ceiling, whether horse has won at this grade before. Flag any eligibility concerns clearly."" + " Return ONLY JSON: { overall: 0-100, verdict: string, scores: { handicap_edge: 0-10, class_fit: 0-10, conditions_match: 0-10, timing: 0-10, cuteness: 0-10 }, bullets: [{icon: emoji, title: string, point: string}], warnings: [string] }";
+  var condStr = "";
+  if (race.isMaiden) condStr += " MAIDEN RACE - horse must not have won.";
+  if (race.isNovice) condStr += " NOVICE RACE - horse must have 3 or fewer runs over this discipline.";
+  if (race.grade) condStr += " Grade: " + race.grade + ".";
+  if (race.sexRestriction && race.sexRestriction !== "Open") condStr += " Restricted to: " + race.sexRestriction + ".";
+  if (race.ratingMin) condStr += " Min rating: " + race.ratingMin + ".";
+  if (race.ratingMax) condStr += " Max rating: " + race.ratingMax + ".";
+  var prompt = "You are an expert horse racing analyst. Be specific about this actual horse."
+    + " Horse: " + horse.name + " | Age: " + getAge(horse.dob) + "yo " + horse.sex
+    + " | NH=" + (horse.nhRating||"unrated") + " Flat=" + (horse.flatRating||"-") + " Hurdle=" + (horse.hurdleRating||"-") + " Chase=" + (horse.chaseRating||"-")
+    + " | Headgear: " + (horse.headgear||"none") + " | Discipline: " + (Array.isArray(horse.discipline) ? horse.discipline.join("/") : (horse.discipline||"unknown"))
+    + " | Race: " + race.raceName + " at " + (race.meetingName||race.venue||"")
+    + " | Date: " + (race.date||"") + " | " + (race.discipline||"") + " " + (race.distanceFurlongs||"") + "f"
+    + " | Going: " + (race.forecastGoing||"unknown") + " | Prize: EUR" + (race.prizeMoney||0)
+    + " | Rating range: " + (race.ratingMin||0) + "-" + (race.ratingMax||"open")
+    + " | Age: " + (race.ageMin||3) + "-" + (race.ageMax||"any") + "yo"
+    + " | Conditions:" + condStr
+    + " Check eligibility carefully - flag maiden/novice restrictions, rating ceiling, sex restrictions."
+    + " Consider distance preference, going, course record, breeding, handicap mark vs ceiling."
+    + " Return ONLY JSON: { overall: 0-100, verdict: string, scores: { handicap_edge: 0-10, class_fit: 0-10, conditions_match: 0-10, timing: 0-10, cuteness: 0-10 }, bullets: [{icon: emoji, title: string, point: string}], warnings: [string] }";
   var res = await fetch("https://api.anthropic.com/v1/messages", {
     method: "POST", headers: API_HEADERS,
     body: JSON.stringify({ model: "claude-sonnet-4-20250514", max_tokens: 800, messages: [{ role: "user", content: prompt }] })
