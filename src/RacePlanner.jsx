@@ -9,27 +9,7 @@ var API_HEADERS = {
 };
 
 async function getAITake(horse, race) {
-  var prompt = "You are an expert Irish horse racing analyst. Use your knowledge of this horse from racing records, breeding databases and news to give accurate analysis. Be specific about this actual horse - mention their breeding, known preferences, recent form.
-
-Horse: " + horse.name + "
-Age: " + getAge(horse.dob) + "yo " + horse.sex + "
-Ratings: NH=" + (horse.nhRating||"unrated") + " Flat=" + (horse.flatRating||"—") + " Hurdle=" + (horse.hurdleRating||"—") + " Chase=" + (horse.chaseRating||"—") + "
-Headgear: " + (horse.headgear||"none") + "
-Discipline: " + (horse.discipline||[]).join("/") + "
-Owner: " + (horse.owner||"unknown") + "
-
-Race: " + race.raceName + "
-Meeting: " + (race.meetingName||race.venue) + "
-Date: " + race.date + "
-Discipline: " + (race.discipline||"") + " " + (race.distanceFurlongs||"") + "f
-Going: " + (race.forecastGoing||"unknown") + "
-Prize: EUR" + (race.prizeMoney||0) + "
-Rating range: " + (race.ratingMin||0) + "-" + (race.ratingMax||"open") + "
-Age: " + (race.ageMin||3) + "-" + (race.ageMax||"any") + "yo
-
-Analyse this horse for this specific race. Consider: known distance preference, going preference, course form, breeding for conditions, current handicap mark vs race ceiling, trainer patterns at this venue, time of season. Be specific - name actual details you know about this horse.
-
-Return ONLY a JSON object: { overall: 0-100, verdict: string (2 sentences, specific to THIS horse and race), scores: { handicap_edge: 0-10, class_fit: 0-10, conditions_match: 0-10, timing: 0-10, cuteness: 0-10 }, bullets: [{icon: emoji, title: string, point: string}] }";
+  var prompt = "You are an expert Irish horse racing analyst. Use your knowledge of this horse from records, breeding and news. Be specific about this actual horse." + " Horse: " + horse.name + " Age: " + getAge(horse.dob) + "yo " + horse.sex + " Ratings: NH=" + (horse.nhRating||"unrated") + " Flat=" + (horse.flatRating||"-") + " Hurdle=" + (horse.hurdleRating||"-") + " Chase=" + (horse.chaseRating||"-") + " Headgear: " + (horse.headgear||"none") + " Discipline: " + (horse.discipline||[]).join("/") + " Owner: " + (horse.owner||"unknown") + " Race: " + race.raceName + " Meeting: " + (race.meetingName||race.venue||"") + " Date: " + (race.date||"") + " Type: " + (race.discipline||"") + " " + (race.distanceFurlongs||"") + "f" + " Going: " + (race.forecastGoing||"unknown") + " Prize: EUR" + (race.prizeMoney||0) + " Rating: " + (race.ratingMin||0) + "-" + (race.ratingMax||"open") + " Age: " + (race.ageMin||3) + "-" + (race.ageMax||"any") + "yo" + " Analyse this horse for this race. Consider distance preference, going, course form, breeding, handicap mark vs ceiling, trainer patterns. Name actual details you know." + " Return ONLY JSON: { overall: 0-100, verdict: string, scores: { handicap_edge: 0-10, class_fit: 0-10, conditions_match: 0-10, timing: 0-10, cuteness: 0-10 }, bullets: [{icon: emoji, title: string, point: string}] }";
   var res = await fetch("https://api.anthropic.com/v1/messages", {
     method: "POST", headers: API_HEADERS,
     body: JSON.stringify({ model: "claude-sonnet-4-20250514", max_tokens: 800, messages: [{ role: "user", content: prompt }] })
