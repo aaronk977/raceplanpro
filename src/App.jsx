@@ -9,6 +9,7 @@ import YardView from "./YardView";
 import MovementLog from "./MovementLog";
 import OwnerPortal from "./OwnerPortal";
 import StaffNotify from "./StaffNotify";
+import YardSettings from "./YardSettings";
 
 const SUPABASE_URL = import.meta.env.VITE_SUPABASE_URL || "";
 const SUPABASE_ANON_KEY = import.meta.env.VITE_SUPABASE_ANON_KEY || "";
@@ -25,6 +26,7 @@ export default function App() {
   const [authError, setAuthError] = useState("");
   const [appLoading, setAppLoading] = useState(true);
   const [tab, setTab] = useState("yard");
+  const [settings, setSettings] = useState({ yardName: "", trainerName: "", weighDay: "Monday", notifyContacts: [], tier: "Professional", costPeptizole: 18, costAntepsin: 25, costAntibiotics: 15 });
   const [sidebarOpen, setSidebarOpen] = useState(true);
 
   const [horsesRaw, setHorsesRaw] = useState([]);
@@ -201,6 +203,7 @@ export default function App() {
     { id: "movements", label: "Horse Movements" },
     { id: "owners", label: "Owner Portal" },
     { id: "staff", label: "Staff Hours" },
+    { id: "settings", label: "Yard Settings" },
   ];
 
   if (appLoading) return (
@@ -316,7 +319,8 @@ export default function App() {
           {tab === "whiteboard" && <RacedayPrint horses={horses} entries={wbEntries} setEntries={setWbEntries} />}
           {tab === "movements" && <MovementLog horses={horses} />}
           {tab === "owners" && <OwnerPortal horses={horses} />}
-          {tab === "staff" && <StaffNotify user={user} supabase={supabase} />}
+          {tab === "staff" && <StaffNotify user={user} supabase={supabase} settings={settings} />}
+          {tab === "settings" && <YardSettings settings={settings} setSettings={setSettings} />}
         </div>
       </div>
     </div>
