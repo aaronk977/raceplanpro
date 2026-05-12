@@ -67,26 +67,16 @@ function StaffNotify({ user, supabase, settings }) {
     // Send WhatsApp to notification contacts
     var contacts = (settings && settings.notifyContacts) ? settings.notifyContacts : [];
     var yardName = (settings && settings.yardName) ? settings.yardName : "the yard";
-    var msg = "RacePlan Pro - Staff Late Return Alert" +
-      "
-
-Staff: " + staffName.trim() +
-      "
-Reason: " + (reasonLabel ? reasonLabel.label : reason) +
-      "
-Expected return: " + returnTime +
-      "
-Next shift: " + shiftTime +
-      "
-Rest time: " + hours + " hours" +
-      (notes.trim() ? "
-Note: " + notes.trim() : "") +
-      (hours < 6 ? "
-
-ACTION NEEDED: Less than 6 hours rest - consider adjusting shift." : hours < 8 ? "
-
-Note: Less than 8 hours rest." : "");
-
+    var msgParts = ["RacePlan Pro Staff Late Return Alert"];
+    msgParts.push("Staff: " + staffName.trim());
+    msgParts.push("Reason: " + (reasonLabel ? reasonLabel.label : reason));
+    msgParts.push("Expected return: " + returnTime);
+    msgParts.push("Next shift: " + shiftTime);
+    msgParts.push("Rest time: " + hours + " hours");
+    if (notes.trim()) msgParts.push("Note: " + notes.trim());
+    if (hours < 6) msgParts.push("ACTION NEEDED: Less than 6 hours rest - consider adjusting shift.");
+    else if (hours < 8) msgParts.push("Note: Less than 8 hours rest.");
+    var msg = msgParts.join("\n");
     var contacted = 0;
     for (var i = 0; i < contacts.length; i++) {
       var contact = contacts[i];
