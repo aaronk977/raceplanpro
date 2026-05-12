@@ -292,14 +292,7 @@ export default function App() {
     </div>
   );
 
-  if (!user) return (
-    <LandingPage
-      onLogin={function() { setAuthMode("login"); setShowAuth(true); }}
-      onSignup={function() { setAuthMode("signup"); setShowAuth(true); }}
-    />
-  );
-
-  if (showAuth) return (
+  if (!user && showAuth) return (
     <div style={{ minHeight: "100vh", background: C.bg, display: "flex", alignItems: "center", justifyContent: "center", padding: 24 }}>
       <style dangerouslySetInnerHTML={{ __html: globalCSS }} />
       <div style={{ background: C.card, borderRadius: 20, width: "100%", maxWidth: 400, boxShadow: C.shadowMd, overflow: "hidden" }}>
@@ -340,6 +333,15 @@ export default function App() {
       </div>
     </div>
   );
+
+  if (!user) return (
+    <LandingPage
+      onLogin={function() { setAuthMode("login"); setShowAuth(true); }}
+      onSignup={function() { setAuthMode("signup"); setShowAuth(true); }}
+    />
+  );
+
+
   return (
     <div style={{ minHeight: "100vh", background: C.bg, fontFamily: "Inter, Helvetica Neue, sans-serif", display: "flex", flexDirection: "column" }}>
       <style dangerouslySetInnerHTML={{ __html: globalCSS }} />
