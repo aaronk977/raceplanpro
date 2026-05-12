@@ -9,7 +9,27 @@ var API_HEADERS = {
 };
 
 async function getAITake(horse, race) {
-  var prompt = "You are an expert Irish horse racing analyst advising a trainer. Be direct and practical.\n\nHorse: " + horse.name + "\nAge: " + getAge(horse.dob) + "yo " + horse.sex + "\nRatings: NH=" + (horse.nhRating||"—") + " Flat=" + (horse.flatRating||"—") + " Hurdle=" + (horse.hurdleRating||"—") + " Chase=" + (horse.chaseRating||"—") + "\nHeadgear: " + (horse.headgear||"none") + "\nDiscipline: " + (horse.discipline||[]).join("/") + "\nForm: " + (horse.form||[]).slice(0,3).map(function(f){return f.position+"/" + f.venue;}).join(", ") + "\n\nRace: " + race.raceName + "\nVenue: " + race.venue + "\nDate: " + race.date + "\nDiscipline: " + (race.discipline||"") + " " + (race.distanceFurlongs||"") + "f\nGoing: " + (race.forecastGoing||"unknown") + "\nPrize: EUR" + (race.prizeMoney||0) + "\nRating range: " + (race.ratingMin||0) + "-" + (race.ratingMax||"open") + "\n\nReturn ONLY a JSON object: { overall: 0-100, verdict: \"one sentence\", scores: { handicap_edge: 0-10, class_fit: 0-10, conditions_match: 0-10, timing: 0-10, cuteness: 0-10 }, bullets: [{icon: emoji, title: string, point: string}] }";
+  var prompt = "You are an expert Irish horse racing analyst. Use your knowledge of this horse from racing records, breeding databases and news to give accurate analysis. Be specific about this actual horse - mention their breeding, known preferences, recent form.
+
+Horse: " + horse.name + "
+Age: " + getAge(horse.dob) + "yo " + horse.sex + "
+Ratings: NH=" + (horse.nhRating||"unrated") + " Flat=" + (horse.flatRating||"—") + " Hurdle=" + (horse.hurdleRating||"—") + " Chase=" + (horse.chaseRating||"—") + "
+Headgear: " + (horse.headgear||"none") + "
+Discipline: " + (horse.discipline||[]).join("/") + "
+Owner: " + (horse.owner||"unknown") + "
+
+Race: " + race.raceName + "
+Meeting: " + (race.meetingName||race.venue) + "
+Date: " + race.date + "
+Discipline: " + (race.discipline||"") + " " + (race.distanceFurlongs||"") + "f
+Going: " + (race.forecastGoing||"unknown") + "
+Prize: EUR" + (race.prizeMoney||0) + "
+Rating range: " + (race.ratingMin||0) + "-" + (race.ratingMax||"open") + "
+Age: " + (race.ageMin||3) + "-" + (race.ageMax||"any") + "yo
+
+Analyse this horse for this specific race. Consider: known distance preference, going preference, course form, breeding for conditions, current handicap mark vs race ceiling, trainer patterns at this venue, time of season. Be specific - name actual details you know about this horse.
+
+Return ONLY a JSON object: { overall: 0-100, verdict: string (2 sentences, specific to THIS horse and race), scores: { handicap_edge: 0-10, class_fit: 0-10, conditions_match: 0-10, timing: 0-10, cuteness: 0-10 }, bullets: [{icon: emoji, title: string, point: string}] }";
   var res = await fetch("https://api.anthropic.com/v1/messages", {
     method: "POST", headers: API_HEADERS,
     body: JSON.stringify({ model: "claude-sonnet-4-20250514", max_tokens: 800, messages: [{ role: "user", content: prompt }] })
@@ -44,6 +64,8 @@ function RacePlanner({ horses, setHorses }) {
   var search = searchState[0]; var setSearch = searchState[1];
   var toastState = useState(null);
   var toast = toastState[0]; var setToast = toastState[1];
+  var expandedAnalysisState = useState({});
+  var expandedAnalysis = expandedAnalysisState[0]; var setExpandedAnalysis = expandedAnalysisState[1];
 
   function k(hId, rId) { return hId + "_" + rId; }
 
@@ -152,6 +174,19 @@ function RacePlanner({ horses, setHorses }) {
     }
   };
 
+  function handlePDFUpload(e) {
+    var file = e.target.files[0];
+    if (!file) return;
+    e.target.value = "";
+    var reader = new FileReader();
+    reader.onload = function(ev) {
+      var text = ev.target.result;
+      setPasteText(text);
+      setShowPaste(true);
+    };
+    reader.readAsText(file);
+  }
+
   var analyseHorseForRace = async function(horse, race) {
     var key = k(horse.id, race.id);
     setLoading(function(l) { return Object.assign({}, l, { [key]: true }); });
@@ -222,10 +257,14 @@ function RacePlanner({ horses, setHorses }) {
             placeholder="Paste race conditions text here..."
             rows={8}
             style={{ width: "100%", background: C.cardOff, border: "1px solid " + C.border, borderRadius: 9, padding: "10px 14px", fontSize: 13, color: C.text, resize: "vertical", marginBottom: 10 }} />
-          <div style={{ display: "flex", gap: 8 }}>
+          <div style={{ display: "flex", gap: 8, flexWrap: "wrap", alignItems: "center" }}>
             <Btn onClick={handleParseText} disabled={!pasteText.trim() || fetchStatus === "fetching"}>
               {fetchStatus === "fetching" ? "Parsing races..." : "Parse Races"}
             </Btn>
+            <label style={{ background: C.cardOff, border: "1.5px solid " + C.border, color: C.textMid, borderRadius: 9, padding: "9px 16px", fontSize: 13, fontWeight: 700, cursor: "pointer", display: "inline-flex", alignItems: "center", gap: 6 }}>
+              Upload PDF
+              <input type="file" accept=".pdf,.txt" onChange={handlePDFUpload} style={{ display: "none" }} />
+            </label>
             <Btn variant="ghost" onClick={function() { setShowPaste(false); setPasteText(""); }}>Cancel</Btn>
           </div>
           {fetchStatus === "error" && <div style={{ fontSize: 12, color: C.red, fontWeight: 600, marginTop: 8 }}>Failed. Check your Anthropic API credits at console.anthropic.com</div>}
@@ -364,6 +403,11 @@ function RacePlanner({ horses, setHorses }) {
                               Get Analysis
                             </Btn>
                           )}
+                          {analysis && !isLoading && (
+                            <Btn variant="ghost" onClick={function() { var k2 = key; setExpandedAnalysis(function(p) { return Object.assign({}, p, { [k2]: !p[k2] }); }); }} style={{ fontSize: 12, padding: "7px 14px" }}>
+                              {expandedAnalysis[key] ? "▲ Hide" : "▼ Analysis (" + analysis.overall + ")"}
+                            </Btn>
+                          )}
                           {isLoading && (
                             <span style={{ fontSize: 12, color: C.textMid, padding: "7px 14px" }}>Analysing...</span>
                           )}
@@ -383,7 +427,7 @@ function RacePlanner({ horses, setHorses }) {
                         </div>
                       </div>
 
-                      {analysis && (
+                      {analysis && expandedAnalysis[key] && (
                         <div style={{ marginTop: 8, paddingTop: 12, borderTop: "1px solid " + C.cardOff }}>
                           <div style={{ display: "flex", gap: 4, marginBottom: 10 }}>
                             {SCORE_KEYS.map(function(pair) {
