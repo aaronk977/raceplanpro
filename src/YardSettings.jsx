@@ -10,6 +10,46 @@ function OwnerContactsPanel({ edit, update }) {
   var editIdxState = React.useState(null);
   var editIdx = editIdxState[0]; var setEditIdx = editIdxState[1];
 
+  var csvResultState = React.useState("");
+  var csvResult = csvResultState[0]; var setCsvResult = csvResultState[1];
+
+  function handleOwnerCSV(e) {
+    var file = e.target.files[0];
+    if (!file) return;
+    e.target.value = "";
+    var reader = new FileReader();
+    reader.onload = function(ev) {
+      var text = ev.target.result;
+      var lines = text.split("\n").filter(function(l) { return l.trim(); });
+      if (lines.length < 2) { setCsvResult("No data found in file"); return; }
+      var sep = lines[0].indexOf("\t") >= 0 ? "\t" : ",";
+      var headers = lines[0].split(sep).map(function(h) {
+        return h.trim().toLowerCase().replace(/[^a-z0-9]/g, "_");
+      });
+      var imported = [];
+      for (var i = 1; i < lines.length; i++) {
+        var cols = lines[i].split(sep).map(function(c) {
+          var t = c.trim();
+          if (t.length > 1 && t[0] === '"' && t[t.length-1] === '"') return t.slice(1,-1);
+          return t;
+        });
+        if (!cols[0]) continue;
+        var row = {};
+        for (var j = 0; j < headers.length; j++) { row[headers[j]] = cols[j] || ""; }
+        var name = row.name || row.owner || row.owner_name || row.full_name || cols[0];
+        if (!name || !name.trim()) continue;
+        var phone = row.phone || row.whatsapp || row.mobile || row.telephone || row.tel || row.contact || "";
+        var email = row.email || row.email_address || row.e_mail || "";
+        imported.push({ id: "own_" + Date.now() + "_" + i, name: name.trim(), phone: phone.trim(), email: email.trim(), notes: "" });
+      }
+      if (!imported.length) { setCsvResult("No owners found — check your CSV has name, phone, email columns"); return; }
+      update("ownerContacts", (owners || []).concat(imported));
+      setCsvResult(imported.length + " owners imported successfully");
+      setTimeout(function() { setCsvResult(""); }, 5000);
+    };
+    reader.readAsText(file);
+  }
+
   function addOwner() {
     if (!newOwner.name.trim()) return;
     var updated = owners.slice();
@@ -45,12 +85,24 @@ function OwnerContactsPanel({ edit, update }) {
 
   return (
     <div>
-      <div style={{ display: "flex", justifyContent: "space-between", alignItems: "center", marginBottom: 14 }}>
+      <div style={{ display: "flex", justifyContent: "space-between", alignItems: "center", marginBottom: 14, flexWrap: "wrap", gap: 8 }}>
         <div style={{ fontSize: 13, color: C.textMid }}>{owners.length + " owner" + (owners.length !== 1 ? "s" : "") + " saved"}</div>
-        <Btn onClick={function() { setShowAdd(!showAdd); }} style={{ fontSize: 12, padding: "8px 16px" }}>
-          {showAdd ? "Cancel" : "+ Add Owner"}
-        </Btn>
+        <div style={{ display: "flex", gap: 8 }}>
+          <label style={{ padding: "8px 16px", borderRadius: 9, border: "1.5px solid " + C.border, background: C.cardOff, color: C.textMid, fontSize: 12, fontWeight: 700, cursor: "pointer", display: "inline-flex", alignItems: "center", gap: 6 }}>
+            📂 Import CSV
+            <input type="file" accept=".csv,.tsv,.txt" onChange={handleOwnerCSV} style={{ display: "none" }} />
+          </label>
+          <Btn onClick={function() { setShowAdd(!showAdd); }} style={{ fontSize: 12, padding: "8px 16px" }}>
+            {showAdd ? "Cancel" : "+ Add Owner"}
+          </Btn>
+        </div>
       </div>
+
+      {csvResult && (
+        <div style={{ background: C.green + "12", border: "1px solid " + C.green + "30", borderRadius: 8, padding: "10px 14px", marginBottom: 12, fontSize: 13, fontWeight: 600, color: C.green }}>
+          {csvResult}
+        </div>
+      )}
 
       {showAdd && (
         <div style={{ background: C.cardOff, border: "1.5px dashed " + C.navy, borderRadius: 12, padding: "16px 18px", marginBottom: 14 }}>
