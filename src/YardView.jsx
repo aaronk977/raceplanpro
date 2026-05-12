@@ -198,7 +198,7 @@ function YardView({ horses, setHorses }) {
   var EDIT_FIELDS = [
     { key: "status", label: "Status", type: "select", options: ["Active", "CoolingOff", "Inactive"] },
     { key: "sex", label: "Sex", type: "select", options: ["Gelding", "Mare", "Filly", "Colt", "Horse"] },
-    { key: "discipline", label: "Discipline", type: "select", options: ["Hurdle", "Chase", "Flat", "Hurdle/Chase"] },
+    { key: "discipline", label: "Discipline", type: "multi", options: ["Hurdle", "Chase", "Flat"] },
     { key: "headgear", label: "Headgear", placeholder: "e.g. Cheekpieces" },
     { key: "nhRating", label: "NH Rating", type: "number", placeholder: "e.g. 98" },
     { key: "flatRating", label: "Flat Rating", type: "number", placeholder: "e.g. 74" },
@@ -216,7 +216,7 @@ function YardView({ horses, setHorses }) {
     { key: "colour", label: "Colour", placeholder: "e.g. Bay" },
     { key: "nhRating", label: "NH Rating", type: "number", placeholder: "e.g. 98" },
     { key: "flatRating", label: "Flat Rating", type: "number", placeholder: "e.g. 74" },
-    { key: "discipline", label: "Discipline", type: "select", options: ["Hurdle", "Chase", "Flat", "Hurdle/Chase"] },
+    { key: "discipline", label: "Discipline", type: "multi", options: ["Hurdle", "Chase", "Flat"] },
     { key: "surface", label: "Surface", type: "select", options: ["Turf", "AWT"] },
     { key: "status", label: "Status", type: "select", options: ["Active", "CoolingOff", "Inactive"] },
     { key: "owner", label: "Owner", placeholder: "e.g. J. Murphy" },
@@ -323,7 +323,25 @@ function YardView({ horses, setHorses }) {
                 return (
                   <div key={key}>
                     <div style={{ fontSize: 10, fontWeight: 700, color: C.textMid, marginBottom: 3, textTransform: "uppercase", letterSpacing: 0.5 }}>{field.label}</div>
-                    {field.type === "select" ? (
+                    {field.type === "multi" ? (
+                      <div style={{ display: "flex", gap: 7, flexWrap: "wrap" }}>
+                        {(field.options || []).map(function(o) {
+                          var currentDisc = editHorse.discipline || [];
+                          var disc = Array.isArray(currentDisc) ? currentDisc : [currentDisc];
+                          var active = disc.indexOf(o) >= 0;
+                          return (
+                            <button key={o} onClick={function() {
+                              var cur = Array.isArray(editHorse.discipline) ? editHorse.discipline.slice() : (editHorse.discipline ? [editHorse.discipline] : []);
+                              var idx2 = cur.indexOf(o);
+                              if (idx2 >= 0) cur.splice(idx2, 1); else cur.push(o);
+                              updateEdit("discipline", cur);
+                            }} style={{ padding: "6px 14px", borderRadius: 20, border: "1.5px solid " + (active ? C.navy : C.border), background: active ? C.navy : "transparent", color: active ? "#fff" : C.textMid, fontSize: 13, fontWeight: 700, cursor: "pointer" }}>
+                              {o}
+                            </button>
+                          );
+                        })}
+                      </div>
+                    ) : field.type === "select" ? (
                       <select value={val} onChange={function(e) { var v = e.target.value; updateEdit(key, v); }}
                         style={{ width: "100%", background: C.cardOff, border: "1px solid " + C.border, borderRadius: 8, padding: "8px 12px", color: C.text, fontSize: 13 }}>
                         {(field.options || []).map(function(o) { return <option key={o} value={o}>{o}</option>; })}
@@ -356,7 +374,24 @@ function YardView({ horses, setHorses }) {
                 return (
                   <div key={key}>
                     <div style={{ fontSize: 10, fontWeight: 700, color: C.textMid, marginBottom: 3, textTransform: "uppercase", letterSpacing: 0.5 }}>{field.label}</div>
-                    {field.type === "select" ? (
+                    {field.type === "multi" ? (
+                      <div style={{ display: "flex", gap: 7, flexWrap: "wrap" }}>
+                        {(field.options || []).map(function(o) {
+                          var cur = Array.isArray(newHorse[key]) ? newHorse[key] : (newHorse[key] ? [newHorse[key]] : []);
+                          var active = cur.indexOf(o) >= 0;
+                          return (
+                            <button key={o} onClick={function() {
+                              var arr = Array.isArray(newHorse[key]) ? newHorse[key].slice() : (newHorse[key] ? [newHorse[key]] : []);
+                              var idx2 = arr.indexOf(o);
+                              if (idx2 >= 0) arr.splice(idx2, 1); else arr.push(o);
+                              updateNew(key, arr);
+                            }} style={{ padding: "6px 14px", borderRadius: 20, border: "1.5px solid " + (active ? C.navy : C.border), background: active ? C.navy : "transparent", color: active ? "#fff" : C.textMid, fontSize: 13, fontWeight: 700, cursor: "pointer" }}>
+                              {o}
+                            </button>
+                          );
+                        })}
+                      </div>
+                    ) : field.type === "select" ? (
                       <select value={newHorse[key]} onChange={function(e) { var v = e.target.value; updateNew(key, v); }}
                         style={{ width: "100%", background: C.cardOff, border: "1px solid " + C.border, borderRadius: 8, padding: "8px 12px", color: C.text, fontSize: 13 }}>
                         {(field.options || []).map(function(o) { return <option key={o} value={o}>{o}</option>; })}
