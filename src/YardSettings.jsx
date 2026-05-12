@@ -390,8 +390,8 @@ function YardSettings({ settings, setSettings }) {
     setTimeout(function() { setSaved(false); }, 3000);
   }
 
-  var TABS = ["yard", "owners", "contacts", "medications", "notifications", "subscription"];
-  var TAB_LABELS = { yard: "Yard Details", owners: "Owner Contacts", contacts: "Staff Contacts", medications: "Medications", notifications: "Notifications", subscription: "Subscription" };
+  var TABS = ["yard", "owners", "users", "contacts", "medications", "notifications", "subscription"];
+  var TAB_LABELS = { yard: "Yard Details", owners: "Owner Contacts", users: "App Users", contacts: "Staff Contacts", medications: "Medications", notifications: "Notifications", subscription: "Subscription" };
   var ROLES = ["Trainer", "Head Lad", "Assistant Trainer", "Head Girl", "HR", "Secretary", "Owner Manager", "Vet"];
   var NOTIFY_TYPES = [
     { key: "late_returns", label: "Late returns" },
@@ -474,6 +474,111 @@ function YardSettings({ settings, setSettings }) {
           </div>
 
           <OwnerContactsPanel edit={edit} update={update} />
+        </div>
+      )}
+
+      {activeTab === "users" && (
+        <div>
+          <div style={{ background: C.card, border: "1px solid " + C.border, borderRadius: 14, padding: "18px 20px", marginBottom: 14 }}>
+            <div style={{ fontSize: 15, fontWeight: 800, color: C.navy, marginBottom: 4 }}>App Users</div>
+            <div style={{ fontSize: 12, color: C.textMid, lineHeight: 1.7 }}>
+              Anyone who needs to log in to RacePlan Pro for your yard creates their own account at the login screen using their email and a password. Share the link below with your staff. Each person logs in with their own credentials — their data is tied to your yard automatically once they sign up with an email you have invited.
+            </div>
+          </div>
+
+          <div style={{ background: C.card, border: "1px solid " + C.border, borderRadius: 14, padding: "18px 20px", marginBottom: 14 }}>
+            <div style={{ fontSize: 14, fontWeight: 700, color: C.navy, marginBottom: 10 }}>Share Login Link</div>
+            <div style={{ background: C.cardOff, border: "1px solid " + C.border, borderRadius: 9, padding: "12px 16px", fontFamily: "monospace", fontSize: 14, color: C.text, marginBottom: 10, wordBreak: "break-all" }}>
+              https://raceplanpro.vercel.app
+            </div>
+            <div style={{ display: "flex", gap: 8 }}>
+              <Btn onClick={function() {
+                if (navigator.clipboard) {
+                  navigator.clipboard.writeText("https://raceplanpro.vercel.app");
+                }
+              }} style={{ fontSize: 12 }}>Copy Link</Btn>
+              <Btn variant="ghost" onClick={function() {
+                window.open("https://wa.me/?text=" + encodeURIComponent("You have been invited to RacePlan Pro. Sign up here: https://raceplanpro.vercel.app"), "_blank");
+              }} style={{ fontSize: 12 }}>Share via WhatsApp</Btn>
+            </div>
+          </div>
+
+          <div style={{ background: C.card, border: "1px solid " + C.border, borderRadius: 14, padding: "18px 20px", marginBottom: 14 }}>
+            <div style={{ display: "flex", justifyContent: "space-between", alignItems: "center", marginBottom: 12 }}>
+              <div>
+                <div style={{ fontSize: 14, fontWeight: 700, color: C.navy }}>Invited Users</div>
+                <div style={{ fontSize: 12, color: C.textMid, marginTop: 2 }}>Track who has been given access to the yard app</div>
+              </div>
+              <Btn onClick={function() { update("showInviteForm", !edit.showInviteForm); }} style={{ fontSize: 12, padding: "8px 16px" }}>
+                {edit.showInviteForm ? "Cancel" : "+ Add User"}
+              </Btn>
+            </div>
+
+            {edit.showInviteForm && (
+              <div style={{ background: C.cardOff, border: "1.5px dashed " + C.navy, borderRadius: 10, padding: "14px 16px", marginBottom: 14 }}>
+                <div style={{ display: "grid", gridTemplateColumns: "1fr 1fr 1fr", gap: 10, marginBottom: 12 }}>
+                  <div>
+                    <div style={{ fontSize: 10, fontWeight: 700, color: C.textMid, marginBottom: 3, textTransform: "uppercase" }}>Name</div>
+                    <input type="text" value={(edit.newUserName || "")} onChange={function(e) { update("newUserName", e.target.value); }}
+                      placeholder="e.g. Sean Murphy"
+                      style={{ width: "100%", padding: "9px 12px", background: "#fff", border: "1px solid " + C.border, borderRadius: 8, fontSize: 13, color: C.text }} />
+                  </div>
+                  <div>
+                    <div style={{ fontSize: 10, fontWeight: 700, color: C.textMid, marginBottom: 3, textTransform: "uppercase" }}>Email</div>
+                    <input type="email" value={(edit.newUserEmail || "")} onChange={function(e) { update("newUserEmail", e.target.value); }}
+                      placeholder="sean@example.com"
+                      style={{ width: "100%", padding: "9px 12px", background: "#fff", border: "1px solid " + C.border, borderRadius: 8, fontSize: 13, color: C.text }} />
+                  </div>
+                  <div>
+                    <div style={{ fontSize: 10, fontWeight: 700, color: C.textMid, marginBottom: 3, textTransform: "uppercase" }}>Role</div>
+                    <select value={(edit.newUserRole || "Staff")} onChange={function(e) { update("newUserRole", e.target.value); }}
+                      style={{ width: "100%", padding: "9px 12px", background: "#fff", border: "1px solid " + C.border, borderRadius: 8, fontSize: 13, color: C.text }}>
+                      {["Trainer", "Head Lad", "Head Girl", "Assistant Trainer", "Secretary", "Staff", "Vet", "Owner"].map(function(r) { return <option key={r} value={r}>{r}</option>; })}
+                    </select>
+                  </div>
+                </div>
+                <Btn onClick={function() {
+                  if (!edit.newUserEmail || !edit.newUserName) return;
+                  var users2 = (edit.yardUsers || []).slice();
+                  users2.push({ id: "u_" + Date.now(), name: edit.newUserName, email: edit.newUserEmail, role: edit.newUserRole || "Staff", addedAt: new Date().toISOString() });
+                  update("yardUsers", users2);
+                  update("newUserName", ""); update("newUserEmail", ""); update("showInviteForm", false);
+                  // Send WhatsApp invite
+                  window.open("https://wa.me/?text=" + encodeURIComponent("Hi " + edit.newUserName + ", you have been invited to join RacePlan Pro for our yard. Sign up at https://raceplanpro.vercel.app using this email: " + edit.newUserEmail), "_blank");
+                }} disabled={!edit.newUserEmail || !edit.newUserName} style={{ fontSize: 12 }}>
+                  Add & Send WhatsApp Invite
+                </Btn>
+              </div>
+            )}
+
+            {(edit.yardUsers || []).length === 0 ? (
+              <div style={{ padding: "20px", textAlign: "center", color: C.textMid, fontSize: 13 }}>
+                No users added yet. Add users above and send them a WhatsApp invite with the login link.
+              </div>
+            ) : (
+              (edit.yardUsers || []).map(function(u, idx) {
+                return (
+                  <div key={u.id || idx} style={{ display: "flex", alignItems: "center", gap: 12, padding: "10px 0", borderBottom: "1px solid " + C.border }}>
+                    <div style={{ width: 36, height: 36, borderRadius: "50%", background: C.navy, display: "flex", alignItems: "center", justifyContent: "center", fontSize: 13, fontWeight: 800, color: "#fff", flexShrink: 0 }}>
+                      {(u.name || "?").charAt(0).toUpperCase()}
+                    </div>
+                    <div style={{ flex: 1 }}>
+                      <div style={{ fontSize: 14, fontWeight: 700, color: C.text }}>{u.name}</div>
+                      <div style={{ fontSize: 12, color: C.textMid }}>{u.email + " · " + (u.role || "Staff")}</div>
+                    </div>
+                    <button onClick={function() {
+                      var users2 = (edit.yardUsers || []).filter(function(x) { return x.id !== u.id; });
+                      update("yardUsers", users2);
+                    }} style={{ background: "none", border: "none", color: C.red, cursor: "pointer", fontSize: 13, fontWeight: 700 }}>Remove</button>
+                  </div>
+                );
+              })
+            )}
+          </div>
+
+          <div style={{ background: C.amberBg, border: "1px solid " + C.amber + "40", borderRadius: 12, padding: "14px 16px", fontSize: 13, color: C.amber, lineHeight: 1.7 }}>
+            <strong>Note:</strong> Each user signs up with their own email and password at the login screen. Full role-based access control (restricting what each person can see) is coming in a future update. For now, all yard users have full access.
+          </div>
         </div>
       )}
 
