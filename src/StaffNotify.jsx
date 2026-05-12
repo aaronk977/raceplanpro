@@ -1,7 +1,7 @@
 import React, { useState, useEffect } from "react";
 import { Btn, C, TODAY } from "./shared";
 
-function StaffNotify({ user, supabase }) {
+function StaffNotify({ user, supabase, settings }) {
   var todayStr = TODAY.toISOString().slice(0, 10);
 
   var notifState = useState([]);
@@ -49,6 +49,7 @@ function StaffNotify({ user, supabase }) {
   function submitNotification() {
     if (!staffName.trim()) return;
     var hours = calcHoursRest(returnTime, shiftTime);
+    var reasonLabel = REASONS.find(function(r) { return r.id === reason; });
     var notif = {
       id: "n_" + Date.now(),
       staffName: staffName.trim(),
@@ -62,13 +63,47 @@ function StaffNotify({ user, supabase }) {
       status: "pending",
     };
     setNotifications(function(prev) { return [notif].concat(prev); });
-    setStatus("submitted");
+
+    // Send WhatsApp to notification contacts
+    var contacts = (settings && settings.notifyContacts) ? settings.notifyContacts : [];
+    var yardName = (settings && settings.yardName) ? settings.yardName : "the yard";
+    var msg = "RacePlan Pro - Staff Late Return Alert" +
+      "
+
+Staff: " + staffName.trim() +
+      "
+Reason: " + (reasonLabel ? reasonLabel.label : reason) +
+      "
+Expected return: " + returnTime +
+      "
+Next shift: " + shiftTime +
+      "
+Rest time: " + hours + " hours" +
+      (notes.trim() ? "
+Note: " + notes.trim() : "") +
+      (hours < 6 ? "
+
+ACTION NEEDED: Less than 6 hours rest - consider adjusting shift." : hours < 8 ? "
+
+Note: Less than 8 hours rest." : "");
+
+    var contacted = 0;
+    for (var i = 0; i < contacts.length; i++) {
+      var contact = contacts[i];
+      var nf = contact.notifyFor || {};
+      if (nf.late_returns !== false && contact.phone) {
+        var phone = contact.phone.split("").filter(function(d) { return d >= "0" && d <= "9" || d === "+"; }).join("");
+        if (phone.length > 7) {
+          window.open("https://wa.me/" + phone + "?text=" + encodeURIComponent(msg), "_blank");
+          contacted++;
+        }
+      }
+    }
+
+    setStatus(contacted > 0 ? "sent" : "submitted");
     setShowForm(false);
-    setStaffName("");
-    setNotes("");
-    setReturnTime("00:30");
-    setShiftTime("07:00");
-    setTimeout(function() { setStatus("idle"); }, 5000);
+    setStaffName(""); setNotes(""); setReturnTime("00:30"); setShiftTime("07:00");
+    setTimeout(function() { setStatus("idle"); }, 6000);
   }
 
   function updateStatus(id, newStatus) {
@@ -93,9 +128,9 @@ function StaffNotify({ user, supabase }) {
         <Btn onClick={function() { setShowForm(true); }}>+ Log Late Return</Btn>
       </div>
 
-      {status === "submitted" && (
+      {(status === "submitted" || status === "sent") && (
         <div style={{ background: C.green + "15", border: "1px solid " + C.green + "40", borderRadius: 10, padding: "12px 16px", marginBottom: 12, fontSize: 13, fontWeight: 700, color: C.green }}>
-          Notification submitted — trainer has been alerted
+          {status === "sent" ? "WhatsApp notification sent to contacts" : "Notification logged — no WhatsApp contacts configured in Yard Settings"}
         </div>
       )}
 
