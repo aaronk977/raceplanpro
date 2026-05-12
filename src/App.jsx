@@ -291,50 +291,181 @@ export default function App() {
   );
 
   if (!user) return (
-    <div style={{ minHeight: "100vh", background: C.bg, display: "flex", alignItems: "center", justifyContent: "center", padding: 20 }}>
+    <div style={{ minHeight: "100vh", fontFamily: "-apple-system,BlinkMacSystemFont,Inter,Segoe UI,sans-serif" }}>
       <style dangerouslySetInnerHTML={{ __html: globalCSS }} />
-      <div style={{ background: C.card, borderRadius: 20, width: "100%", maxWidth: 400, boxShadow: C.shadowMd, overflow: "hidden" }}>
-        <div style={{ background: C.navy, padding: "28px 32px" }}>
-          <div style={{ fontSize: 22, fontWeight: 800, color: "#fff", marginBottom: 4 }}>RacePlan Pro</div>
-          <div style={{ fontSize: 13, color: "rgba(255,255,255,0.5)" }}>Yard Management System</div>
-        </div>
-        <div style={{ padding: "28px 32px" }}>
-          <div style={{ display: "flex", gap: 0, marginBottom: 24, background: C.cardOff, borderRadius: 10, padding: 4 }}>
-            {["login", "signup"].map(function(m) {
-              return (
-                <button key={m} onClick={function() { setAuthMode(m); setAuthError(""); }}
-                  style={{ flex: 1, padding: "8px 0", borderRadius: 8, border: "none", fontWeight: 700, fontSize: 13, cursor: "pointer",
-                    background: authMode === m ? C.navy : "transparent", color: authMode === m ? "#fff" : C.textMid }}>
-                  {m === "login" ? "Log In" : "Sign Up"}
-                </button>
-              );
-            })}
-          </div>
-          <input type="email" placeholder="Email" value={email}
-            onChange={function(e) { setEmail(e.target.value); }}
-            onKeyDown={function(e) { if (e.key === "Enter") authMode === "login" ? handleLogin() : handleSignup(); }}
-            style={{ width: "100%", padding: "10px 14px", marginBottom: 12, background: C.cardOff,
-              border: "1px solid " + C.border, borderRadius: 10, fontSize: 14, color: C.text }} />
-          <input type="password" placeholder="Password" value={password}
-            onChange={function(e) { setPassword(e.target.value); }}
-            onKeyDown={function(e) { if (e.key === "Enter") authMode === "login" ? handleLogin() : handleSignup(); }}
-            style={{ width: "100%", padding: "10px 14px", marginBottom: 16, background: C.cardOff,
-              border: "1px solid " + C.border, borderRadius: 10, fontSize: 14, color: C.text }} />
-          {authError && (
-            <div style={{ fontSize: 13, marginBottom: 14, fontWeight: 600,
-              color: authError.includes("created") ? C.green : C.red }}>
-              {authError}
+      {!showAuth ? (
+        <div>
+          <div style={{ background: "rgba(10,22,40,0.97)", padding: "0 24px", height: 64, display: "flex", alignItems: "center", justifyContent: "space-between", position: "sticky", top: 0, zIndex: 100 }}>
+            <div style={{ fontSize: 20, fontWeight: 900, color: "#fff", display: "flex", alignItems: "center", gap: 10 }}>
+              🏇 RacePlan Pro
+              <span style={{ background: "#c9952a", color: "#0a1628", fontSize: 11, fontWeight: 800, padding: "2px 8px", borderRadius: 20 }}>BETA</span>
             </div>
-          )}
-          <Btn onClick={authMode === "login" ? handleLogin : handleSignup} disabled={authLoading}
-            style={{ width: "100%", justifyContent: "center" }}>
-            {authLoading ? "Please wait..." : authMode === "login" ? "Log In" : "Create Account"}
-          </Btn>
+            <div style={{ display: "flex", gap: 12 }}>
+              <button onClick={function() { setAuthMode("login"); setShowAuth(true); }}
+                style={{ padding: "9px 20px", borderRadius: 8, border: "1px solid rgba(255,255,255,0.2)", background: "transparent", color: "rgba(255,255,255,0.8)", fontSize: 14, fontWeight: 600, cursor: "pointer" }}>
+                Log In
+              </button>
+              <button onClick={function() { setAuthMode("signup"); setShowAuth(true); }}
+                style={{ padding: "9px 20px", borderRadius: 8, border: "none", background: "#c9952a", color: "#0a1628", fontSize: 14, fontWeight: 800, cursor: "pointer" }}>
+                Start Free Trial
+              </button>
+            </div>
+          </div>
+          <div style={{ minHeight: "calc(100vh - 64px)", background: "linear-gradient(135deg, #0a1628 0%, #0d2040 60%, #091830 100%)", display: "flex", alignItems: "center", padding: "60px 24px" }}>
+            <div style={{ maxWidth: 1100, margin: "0 auto", width: "100%", display: "grid", gridTemplateColumns: "1fr 1fr", gap: 60, alignItems: "center" }}>
+              <div>
+                <div style={{ display: "inline-flex", alignItems: "center", gap: 8, background: "rgba(201,149,42,0.12)", border: "1px solid rgba(201,149,42,0.3)", color: "#c9952a", fontSize: 12, fontWeight: 700, padding: "5px 14px", borderRadius: 20, marginBottom: 22, textTransform: "uppercase", letterSpacing: "0.5px" }}>
+                  🇮🇪 Built for Irish Racing
+                </div>
+                <div style={{ fontSize: "clamp(34px,4.5vw,56px)", fontWeight: 900, color: "#fff", lineHeight: 1.1, marginBottom: 20 }}>
+                  The yard management app your <span style={{ color: "#c9952a" }}>trainer has been waiting for</span>
+                </div>
+                <div style={{ fontSize: 18, color: "rgba(255,255,255,0.6)", lineHeight: 1.75, marginBottom: 32, maxWidth: 460 }}>
+                  Race planning, medication tracking, owner communications, whiteboard, AI analysis — all in one app built for Irish racing yards.
+                </div>
+                <div style={{ display: "flex", gap: 14, flexWrap: "wrap", marginBottom: 40 }}>
+                  <button onClick={function() { setAuthMode("signup"); setShowAuth(true); }}
+                    style={{ padding: "14px 28px", borderRadius: 10, border: "none", background: "#c9952a", color: "#0a1628", fontSize: 15, fontWeight: 800, cursor: "pointer" }}>
+                    Start Free Trial →
+                  </button>
+                  <button onClick={function() { setAuthMode("login"); setShowAuth(true); }}
+                    style={{ padding: "14px 28px", borderRadius: 10, border: "1px solid rgba(255,255,255,0.15)", background: "rgba(255,255,255,0.08)", color: "#fff", fontSize: 15, fontWeight: 700, cursor: "pointer" }}>
+                    Log In
+                  </button>
+                </div>
+                <div style={{ display: "flex", gap: 32, paddingTop: 28, borderTop: "1px solid rgba(255,255,255,0.08)" }}>
+                  {[["200+","Horses managed"],["12pm","Entry alerts"],["5 min","Setup time"],["14 day","Free trial"]].map(function(s) {
+                    return (
+                      <div key={s[0]} style={{ textAlign: "center" }}>
+                        <div style={{ fontSize: 24, fontWeight: 900, color: "#c9952a", lineHeight: 1 }}>{s[0]}</div>
+                        <div style={{ fontSize: 10, color: "rgba(255,255,255,0.35)", marginTop: 4, textTransform: "uppercase", letterSpacing: "0.5px" }}>{s[1]}</div>
+                      </div>
+                    );
+                  })}
+                </div>
+              </div>
+              <div style={{ background: "rgba(255,255,255,0.04)", border: "1px solid rgba(255,255,255,0.08)", borderRadius: 20, padding: 22 }}>
+                <div style={{ background: "rgba(255,255,255,0.06)", borderRadius: 10, padding: "11px 14px", marginBottom: 14, display: "flex", alignItems: "center", gap: 8 }}>
+                  {["#ef4444","#f59e0b","#22c55e"].map(function(c) { return <div key={c} style={{ width: 8, height: 8, borderRadius: "50%", background: c }} />; })}
+                  <div style={{ flex: 1 }} />
+                  <div style={{ background: "#c9952a", color: "#0a1628", borderRadius: 6, padding: "4px 11px", fontSize: 11, fontWeight: 700 }}>Race Planner</div>
+                  <div style={{ background: "rgba(255,255,255,0.07)", borderRadius: 6, padding: "4px 11px", fontSize: 11, color: "rgba(255,255,255,0.4)" }}>Whiteboard</div>
+                </div>
+                <div style={{ fontSize: 10, color: "rgba(255,255,255,0.3)", marginBottom: 10, fontWeight: 700, textTransform: "uppercase", letterSpacing: "1px" }}>14 races loaded · 8 horses eligible</div>
+                {[
+                  { venue: "LEOPARDSTOWN · SATURDAY", race: "Mares Novice Hurdle 2m", prize: "EUR 18,000", count: "3 eligible", colour: "#22c55e" },
+                  { venue: "NAVAN · SUNDAY", race: "Handicap Chase 2m4f", prize: "EUR 12,000", count: "2 eligible", colour: "#f59e0b" },
+                ].map(function(r) {
+                  return (
+                    <div key={r.race} style={{ background: "rgba(255,255,255,0.05)", border: "1px solid rgba(255,255,255,0.05)", borderRadius: 10, padding: "13px 15px", marginBottom: 9 }}>
+                      <div style={{ fontSize: 10, color: "rgba(255,255,255,0.3)", fontWeight: 700, textTransform: "uppercase", letterSpacing: "1px", marginBottom: 5 }}>{r.venue}</div>
+                      <div style={{ display: "flex", justifyContent: "space-between", alignItems: "center" }}>
+                        <div style={{ fontSize: 13, fontWeight: 800, color: "#fff" }}>{r.race}</div>
+                        <div style={{ display: "flex", gap: 6 }}>
+                          <span style={{ fontSize: 10, padding: "2px 7px", borderRadius: 20, background: "rgba(201,149,42,0.2)", color: "#f5c842", fontWeight: 700 }}>{r.prize}</span>
+                          <span style={{ fontSize: 10, padding: "2px 7px", borderRadius: 20, background: r.colour + "20", color: r.colour, fontWeight: 700, border: "1px solid " + r.colour + "40" }}>{r.count}</span>
+                        </div>
+                      </div>
+                    </div>
+                  );
+                })}
+                <div style={{ background: "rgba(201,149,42,0.08)", border: "1px solid rgba(201,149,42,0.25)", borderRadius: 10, padding: "13px 15px" }}>
+                  <div style={{ fontSize: 10, color: "rgba(255,255,255,0.3)", marginBottom: 3 }}>💊 PEPTIZOLE ALERT · 10:00AM</div>
+                  <div style={{ fontSize: 13, fontWeight: 700, color: "#fff" }}>2 horses finishing course today</div>
+                  <div style={{ fontSize: 11, color: "rgba(255,255,255,0.35)", marginTop: 2 }}>Entry deadline 12:00 — act now</div>
+                </div>
+              </div>
+            </div>
+          </div>
+          <div style={{ background: "#f0f4f8", padding: "80px 24px" }}>
+            <div style={{ maxWidth: 1100, margin: "0 auto" }}>
+              <div style={{ fontSize: 12, fontWeight: 700, color: "#c9952a", textTransform: "uppercase", letterSpacing: "1.5px", marginBottom: 10 }}>Everything you need</div>
+              <div style={{ fontSize: "clamp(26px,3.5vw,40px)", fontWeight: 900, color: "#0a1628", marginBottom: 14 }}>Built around how a racing yard actually works</div>
+              <div style={{ display: "grid", gridTemplateColumns: "repeat(3,1fr)", gap: 20, marginTop: 40 }}>
+                {[
+                  ["📋","Race Planner","Paste HRI conditions. Every race shows eligible horses by age, sex, rating and discipline. AI analysis per combination."],
+                  ["💊","Medication Tracker","10am WhatsApp alert when Peptizole ends on entry day — 2 hours before the 12pm deadline."],
+                  ["🖨️","Raceday Whiteboard","Import HRI CSV. Headgear and ballot badges print in full colour. Used every race day."],
+                  ["⚖️","Weights Tracker","Staff enter weights on phones as they go. Trends, history, race day weights. Auto-saves."],
+                  ["🤖","AI Yard Assistant","Voice or text. Knows your yard and horses. Logs tasks. Today's conversation saves automatically."],
+                  ["🛒","Procurement","Staff order from TRI, RED MILLS, Vet Supplies. Secretary approves. Order goes to supplier."]
+                ].map(function(f) {
+                  return (
+                    <div key={f[1]} style={{ background: "#fff", borderRadius: 14, padding: 24, border: "1px solid #d4dde8" }}>
+                      <div style={{ fontSize: 32, marginBottom: 12 }}>{f[0]}</div>
+                      <div style={{ fontSize: 16, fontWeight: 800, color: "#0a1628", marginBottom: 8 }}>{f[1]}</div>
+                      <div style={{ fontSize: 13, color: "#4a6080", lineHeight: 1.6 }}>{f[2]}</div>
+                    </div>
+                  );
+                })}
+              </div>
+            </div>
+          </div>
+          <div style={{ background: "#0a1628", padding: "80px 24px", textAlign: "center" }}>
+            <div style={{ maxWidth: 600, margin: "0 auto" }}>
+              <div style={{ fontSize: "clamp(26px,3.5vw,40px)", fontWeight: 900, color: "#fff", marginBottom: 14 }}>Ready to modernise your yard?</div>
+              <div style={{ fontSize: 17, color: "rgba(255,255,255,0.5)", marginBottom: 32 }}>14-day free trial. No credit card required. Set up in 5 minutes.</div>
+              <button onClick={function() { setAuthMode("signup"); setShowAuth(true); }}
+                style={{ padding: "16px 36px", borderRadius: 12, border: "none", background: "#c9952a", color: "#0a1628", fontSize: 16, fontWeight: 900, cursor: "pointer" }}>
+                Start Free Trial →
+              </button>
+              <div style={{ fontSize: 13, color: "rgba(255,255,255,0.25)", marginTop: 14 }}>€169/month after trial · Cancel anytime</div>
+            </div>
+          </div>
+          <div style={{ background: "#091830", padding: "28px 24px", display: "flex", justifyContent: "space-between", alignItems: "center", flexWrap: "wrap", gap: 12 }}>
+            <div style={{ fontSize: 14, fontWeight: 800, color: "rgba(255,255,255,0.5)" }}>🏇 RacePlan Pro — Built in Ireland 🇮🇪</div>
+            <div style={{ display: "flex", gap: 20 }}>
+              {[["Terms","/terms"],["Privacy","/privacy"],["hello@raceplanpro.com","mailto:hello@raceplanpro.com"]].map(function(l) {
+                return <a key={l[0]} href={l[1]} style={{ fontSize: 13, color: "rgba(255,255,255,0.35)", textDecoration: "none" }}>{l[0]}</a>;
+              })}
+            </div>
+          </div>
         </div>
-      </div>
+      ) : (
+        <div style={{ minHeight: "100vh", background: "#f0f4f8", display: "flex", alignItems: "center", justifyContent: "center", padding: 24 }}>
+          <div style={{ background: "#fff", borderRadius: 20, width: "100%", maxWidth: 400, boxShadow: "0 4px 24px rgba(10,22,40,0.12)", overflow: "hidden" }}>
+            <div style={{ background: "#0a1628", padding: "24px 28px", display: "flex", justifyContent: "space-between", alignItems: "center" }}>
+              <div>
+                <div style={{ fontSize: 18, fontWeight: 800, color: "#fff" }}>RacePlan Pro</div>
+                <div style={{ fontSize: 12, color: "rgba(255,255,255,0.45)", marginTop: 2 }}>{authMode === "login" ? "Welcome back" : "Start your free trial"}</div>
+              </div>
+              <button onClick={function() { setShowAuth(false); }}
+                style={{ background: "rgba(255,255,255,0.1)", border: "none", color: "#fff", width: 28, height: 28, borderRadius: 6, cursor: "pointer", fontSize: 16 }}>
+                ←
+              </button>
+            </div>
+            <div style={{ padding: "24px 28px" }}>
+              <div style={{ display: "flex", gap: 0, marginBottom: 20, background: "#f0f4f8", borderRadius: 10, padding: 4 }}>
+                {["login","signup"].map(function(m) {
+                  return (
+                    <button key={m} onClick={function() { setAuthMode(m); setAuthError(""); }}
+                      style={{ flex: 1, padding: "8px 0", borderRadius: 8, border: "none", fontWeight: 700, fontSize: 13, cursor: "pointer",
+                        background: authMode === m ? "#0a1628" : "transparent", color: authMode === m ? "#fff" : "#4a6080" }}>
+                      {m === "login" ? "Log In" : "Sign Up"}
+                    </button>
+                  );
+                })}
+              </div>
+              <input type="email" placeholder="Email" value={email}
+                onChange={function(e) { setEmail(e.target.value); }}
+                onKeyDown={function(e) { if (e.key === "Enter") authMode === "login" ? handleLogin() : handleSignup(); }}
+                style={{ width: "100%", padding: "11px 14px", marginBottom: 10, background: "#f0f4f8", border: "1px solid #d4dde8", borderRadius: 10, fontSize: 14, color: "#0a1628" }} />
+              <input type="password" placeholder="Password" value={password}
+                onChange={function(e) { setPassword(e.target.value); }}
+                onKeyDown={function(e) { if (e.key === "Enter") authMode === "login" ? handleLogin() : handleSignup(); }}
+                style={{ width: "100%", padding: "11px 14px", marginBottom: 16, background: "#f0f4f8", border: "1px solid #d4dde8", borderRadius: 10, fontSize: 14, color: "#0a1628" }} />
+              {authError && <div style={{ fontSize: 13, color: "#c0392b", marginBottom: 12, fontWeight: 600 }}>{authError}</div>}
+              <button onClick={function() { authMode === "login" ? handleLogin() : handleSignup(); }}
+                style={{ width: "100%", padding: "12px", background: "#0a1628", color: "#fff", border: "none", borderRadius: 10, fontSize: 15, fontWeight: 800, cursor: "pointer" }}>
+                {authMode === "login" ? "Log In" : "Create Account"}
+              </button>
+              {authMode === "signup" && <div style={{ fontSize: 12, color: "#8fa3bc", textAlign: "center", marginTop: 12, lineHeight: 1.5 }}>14-day free trial · No credit card required</div>}
+            </div>
+          </div>
+        </div>
+      )}
     </div>
   );
-
   return (
     <div style={{ minHeight: "100vh", background: C.bg, fontFamily: "Inter, Helvetica Neue, sans-serif", display: "flex", flexDirection: "column" }}>
       <style dangerouslySetInnerHTML={{ __html: globalCSS }} />
