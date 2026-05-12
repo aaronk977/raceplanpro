@@ -47,76 +47,8 @@ function Silk({ silk, size = 40 }) {
 }
 
 // ─── DATA ─────────────────────────────────────────────────────────────────────
-const TODAY = new Date("2026-03-18");
+const TODAY = new Date();
 const todayStr = TODAY.toISOString().split("T")[0];
-
-const INITIAL_HORSES = [
-  {
-    id: "h1", name: "Bob Olinger", dob: "2015-05-11", sex: "Gelding", colour: "Bay",
-    nhRating: 168, flatRating: null, discipline: ["Hurdle"], surface: "Turf",
-    status: "Active", activationDate: null, isEBF: false, isMaiden: false, isNovice: false,
-    owner: "Robcour", ownerPhone: "+353861112222", ownerEmail: "robcour@example.com",
-    trainer: "Henry de Bromhead", jockey: "D.J. O'Keeffe",
-    headgear: "Hood", nextRaceDate: "2026-03-30",
-    goingPref: ["Good to Soft", "Soft", "Yielding"], distanceMin: 20, distanceMax: 28,
-    silk: SILKS[0],
-    notes: "Cheltenham specialist. Keep fresh. De Bromhead says better than ever.",
-    form: [
-      { date: "2025-12-28", venue: "Leopardstown", position: 2, runners: 8, raceClass: "Grade 1", going: "Good to Yielding" },
-      { date: "2025-03-13", venue: "Cheltenham", position: 1, runners: 13, raceClass: "Grade 1", going: "Good to Soft" },
-    ],
-    arrivedDate: "2025-08-01", arrivedFrom: "Summer grass",
-    provisionalEntries: [],
-  },
-  {
-    id: "h2", name: "Dunmore Lady", dob: "2020-04-05", sex: "Mare", colour: "Chestnut",
-    nhRating: 82, flatRating: null, discipline: ["Hurdle"], surface: "Turf",
-    status: "CoolingOff", activationDate: "2026-03-14", isEBF: true, isMaiden: false, isNovice: false,
-    owner: "P. & M. Kelly", ownerPhone: "+353853334444", ownerEmail: "kelly@example.com",
-    trainer: "P.J. Hennessy", jockey: "P. Townend",
-    headgear: "Cheekpieces", nextRaceDate: "2026-04-02",
-    goingPref: ["Soft", "Heavy"], distanceMin: 16, distanceMax: 20,
-    silk: SILKS[1],
-    notes: "Back from wind op. Needs soft. Was flying before the op.",
-    form: [
-      { date: "2026-01-15", venue: "Naas", position: 1, runners: 8, raceClass: "Handicap", going: "Soft" },
-      { date: "2025-11-28", venue: "Thurles", position: 2, runners: 7, raceClass: "Handicap", going: "Heavy" },
-    ],
-    arrivedDate: "2026-02-10", arrivedFrom: "Convalescence",
-    provisionalEntries: [{ id: "pe1", venue: "Navan", date: "2026-04-02", raceName: "Mares Handicap Hurdle", raceRef: "Navan 55 Race B", note: "If ground stays soft" }],
-  },
-  {
-    id: "h3", name: "Ardmore Flash", dob: "2022-05-20", sex: "Colt", colour: "Dark Bay",
-    nhRating: null, flatRating: 74, discipline: ["Flat"], surface: "AWT",
-    status: "Active", activationDate: null, isEBF: true, isMaiden: true, isNovice: false,
-    owner: "Ballykea Syndicate", ownerPhone: "+353835556666", ownerEmail: "ballykea@example.com",
-    trainer: "P.J. Hennessy", jockey: "C. Hayes",
-    headgear: null, nextRaceDate: "2026-03-25",
-    goingPref: ["Standard", "Fast"], distanceMin: 5, distanceMax: 7,
-    silk: SILKS[2],
-    notes: "Keeps finding one. Try cheekpieces. 7f untried but bred for it.",
-    form: [
-      { date: "2026-03-01", venue: "Dundalk", position: 2, runners: 10, raceClass: "Maiden", going: "Standard" },
-      { date: "2026-01-17", venue: "Dundalk", position: 3, runners: 12, raceClass: "Maiden", going: "Standard" },
-    ],
-    arrivedDate: "2025-03-15", arrivedFrom: "Breeder",
-    provisionalEntries: [{ id: "pe2", venue: "Dundalk", date: "2026-03-25", raceName: "EBF Median Auction Maiden 7f", raceRef: "Dundalk 47 Race C", note: "First time at 7f — step up in trip" }],
-  },
-  {
-    id: "h4", name: "Kilmore Star", dob: "2018-02-28", sex: "Gelding", colour: "Grey",
-    nhRating: 118, flatRating: null, discipline: ["Chase"], surface: "Turf",
-    status: "Inactive", activationDate: null, isEBF: false, isMaiden: false, isNovice: false,
-    owner: "T. Brennan", ownerPhone: "+353877778888", ownerEmail: "brennan@example.com",
-    trainer: "P.J. Hennessy", jockey: "D. Russell",
-    headgear: "Blinkers", nextRaceDate: null,
-    goingPref: ["Good to Soft", "Soft"], distanceMin: 20, distanceMax: 28,
-    silk: SILKS[3],
-    notes: "Wind op. Needs time. Don't rush.",
-    form: [{ date: "2025-12-20", venue: "Leopardstown", position: 4, runners: 14, raceClass: "Grade 1", going: "Soft" }],
-    arrivedDate: "2026-01-05", arrivedFrom: "Post-op recovery",
-    provisionalEntries: [],
-  },
-];
 
 // ─── HELPERS ──────────────────────────────────────────────────────────────────
 const getAge = function(dob) { return TODAY.getFullYear() - new Date(dob).getFullYear(); };
