@@ -379,8 +379,8 @@ function MedicationTracker({ horses, medLogs, setMedLogs, trackedIds, setTracked
                   lines2.push("---");
                 });
                 lines2.push("GRAND TOTAL: €" + Math.round(grandTotal * 100) / 100);
-                var text = lines2.join("
-");
+                var text = lines2.join("\n");
+
                 if (navigator.clipboard) {
                   navigator.clipboard.writeText(text);
                   alert("Report copied to clipboard — paste into WhatsApp or email");
