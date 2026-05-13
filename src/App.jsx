@@ -407,7 +407,7 @@ export default function App() {
           {tab === "staff" && <StaffNotify user={user} supabase={supabase} settings={settings} />}
           {tab === "settings" && <YardSettings settings={settings} setSettings={saveSettings} />}
           {tab === "weights" && <WeightsTracker horses={horses} weights={weightsRaw} setWeights={setWeights} settings={settings} />}
-          {tab === "assistant" && <YardAssistant horses={horses} weights={weightsRaw} medLogs={medLogs} settings={settings} user={user} supabase={supabase} />}
+          {tab === "assistant" && <YardAssistant horses={horses} setHorses={setHorses} weights={weightsRaw} medLogs={medLogs} setMedLogs={setMedLogs} settings={settings} user={user} supabase={supabase} onNavigate={setTab} />}
           {tab === "content" && <ContentScheduler horses={horses} settings={settings} />}
           {tab === "summary" && <DailySummary horses={horses} medLogs={medLogs} weights={weightsRaw} wbEntries={wbEntries} settings={settings} />}
           {tab === "procurement" && <Procurement user={user} supabase={supabase} orders={ordersRaw} setOrders={setOrders} settings={settings} />}
