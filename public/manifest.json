@@ -1,0 +1,45 @@
+{
+  "name": "RacePlan Pro",
+  "short_name": "RacePlan",
+  "description": "Yard management for professional racing trainers",
+  "start_url": "/",
+  "display": "standalone",
+  "background_color": "#0a1628",
+  "theme_color": "#0a1628",
+  "orientation": "portrait-primary",
+  "icons": [
+    {
+      "src": "/icon-192.png",
+      "sizes": "192x192",
+      "type": "image/png",
+      "purpose": "any maskable"
+    },
+    {
+      "src": "/icon-512.png",
+      "sizes": "512x512",
+      "type": "image/png",
+      "purpose": "any maskable"
+    }
+  ],
+  "categories": ["productivity", "business"],
+  "shortcuts": [
+    {
+      "name": "My Yard",
+      "short_name": "Yard",
+      "url": "/?tab=yard",
+      "description": "View your horses"
+    },
+    {
+      "name": "Medications",
+      "short_name": "Meds",
+      "url": "/?tab=meds",
+      "description": "Track medication"
+    },
+    {
+      "name": "Race Planner",
+      "short_name": "Races",
+      "url": "/?tab=planner",
+      "description": "Plan entries"
+    }
+  ]
+}
