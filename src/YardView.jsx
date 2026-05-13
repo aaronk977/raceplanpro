@@ -267,7 +267,13 @@ function YardView({ horses, setHorses }) {
         })}
       </div>
 
-      {horses.map(function(h) {
+      {horses.sort(function(a, b) {
+    var aEx = (a.name || "").toUpperCase().indexOf("EX ") === 0 || (a.name || "").toUpperCase().indexOf("(EX)") >= 0;
+    var bEx = (b.name || "").toUpperCase().indexOf("EX ") === 0 || (b.name || "").toUpperCase().indexOf("(EX)") >= 0;
+    if (aEx && !bEx) return -1;
+    if (!aEx && bEx) return 1;
+    return (a.name || "").localeCompare(b.name || "");
+  }).map(function(h) {
         return (
           <div key={h.id} style={{ background: C.card, border: "1px solid " + C.border, borderLeft: "4px solid " + (h.status === "Active" ? C.green : h.status === "CoolingOff" ? C.amber : C.border), borderRadius: 12, padding: "14px 16px", marginBottom: 10 }}>
             <div style={{ display: "flex", alignItems: "center", gap: 12 }}>
