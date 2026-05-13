@@ -77,7 +77,13 @@ function RacePlanner({ horses, setHorses }) {
     setExpanded(function(prev) { return Object.assign({}, prev, { [raceId]: !prev[raceId] }); });
   }
 
-  var activeHorses = horses.filter(function(h) { return h.status === "Active"; });
+  var activeHorses = horses.filter(function(h) { return h.status === "Active"; }).sort(function(a, b) {
+    var aEx = (a.name || "").toUpperCase().indexOf("EX ") === 0 || (a.name || "").toUpperCase().indexOf("(EX)") >= 0;
+    var bEx = (b.name || "").toUpperCase().indexOf("EX ") === 0 || (b.name || "").toUpperCase().indexOf("(EX)") >= 0;
+    if (aEx && !bEx) return -1;
+    if (!aEx && bEx) return 1;
+    return (a.name || "").localeCompare(b.name || "");
+  });
 
   function getEligible(race) {
     return activeHorses.filter(function(horse) {
