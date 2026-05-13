@@ -325,7 +325,7 @@ function YardSettings({ settings, setSettings }) {
     medications: [
       { id: "pep", name: "Peptizole", costPerUnit: 18, unit: "per day", color: "#1e6fb5", courseDays: 12, withdrawalDays: 4 },
       { id: "ant", name: "Antepsin", costPerUnit: 6.25, unit: "per day", color: "#6d3fc0", courseDays: 12, withdrawalDays: 1 },
-      { id: "ab", name: "Antibiotics", costPerUnit: 15, unit: "per dose", color: "#d97706", courseDays: 5, withdrawalDays: 0 }
+      { id: "ab", name: "Antibiotics", costPerUnit: 15, unit: "per dose", color: "#d97706", courseDays: 5, withdrawalDays: 0, maxDoses: 2 }
     ],
     anthropicKey: "",
     tier: "Professional",
@@ -870,6 +870,13 @@ function YardSettings({ settings, setSettings }) {
                           style={{ width: "100%", padding: "8px 12px", background: C.cardOff, border: "1px solid " + C.border, borderRadius: 8, fontSize: 13, color: C.text }} />
                       </div>
                       <div>
+                        <div style={{ fontSize: 10, fontWeight: 700, color: C.textMid, marginBottom: 3, textTransform: "uppercase" }}>Max doses/day</div>
+                        <select value={med.maxDoses || 1} onChange={function(e) { updateMed(idx, "maxDoses", parseInt(e.target.value)); }}
+                          style={{ width: "100%", padding: "8px 12px", background: C.cardOff, border: "1px solid " + C.border, borderRadius: 8, fontSize: 13, color: C.text }}>
+                          {[1,2,3,4].map(function(n) { return <option key={n} value={n}>{n + " dose" + (n > 1 ? "s" : "")}</option>; })}
+                        </select>
+                      </div>
+                      <div>
                         <div style={{ fontSize: 10, fontWeight: 700, color: C.textMid, marginBottom: 3, textTransform: "uppercase" }}>Unit</div>
                         <select value={med.unit} onChange={function(e) { updateMed(idx, "unit", e.target.value); }}
                           style={{ width: "100%", padding: "8px 12px", background: C.cardOff, border: "1px solid " + C.border, borderRadius: 8, fontSize: 13, color: C.text }}>
@@ -914,6 +921,13 @@ function YardSettings({ settings, setSettings }) {
                   <input type="number" value={newMed.withdrawalDays || ""} onChange={function(e) { setNewMed(function(p) { return Object.assign({}, p, { withdrawalDays: parseInt(e.target.value) }); }); }}
                     placeholder="4"
                     style={{ width: "100%", padding: "8px 12px", background: "#fff", border: "1px solid " + C.border, borderRadius: 8, fontSize: 13, color: C.text }} />
+                </div>
+                <div>
+                  <div style={{ fontSize: 10, fontWeight: 700, color: C.textMid, marginBottom: 3, textTransform: "uppercase" }}>Max doses/day</div>
+                  <select value={newMed.maxDoses || 1} onChange={function(e) { setNewMed(function(p) { return Object.assign({}, p, { maxDoses: parseInt(e.target.value) }); }); }}
+                    style={{ width: "100%", padding: "8px 12px", background: "#fff", border: "1px solid " + C.border, borderRadius: 8, fontSize: 13, color: C.text }}>
+                    {[1,2,3,4].map(function(n) { return <option key={n} value={n}>{n + " dose" + (n > 1 ? "s" : "")}</option>; })}
+                  </select>
                 </div>
                 <div>
                   <div style={{ fontSize: 10, fontWeight: 700, color: C.textMid, marginBottom: 3, textTransform: "uppercase" }}>Unit</div>
