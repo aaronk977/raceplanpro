@@ -64,14 +64,46 @@ function WeightsTracker({ horses, weights, setWeights, settings }) {
     return { diff: Math.round(diff * 10) / 10, up: diff > 0, down: diff < 0 };
   }
 
+  function parseWeightKey(k) {
+    // key = horseId_YYYY-MM-DD_type  (horseId may contain underscores)
+    var lastUnd = k.lastIndexOf("_");
+    var type = k.slice(lastUnd + 1);
+    var rest = k.slice(0, lastUnd);
+    var dateUnd = rest.lastIndexOf("_");
+    var date = rest.slice(dateUnd + 1);
+    var horseId = rest.slice(0, dateUnd);
+    return { horseId: horseId, date: date, type: type };
+  }
+
   function getHistory(horseId) {
     var allKeys = Object.keys(weights || {}).filter(function(k) {
-      return k.indexOf(horseId + "_") === 0;
+      var parsed = parseWeightKey(k);
+      return parsed.horseId === horseId && parsed.date && parsed.date.length === 10;
     });
     allKeys.sort().reverse();
-    return allKeys.slice(0, 8).map(function(k) {
-      var parts = k.split("_");
-      return { date: parts[1], type: parts[2], value: weights[k] };
+    return allKeys.slice(0, 20).map(function(k) {
+      var parsed = parseWeightKey(k);
+      return { key: k, date: parsed.date, type: parsed.type, value: weights[k] };
+    });
+  }
+
+  function deleteWeight(key) {
+    setWeights(function(prev) {
+      var next = Object.assign({}, prev);
+      delete next[key];
+      return next;
+    });
+  }
+
+  function updateWeight(key, newVal) {
+    setWeights(function(prev) {
+      var next = Object.assign({}, prev);
+      if (newVal === "" || newVal === null) {
+        delete next[key];
+      } else {
+        next[key] = newVal;
+      }
+      return next;
     });
   }
 
@@ -213,17 +245,23 @@ function WeightsTracker({ horses, weights, setWeights, settings }) {
                   )}
                 </div>
                 <div style={{ display: "flex", gap: 6, flexWrap: "wrap" }}>
-                  {history.map(function(entry, idx) {
-                    return (
-                      <div key={idx} style={{ padding: "8px 12px", background: C.cardOff, borderRadius: 8, textAlign: "center", minWidth: 80 }}>
-                        <div style={{ fontSize: 15, fontWeight: 800, color: C.navy }}>{entry.value + "kg"}</div>
-                        <div style={{ fontSize: 10, color: C.textMid, marginTop: 2 }}>
-                          {new Date(entry.date + "T12:00:00").toLocaleDateString("en-IE", { day: "numeric", month: "short" })}
-                        </div>
-                        <div style={{ fontSize: 9, color: C.textDim }}>{entry.type}</div>
-                      </div>
-                    );
-                  })}
+                  {history.map(function(entry) {
+                     var d = new Date(entry.date + "T12:00:00");
+                     var validDate = !isNaN(d.getTime()) && entry.date && entry.date.length === 10;
+                     var dateStr = validDate ? d.toLocaleDateString("en-IE", { weekday: "short", day: "numeric", month: "short" }) : "Bad key";
+                     return (
+                       <div key={entry.key || entry.date + entry.type} style={{ display: "flex", alignItems: "center", gap: 8, padding: "7px 0", borderBottom: "1px solid " + C.border, fontSize: 13 }}>
+                         <span style={{ color: C.textMid, flex: 1 }}>{dateStr}</span>
+                         <span style={{ fontSize: 10, background: C.cardOff, padding: "2px 7px", borderRadius: 10, color: C.textMid }}>{entry.type}</span>
+                         <input type="number" step="0.1" defaultValue={entry.value}
+                           onBlur={function(e) { if (entry.key) updateWeight(entry.key, e.target.value); }}
+                           style={{ width: 60, padding: "3px 6px", background: C.cardOff, border: "1px solid " + C.border, borderRadius: 6, fontSize: 13, fontWeight: 700, color: C.text, textAlign: "right" }} />
+                         <span style={{ fontSize: 11, color: C.textMid }}>kg</span>
+                         <button onClick={function() { if (entry.key && window.confirm("Remove this entry?")) deleteWeight(entry.key); }}
+                           style={{ background: "none", border: "none", color: C.red, cursor: "pointer", fontSize: 16, lineHeight: 1, padding: "2px 4px" }}>×</button>
+                       </div>
+                     );
+                   })}
                 </div>
               </div>
             );
