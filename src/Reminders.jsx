@@ -11,17 +11,33 @@ function Reminders({ reminders, setReminders, settings, user, supabase }) {
   var loadedState = useState(false);
   var loaded = loadedState[0]; var setLoaded = loadedState[1];
 
-  var emptyReminder = { text: "", date: "", time: "09:00", horseName: "", phone: "", notifyBeforeHours: 24, maxAttempts: 3, sendWhatsApp: true };
+  var emptyReminder = { text: "", date: "", time: "09:00", horseName: "", phone: null, notifyBeforeHours: 24, maxAttempts: 3, sendWhatsApp: true };
   var newReminderState = useState(emptyReminder);
   var newReminder = newReminderState[0]; var setNewReminder = newReminderState[1];
   var filterState = useState("upcoming");
   var filter = filterState[0]; var setFilter = filterState[1];
 
-  // Get trainer phone from settings
-  var contacts = (settings && settings.notifyContacts) ? settings.notifyContacts : [];
+  // Get all contacts with phone numbers
+  var staffContacts = (settings && settings.notifyContacts) ? settings.notifyContacts : [];
+  var ownerContacts = (settings && settings.ownerContacts) ? settings.ownerContacts : [];
   var trainerPhone = "";
-  var trainerContact = contacts.find(function(c) { return c.phone && (c.role === "Trainer" || c.role === "Head Lad"); });
+
+  // Build combined contact list with phone numbers
+  var allContacts = [];
+  staffContacts.forEach(function(c) {
+    if (c.phone && c.name) allContacts.push({ name: c.name, phone: c.phone, role: c.role || "Staff", id: "s_" + c.name });
+  });
+  ownerContacts.forEach(function(c) {
+    if (c.phone && c.name) allContacts.push({ name: c.name, phone: c.phone, role: "Owner", id: "o_" + c.name });
+  });
+
+  var trainerContact = staffContacts.find(function(c) { return c.phone && (c.role === "Trainer" || c.role === "Head Lad"); });
   if (trainerContact) trainerPhone = trainerContact.phone;
+
+  // Default phone for new reminders to trainer if not set
+  if (!newReminder.phone && trainerPhone && newReminder.phone !== "") {
+    // Don't auto-set — let user pick from buttons
+  }
 
   function showToast(msg, color) {
     setToast({ msg: msg, color: color || C.green });
@@ -122,7 +138,7 @@ function Reminders({ reminders, setReminders, settings, user, supabase }) {
     saveToSupabase(updated);
 
     // Send WhatsApp
-    var phone = reminder.phone || trainerPhone;
+    var phone = (reminder.phone && reminder.phone !== "null") ? reminder.phone : trainerPhone;
     if (phone && reminder.sendWhatsApp !== false) {
       var cleanPhone = phone.split("").filter(function(d) { return (d >= "0" && d <= "9") || d === "+"; }).join("");
       var hoursUntil = Math.round((new Date(reminder.date + "T" + (reminder.time || "09:00") + ":00") - new Date()) / 3600000);
@@ -269,11 +285,43 @@ function Reminders({ reminders, setReminders, settings, user, supabase }) {
                 {[1,2,3,4,5].map(function(n) { return <option key={n} value={n}>{n + " time" + (n > 1 ? "s" : "")}</option>; })}
               </select>
             </div>
-            <div>
-              <div style={{ fontSize: 10, fontWeight: 700, color: C.textMid, marginBottom: 3, textTransform: "uppercase" }}>WhatsApp to</div>
-              <input type="tel" value={newReminder.phone || trainerPhone} onChange={function(e) { updateNew("phone", e.target.value); }}
-                placeholder="+353 86 000 0000"
-                style={{ width: "100%", padding: "9px 12px", background: C.cardOff, border: "1px solid " + C.border, borderRadius: 8, fontSize: 13, color: C.text }} />
+            <div style={{ gridColumn: "1 / -1" }}>
+              <div style={{ fontSize: 10, fontWeight: 700, color: C.textMid, marginBottom: 6, textTransform: "uppercase" }}>Send WhatsApp to</div>
+              <div style={{ display: "flex", flexDirection: "column", gap: 6 }}>
+                {allContacts.length > 0 ? (
+                  <div style={{ display: "flex", gap: 6, flexWrap: "wrap" }}>
+                    {allContacts.map(function(contact) {
+                      var isSelected = (newReminder.phone === contact.phone);
+                      return (
+                        <button key={contact.id || contact.name} onClick={function() { updateNew("phone", contact.phone); }}
+                          style={{ padding: "7px 14px", borderRadius: 20, border: "1.5px solid " + (isSelected ? C.navy : C.border),
+                            background: isSelected ? C.navy : C.card, color: isSelected ? "#fff" : C.textMid,
+                            fontSize: 12, fontWeight: 700, cursor: "pointer", display: "flex", alignItems: "center", gap: 6 }}>
+                          <div style={{ width: 22, height: 22, borderRadius: "50%", background: isSelected ? "rgba(255,255,255,0.2)" : C.cardOff, display: "flex", alignItems: "center", justifyContent: "center", fontSize: 10, fontWeight: 800, color: isSelected ? "#fff" : C.textMid, flexShrink: 0 }}>
+                            {(contact.name || "?").charAt(0).toUpperCase()}
+                          </div>
+                          {contact.name}
+                          <span style={{ fontSize: 10, opacity: 0.6 }}>{"(" + contact.role + ")"}</span>
+                        </button>
+                      );
+                    })}
+                    <button onClick={function() { updateNew("phone", ""); }}
+                      style={{ padding: "7px 14px", borderRadius: 20, border: "1.5px solid " + (newReminder.phone === "" ? C.navy : C.border),
+                        background: newReminder.phone === "" ? C.navy : C.card, color: newReminder.phone === "" ? "#fff" : C.textMid,
+                        fontSize: 12, fontWeight: 600, cursor: "pointer" }}>
+                      + Manual number
+                    </button>
+                  </div>
+                ) : null}
+                {(newReminder.phone === "" || allContacts.length === 0) && (
+                  <input type="tel" value={newReminder.phone} onChange={function(e) { updateNew("phone", e.target.value); }}
+                    placeholder="+353 86 000 0000"
+                    style={{ width: "100%", padding: "9px 12px", background: C.cardOff, border: "1px solid " + C.border, borderRadius: 8, fontSize: 13, color: C.text }} />
+                )}
+                {newReminder.phone && newReminder.phone !== "" && (
+                  <div style={{ fontSize: 11, color: C.textMid }}>{"📱 " + newReminder.phone}</div>
+                )}
+              </div>
             </div>
           </div>
           {newReminder.date && newReminder.time && (
