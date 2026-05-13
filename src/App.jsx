@@ -23,7 +23,7 @@ const SUPABASE_ANON_KEY = import.meta.env.VITE_SUPABASE_ANON_KEY || "";
 const supabase = createClient(SUPABASE_URL, SUPABASE_ANON_KEY);
 
 
-const globalCSS = ".desktop-only { display: flex !important; } @media (max-width: 767px) { .desktop-only { display: none !important; } } * { box-sizing: border-box; margin: 0; padding: 0; } body { font-family: Inter, Helvetica Neue, sans-serif; } button:hover { opacity: 0.88; } input:focus, select:focus { outline: none; } ::-webkit-scrollbar { width: 4px; } ::-webkit-scrollbar-thumb { background: #b8c8da; border-radius: 2px; } @media print { body * { visibility: hidden; } #print-area, #print-area * { visibility: visible; } #print-area { position: absolute; left: 0; top: 0; } }";
+const globalCSS = ".desktop-only { display: flex !important; } @media (max-width: 767px) { .desktop-only { display: none !important; } html, body { overflow-x: hidden; overflow-y: scroll !important; -webkit-overflow-scrolling: touch; height: auto !important; min-height: 100%; } } * { box-sizing: border-box; margin: 0; padding: 0; } body { font-family: Inter, Helvetica Neue, sans-serif; } button:hover { opacity: 0.88; } input:focus, select:focus { outline: none; } ::-webkit-scrollbar { width: 4px; } ::-webkit-scrollbar-thumb { background: #b8c8da; border-radius: 2px; } @media print { body * { visibility: hidden; } #print-area, #print-area * { visibility: visible; } #print-area { position: absolute; left: 0; top: 0; } }";
 
 export default function App() {
   const [user, setUser] = useState(null);
@@ -447,7 +447,7 @@ export default function App() {
           )}
         </div>
 
-        <div style={{ flex: 1, padding: "14px 16px", minWidth: 0, boxSizing: "border-box", minHeight: "calc(100vh - 56px)" }}>
+        <div style={{ flex: 1, padding: "14px 16px", minWidth: 0, boxSizing: "border-box" }}>
           {tab === "yard" && <YardView horses={horses} setHorses={setHorses} />}
           {tab === "planner" && <RacePlanner horses={horses} setHorses={setHorses} />}
           {tab === "provisional" && <ProvisionalEntries horses={horses} setHorses={setHorses} />}
