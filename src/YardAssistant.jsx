@@ -8,7 +8,7 @@ var API_HEADERS = {
   "anthropic-dangerous-direct-browser-access": "true"
 };
 
-function YardAssistant({ horses, weights, medLogs, settings, user, supabase }) {
+function YardAssistant({ horses, setHorses, weights, medLogs, setMedLogs, settings, user, supabase, onNavigate }) {
   var todayStr = new Date().toISOString().slice(0, 10);
   var messagesState = useState([]);
   var messages = messagesState[0]; var setMessages = messagesState[1];
@@ -20,66 +20,146 @@ function YardAssistant({ horses, weights, medLogs, settings, user, supabase }) {
   var listening = listeningState[0]; var setListening = listeningState[1];
   var loadedState = useState(false);
   var loaded = loadedState[0]; var setLoaded = loadedState[1];
+  var actionsState = useState([]);
+  var pendingActions = actionsState[0]; var setPendingActions = actionsState[1];
   var bottomRef = useRef(null);
 
   var yardName = (settings && settings.yardName) || "the yard";
   var trainerName = (settings && settings.trainerName) || "the trainer";
   var activeHorses = (horses || []).filter(function(h) { return h.status === "Active"; });
 
-  // Load today's conversation from Supabase
+  var medTypes = (settings && settings.medications && settings.medications.length > 0)
+    ? settings.medications
+    : [
+        { id: "peptizole", name: "Peptizole" },
+        { id: "antepsin", name: "Antepsin" },
+        { id: "antibiotics", name: "Antibiotics" }
+      ];
+
   useEffect(function() {
     if (!user || !supabase || loaded) return;
     setLoaded(true);
     supabase.from("yard_logs")
-      .select("*")
-      .eq("user_id", user.id)
-      .eq("log_date", todayStr)
-      .eq("category", "assistant")
+      .select("*").eq("user_id", user.id).eq("log_date", todayStr).eq("category", "assistant")
       .order("created_at", { ascending: true })
       .then(function(res) {
         if (res.data && res.data.length > 0) {
-          var hist = res.data.map(function(row) {
-            return { role: row.role, content: row.content, id: row.id };
-          });
-          setMessages(hist);
+          setMessages(res.data.map(function(r) { return { role: r.role, content: r.content, id: r.id, actions: r.actions }; }));
         } else {
-          setMessages([{ role: "assistant", content: "Morning! I'm your yard assistant for " + yardName + ". I know your " + activeHorses.length + " active horses. Ask me anything, log tasks, or book appointments.", id: "welcome" }]);
+          setMessages([{ role: "assistant", content: "Morning! I'm your yard assistant for " + yardName + ". I know your " + activeHorses.length + " active horses. Tell me what to do — start medication, log vet visits, note anything.", id: "welcome" }]);
         }
       });
   }, [user]);
 
-  // Scroll to bottom when messages change
   useEffect(function() {
-    if (bottomRef.current) {
-      bottomRef.current.scrollIntoView({ behavior: "smooth" });
-    }
+    if (bottomRef.current) bottomRef.current.scrollIntoView({ behavior: "smooth" });
   }, [messages, loading]);
 
-  function saveMessage(role, content) {
+  function saveMessage(role, content, actions) {
     if (!user || !supabase) return;
     supabase.from("yard_logs").insert({
-      user_id: user.id,
-      log_date: todayStr,
-      role: role,
-      content: content,
-      category: "assistant"
-    }).then(function(r) {
-      if (r.error) console.error("Log save:", r.error);
+      user_id: user.id, log_date: todayStr, role: role, content: content, category: "assistant"
+    }).then(function(r) { if (r.error) console.error("Log save:", r.error); });
+  }
+
+  // Find horse by fuzzy name match
+  function findHorse(name) {
+    if (!name) return null;
+    var nl = name.toLowerCase().trim();
+    return (horses || []).find(function(h) {
+      var hl = h.name.toLowerCase();
+      return hl === nl || hl.indexOf(nl) >= 0 || nl.indexOf(hl) >= 0;
     });
   }
 
+  function getMedId(medName) {
+    if (!medName) return null;
+    var ml = medName.toLowerCase();
+    var found = medTypes.find(function(m) {
+      return (m.name || m.label || "").toLowerCase().indexOf(ml) >= 0 || ml.indexOf((m.name || m.label || "").toLowerCase()) >= 0;
+    });
+    return found ? (found.id || (found.name || "").toLowerCase().replace(/[^a-z0-9]/g, "_")) : null;
+  }
+
+  // Execute an action returned from Claude
+  function executeAction(action) {
+    var horse = action.horseName ? findHorse(action.horseName) : null;
+
+    if (action.type === "start_medication" && horse) {
+      var medId = getMedId(action.medication);
+      if (!medId) return "Could not find medication: " + action.medication;
+      var key = horse.id + "_" + todayStr + "_" + medId;
+      setMedLogs(function(prev) { return Object.assign({}, prev, { [key]: 1 }); });
+      if (onNavigate) {} // stay on assistant tab
+      return horse.name + " — " + action.medication + " started today ✓";
+    }
+
+    if (action.type === "stop_medication" && horse) {
+      var medId2 = getMedId(action.medication);
+      if (!medId2) return "Could not find medication: " + action.medication;
+      var key2 = horse.id + "_" + todayStr + "_" + medId2;
+      setMedLogs(function(prev) { var n = Object.assign({}, prev); n[key2] = 0; return n; });
+      return horse.name + " — " + action.medication + " stopped today ✓";
+    }
+
+    if (action.type === "log_daily" ) {
+      // Save to yard_logs as a daily entry
+      if (user && supabase) {
+        supabase.from("yard_logs").insert({
+          user_id: user.id, log_date: todayStr,
+          role: "system", content: action.note,
+          category: action.category || "health",
+          horse_id: horse ? horse.id : null
+        }).then(function() {});
+      }
+      return (horse ? horse.name + " — " : "") + "Logged to Daily Summary ✓";
+    }
+
+    if (action.type === "update_horse" && horse && action.field) {
+      setHorses(function(prev) {
+        return prev.map(function(h) {
+          if (h.id !== horse.id) return h;
+          var update = {};
+          update[action.field] = action.value;
+          return Object.assign({}, h, update);
+        });
+      });
+      return horse.name + " — " + action.field + " updated to " + action.value + " ✓";
+    }
+
+    if (action.type === "navigate" && onNavigate) {
+      var tabMap = { medications: "meds", "daily summary": "summary", whiteboard: "whiteboard", "race planner": "races", weights: "weights" };
+      var tab = tabMap[action.tab] || action.tab;
+      onNavigate(tab);
+      return "Opening " + action.tab + "...";
+    }
+
+    return null;
+  }
+
   function buildSystemPrompt() {
-    var horseList = activeHorses.slice(0, 20).map(function(h) {
-      return h.name + " (" + (h.sex || "") + ", " + (h.owner || "no owner") + ", OR " + (h.nhRating || h.flatRating || "unrated") + ")";
+    var horseList = activeHorses.slice(0, 30).map(function(h) {
+      return h.name + " (" + (h.sex || "") + ", owner: " + (h.owner || "?") + ", OR: " + (h.nhRating || h.flatRating || "unrated") + ")";
     }).join("; ");
+    var medList = medTypes.map(function(m) { return m.name || m.label; }).join(", ");
     return [
       "You are the AI yard assistant for " + yardName + ", trainer: " + trainerName + ".",
-      activeHorses.length + " active horses. " + (horseList || "None loaded."),
+      "Active horses: " + (horseList || "none") + ".",
+      "Available medications: " + medList + ".",
       "Today: " + new Date().toLocaleDateString("en-IE", { weekday: "long", day: "numeric", month: "long", year: "numeric" }) + ".",
-      "Help with: logging tasks, appointments, horse queries, medication, race planning.",
-      "Be direct and concise. Under 120 words unless detail needed. Use Irish racing knowledge.",
-      "When asked to log or book something, confirm it's been noted and saved to today's log.",
-      "Format lists with bullet points. Keep it practical."
+      "IMPORTANT: When asked to DO something (start/stop medication, log a vet visit, note something about a horse), respond with your message AND a JSON actions array.",
+      "Format: respond normally then add on a new line: ACTIONS:[{...}]",
+      "Action types:",
+      '{ "type": "start_medication", "horseName": "Horse Name", "medication": "Peptizole" }',
+      '{ "type": "stop_medication", "horseName": "Horse Name", "medication": "Peptizole" }',
+      '{ "type": "log_daily", "horseName": "Horse Name", "note": "vet to check heart", "category": "health" }',
+      '{ "type": "log_daily", "horseName": "", "note": "general yard note", "category": "general" }',
+      '{ "type": "update_horse", "horseName": "Horse Name", "field": "notes", "value": "note text" }',
+      '{ "type": "navigate", "tab": "medications" }',
+      "Categories: health, gallop, racing, farrier, general.",
+      "Match horse names loosely — if someone says Butch just match Butch Cassidy etc.",
+      "If no action needed, just respond normally without ACTIONS.",
+      "Be brief and practical."
     ].join(" ");
   }
 
@@ -91,29 +171,55 @@ function YardAssistant({ horses, weights, medLogs, settings, user, supabase }) {
     saveMessage("user", userText);
     setInput("");
     setLoading(true);
+
     try {
-      var history = messages
-        .filter(function(m) { return m.id !== "welcome"; })
-        .concat([userMsg])
-        .slice(-12)
+      var history = messages.filter(function(m) { return m.id !== "welcome"; })
+        .concat([userMsg]).slice(-12)
         .map(function(m) { return { role: m.role, content: m.content }; });
+
       var res = await fetch("https://api.anthropic.com/v1/messages", {
         method: "POST", headers: API_HEADERS,
         body: JSON.stringify({
-          model: "claude-sonnet-4-20250514", max_tokens: 500,
+          model: "claude-sonnet-4-20250514", max_tokens: 600,
           system: buildSystemPrompt(),
           messages: history
         })
       });
       var data = await res.json();
       var txt = (data.content || []).filter(function(b) { return b.type === "text"; }).map(function(b) { return b.text; }).join("");
-      var aMsg = { role: "assistant", content: txt, id: "a_" + Date.now() };
+
+      // Parse out ACTIONS if present
+      var displayText = txt;
+      var actionResults = [];
+      var actionsMatch = txt.indexOf("ACTIONS:");
+      if (actionsMatch >= 0) {
+        displayText = txt.slice(0, actionsMatch).trim();
+        var actionsStr = txt.slice(actionsMatch + 8).trim();
+        try {
+          var s = actionsStr.indexOf("["); var e = actionsStr.lastIndexOf("]");
+          if (s >= 0 && e > s) {
+            var actions = JSON.parse(actionsStr.slice(s, e + 1));
+            actions.forEach(function(action) {
+              var result = executeAction(action);
+              if (result) actionResults.push(result);
+            });
+          }
+        } catch (err) { console.error("Action parse error:", err); }
+      }
+
+      // Build response message with action confirmations
+      var finalText = displayText;
+      if (actionResults.length > 0) {
+        finalText = displayText + (displayText ? "\n\n" : "") + "Done:\n" + actionResults.map(function(r) { return "✓ " + r; }).join("\n");
+      }
+
+      var aMsg = { role: "assistant", content: finalText, id: "a_" + Date.now(), hasActions: actionResults.length > 0 };
       setMessages(function(prev) { return prev.concat([aMsg]); });
-      saveMessage("assistant", txt);
+      saveMessage("assistant", finalText);
+
     } catch (err) {
       console.error(err);
-      var errMsg = { role: "assistant", content: "Connection error. Check API key in Yard Settings.", id: "err_" + Date.now() };
-      setMessages(function(prev) { return prev.concat([errMsg]); });
+      setMessages(function(prev) { return prev.concat([{ role: "assistant", content: "Connection error. Check API key in Yard Settings.", id: "err_" + Date.now() }]); });
     }
     setLoading(false);
   };
@@ -140,14 +246,13 @@ function YardAssistant({ horses, weights, medLogs, settings, user, supabase }) {
   }
 
   var QUICK_PROMPTS = [
-    "Who is racing this week?",
-    "Which horses need Peptizole checked today?",
-    "Log: checked all horses this morning, all good",
+    "Start Adaliz on Peptizole today",
+    "Vet to see Butch Cassidy — check heart",
+    "Log: all horses worked well this morning",
+    "Stop Peptizole on Desert Crown",
     "Book farrier for next Thursday",
-    "What tasks are outstanding?"
+    "What horses are on medication today?"
   ];
-
-  var isFirstOpen = messages.length <= 1;
 
   return (
     <div style={{ display: "flex", flexDirection: "column", height: "calc(100vh - 130px)", minHeight: 500 }}>
@@ -155,12 +260,10 @@ function YardAssistant({ horses, weights, medLogs, settings, user, supabase }) {
         <div>
           <div style={{ fontSize: 22, fontWeight: 800, color: C.text }}>Yard Assistant</div>
           <div style={{ fontSize: 13, color: C.textMid, marginTop: 2 }}>
-            {"AI pocket assistant — " + activeHorses.length + " horses · today's conversation auto-saves"}
+            {"Speak or type — I can start/stop medication, log vet visits, update horses and more"}
           </div>
         </div>
-        <div style={{ display: "flex", gap: 8 }}>
-          <Btn variant="ghost" onClick={clearToday} style={{ fontSize: 11, padding: "6px 12px" }}>Clear Today</Btn>
-        </div>
+        <Btn variant="ghost" onClick={clearToday} style={{ fontSize: 11, padding: "6px 12px" }}>Clear Today</Btn>
       </div>
 
       <div style={{ flex: 1, overflowY: "auto", display: "flex", flexDirection: "column", gap: 8, paddingRight: 4, marginBottom: 10 }}>
@@ -171,11 +274,11 @@ function YardAssistant({ horses, weights, medLogs, settings, user, supabase }) {
               <div style={{ maxWidth: "82%", padding: "11px 15px",
                 borderRadius: isUser ? "18px 18px 4px 18px" : "4px 18px 18px 18px",
                 background: isUser ? C.navy : C.card,
-                border: isUser ? "none" : "1px solid " + C.border,
+                border: isUser ? "none" : "1px solid " + (msg.hasActions ? C.green : C.border),
                 color: isUser ? "#fff" : C.text, fontSize: 14, lineHeight: 1.65, whiteSpace: "pre-wrap" }}>
                 {!isUser && (
-                  <div style={{ fontSize: 9, fontWeight: 700, color: C.gold, marginBottom: 4, textTransform: "uppercase", letterSpacing: 1 }}>
-                    Yard Assistant
+                  <div style={{ fontSize: 9, fontWeight: 700, color: msg.hasActions ? C.green : C.gold, marginBottom: 4, textTransform: "uppercase", letterSpacing: 1 }}>
+                    {msg.hasActions ? "✓ Action taken" : "Yard Assistant"}
                   </div>
                 )}
                 {msg.content}
@@ -197,9 +300,9 @@ function YardAssistant({ horses, weights, medLogs, settings, user, supabase }) {
         <div ref={bottomRef} />
       </div>
 
-      {isFirstOpen && (
+      {messages.length <= 1 && (
         <div style={{ marginBottom: 10, flexShrink: 0 }}>
-          <div style={{ fontSize: 11, fontWeight: 700, color: C.textMid, textTransform: "uppercase", letterSpacing: 1, marginBottom: 7 }}>Quick prompts</div>
+          <div style={{ fontSize: 11, fontWeight: 700, color: C.textMid, textTransform: "uppercase", letterSpacing: 1, marginBottom: 7 }}>Try saying...</div>
           <div style={{ display: "flex", gap: 6, flexWrap: "wrap" }}>
             {QUICK_PROMPTS.map(function(prompt) {
               return (
@@ -217,7 +320,7 @@ function YardAssistant({ horses, weights, medLogs, settings, user, supabase }) {
         <div style={{ flex: 1 }}>
           <textarea value={input} onChange={function(e) { setInput(e.target.value); }}
             onKeyDown={function(e) { if (e.key === "Enter" && !e.shiftKey) { e.preventDefault(); sendMessage(); } }}
-            placeholder={"Ask anything · log a task · book an appointment · Enter to send"}
+            placeholder={"e.g. Start Butch Cassidy on Peptizole today  |  Vet to see Adaliz — check heart"}
             rows={2}
             style={{ width: "100%", padding: "11px 15px", background: C.card, border: "1.5px solid " + C.border, borderRadius: 14, fontSize: 14, color: C.text, resize: "none", lineHeight: 1.5 }} />
         </div>
