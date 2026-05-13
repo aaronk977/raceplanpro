@@ -457,8 +457,8 @@ function MedicationTracker({ horses, medLogs, setMedLogs, trackedIds, setTracked
                             });
                             msgLines.push("Total: €" + c2.total);
                             var phone = horse.ownerPhone.split("").filter(function(d) { return (d>="0"&&d<="9")||d==="+"; }).join("");
-                            window.open("https://wa.me/" + phone + "?text=" + encodeURIComponent(msgLines.join("
-")), "_blank");
+                            window.open("https://wa.me/" + phone + "?text=" + encodeURIComponent(msgLines.join(\n")), "_blank");
+
                           }} style={{ width: "100%", marginTop: 10, padding: "8px", background: "#25D366", border: "none", borderRadius: 8, color: "#fff", fontSize: 12, fontWeight: 700, cursor: "pointer" }}>
                             {"📱 Send to " + (horse.owner || "Owner") + " via WhatsApp"}
                           </button>
