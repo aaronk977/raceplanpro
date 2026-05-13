@@ -68,6 +68,7 @@ export default function App() {
   const [reminders, setReminders] = useState([]);
   const [ordersRaw, setOrdersRaw] = useState([]);
   const [sidebarOpen, setSidebarOpen] = useState(true);
+  const [mobileNavOpen, setMobileNavOpen] = useState(false);
 
   const [horsesRaw, setHorsesRaw] = useState([]);
   const [medLogsRaw, setMedLogsRaw] = useState({});
@@ -356,9 +357,12 @@ export default function App() {
     <div style={{ minHeight: "100vh", background: C.bg, fontFamily: "Inter, Helvetica Neue, sans-serif", display: "flex", flexDirection: "column" }}>
       <style dangerouslySetInnerHTML={{ __html: globalCSS }} />
       <div style={{ background: C.navy, height: 56, display: "flex", alignItems: "center", padding: "0 16px", flexShrink: 0, gap: 10 }}>
-        <button onClick={function() { setSidebarOpen(function(o) { return !o; }); }}
-          style={{ background: "rgba(255,255,255,0.08)", border: "1px solid rgba(255,255,255,0.12)", color: "#fff", width: 32, height: 32, borderRadius: 8, cursor: "pointer", fontSize: 13 }}>
-          {sidebarOpen ? "<" : ">"}
+        <button onClick={function() {
+          if (window.innerWidth < 768) { setMobileNavOpen(function(o) { return !o; }); }
+          else { setSidebarOpen(function(o) { return !o; }); }
+        }}
+          style={{ background: "rgba(255,255,255,0.08)", border: "none", color: "#fff", width: 32, height: 32, borderRadius: 8, cursor: "pointer", fontSize: 13 }}>
+          {"☰"}
         </button>
         <div style={{ fontSize: 15, fontWeight: 900, color: "#fff" }}>🏇 RacePlan Pro</div>
         <div style={{ marginLeft: 8, padding: "4px 12px", background: "rgba(255,255,255,0.08)", borderRadius: 20, fontSize: 12, color: "rgba(255,255,255,0.7)", fontWeight: 600 }}>
