@@ -58,7 +58,13 @@ function DailySummary({ horses, medLogs, weights, wbEntries, settings }) {
   var generateAISummary = async function() {
     setLoading(true);
     try {
-      var activeHorses = (horses || []).filter(function(h) { return h.status === "Active"; });
+      var activeHorses = (horses || []).filter(function(h) { return h.status === "Active"; });.sort(function(a, b) {
+    var aEx = (a.name || "").toUpperCase().indexOf("EX ") === 0 || (a.name || "").toUpperCase().indexOf("(EX)") >= 0;
+    var bEx = (b.name || "").toUpperCase().indexOf("EX ") === 0 || (b.name || "").toUpperCase().indexOf("(EX)") >= 0;
+    if (aEx && !bEx) return -1;
+    if (!aEx && bEx) return 1;
+    return (a.name || "").localeCompare(b.name || "");
+  })
       var todayLogs = (dailyLogs[selectedDate] || []);
       var racingToday = (wbEntries || []).filter(function(e) { return e.date === selectedDate; });
       var yardName = (settings && settings.yardName) || "the yard";
