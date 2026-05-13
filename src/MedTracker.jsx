@@ -142,7 +142,7 @@ function MedicationTracker({ horses, medLogs, setMedLogs, trackedIds, setTracked
     return alerts;
   }
 
-  var activeHorses = (horses || []).filter(function(h) { return h.status === "Active"; });.sort(function(a, b) {
+  var activeHorses = (horses || []).filter(function(h) { return h.status === "Active"; }).sort(function(a, b) {
     var aEx = (a.name || "").toUpperCase().indexOf("EX ") === 0 || (a.name || "").toUpperCase().indexOf("(EX)") >= 0;
     var bEx = (b.name || "").toUpperCase().indexOf("EX ") === 0 || (b.name || "").toUpperCase().indexOf("(EX)") >= 0;
     if (aEx && !bEx) return -1;
