@@ -175,7 +175,9 @@ function YardAssistant({ horses, setHorses, weights, medLogs, setMedLogs, remind
       '{ "type": "set_reminder", "text": "reminder text", "date": "YYYY-MM-DD", "time": "HH:MM", "horseName": "" }',
       '{ "type": "navigate", "tab": "medications" }',
       "For reminders: extract date and time from natural language. Monday=next monday, Tuesday=next tuesday etc.",
-      "If no time mentioned use 08:00. Always set a reminder action when someone says remind me, dont forget, remember etc.",
+      "If no time mentioned use 09:00. Always set a reminder for remind me/dont forget/remember requests.",
+      "Keep reminder text exactly as the user said it - do not add words like send push notification re.",
+      "After setting a reminder just say: Done - reminder set for [day] at [time].",
       "Categories: health, gallop, racing, farrier, general.",
       "Match horse names loosely — if someone says Butch just match Butch Cassidy etc.",
       "If no action needed, just respond normally without ACTIONS.",
@@ -228,11 +230,15 @@ function YardAssistant({ horses, setHorses, weights, medLogs, setMedLogs, remind
       }
 
       // Build response message with action confirmations
-      var finalText = displayText;
+      var finalText = displayText.trim();
       if (actionResults.length > 0) {
-        finalText = displayText + (displayText ? "\n\n" : "") + "Done:\n" + actionResults.map(function(r) { return "✓ " + r; }).join("\n");
+        finalText = (finalText ? finalText + "\n\n" : "") + "Done:\n" + actionResults.map(function(r) { return "✓ " + r; }).join("\n");
       }
 
+      // Don't add blank bubble
+      if (!finalText || !finalText.trim()) {
+        finalText = actionResults.length > 0 ? "Done: " + actionResults.join(", ") : "...";
+      }
       var aMsg = { role: "assistant", content: finalText, id: "a_" + Date.now(), hasActions: actionResults.length > 0 };
       setMessages(function(prev) { return prev.concat([aMsg]); });
       saveMessage("assistant", finalText);
@@ -337,22 +343,22 @@ function YardAssistant({ horses, setHorses, weights, medLogs, setMedLogs, remind
         </div>
       )}
 
-      <div style={{ display: "flex", gap: 8, alignItems: "flex-end", flexShrink: 0 }}>
-        <div style={{ flex: 1 }}>
+      <div style={{ display: "flex", gap: 6, alignItems: "flex-end", flexShrink: 0, minWidth: 0 }}>
+        <div style={{ flex: 1, minWidth: 0 }}>
           <textarea value={input} onChange={function(e) { setInput(e.target.value); }}
             onKeyDown={function(e) { if (e.key === "Enter" && !e.shiftKey) { e.preventDefault(); sendMessage(); } }}
-            placeholder={"e.g. Start Butch Cassidy on Peptizole today  |  Vet to see Adaliz — check heart"}
+            placeholder={"Ask anything or say: Start [horse] on Peptizole"}
             rows={2}
-            style={{ width: "100%", padding: "11px 15px", background: C.card, border: "1.5px solid " + C.border, borderRadius: 14, fontSize: 14, color: C.text, resize: "none", lineHeight: 1.5 }} />
+            style={{ width: "100%", padding: "10px 12px", background: C.card, border: "1.5px solid " + C.border, borderRadius: 12, fontSize: 14, color: C.text, resize: "none", lineHeight: 1.5, boxSizing: "border-box" }} />
         </div>
         <button onClick={startListening} disabled={listening}
-          style={{ width: 46, height: 46, borderRadius: 14, border: "1.5px solid " + (listening ? C.red : C.border), background: listening ? C.red + "15" : C.card, cursor: "pointer", fontSize: 20, display: "flex", alignItems: "center", justifyContent: "center", flexShrink: 0 }}>
+          style={{ width: 42, height: 42, borderRadius: 12, border: "1.5px solid " + (listening ? C.red : C.border), background: listening ? C.red + "15" : C.card, cursor: "pointer", fontSize: 18, display: "flex", alignItems: "center", justifyContent: "center", flexShrink: 0 }}>
           {listening ? "🔴" : "🎤"}
         </button>
-        <Btn onClick={sendMessage} disabled={!input.trim() || loading}
-          style={{ height: 46, padding: "0 20px", borderRadius: 14, flexShrink: 0, justifyContent: "center" }}>
+        <button onClick={sendMessage} disabled={!input.trim() || loading}
+          style={{ height: 42, padding: "0 14px", borderRadius: 12, flexShrink: 0, background: (!input.trim() || loading) ? C.border : C.navy, color: "#fff", border: "none", fontWeight: 700, fontSize: 14, cursor: "pointer", whiteSpace: "nowrap" }}>
           {loading ? "..." : "Send"}
-        </Btn>
+        </button>
       </div>
     </div>
   );
