@@ -12,6 +12,8 @@ function MedicationTracker({ horses, medLogs, setMedLogs, trackedIds, setTracked
   var [selMonth, setSelMonth] = useState(nowInit.getMonth());
   var [selYear, setSelYear] = useState(nowInit.getFullYear());
   var [openHorse, setOpenHorse] = useState(null);
+  var [trackerMode, setTrackerMode] = useState("daily");
+  var [selDate, setSelDate] = useState(nowInit.toISOString().slice(0, 10));
   var [showBill, setShowBill] = useState(false);
   var [billHorse, setBillHorse] = useState(null);
   var [medView, setMedView] = useState("tracker");
@@ -48,7 +50,17 @@ function MedicationTracker({ horses, medLogs, setMedLogs, trackedIds, setTracked
     var dd = String(d).padStart(2, "0");
     return hId + "_" + selYear + "-" + mm + "-" + dd + "_" + t;
   }
+
+  function kDate(hId, dateStr, t) {
+    return hId + "_" + dateStr + "_" + t;
+  }
+
   function getMed(hId, d, t) { return medLogs[k(hId, d, t)] || 0; }
+
+  function getMedOnDate(hId, dateStr, t) {
+    return medLogs[kDate(hId, dateStr, t)] || 0;
+  }
+
   function toggleMed(hId, d, t) {
     setMedLogs(function(prev) {
       var cur = prev[k(hId, d, t)] || 0;
@@ -58,8 +70,26 @@ function MedicationTracker({ horses, medLogs, setMedLogs, trackedIds, setTracked
     });
   }
 
+  function toggleMedOnDate(hId, dateStr, t) {
+    setMedLogs(function(prev) {
+      var cur = prev[kDate(hId, dateStr, t)] || 0;
+      var next = Object.assign({}, prev);
+      next[kDate(hId, dateStr, t)] = cur ? 0 : 1;
+      return next;
+    });
+  }
+
   function getMedToday(hId, t) {
     return getMed(hId, todayD, t);
+  }
+
+  function getSelDateDisplay() {
+    if (!selDate) return "Today";
+    var d = new Date(selDate + "T12:00:00");
+    var todayCheck = new Date(); todayCheck.setHours(0,0,0,0);
+    var selCheck = new Date(selDate + "T00:00:00");
+    if (selCheck.getTime() === todayCheck.getTime()) return "Today";
+    return d.toLocaleDateString("en-IE", { weekday: "short", day: "numeric", month: "short" });
   }
 
   function calcCosts(horse) {
@@ -267,49 +297,89 @@ function MedicationTracker({ horses, medLogs, setMedLogs, trackedIds, setTracked
 
       {medView === "tracker" && (
         <div>
-          <div style={{ display: "flex", justifyContent: "space-between", alignItems: "center", marginBottom: 12 }}>
-            <div style={{ display: "flex", gap: 8 }}>
-              <Btn variant="ghost" onClick={function() { var d = new Date(selYear, selMonth - 1, 1); setSelMonth(d.getMonth()); setSelYear(d.getFullYear()); }} style={{ fontSize: 13, padding: "6px 12px" }}>{"<"}</Btn>
-              <span style={{ fontSize: 15, fontWeight: 700, color: C.text, lineHeight: "34px" }}>{monthName}</span>
-              <Btn variant="ghost" onClick={function() { var d = new Date(selYear, selMonth + 1, 1); setSelMonth(d.getMonth()); setSelYear(d.getFullYear()); }} style={{ fontSize: 13, padding: "6px 12px" }}>{">"}</Btn>
+          <div style={{ background: C.card, border: "1px solid " + C.border, borderRadius: 12, padding: "12px 16px", marginBottom: 14, display: "flex", alignItems: "center", gap: 12, flexWrap: "wrap" }}>
+            <div style={{ display: "flex", gap: 0, background: C.cardOff, borderRadius: 8, padding: 3 }}>
+              {["daily", "monthly"].map(function(mode) {
+                return (
+                  <button key={mode} onClick={function() { setTrackerMode(mode); }}
+                    style={{ padding: "7px 16px", borderRadius: 6, border: "none", fontWeight: 700, fontSize: 13, cursor: "pointer",
+                      background: trackerMode === mode ? C.navy : "transparent",
+                      color: trackerMode === mode ? "#fff" : C.textMid }}>
+                    {mode === "daily" ? "Daily Entry" : "Monthly Grid"}
+                  </button>
+                );
+              })}
             </div>
+
+            {trackerMode === "daily" ? (
+              <div style={{ display: "flex", alignItems: "center", gap: 10, flex: 1 }}>
+                <div style={{ fontSize: 13, fontWeight: 600, color: C.textMid }}>Date:</div>
+                <input type="date" value={selDate} onChange={function(e) { setSelDate(e.target.value); }}
+                  style={{ padding: "7px 12px", background: C.cardOff, border: "1px solid " + C.border, borderRadius: 8, fontSize: 14, fontWeight: 700, color: C.text, cursor: "pointer" }} />
+                <div style={{ fontSize: 14, fontWeight: 700, color: C.navy }}>{getSelDateDisplay()}</div>
+                <button onClick={function() { setSelDate(nowInit.toISOString().slice(0,10)); }}
+                  style={{ padding: "6px 14px", borderRadius: 8, border: "1px solid " + C.border, background: C.cardOff, fontSize: 12, fontWeight: 600, color: C.textMid, cursor: "pointer" }}>
+                  Today
+                </button>
+              </div>
+            ) : (
+              <div style={{ display: "flex", alignItems: "center", gap: 8 }}>
+                <Btn variant="ghost" onClick={function() { var d = new Date(selYear, selMonth - 1, 1); setSelMonth(d.getMonth()); setSelYear(d.getFullYear()); }} style={{ fontSize: 13, padding: "6px 12px" }}>{"<"}</Btn>
+                <span style={{ fontSize: 15, fontWeight: 700, color: C.text }}>{monthName}</span>
+                <Btn variant="ghost" onClick={function() { var d = new Date(selYear, selMonth + 1, 1); setSelMonth(d.getMonth()); setSelYear(d.getFullYear()); }} style={{ fontSize: 13, padding: "6px 12px" }}>{">"}</Btn>
+              </div>
+            )}
           </div>
 
           {tracked.map(function(horse) {
             var isOpen = openHorse === horse.id;
-            var hasMedToday = medTypes.some(function(mt) { return isCurrent && getMedToday(horse.id, mt.id); });
+            var hasMedOnSel = medTypes.some(function(mt) {
+              return trackerMode === "daily"
+                ? getMedOnDate(horse.id, selDate, mt.id)
+                : isCurrent && getMedToday(horse.id, mt.id);
+            });
             return (
-              <div key={horse.id} style={{ background: C.card, border: "1px solid " + (hasMedToday ? C.green : C.border), borderRadius: 12, marginBottom: 10, overflow: "hidden" }}>
-                <div onClick={function() { setOpenHorse(isOpen ? null : horse.id); }}
-                  style={{ display: "flex", alignItems: "center", gap: 12, padding: "12px 16px", cursor: "pointer" }}>
+              <div key={horse.id} style={{ background: C.card, border: "1px solid " + (hasMedOnSel ? C.green : C.border), borderLeft: "4px solid " + (hasMedOnSel ? C.green : C.border), borderRadius: 12, marginBottom: 10, overflow: "hidden" }}>
+                <div onClick={function() { if (trackerMode === "monthly") setOpenHorse(isOpen ? null : horse.id); }}
+                  style={{ display: "flex", alignItems: "center", gap: 12, padding: "12px 16px", cursor: trackerMode === "monthly" ? "pointer" : "default" }}>
                   <Silk silk={horse.silk} size={32} />
                   <div style={{ flex: 1 }}>
                     <div style={{ fontSize: 14, fontWeight: 700, color: C.text }}>{horse.name}</div>
                     <div style={{ display: "flex", gap: 8, flexWrap: "wrap", marginTop: 3 }}>
                       {medTypes.map(function(mt) {
-                        var onToday = isCurrent && getMedToday(horse.id, mt.id);
-                        return onToday ? (
+                        var on = trackerMode === "daily"
+                          ? getMedOnDate(horse.id, selDate, mt.id)
+                          : (isCurrent && getMedToday(horse.id, mt.id));
+                        return on ? (
                           <span key={mt.id} style={{ fontSize: 11, padding: "1px 8px", borderRadius: 20, background: mt.color + "15", color: mt.color, fontWeight: 700 }}>{mt.label}</span>
                         ) : null;
                       })}
-                      {!hasMedToday && <span style={{ fontSize: 11, color: C.textDim }}>No medication today</span>}
+                      {!hasMedOnSel && <span style={{ fontSize: 11, color: C.textDim }}>No medication {trackerMode === "daily" ? "on this date" : "today"}</span>}
                     </div>
                   </div>
                   <div style={{ display: "flex", gap: 6 }}>
-                    {isCurrent && medTypes.map(function(mt) {
-                      var val = getMedToday(horse.id, mt.id);
+                    {medTypes.map(function(mt) {
+                      var val = trackerMode === "daily"
+                        ? getMedOnDate(horse.id, selDate, mt.id)
+                        : getMedToday(horse.id, mt.id);
                       return (
-                        <button key={mt.id} onClick={function(e) { e.stopPropagation(); toggleMed(horse.id, todayD, mt.id); }}
-                          style={{ width: 32, height: 32, borderRadius: 8, border: "2px solid " + (val ? mt.color : C.border), background: val ? mt.color : "transparent", color: val ? "#fff" : C.textMid, fontWeight: 800, fontSize: 11, cursor: "pointer" }}>
-                          {mt.short}
+                        <button key={mt.id} onClick={function(e) {
+                          e.stopPropagation();
+                          if (trackerMode === "daily") {
+                            toggleMedOnDate(horse.id, selDate, mt.id);
+                          } else {
+                            toggleMed(horse.id, todayD, mt.id);
+                          }
+                        }} style={{ width: 36, height: 36, borderRadius: 9, border: "2px solid " + (val ? mt.color : C.border), background: val ? mt.color : "transparent", color: val ? "#fff" : C.textMid, fontWeight: 800, fontSize: 13, cursor: "pointer", display: "flex", alignItems: "center", justifyContent: "center" }}>
+                          {val ? "✓" : mt.short}
                         </button>
                       );
                     })}
-                    <span style={{ fontSize: 14, color: C.textDim, lineHeight: "32px", marginLeft: 4 }}>{isOpen ? "▲" : "▼"}</span>
+                    {trackerMode === "monthly" && <span style={{ fontSize: 14, color: C.textDim, lineHeight: "36px", marginLeft: 4 }}>{isOpen ? "▲" : "▼"}</span>}
                   </div>
                 </div>
 
-                {isOpen && (
+                {isOpen && trackerMode === "monthly" && (
                   <div style={{ borderTop: "1px solid " + C.border, overflowX: "auto", padding: "12px 16px" }}>
                     <table style={{ borderCollapse: "collapse", width: "100%", minWidth: 600 }}>
                       <thead>
