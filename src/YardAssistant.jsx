@@ -8,7 +8,7 @@ var API_HEADERS = {
   "anthropic-dangerous-direct-browser-access": "true"
 };
 
-function YardAssistant({ horses, setHorses, weights, medLogs, setMedLogs, settings, user, supabase, onNavigate }) {
+function YardAssistant({ horses, setHorses, weights, medLogs, setMedLogs, reminders, setReminders, settings, user, supabase, onNavigate }) {
   var todayStr = new Date().toISOString().slice(0, 10);
   var messagesState = useState([]);
   var messages = messagesState[0]; var setMessages = messagesState[1];
@@ -127,8 +127,25 @@ function YardAssistant({ horses, setHorses, weights, medLogs, setMedLogs, settin
       return horse.name + " — " + action.field + " updated to " + action.value + " ✓";
     }
 
+    if (action.type === "set_reminder") {
+      var reminder = {
+        id: "rem_" + Date.now(),
+        text: action.text || action.note,
+        date: action.date || new Date().toISOString().slice(0, 10),
+        time: action.time || "09:00",
+        horseName: action.horseName || "",
+        phone: action.phone || ((settings && settings.notifyContacts && settings.notifyContacts[0]) ? settings.notifyContacts[0].phone : ""),
+        sendWhatsApp: true,
+        fired: false, dismissed: false,
+        createdAt: new Date().toISOString()
+      };
+      if (setReminders) setReminders(function(prev) { return (prev || []).concat([reminder]); });
+      if (onNavigate) {} // stay on assistant
+      return "Reminder saved: " + reminder.text + " on " + reminder.date + " at " + reminder.time;
+    }
+
     if (action.type === "navigate" && onNavigate) {
-      var tabMap = { medications: "meds", "daily summary": "summary", whiteboard: "whiteboard", "race planner": "races", weights: "weights" };
+      var tabMap = { medications: "meds", "daily summary": "summary", whiteboard: "whiteboard", "race planner": "races", weights: "weights", reminders: "reminders" };
       var tab = tabMap[action.tab] || action.tab;
       onNavigate(tab);
       return "Opening " + action.tab + "...";
@@ -155,7 +172,10 @@ function YardAssistant({ horses, setHorses, weights, medLogs, setMedLogs, settin
       '{ "type": "log_daily", "horseName": "Horse Name", "note": "vet to check heart", "category": "health" }',
       '{ "type": "log_daily", "horseName": "", "note": "general yard note", "category": "general" }',
       '{ "type": "update_horse", "horseName": "Horse Name", "field": "notes", "value": "note text" }',
+      '{ "type": "set_reminder", "text": "reminder text", "date": "YYYY-MM-DD", "time": "HH:MM", "horseName": "" }',
       '{ "type": "navigate", "tab": "medications" }',
+      "For reminders: extract date and time from natural language. Monday=next monday, Tuesday=next tuesday etc.",
+      "If no time mentioned use 08:00. Always set a reminder action when someone says remind me, dont forget, remember etc.",
       "Categories: health, gallop, racing, farrier, general.",
       "Match horse names loosely — if someone says Butch just match Butch Cassidy etc.",
       "If no action needed, just respond normally without ACTIONS.",
@@ -251,7 +271,8 @@ function YardAssistant({ horses, setHorses, weights, medLogs, setMedLogs, settin
     "Log: all horses worked well this morning",
     "Stop Peptizole on Desert Crown",
     "Book farrier for next Thursday",
-    "What horses are on medication today?"
+    "What horses are on medication today?",
+    "Remind me owners visiting Thursday at 2pm"
   ];
 
   return (
