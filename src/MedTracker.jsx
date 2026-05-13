@@ -353,36 +353,128 @@ function MedicationTracker({ horses, medLogs, setMedLogs, trackedIds, setTracked
 
       {medView === "billing" && (
         <div>
-          <div style={{ fontSize: 13, color: C.textMid, marginBottom: 14 }}>Monthly medication costs for {monthName}. Based on ticks entered in the grid and your configured medication prices.</div>
-          {tracked.map(function(horse) {
-            var costs = calcCosts(horse);
-            if (costs.total === 0) return null;
+          <div style={{ display: "flex", justifyContent: "space-between", alignItems: "center", marginBottom: 14, flexWrap: "wrap", gap: 8 }}>
+            <div>
+              <div style={{ fontSize: 15, fontWeight: 700, color: C.navy }}>{"Monthly Medication Report — " + monthName}</div>
+              <div style={{ fontSize: 12, color: C.textMid, marginTop: 2 }}>Based on ticks in the grid and your configured medication prices. Send to owners or print for records.</div>
+            </div>
+            <div style={{ display: "flex", gap: 8 }}>
+              <Btn variant="ghost" onClick={function() { window.print(); }} style={{ fontSize: 12 }}>🖨 Print Report</Btn>
+              <Btn onClick={function() {
+                var lines2 = ["MEDICATION REPORT — " + monthName.toUpperCase()];
+                lines2.push("Generated: " + new Date().toLocaleDateString("en-IE"));
+                lines2.push("---");
+                var grandTotal = 0;
+                tracked.forEach(function(horse) {
+                  var costs = calcCosts(horse);
+                  if (costs.total === 0) return;
+                  grandTotal += costs.total;
+                  lines2.push(horse.name + " (" + (horse.owner||"") + ")");
+                  medTypes.forEach(function(mt) {
+                    var c = costs[mt.id];
+                    if (!c || c.days === 0) return;
+                    lines2.push("  " + mt.label + ": " + c.days + " days x €" + mt.costPerDay + " = €" + c.cost);
+                  });
+                  lines2.push("  TOTAL: €" + costs.total);
+                  lines2.push("---");
+                });
+                lines2.push("GRAND TOTAL: €" + Math.round(grandTotal * 100) / 100);
+                var text = lines2.join("
+");
+                if (navigator.clipboard) {
+                  navigator.clipboard.writeText(text);
+                  alert("Report copied to clipboard — paste into WhatsApp or email");
+                }
+              }} style={{ fontSize: 12 }}>📋 Copy Report</Btn>
+            </div>
+          </div>
+
+          {(function() {
+            var horsesWithCosts = tracked.filter(function(h) { return calcCosts(h).total > 0; });
+            var grandTotal = horsesWithCosts.reduce(function(sum, h) { return sum + calcCosts(h).total; }, 0);
+            if (horsesWithCosts.length === 0) return (
+              <div style={{ padding: 32, textAlign: "center", color: C.textMid, fontSize: 13 }}>No medication costs recorded for {monthName}</div>
+            );
             return (
-              <div key={horse.id} style={{ background: C.card, border: "1px solid " + C.border, borderRadius: 12, padding: "14px 16px", marginBottom: 10 }}>
-                <div style={{ display: "flex", alignItems: "center", gap: 12, marginBottom: 12 }}>
-                  <Silk silk={horse.silk} size={28} />
-                  <div style={{ flex: 1 }}>
-                    <div style={{ fontSize: 14, fontWeight: 700, color: C.text }}>{horse.name}</div>
-                    <div style={{ fontSize: 12, color: C.textMid }}>{horse.owner}</div>
-                  </div>
-                  <div style={{ fontSize: 18, fontWeight: 900, color: C.navy }}>{"€" + costs.total}</div>
-                </div>
-                {medTypes.map(function(mt) {
-                  var c = costs[mt.id];
-                  if (!c || c.days === 0) return null;
-                  return (
-                    <div key={mt.id} style={{ display: "flex", justifyContent: "space-between", fontSize: 13, color: C.textMid, padding: "5px 0", borderBottom: "1px solid " + C.cardOff }}>
-                      <span>{mt.label + " — " + c.days + " days @ €" + mt.costPerDay + "/day"}</span>
-                      <span style={{ fontWeight: 700, color: C.text }}>{"€" + c.cost}</span>
+              <div>
+                <div id="med-report-print">
+                  <div style={{ background: C.navy, borderRadius: 12, padding: "16px 20px", marginBottom: 16, display: "flex", justifyContent: "space-between", alignItems: "center" }}>
+                    <div>
+                      <div style={{ fontSize: 16, fontWeight: 900, color: "#fff" }}>{"Medication Report — " + monthName}</div>
+                      <div style={{ fontSize: 12, color: "rgba(255,255,255,0.45)", marginTop: 2 }}>{horsesWithCosts.length + " horses · " + horsesWithCosts.reduce(function(s,h) { var c=calcCosts(h); return s + medTypes.reduce(function(s2,mt) { return s2+(c[mt.id]?c[mt.id].days:0); },0); }, 0) + " treatment days"}</div>
                     </div>
-                  );
-                })}
+                    <div style={{ textAlign: "right" }}>
+                      <div style={{ fontSize: 28, fontWeight: 900, color: C.gold }}>{"€" + Math.round(grandTotal * 100) / 100}</div>
+                      <div style={{ fontSize: 11, color: "rgba(255,255,255,0.45)" }}>Grand Total</div>
+                    </div>
+                  </div>
+
+                  {horsesWithCosts.map(function(horse) {
+                    var costs = calcCosts(horse);
+                    return (
+                      <div key={horse.id} style={{ background: C.card, border: "1px solid " + C.border, borderRadius: 12, padding: "14px 16px", marginBottom: 10 }}>
+                        <div style={{ display: "flex", alignItems: "center", gap: 12, marginBottom: 10 }}>
+                          <Silk silk={horse.silk} size={28} />
+                          <div style={{ flex: 1 }}>
+                            <div style={{ fontSize: 15, fontWeight: 700, color: C.text }}>{horse.name}</div>
+                            <div style={{ fontSize: 12, color: C.textMid }}>{horse.owner || "No owner"}</div>
+                          </div>
+                          <div style={{ textAlign: "right" }}>
+                            <div style={{ fontSize: 20, fontWeight: 900, color: C.navy }}>{"€" + costs.total}</div>
+                            <div style={{ fontSize: 11, color: C.textMid }}>this month</div>
+                          </div>
+                        </div>
+                        <div style={{ background: C.cardOff, borderRadius: 8, overflow: "hidden" }}>
+                          {medTypes.map(function(mt) {
+                            var c = costs[mt.id];
+                            if (!c || c.days === 0) return null;
+                            var pct = Math.round((c.days / daysInMonth) * 100);
+                            return (
+                              <div key={mt.id} style={{ padding: "8px 12px", borderBottom: "1px solid " + C.border }}>
+                                <div style={{ display: "flex", justifyContent: "space-between", alignItems: "center", marginBottom: 4 }}>
+                                  <div style={{ display: "flex", alignItems: "center", gap: 8 }}>
+                                    <div style={{ width: 10, height: 10, borderRadius: "50%", background: mt.color }} />
+                                    <span style={{ fontSize: 13, fontWeight: 600, color: C.text }}>{mt.label}</span>
+                                    <span style={{ fontSize: 11, color: C.textMid }}>{c.days + " days @ €" + mt.costPerDay + "/day"}</span>
+                                  </div>
+                                  <span style={{ fontSize: 14, fontWeight: 700, color: C.text }}>{"€" + c.cost}</span>
+                                </div>
+                                <div style={{ background: C.border, borderRadius: 4, height: 4, overflow: "hidden" }}>
+                                  <div style={{ background: mt.color, height: "100%", width: pct + "%" }} />
+                                </div>
+                              </div>
+                            );
+                          })}
+                        </div>
+                        {horse.ownerPhone && (
+                          <button onClick={function() {
+                            var c2 = calcCosts(horse);
+                            var msgLines = ["Medication costs for " + horse.name + " — " + monthName + ":"];
+                            medTypes.forEach(function(mt) {
+                              var c3 = c2[mt.id];
+                              if (!c3 || c3.days === 0) return;
+                              msgLines.push(mt.label + ": " + c3.days + " days = €" + c3.cost);
+                            });
+                            msgLines.push("Total: €" + c2.total);
+                            var phone = horse.ownerPhone.split("").filter(function(d) { return (d>="0"&&d<="9")||d==="+"; }).join("");
+                            window.open("https://wa.me/" + phone + "?text=" + encodeURIComponent(msgLines.join("
+")), "_blank");
+                          }} style={{ width: "100%", marginTop: 10, padding: "8px", background: "#25D366", border: "none", borderRadius: 8, color: "#fff", fontSize: 12, fontWeight: 700, cursor: "pointer" }}>
+                            {"📱 Send to " + (horse.owner || "Owner") + " via WhatsApp"}
+                          </button>
+                        )}
+                      </div>
+                    );
+                  })}
+
+                  <div style={{ background: C.navy, borderRadius: 12, padding: "16px 20px", display: "flex", justifyContent: "space-between", alignItems: "center" }}>
+                    <div style={{ fontSize: 15, fontWeight: 700, color: "rgba(255,255,255,0.7)" }}>Grand Total — {monthName}</div>
+                    <div style={{ fontSize: 28, fontWeight: 900, color: C.gold }}>{"€" + Math.round(grandTotal * 100) / 100}</div>
+                  </div>
+                </div>
               </div>
             );
-          })}
-          {tracked.filter(function(h) { return calcCosts(h).total > 0; }).length === 0 && (
-            <div style={{ padding: 32, textAlign: "center", color: C.textMid, fontSize: 13 }}>No medication costs recorded for {monthName}</div>
-          )}
+          })()}
         </div>
       )}
     </div>
