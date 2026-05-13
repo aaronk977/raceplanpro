@@ -33,7 +33,8 @@ function MedicationTracker({ horses, medLogs, setMedLogs, trackedIds, setTracked
       short: (m.name || m.label || "M").charAt(0).toUpperCase(),
       costPerDay: parseFloat(m.costPerUnit || m.costPerDay || 0),
       courseDays: parseInt(m.courseDays || 12),
-      withdrawalDays: parseInt(m.withdrawalDays || 4)
+      withdrawalDays: parseInt(m.withdrawalDays || 4),
+      maxDoses: parseInt(m.maxDoses || 1)
     };
   });
 
@@ -61,20 +62,24 @@ function MedicationTracker({ horses, medLogs, setMedLogs, trackedIds, setTracked
     return medLogs[kDate(hId, dateStr, t)] || 0;
   }
 
-  function toggleMed(hId, d, t) {
+
+
+  function toggleMedOnDate(hId, dateStr, t, maxDoses) {
+    var max = maxDoses || 1;
     setMedLogs(function(prev) {
-      var cur = prev[k(hId, d, t)] || 0;
+      var cur = prev[kDate(hId, dateStr, t)] || 0;
       var next = Object.assign({}, prev);
-      next[k(hId, d, t)] = cur ? 0 : 1;
+      next[kDate(hId, dateStr, t)] = cur >= max ? 0 : cur + 1;
       return next;
     });
   }
 
-  function toggleMedOnDate(hId, dateStr, t) {
+  function toggleMed(hId, d, t, maxDoses) {
+    var max = maxDoses || 1;
     setMedLogs(function(prev) {
-      var cur = prev[kDate(hId, dateStr, t)] || 0;
+      var cur = prev[k(hId, d, t)] || 0;
       var next = Object.assign({}, prev);
-      next[kDate(hId, dateStr, t)] = cur ? 0 : 1;
+      next[k(hId, d, t)] = cur >= max ? 0 : cur + 1;
       return next;
     });
   }
@@ -362,16 +367,21 @@ function MedicationTracker({ horses, medLogs, setMedLogs, trackedIds, setTracked
                       var val = trackerMode === "daily"
                         ? getMedOnDate(horse.id, selDate, mt.id)
                         : getMedToday(horse.id, mt.id);
+                      var maxD = mt.maxDoses || 1;
+                      var btnLabel = val === 0 ? mt.short : val >= maxD ? "✓" : val + "/" + maxD;
+                      var btnBg = val === 0 ? "transparent" : val >= maxD ? mt.color : mt.color + "70";
+                      var btnBorder = val > 0 ? mt.color : C.border;
                       return (
                         <button key={mt.id} onClick={function(e) {
                           e.stopPropagation();
                           if (trackerMode === "daily") {
-                            toggleMedOnDate(horse.id, selDate, mt.id);
+                            toggleMedOnDate(horse.id, selDate, mt.id, maxD);
                           } else {
-                            toggleMed(horse.id, todayD, mt.id);
+                            toggleMed(horse.id, todayD, mt.id, maxD);
                           }
-                        }} style={{ width: 36, height: 36, borderRadius: 9, border: "2px solid " + (val ? mt.color : C.border), background: val ? mt.color : "transparent", color: val ? "#fff" : C.textMid, fontWeight: 800, fontSize: 13, cursor: "pointer", display: "flex", alignItems: "center", justifyContent: "center" }}>
-                          {val ? "✓" : mt.short}
+                        }} title={(val === 0 ? "Tap to give 1 dose" : val >= maxD ? "Tap to clear" : "Tap for dose " + (val+1)) + " of " + mt.label}
+                          style={{ minWidth: 40, height: 36, borderRadius: 9, border: "2px solid " + btnBorder, background: btnBg, color: val > 0 ? "#fff" : C.textMid, fontWeight: 800, fontSize: 12, cursor: "pointer", display: "flex", alignItems: "center", justifyContent: "center", padding: "0 6px" }}>
+                          {btnLabel}
                         </button>
                       );
                     })}
@@ -402,9 +412,10 @@ function MedicationTracker({ horses, medLogs, setMedLogs, trackedIds, setTracked
                                 return (
                                   <td key={d} onClick={function() { toggleMed(horse.id, d, mt.id); }}
                                     style={{ padding: "3px", textAlign: "center", cursor: "pointer" }}>
-                                    <div style={{ width: 20, height: 20, borderRadius: 5, margin: "0 auto", background: val ? mt.color : isToday ? C.gold + "20" : C.cardOff, border: "1.5px solid " + (val ? mt.color : isToday ? C.gold : C.border), display: "flex", alignItems: "center", justifyContent: "center" }}>
-                                      {val ? <span style={{ fontSize: 9, color: "#fff", fontWeight: 900 }}>✓</span> : null}
-                                    </div>
+                                    <div onClick={function(e2) { e2.stopPropagation(); toggleMed(horse.id, d, mt.id); }}
+                                    style={{ width: 20, height: 20, borderRadius: 5, margin: "0 auto", background: val ? mt.color : isToday ? C.gold + "20" : C.cardOff, border: "1.5px solid " + (val ? mt.color : isToday ? C.gold : C.border), display: "flex", alignItems: "center", justifyContent: "center", cursor: "pointer" }}>
+                                    {val > 1 ? <span style={{ fontSize: 8, color: "#fff", fontWeight: 900 }}>{val}</span> : val === 1 ? <span style={{ fontSize: 9, color: "#fff", fontWeight: 900 }}>✓</span> : null}
+                                  </div>
                                   </td>
                                 );
                               })}
