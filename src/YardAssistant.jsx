@@ -140,8 +140,18 @@ function YardAssistant({ horses, setHorses, weights, medLogs, setMedLogs, remind
         createdAt: new Date().toISOString()
       };
       if (setReminders) setReminders(function(prev) { return (prev || []).concat([reminder]); });
-      if (onNavigate) {} // stay on assistant
-      return "Reminder saved: " + reminder.text + " on " + reminder.date + " at " + reminder.time;
+      // Save to Supabase so it persists in Reminders tab
+      if (user && supabase) {
+        supabase.from("reminders").insert({
+          id: reminder.id, user_id: user.id,
+          text: reminder.text, reminder_date: reminder.date,
+          reminder_time: reminder.time, horse_name: reminder.horseName || "",
+          phone: reminder.phone || "", send_whatsapp: true,
+          notify_before_hours: 24, max_attempts: 3,
+          attempt_count: 0, acknowledged: false, dismissed: false, fired: false
+        }).then(function(r) { if (r.error) console.error("Reminder save:", r.error); });
+      }
+      return "Reminder set for " + reminder.date + " at " + reminder.time + ": " + reminder.text;
     }
 
     if (action.type === "navigate" && onNavigate) {
@@ -282,7 +292,7 @@ function YardAssistant({ horses, setHorses, weights, medLogs, setMedLogs, remind
   ];
 
   return (
-    <div style={{ display: "flex", flexDirection: "column", height: "calc(100vh - 130px)", minHeight: 500 }}>
+    <div style={{ display: "flex", flexDirection: "column", height: "calc(100dvh - 120px)", maxHeight: "calc(100dvh - 120px)", minHeight: 300, overflow: "hidden" }}>
       <div style={{ display: "flex", justifyContent: "space-between", alignItems: "flex-start", marginBottom: 10, flexShrink: 0 }}>
         <div>
           <div style={{ fontSize: 22, fontWeight: 800, color: C.text }}>Yard Assistant</div>
@@ -293,7 +303,7 @@ function YardAssistant({ horses, setHorses, weights, medLogs, setMedLogs, remind
         <Btn variant="ghost" onClick={clearToday} style={{ fontSize: 11, padding: "6px 12px" }}>Clear Today</Btn>
       </div>
 
-      <div style={{ flex: 1, overflowY: "auto", display: "flex", flexDirection: "column", gap: 8, paddingRight: 4, marginBottom: 10 }}>
+      <div style={{ flex: 1, overflowY: "auto", display: "flex", flexDirection: "column", gap: 8, paddingRight: 4, marginBottom: 8, WebkitOverflowScrolling: "touch" }}>
         {messages.map(function(msg) {
           var isUser = msg.role === "user";
           return (
