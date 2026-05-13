@@ -549,7 +549,8 @@ function YardSettings({ settings, setSettings }) {
     { key: "late_returns", label: "Late returns" },
     { key: "medication_alerts", label: "Medication alerts" },
     { key: "race_day", label: "Race day" },
-    { key: "entry_confirmations", label: "Entry confirmations" }
+    { key: "entry_confirmations", label: "Entry confirmations" },
+    { key: "reminders", label: "Reminders" }
   ];
 
   return (
