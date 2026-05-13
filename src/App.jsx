@@ -279,21 +279,21 @@ export default function App() {
   var medAlerts = horses.filter(function(h) { var d = daysUntil(h.nextRaceDate); return d && d >= 12 && d <= 16; }).length;
 
   var NAV = [
-    { id: "yard", label: "My Yard" },
-    { id: "planner", label: "Race Planner" },
-    { id: "provisional", label: "Provisional Entries" },
-    { id: "meds", label: "Medication Tracker", badge: medAlerts },
-    { id: "whiteboard", label: "Raceday Whiteboard" },
-    { id: "movements", label: "Horse Movements" },
-    { id: "owners", label: "Owner Portal" },
-    { id: "staff", label: "Staff Hours" },
-    { id: "settings", label: "Yard Settings" },
-    { id: "weights", label: "Weights" },
-    { id: "assistant", label: "AI Assistant" },
-    { id: "content", label: "Content" },
-    { id: "summary", label: "Daily Summary" },
-    { id: "reminders", label: "Reminders" },
-    { id: "procurement", label: "Procurement" },
+    { id: "yard", label: "My Yard", icon: "🐎" },
+    { id: "planner", label: "Race Planner", icon: "📋" },
+    { id: "provisional", label: "Provisional", icon: "📝" },
+    { id: "meds", label: "Medications", icon: "💊", badge: medAlerts },
+    { id: "whiteboard", label: "Whiteboard", icon: "🖨️" },
+    { id: "movements", label: "Movements", icon: "🚛" },
+    { id: "owners", label: "Owners", icon: "👤" },
+    { id: "staff", label: "Staff Hours", icon: "🌙" },
+    { id: "weights", label: "Weights", icon: "⚖️" },
+    { id: "assistant", label: "AI Assistant", icon: "🤖" },
+    { id: "content", label: "Content", icon: "🎥" },
+    { id: "summary", label: "Daily Summary", icon: "📊" },
+    { id: "reminders", label: "Reminders", icon: "🔔" },
+    { id: "procurement", label: "Procurement", icon: "🛒" },
+    { id: "settings", label: "Settings", icon: "⚙️" },
   ];
 
   if (appLoading) return (
@@ -360,18 +360,55 @@ export default function App() {
           style={{ background: "rgba(255,255,255,0.08)", border: "1px solid rgba(255,255,255,0.12)", color: "#fff", width: 32, height: 32, borderRadius: 8, cursor: "pointer", fontSize: 13 }}>
           {sidebarOpen ? "<" : ">"}
         </button>
-        <div style={{ fontSize: 16, fontWeight: 800, color: "#fff" }}>RacePlan Pro</div>
+        <div style={{ fontSize: 15, fontWeight: 900, color: "#fff" }}>🏇 RacePlan Pro</div>
         <div style={{ marginLeft: 8, padding: "4px 12px", background: "rgba(255,255,255,0.08)", borderRadius: 20, fontSize: 12, color: "rgba(255,255,255,0.7)", fontWeight: 600 }}>
           {(NAV.find(function(n) { return n.id === tab; }) || {}).label || ""}
         </div>
         <div style={{ marginLeft: "auto", display: "flex", alignItems: "center", gap: 10 }}>
-          <span style={{ fontSize: 11, color: "rgba(255,255,255,0.4)" }}>{user.email}</span>
+          <span style={{ fontSize: 11, color: "rgba(255,255,255,0.35)", maxWidth: 120, overflow: "hidden", textOverflow: "ellipsis", whiteSpace: "nowrap", display: "block" }}>{user.email}</span>
           <button onClick={handleLogout}
             style={{ background: "rgba(255,255,255,0.08)", border: "1px solid rgba(255,255,255,0.12)", color: "#fff", padding: "5px 12px", borderRadius: 8, fontSize: 12, cursor: "pointer" }}>
             Sign Out
           </button>
         </div>
       </div>
+
+      {mobileNavOpen && (
+        <div onClick={function() { setMobileNavOpen(false); }}
+          style={{ position: "fixed", inset: 0, background: "rgba(0,0,0,0.65)", zIndex: 300, display: "flex", flexDirection: "column", justifyContent: "flex-end" }}>
+          <div onClick={function(e) { e.stopPropagation(); }}
+            style={{ background: C.navy, borderRadius: "20px 20px 0 0", maxHeight: "85vh", overflowY: "auto", paddingBottom: 24 }}>
+            <div style={{ width: 40, height: 4, background: "rgba(255,255,255,0.2)", borderRadius: 2, margin: "12px auto 16px" }} />
+            <div style={{ display: "grid", gridTemplateColumns: "1fr 1fr 1fr", gap: 4, padding: "0 10px" }}>
+              {NAV.map(function(nav) {
+                var active = tab === nav.id;
+                return (
+                  <button key={nav.id} onClick={function() { setTab(nav.id); setMobileNavOpen(false); }}
+                    style={{ display: "flex", flexDirection: "column", alignItems: "center", justifyContent: "center",
+                      padding: "14px 6px", borderRadius: 12, border: "none",
+                      background: active ? "rgba(255,255,255,0.15)" : "rgba(255,255,255,0.04)",
+                      color: active ? "#fff" : "rgba(255,255,255,0.6)",
+                      fontSize: 11, fontWeight: active ? 700 : 500, cursor: "pointer", gap: 6,
+                      borderBottom: active ? "2px solid " + C.gold : "2px solid transparent" }}>
+                    <span style={{ fontSize: 22 }}>{nav.icon}</span>
+                    <span style={{ lineHeight: 1.2, textAlign: "center", fontSize: 10 }}>{nav.label}</span>
+                  </button>
+                );
+              })}
+            </div>
+            <div style={{ margin: "14px 14px 0", padding: "12px 16px", background: "rgba(255,255,255,0.06)", borderRadius: 12, display: "flex", justifyContent: "space-between", alignItems: "center" }}>
+              <div>
+                <div style={{ fontSize: 11, color: "rgba(255,255,255,0.4)" }}>Active horses</div>
+                <div style={{ fontSize: 20, fontWeight: 900, color: C.green }}>{horses.filter(function(h) { return h.status === "Active"; }).length}</div>
+              </div>
+              <button onClick={function() { handleLogout(); setMobileNavOpen(false); }}
+                style={{ padding: "8px 16px", background: "rgba(255,255,255,0.08)", border: "none", color: "#fff", borderRadius: 8, cursor: "pointer", fontSize: 13 }}>
+                Sign Out
+              </button>
+            </div>
+          </div>
+        </div>
+      )}
 
       <div style={{ display: "flex", flex: 1, minHeight: 0 }}>
         <div style={{ width: sidebarOpen ? 200 : 52, background: C.sidebar, flexShrink: 0, display: "flex", flexDirection: "column", transition: "width 0.2s", overflow: "hidden" }}>
@@ -406,7 +443,7 @@ export default function App() {
           )}
         </div>
 
-        <div style={{ flex: 1, overflowY: "auto", padding: "20px 24px", minWidth: 0 }}>
+        <div style={{ flex: 1, overflowY: "auto", padding: "14px 16px", minWidth: 0, boxSizing: "border-box" }}>
           {tab === "yard" && <YardView horses={horses} setHorses={setHorses} />}
           {tab === "planner" && <RacePlanner horses={horses} setHorses={setHorses} />}
           {tab === "provisional" && <ProvisionalEntries horses={horses} setHorses={setHorses} />}
