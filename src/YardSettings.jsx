@@ -472,8 +472,7 @@ function YardSettings({ settings, setSettings }) {
     var reader = new FileReader();
     reader.onload = function(ev) {
       var text = ev.target.result;
-      var lines2 = text.split("
-").filter(function(l) { return l.trim(); });
+      var lines2 = text.split("\n").filter(function(l) { return l.trim(); });
       var results = [];
       for (var i = 1; i < lines2.length; i++) {
         var line = lines2[i].trim();
