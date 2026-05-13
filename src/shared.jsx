@@ -31,17 +31,31 @@ const SILKS = [
   { primary: "#1e6fb5", secondary: "#f5c842", pattern: "plain" },
 ];
 
-function Silk({ silk, size = 40 }) {
-  const s = silk || SILKS[0];
+function Silk({ silk, size }) {
+  var sz = size || 40;
+  var s = silk || SILKS[0];
+  var body = s.body || s.primary || "#888";
+  var secondary = s.secondary || "#555";
+  var sleeve = s.sleeve || secondary;
+  var cap = s.cap || secondary;
+  var pattern = s.pattern || "plain";
   return (
-    <svg width={size} height={size} viewBox="0 0 36 36" style={{ flexShrink: 0, filter: "drop-shadow(0 1px 2px rgba(0,0,0,0.12))" }}>
-      <ellipse cx="18" cy="20" rx="13" ry="11" fill={s.primary} />
-      <ellipse cx="18" cy="11" rx="7" ry="8" fill={s.primary} />
-      {s.pattern === "stripes" && <><rect x="5" y="14" width="26" height="3" fill={s.secondary} opacity="0.45" /><rect x="5" y="20" width="26" height="3" fill={s.secondary} opacity="0.45" /></>}
-      {s.pattern === "spots" && <><circle cx="12" cy="22" r="2.5" fill={s.secondary} opacity="0.55" /><circle cx="24" cy="22" r="2.5" fill={s.secondary} opacity="0.55" /><circle cx="18" cy="17" r="2.5" fill={s.secondary} opacity="0.55" /></>}
-      {s.pattern === "chevron" && <polyline points="5,18 18,12 31,18" fill="none" stroke={s.secondary} strokeWidth="3" opacity="0.55" />}
-      <ellipse cx="18" cy="8" rx="5" ry="4" fill={s.secondary} opacity="0.92" />
-      <ellipse cx="18" cy="20" rx="13" ry="11" fill="none" stroke="rgba(0,0,0,0.08)" strokeWidth="1" />
+    <svg width={sz} height={sz} viewBox="0 0 36 40" style={{ flexShrink: 0, filter: "drop-shadow(0 1px 3px rgba(0,0,0,0.25))" }}>
+      <path d="M18,3 L28,9 L28,27 Q18,33 8,27 L8,9 Z" fill={body} />
+      {pattern === "stripes" && <g><rect x="8" y="3" width="4" height="30" fill={secondary} opacity="0.55" /><rect x="16" y="3" width="4" height="30" fill={secondary} opacity="0.55" /><rect x="24" y="3" width="4" height="30" fill={secondary} opacity="0.55" /></g>}
+      {pattern === "hoops" && <g><rect x="8" y="11" width="20" height="5" fill={secondary} opacity="0.6" /><rect x="8" y="20" width="20" height="5" fill={secondary} opacity="0.6" /></g>}
+      {pattern === "chevron" && <polygon points="18,9 28,17 28,22 18,14 8,22 8,17" fill={secondary} opacity="0.7" />}
+      {pattern === "quartered" && <g><rect x="18" y="3" width="10" height="14" fill={secondary} opacity="0.65" /><rect x="8" y="17" width="10" height="16" fill={secondary} opacity="0.65" /></g>}
+      {pattern === "spots" && <g><circle cx="13" cy="13" r="3" fill={secondary} opacity="0.6" /><circle cx="23" cy="11" r="2.5" fill={secondary} opacity="0.6" /><circle cx="11" cy="22" r="2.5" fill={secondary} opacity="0.6" /><circle cx="24" cy="22" r="3" fill={secondary} opacity="0.6" /></g>}
+      {pattern === "panel" && <rect x="13" y="3" width="10" height="30" fill={secondary} opacity="0.6" />}
+      {pattern === "braces" && <g><line x1="13" y1="3" x2="18" y2="16" stroke={secondary} strokeWidth="4" opacity="0.7" /><line x1="23" y1="3" x2="18" y2="16" stroke={secondary} strokeWidth="4" opacity="0.7" /></g>}
+      {pattern === "epaulettes" && <rect x="8" y="3" width="20" height="7" fill={secondary} opacity="0.65" />}
+      {pattern === "diamond" && <polygon points="18,9 25,18 18,27 11,18" fill={secondary} opacity="0.65" />}
+      <path d="M18,3 L28,9 L28,27 Q18,33 8,27 L8,9 Z" fill="none" stroke="rgba(0,0,0,0.12)" strokeWidth="0.8" />
+      <rect x="6" y="9" width="4" height="18" fill={sleeve} rx="2" />
+      <rect x="26" y="9" width="4" height="18" fill={sleeve} rx="2" />
+      <ellipse cx="18" cy="5" rx="8" ry="4" fill={cap} />
+      <line x1="10" y1="5" x2="26" y2="5" stroke="rgba(0,0,0,0.1)" strokeWidth="0.6" />
     </svg>
   );
 }
