@@ -1,3 +1,28 @@
+function SilkPreview({ silk, size }) {
+  var sz = size || 36;
+  if (!silk) return <div style={{ width: sz, height: sz, borderRadius: "50%", background: "#888" }} />;
+  var body = silk.body || "#888"; var secondary = silk.secondary || "#555";
+  var sleeve = silk.sleeve || secondary; var cap = silk.cap || secondary;
+  var pattern = silk.pattern || "plain";
+  return (
+    <svg width={sz} height={sz} viewBox="0 0 36 40" style={{ flexShrink: 0 }}>
+      <path d="M18,3 L28,9 L28,27 Q18,33 8,27 L8,9 Z" fill={body} />
+      {pattern === "stripes" && <g><rect x="8" y="3" width="4" height="30" fill={secondary} opacity="0.55" /><rect x="16" y="3" width="4" height="30" fill={secondary} opacity="0.55" /><rect x="24" y="3" width="4" height="30" fill={secondary} opacity="0.55" /></g>}
+      {pattern === "hoops" && <g><rect x="8" y="11" width="20" height="5" fill={secondary} opacity="0.6" /><rect x="8" y="20" width="20" height="5" fill={secondary} opacity="0.6" /></g>}
+      {pattern === "chevron" && <polygon points="18,9 28,17 28,22 18,14 8,22 8,17" fill={secondary} opacity="0.7" />}
+      {pattern === "quartered" && <g><rect x="18" y="3" width="10" height="14" fill={secondary} opacity="0.65" /><rect x="8" y="17" width="10" height="16" fill={secondary} opacity="0.65" /></g>}
+      {pattern === "spots" && <g><circle cx="13" cy="13" r="3" fill={secondary} opacity="0.6" /><circle cx="23" cy="11" r="2.5" fill={secondary} opacity="0.6" /><circle cx="11" cy="22" r="2.5" fill={secondary} opacity="0.6" /><circle cx="24" cy="22" r="3" fill={secondary} opacity="0.6" /></g>}
+      {pattern === "panel" && <rect x="13" y="3" width="10" height="30" fill={secondary} opacity="0.6" />}
+      {pattern === "braces" && <g><line x1="13" y1="3" x2="18" y2="16" stroke={secondary} strokeWidth="4" opacity="0.7" /><line x1="23" y1="3" x2="18" y2="16" stroke={secondary} strokeWidth="4" opacity="0.7" /></g>}
+      {pattern === "diamond" && <polygon points="18,9 25,18 18,27 11,18" fill={secondary} opacity="0.65" />}
+      <path d="M18,3 L28,9 L28,27 Q18,33 8,27 L8,9 Z" fill="none" stroke="rgba(0,0,0,0.12)" strokeWidth="0.8" />
+      <rect x="6" y="9" width="4" height="18" fill={sleeve} rx="2" />
+      <rect x="26" y="9" width="4" height="18" fill={sleeve} rx="2" />
+      <ellipse cx="18" cy="5" rx="8" ry="4" fill={cap} />
+    </svg>
+  );
+}
+
 import React, { useState } from "react";
 import { Btn, C } from "./shared";
 
@@ -311,6 +336,8 @@ function YardSettings({ settings, setSettings }) {
   var edit = editState[0]; var setEdit = editState[1];
 
   var savedState = useState(false);
+  var silkPreviewState = useState([]);
+  var silkPreviews = silkPreviewState[0]; var setSilkPreviews = silkPreviewState[1];
   var saved = savedState[0]; var setSaved = savedState[1];
   var activeTabState = useState("yard");
   var activeTab = activeTabState[0]; var setActiveTab = activeTabState[1];
@@ -384,14 +411,106 @@ function YardSettings({ settings, setSettings }) {
     });
   }
 
+  var COLOUR_HEX = {
+    "white": "#ffffff", "black": "#1a1a1a", "red": "#c0392b",
+    "blue": "#1e6fb5", "royal blue": "#2c4fb5", "dark blue": "#0a1628",
+    "light blue": "#5bc8f5", "navy": "#0a1628", "navy blue": "#0a1628",
+    "pink": "#e91e8c", "hot pink": "#ff69b4", "yellow": "#f5c842",
+    "gold": "#c9952a", "green": "#1a7a4a", "emerald": "#2ecc71",
+    "emerald green": "#2ecc71", "dark green": "#1a5c2a", "light green": "#4caf50",
+    "orange": "#e67e22", "purple": "#6d3fc0", "brown": "#795548",
+    "grey": "#9e9e9e", "gray": "#9e9e9e", "maroon": "#800000",
+    "crimson": "#dc143c", "silver": "#bdc3c7", "turquoise": "#1abc9c",
+    "beige": "#f5f0e8", "lime": "#cddc39", "coral": "#ff6b6b",
+    "mauve": "#d4a5c9", "magenta": "#e040fb", "cream": "#fffde7"
+  };
+
+  function getColourHex(text) {
+    if (!text) return "#888888";
+    var t = text.toLowerCase().trim();
+    var keys = Object.keys(COLOUR_HEX).sort(function(a,b) { return b.length - a.length; });
+    for (var i = 0; i < keys.length; i++) {
+      if (t.indexOf(keys[i]) >= 0) return COLOUR_HEX[keys[i]];
+    }
+    return "#888888";
+  }
+
+  function parseSilkDesc(desc) {
+    if (!desc) return null;
+    var parts = desc.split(",").map(function(p) { return p.trim().toLowerCase(); });
+    var body = getColourHex(parts[0]);
+    var sleeve = "#888888"; var cap = "#888888"; var secondary = "#888888";
+    parts.forEach(function(p) {
+      if (p.indexOf("sleeve") >= 0) sleeve = getColourHex(p);
+      if (p.indexOf("cap") >= 0) cap = getColourHex(p);
+    });
+    for (var i = 1; i < parts.length; i++) {
+      var p = parts[i];
+      if (p.indexOf("sleeve") < 0 && p.indexOf("cap") < 0 && p.indexOf("armlet") < 0) {
+        var c = getColourHex(p);
+        if (c !== "#888888") { secondary = c; break; }
+      }
+    }
+    var full = desc.toLowerCase();
+    var pattern = "plain";
+    if (full.indexOf("stripe") >= 0) pattern = "stripes";
+    else if (full.indexOf("chevron") >= 0) pattern = "chevron";
+    else if (full.indexOf("hoop") >= 0) pattern = "hoops";
+    else if (full.indexOf("quartered") >= 0) pattern = "quartered";
+    else if (full.indexOf("spot") >= 0) pattern = "spots";
+    else if (full.indexOf("diamond") >= 0) pattern = "diamond";
+    else if (full.indexOf("panel") >= 0) pattern = "panel";
+    else if (full.indexOf("epaulett") >= 0) pattern = "epaulettes";
+    else if (full.indexOf("brace") >= 0) pattern = "braces";
+    return { body: body, secondary: secondary, sleeve: sleeve, cap: cap, pattern: pattern, description: desc };
+  }
+
+  function handleSilksCSV(e) {
+    var file = e.target.files[0];
+    if (!file) return;
+    e.target.value = "";
+    var reader = new FileReader();
+    reader.onload = function(ev) {
+      var text = ev.target.result;
+      var lines2 = text.split("
+").filter(function(l) { return l.trim(); });
+      var results = [];
+      for (var i = 1; i < lines2.length; i++) {
+        var line = lines2[i].trim();
+        if (!line) continue;
+        var parts2 = line.split('","');
+        var owner = (parts2[0] || "").replace(/"/g, "").trim();
+        var desc = (parts2[1] || "").replace(/"/g, "").trim();
+        if (!owner) continue;
+        var silk = parseSilkDesc(desc);
+        if (silk) results.push({ owner: owner, silk: silk, description: desc });
+      }
+      setSilkPreviews(results);
+      // Store in settings
+      var silkMap = {};
+      results.forEach(function(r) { silkMap[r.owner.toLowerCase().trim()] = r.silk; });
+      update("ownerSilks", silkMap);
+      update("ownerSilksCount", results.length);
+    };
+    reader.readAsText(file);
+  }
+
+  function applysilksToHorses() {
+    // This will be called when trainer confirms — matches horses by owner name
+    var silkMap = edit.ownerSilks || {};
+    if (Object.keys(silkMap).length === 0) return;
+    update("silksApplied", true);
+    save();
+  }
+
   function save() {
     setSettings(edit);
     setSaved(true);
     setTimeout(function() { setSaved(false); }, 3000);
   }
 
-  var TABS = ["yard", "owners", "users", "contacts", "medications", "notifications", "subscription"];
-  var TAB_LABELS = { yard: "Yard Details", owners: "Owner Contacts", users: "App Users", contacts: "Staff Contacts", medications: "Medications", notifications: "Notifications", subscription: "Subscription" };
+  var TABS = ["yard", "owners", "users", "contacts", "medications", "silks", "notifications", "subscription"];
+  var TAB_LABELS = { yard: "Yard Details", owners: "Owner Contacts", users: "App Users", contacts: "Staff Contacts", medications: "Medications", silks: "Owner Silks", notifications: "Notifications", subscription: "Subscription" };
   var ROLES = ["Trainer", "Head Lad", "Assistant Trainer", "Head Girl", "HR", "Secretary", "Owner Manager", "Vet"];
   var NOTIFY_TYPES = [
     { key: "late_returns", label: "Late returns" },
@@ -776,6 +895,61 @@ function YardSettings({ settings, setSettings }) {
               </div>
             </div>
           )}
+        </div>
+      )}
+
+      {activeTab === "silks" && (
+        <div>
+          <div style={{ background: C.card, border: "1px solid " + C.border, borderRadius: 14, padding: "18px 20px", marginBottom: 14 }}>
+            <div style={{ fontSize: 15, fontWeight: 800, color: C.navy, marginBottom: 4 }}>Owner Racing Colours</div>
+            <div style={{ fontSize: 12, color: C.textMid, lineHeight: 1.7, marginBottom: 14 }}>
+              Upload your HRI Authority to Act CSV (the file listing owner names and their racing colour descriptions). The app will parse each description and generate the correct silk colours for every horse in your yard, matched by owner name.
+            </div>
+            <div style={{ display: "flex", gap: 10, alignItems: "center" }}>
+              <label style={{ padding: "10px 20px", borderRadius: 9, border: "1.5px solid " + C.navy, background: C.navy, color: "#fff", fontSize: 13, fontWeight: 700, cursor: "pointer", display: "inline-flex", alignItems: "center", gap: 8 }}>
+                Upload Authority to Act CSV
+                <input type="file" accept=".csv,.txt" onChange={handleSilksCSV} style={{ display: "none" }} />
+              </label>
+              {edit.ownerSilksCount > 0 && (
+                <span style={{ fontSize: 13, color: C.green, fontWeight: 700 }}>{edit.ownerSilksCount + " owner silks loaded"}</span>
+              )}
+            </div>
+          </div>
+
+          {silkPreviews.length > 0 && (
+            <div>
+              <div style={{ display: "flex", justifyContent: "space-between", alignItems: "center", marginBottom: 12 }}>
+                <div style={{ fontSize: 14, fontWeight: 700, color: C.navy }}>{silkPreviews.length + " silks parsed — preview below"}</div>
+                <Btn onClick={applysilksToHorses} style={{ fontSize: 12 }}>Apply to Yard & Save</Btn>
+              </div>
+              <div style={{ display: "grid", gridTemplateColumns: "repeat(3,1fr)", gap: 10 }}>
+                {silkPreviews.slice(0, 30).map(function(item, idx) {
+                  return (
+                    <div key={idx} style={{ background: C.card, border: "1px solid " + C.border, borderRadius: 10, padding: "12px 14px", display: "flex", alignItems: "center", gap: 10 }}>
+                      <SilkPreview silk={item.silk} size={36} />
+                      <div style={{ flex: 1, minWidth: 0 }}>
+                        <div style={{ fontSize: 12, fontWeight: 700, color: C.text, overflow: "hidden", textOverflow: "ellipsis", whiteSpace: "nowrap" }}>{item.owner}</div>
+                        <div style={{ fontSize: 10, color: C.textDim, marginTop: 2, overflow: "hidden", textOverflow: "ellipsis", whiteSpace: "nowrap" }}>{item.description.substring(0,40)}</div>
+                      </div>
+                    </div>
+                  );
+                })}
+              </div>
+              {silkPreviews.length > 30 && (
+                <div style={{ fontSize: 12, color: C.textMid, textAlign: "center", marginTop: 10 }}>{"+ " + (silkPreviews.length - 30) + " more owners"}</div>
+              )}
+            </div>
+          )}
+
+          {edit.ownerSilks && Object.keys(edit.ownerSilks).length > 0 && silkPreviews.length === 0 && (
+            <div style={{ background: C.cardOff, border: "1px solid " + C.border, borderRadius: 12, padding: "14px 16px", fontSize: 13, color: C.textMid }}>
+              {Object.keys(edit.ownerSilks).length + " owner silks saved. These are applied to horses when you save settings. Upload a new CSV to update."}
+            </div>
+          )}
+
+          <div style={{ background: C.amberBg, border: "1px solid " + C.amber + "40", borderRadius: 10, padding: "12px 14px", marginTop: 14, fontSize: 12, color: C.amber, lineHeight: 1.6 }}>
+            <strong>How matching works:</strong> When you click Apply, each horse in your yard is matched to an owner silk by their owner name. If the owner name on the horse matches an owner in this CSV, their silk is applied. Names are matched case-insensitively.
+          </div>
         </div>
       )}
 
