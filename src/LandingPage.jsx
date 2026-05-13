@@ -12,7 +12,7 @@ var OFF = "#f0f4f8";
 var PLANS = [
   {
     name: "Basic",
-    price: "149",
+    price: null,
     color: BLUE,
     desc: "For smaller yards getting started",
     features: [
@@ -30,7 +30,7 @@ var PLANS = [
   },
   {
     name: "Professional",
-    price: "249",
+    price: null,
     color: GOLD,
     desc: "For established yards — most popular",
     popular: true,
@@ -52,7 +52,7 @@ var PLANS = [
   },
   {
     name: "Gold",
-    price: "399",
+    price: null,
     color: GREEN,
     desc: "For large or multi-yard operations",
     features: [
@@ -156,7 +156,7 @@ function LandingPage({ onLogin, onSignup }) {
               </button>
             </div>
             <div style={{ display: "flex", gap: 28, paddingTop: 28, borderTop: "1px solid rgba(255,255,255,0.08)" }}>
-              {[["200+","Horses managed"],["£/€249","Most popular plan"],["5 min","Setup time"],["14 day","Free trial"]].map(function(s) {
+              {[["200+","Horses managed"],["Free","During beta"],["5 min","Setup time"],["14 day","Free trial"]].map(function(s) {
                 return (
                   <div key={s[0]}>
                     <div style={{ fontSize: 24, fontWeight: 900, color: GOLD, lineHeight: 1 }}>{s[0]}</div>
@@ -235,8 +235,12 @@ function LandingPage({ onLogin, onSignup }) {
                 <div key={plan.name} style={{ borderRadius: 20, padding: "30px 26px", border: "2px solid " + (featured ? plan.color : BORDER), background: featured ? NAVY : "#fff", position: "relative", transform: featured ? "scale(1.04)" : "none" }}>
                   {featured && <div style={{ position: "absolute", top: -13, left: "50%", transform: "translateX(-50%)", background: GOLD, color: NAVY, fontSize: 11, fontWeight: 800, padding: "4px 16px", borderRadius: 20, textTransform: "uppercase", whiteSpace: "nowrap" }}>Most Popular</div>}
                   <div style={{ fontSize: 12, fontWeight: 700, textTransform: "uppercase", letterSpacing: "1px", color: featured ? "rgba(255,255,255,0.4)" : MID, marginBottom: 6 }}>{plan.name}</div>
-                  <div style={{ fontSize: 44, fontWeight: 900, color: featured ? GOLD : NAVY, lineHeight: 1 }}>€{plan.price}</div>
-                  <div style={{ fontSize: 13, color: featured ? "rgba(255,255,255,0.35)" : MID, marginBottom: 6 }}>per month</div>
+                  <div style={{ fontSize: plan.price ? 44 : 22, fontWeight: 900, color: featured ? GOLD : NAVY, lineHeight: 1, marginBottom: 4 }}>
+                    {plan.price ? ("€" + plan.price) : "Free in Beta"}
+                  </div>
+                  <div style={{ fontSize: 13, color: featured ? "rgba(255,255,255,0.35)" : MID, marginBottom: 6 }}>
+                    {plan.price ? "per month" : "pricing TBC at launch"}
+                  </div>
                   <div style={{ fontSize: 13, color: featured ? "rgba(255,255,255,0.55)" : MID, marginBottom: 22, fontStyle: "italic" }}>{plan.desc}</div>
                   <div style={{ marginBottom: 24 }}>
                     {plan.features.map(function(f) {
@@ -258,7 +262,7 @@ function LandingPage({ onLogin, onSignup }) {
                   </div>
                   <button onClick={onSignup}
                     style={{ width: "100%", padding: "13px", borderRadius: 10, border: featured ? "none" : "2px solid " + BORDER, background: featured ? GOLD : OFF, color: featured ? NAVY : NAVY, fontWeight: 800, fontSize: 14, cursor: "pointer" }}>
-                    {featured ? "Start Free Trial" : "Get Started"}
+                    "Get Early Access"
                   </button>
                   <div style={{ fontSize: 11, color: featured ? "rgba(255,255,255,0.25)" : MID, textAlign: "center", marginTop: 10 }}>14-day free trial included</div>
                 </div>
