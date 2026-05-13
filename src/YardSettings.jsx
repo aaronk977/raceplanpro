@@ -11,6 +11,7 @@ function SilkPreview({ silk, size }) {
       {pattern === "hoops" && <g><rect x="8" y="11" width="20" height="5" fill={secondary} opacity="0.6" /><rect x="8" y="20" width="20" height="5" fill={secondary} opacity="0.6" /></g>}
       {pattern === "chevron" && <polygon points="18,9 28,17 28,22 18,14 8,22 8,17" fill={secondary} opacity="0.7" />}
       {pattern === "quartered" && <g><rect x="18" y="3" width="10" height="14" fill={secondary} opacity="0.65" /><rect x="8" y="17" width="10" height="16" fill={secondary} opacity="0.65" /></g>}
+      {pattern === "halved" && <path d="M18,3 L18,33 Q23,32 28,27 L28,9 Z" fill={secondary} opacity="0.9" />}
       {pattern === "spots" && <g><circle cx="13" cy="13" r="3" fill={secondary} opacity="0.6" /><circle cx="23" cy="11" r="2.5" fill={secondary} opacity="0.6" /><circle cx="11" cy="22" r="2.5" fill={secondary} opacity="0.6" /><circle cx="24" cy="22" r="3" fill={secondary} opacity="0.6" /></g>}
       {pattern === "panel" && <rect x="13" y="3" width="10" height="30" fill={secondary} opacity="0.6" />}
       {pattern === "braces" && <g><line x1="13" y1="3" x2="18" y2="16" stroke={secondary} strokeWidth="4" opacity="0.7" /><line x1="23" y1="3" x2="18" y2="16" stroke={secondary} strokeWidth="4" opacity="0.7" /></g>}
@@ -412,17 +413,23 @@ function YardSettings({ settings, setSettings }) {
   }
 
   var COLOUR_HEX = {
-    "white": "#ffffff", "black": "#1a1a1a", "red": "#c0392b",
-    "blue": "#1e6fb5", "royal blue": "#2c4fb5", "dark blue": "#0a1628",
-    "light blue": "#5bc8f5", "navy": "#0a1628", "navy blue": "#0a1628",
-    "pink": "#e91e8c", "hot pink": "#ff69b4", "yellow": "#f5c842",
-    "gold": "#c9952a", "green": "#1a7a4a", "emerald": "#2ecc71",
-    "emerald green": "#2ecc71", "dark green": "#1a5c2a", "light green": "#4caf50",
-    "orange": "#e67e22", "purple": "#6d3fc0", "brown": "#795548",
-    "grey": "#9e9e9e", "gray": "#9e9e9e", "maroon": "#800000",
-    "crimson": "#dc143c", "silver": "#bdc3c7", "turquoise": "#1abc9c",
-    "beige": "#f5f0e8", "lime": "#cddc39", "coral": "#ff6b6b",
-    "mauve": "#d4a5c9", "magenta": "#e040fb", "cream": "#fffde7"
+    "white": "#ffffff", "black": "#111111", "red": "#c0392b",
+    "dark red": "#8b0000", "light red": "#e57373",
+    "blue": "#1e6fb5", "royal blue": "#2e4ebb", "dark blue": "#1a2a6c",
+    "light blue": "#5bc8f5", "sky blue": "#87ceeb",
+    "navy": "#1a2a6c", "navy blue": "#1a2a6c",
+    "pink": "#f06292", "hot pink": "#ff69b4", "light pink": "#ffb3c6",
+    "yellow": "#f5c842", "gold": "#c9952a", "amber": "#ffa000",
+    "green": "#2e7d32", "emerald": "#2ecc71", "emerald green": "#00a651",
+    "dark green": "#1b5e20", "light green": "#81c784", "lime": "#cddc39",
+    "orange": "#e67e22", "bright orange": "#ff5722",
+    "purple": "#6d3fc0", "mauve": "#d4a5c9", "magenta": "#e040fb", "violet": "#7b1fa2",
+    "brown": "#795548", "chocolate": "#5d4037",
+    "grey": "#9e9e9e", "gray": "#9e9e9e", "silver": "#bdc3c7",
+    "maroon": "#800000", "crimson": "#dc143c", "scarlet": "#ff2400",
+    "turquoise": "#1abc9c", "teal": "#009688", "aqua": "#00bcd4",
+    "beige": "#f5f0e8", "cream": "#fffde7", "coral": "#ff6b6b",
+    "black & white": "#555555"
   };
 
   function getColourHex(text) {
@@ -437,31 +444,58 @@ function YardSettings({ settings, setSettings }) {
 
   function parseSilkDesc(desc) {
     if (!desc) return null;
-    var parts = desc.split(",").map(function(p) { return p.trim().toLowerCase(); });
-    var body = getColourHex(parts[0]);
-    var sleeve = "#888888"; var cap = "#888888"; var secondary = "#888888";
+    var full = desc.toLowerCase();
+    var parts = desc.split(",").map(function(p) { return p.trim(); });
+
+    // Parse the first part carefully - could be "PINK & WHITE HALVED" or "BLACK & RED STRIPES"
+    var bodyPart = parts[0].toLowerCase();
+    var body = "#888888"; var secondary = "#888888";
+
+    // Check for two-colour body pattern like "PINK & WHITE HALVED"
+    var ampIdx = bodyPart.indexOf(" & ");
+    if (ampIdx >= 0) {
+      body = getColourHex(bodyPart.slice(0, ampIdx));
+      var rest = bodyPart.slice(ampIdx + 3);
+      // rest could be "white halved" or "red stripes" - get colour then pattern word
+      var restWords = rest.split(" ");
+      secondary = getColourHex(restWords[0]);
+    } else {
+      body = getColourHex(bodyPart);
+    }
+
+    var sleeve = "#888888"; var cap = "#888888";
     parts.forEach(function(p) {
-      if (p.indexOf("sleeve") >= 0) sleeve = getColourHex(p);
-      if (p.indexOf("cap") >= 0) cap = getColourHex(p);
+      var pl = p.toLowerCase();
+      if (pl.indexOf("sleeve") >= 0) sleeve = getColourHex(pl);
+      if (pl.indexOf("cap") >= 0) cap = getColourHex(pl);
     });
-    for (var i = 1; i < parts.length; i++) {
-      var p = parts[i];
-      if (p.indexOf("sleeve") < 0 && p.indexOf("cap") < 0 && p.indexOf("armlet") < 0) {
-        var c = getColourHex(p);
-        if (c !== "#888888") { secondary = c; break; }
+
+    // If secondary still not found, look in non-sleeve/cap parts
+    if (secondary === "#888888") {
+      for (var i = 1; i < parts.length; i++) {
+        var p = parts[i].toLowerCase();
+        if (p.indexOf("sleeve") < 0 && p.indexOf("cap") < 0 && p.indexOf("armlet") < 0 && p.indexOf("star") < 0) {
+          var c = getColourHex(p);
+          if (c !== "#888888") { secondary = c; break; }
+        }
       }
     }
-    var full = desc.toLowerCase();
+
+    // Pattern detection - order matters, check most specific first
     var pattern = "plain";
-    if (full.indexOf("stripe") >= 0) pattern = "stripes";
+    if (full.indexOf("halved") >= 0) pattern = "halved";
+    else if (full.indexOf("quartered") >= 0) pattern = "quartered";
+    else if (full.indexOf("stripe") >= 0) pattern = "stripes";
     else if (full.indexOf("chevron") >= 0) pattern = "chevron";
     else if (full.indexOf("hoop") >= 0) pattern = "hoops";
-    else if (full.indexOf("quartered") >= 0) pattern = "quartered";
     else if (full.indexOf("spot") >= 0) pattern = "spots";
     else if (full.indexOf("diamond") >= 0) pattern = "diamond";
     else if (full.indexOf("panel") >= 0) pattern = "panel";
     else if (full.indexOf("epaulett") >= 0) pattern = "epaulettes";
     else if (full.indexOf("brace") >= 0) pattern = "braces";
+    else if (full.indexOf("seam") >= 0) pattern = "stripes";
+    else if (ampIdx >= 0) pattern = "halved"; // "X & Y" with no named pattern = halved
+
     return { body: body, secondary: secondary, sleeve: sleeve, cap: cap, pattern: pattern, description: desc };
   }
 
