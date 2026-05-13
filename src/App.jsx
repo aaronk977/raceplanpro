@@ -421,7 +421,7 @@ export default function App() {
           {tab === "content" && <ContentScheduler horses={horses} settings={settings} />}
           {tab === "summary" && <DailySummary horses={horses} medLogs={medLogs} weights={weightsRaw} wbEntries={wbEntries} settings={settings} />}
           {tab === "procurement" && <Procurement user={user} supabase={supabase} orders={ordersRaw} setOrders={setOrders} settings={settings} />}
-          {tab === "reminders" && <Reminders reminders={reminders} setReminders={setReminders} settings={settings} user={user} />}
+          {tab === "reminders" && <Reminders reminders={reminders} setReminders={setReminders} settings={settings} user={user} supabase={supabase} />}
         </div>
       </div>
     </div>
