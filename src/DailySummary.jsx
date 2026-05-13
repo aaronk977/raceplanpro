@@ -97,12 +97,52 @@ function DailySummary({ horses, medLogs, weights, wbEntries, settings }) {
   var activeHorses = (horses || []).filter(function(h) { return h.status === "Active"; });
   var racingToday = (wbEntries || []).filter(function(e) { return e.date === selectedDate; });
   var racingSoon = activeHorses.filter(function(h) { var d = daysUntil(h.nextRaceDate); return d && d >= 0 && d <= 7; });
-  var medEndingToday = activeHorses.filter(function(h) {
-    var mm = String(now.getMonth() + 1).padStart(2, "0");
-    var dd = String(now.getDate()).padStart(2, "0");
-    var key = h.id + "_" + now.getFullYear() + "-" + mm + "-" + dd + "_peptizole";
-    return (medLogs || {})[key];
+  var todayKey = now.getFullYear() + "-" + String(now.getMonth() + 1).padStart(2, "0") + "-" + String(now.getDate()).padStart(2, "0");
+
+  // All medications given today - any med type
+  var medsGivenToday = [];
+  activeHorses.forEach(function(h) {
+    var horseMeds = [];
+    Object.keys(medLogs || {}).forEach(function(key) {
+      if (key.indexOf(h.id + "_" + todayKey + "_") === 0 && medLogs[key]) {
+        var medType = key.split("_").slice(-1)[0];
+        horseMeds.push(medType);
+      }
+    });
+    if (horseMeds.length > 0) {
+      medsGivenToday.push({ horse: h, meds: horseMeds });
+    }
   });
+
+  // Horses whose medication ends today or in next 2 days
+  // based on entries/shortlists and configured course lengths
+  var medSettings = (settings && settings.medications) ? settings.medications : [
+    { name: "Peptizole", courseDays: 12, withdrawalDays: 4 },
+    { name: "Antepsin", courseDays: 12, withdrawalDays: 1 }
+  ];
+
+  var medEndingSoon = [];
+  activeHorses.forEach(function(h) {
+    var entries = (h.provisionalEntries || []);
+    entries.forEach(function(entry) {
+      if (!entry.date) return;
+      var raceDate = new Date(entry.date + "T12:00:00");
+      medSettings.forEach(function(ms) {
+        var courseDays = parseInt(ms.courseDays || 12);
+        var withdrawalDays = parseInt(ms.withdrawalDays || 4);
+        var stopDate = new Date(raceDate);
+        stopDate.setDate(stopDate.getDate() - withdrawalDays);
+        var today2 = new Date(); today2.setHours(0,0,0,0);
+        var stopD = new Date(stopDate); stopD.setHours(0,0,0,0);
+        var daysToStop = Math.round((stopD - today2) / 86400000);
+        if (daysToStop >= 0 && daysToStop <= 2) {
+          medEndingSoon.push({ horse: h, med: ms.name || ms.label, daysToStop: daysToStop, stopDate: stopDate.toLocaleDateString("en-IE", { day: "numeric", month: "short" }), race: entry.raceName || entry.venue, raceDate: entry.date });
+        }
+      });
+    });
+  });
+
+  var medEndingToday = medEndingSoon.filter(function(m) { return m.daysToStop === 0; });
 
   var headgearStats = {};
   (horses || []).forEach(function(h) {
@@ -132,7 +172,7 @@ function DailySummary({ horses, medLogs, weights, wbEntries, settings }) {
           { label: "Active Horses", value: activeHorses.length, color: C.blue, icon: "🐎" },
           { label: "Racing Today", value: racingToday.length, color: C.gold, icon: "🏇" },
           { label: "Racing This Week", value: racingSoon.length, color: C.amber, icon: "📅" },
-          { label: "Med Ending Today", value: medEndingToday.length, color: medEndingToday.length > 0 ? C.red : C.green, icon: "💊" }
+          { label: "Meds Given Today", value: medsGivenToday.length, color: medsGivenToday.length > 0 ? C.blue : C.textMid, icon: "💊" }
         ].map(function(stat) {
           return (
             <div key={stat.label} style={{ background: C.card, borderRadius: 12, padding: "14px 16px", borderTop: "4px solid " + stat.color }}>
@@ -169,21 +209,64 @@ function DailySummary({ horses, medLogs, weights, wbEntries, settings }) {
         </div>
       )}
 
-      {medEndingToday.length > 0 && (
-        <div style={{ background: C.redBg, border: "1px solid " + C.red + "30", borderRadius: 12, padding: "14px 16px", marginBottom: 14 }}>
-          <div style={{ fontSize: 13, fontWeight: 700, color: C.red, marginBottom: 8 }}>💊 Peptizole ending today — check entries before 12pm</div>
-          <div style={{ display: "flex", gap: 8, flexWrap: "wrap" }}>
-            {medEndingToday.map(function(h) {
-              return (
-                <div key={h.id} style={{ display: "flex", alignItems: "center", gap: 6, padding: "5px 12px", background: "#fff", borderRadius: 20, border: "1px solid " + C.red + "30" }}>
-                  <Silk silk={h.silk} size={20} />
-                  <span style={{ fontSize: 13, fontWeight: 700, color: C.text }}>{h.name}</span>
-                </div>
-              );
-            })}
+      <div style={{ background: C.card, border: "1px solid " + C.border, borderRadius: 12, padding: "14px 16px", marginBottom: 14 }}>
+        <div style={{ fontSize: 14, fontWeight: 700, color: C.navy, marginBottom: 12 }}>💊 Medication — Today</div>
+
+        {medsGivenToday.length > 0 ? (
+          <div style={{ marginBottom: medEndingSoon.length > 0 ? 12 : 0 }}>
+            <div style={{ fontSize: 10, fontWeight: 700, color: C.textMid, textTransform: "uppercase", letterSpacing: 1, marginBottom: 8 }}>Given Today</div>
+            <div style={{ display: "flex", flexDirection: "column", gap: 5 }}>
+              {medsGivenToday.map(function(item) {
+                return (
+                  <div key={item.horse.id} style={{ display: "flex", alignItems: "center", gap: 10, padding: "7px 10px", background: C.cardOff, borderRadius: 8 }}>
+                    <Silk silk={item.horse.silk} size={22} />
+                    <span style={{ fontSize: 13, fontWeight: 700, color: C.text, flex: 1 }}>{item.horse.name}</span>
+                    <div style={{ display: "flex", gap: 5 }}>
+                      {item.meds.map(function(med) {
+                        return <span key={med} style={{ fontSize: 11, padding: "2px 8px", borderRadius: 20, background: C.blue + "15", color: C.blue, fontWeight: 700, textTransform: "capitalize" }}>{med}</span>;
+                      })}
+                    </div>
+                  </div>
+                );
+              })}
+            </div>
           </div>
-        </div>
-      )}
+        ) : (
+          <div style={{ fontSize: 13, color: C.textDim, marginBottom: medEndingSoon.length > 0 ? 12 : 0 }}>No medication logged yet today — go to Medication Tracker to log</div>
+        )}
+
+        {medEndingSoon.length > 0 && (
+          <div>
+            <div style={{ fontSize: 10, fontWeight: 700, color: C.red, textTransform: "uppercase", letterSpacing: 1, marginBottom: 8, marginTop: medsGivenToday.length > 0 ? 12 : 0, paddingTop: medsGivenToday.length > 0 ? 12 : 0, borderTop: medsGivenToday.length > 0 ? "1px solid " + C.border : "none" }}>
+              Ending Soon — Check Entries Before 12pm
+            </div>
+            <div style={{ display: "flex", flexDirection: "column", gap: 5 }}>
+              {medEndingSoon.map(function(item, idx) {
+                var isToday = item.daysToStop === 0;
+                return (
+                  <div key={idx} style={{ display: "flex", alignItems: "center", gap: 10, padding: "7px 10px", background: isToday ? C.red + "08" : C.amberBg, borderRadius: 8, border: "1px solid " + (isToday ? C.red : C.amber) + "30" }}>
+                    <Silk silk={item.horse.silk} size={22} />
+                    <div style={{ flex: 1 }}>
+                      <span style={{ fontSize: 13, fontWeight: 700, color: C.text }}>{item.horse.name}</span>
+                      <span style={{ fontSize: 11, color: C.textMid, marginLeft: 6 }}>{item.race}</span>
+                    </div>
+                    <div style={{ textAlign: "right" }}>
+                      <div style={{ fontSize: 12, fontWeight: 700, color: isToday ? C.red : C.amber }}>
+                        {isToday ? "LAST DAY" : "In " + item.daysToStop + "d"}
+                      </div>
+                      <div style={{ fontSize: 10, color: C.textDim }}>{item.med}</div>
+                    </div>
+                  </div>
+                );
+              })}
+            </div>
+          </div>
+        )}
+
+        {medsGivenToday.length === 0 && medEndingSoon.length === 0 && (
+          <div style={{ fontSize: 13, color: C.textDim }}>No medication activity today</div>
+        )}
+      </div>
 
       <div style={{ background: C.card, border: "1px solid " + C.border, borderRadius: 14, padding: "16px 18px", marginBottom: 14 }}>
         <div style={{ fontSize: 14, fontWeight: 700, color: C.navy, marginBottom: 12 }}>Log Entry</div>
