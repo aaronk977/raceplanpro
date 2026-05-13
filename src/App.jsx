@@ -38,19 +38,26 @@ export default function App() {
 
   var saveSettings = function(newSettings) {
     setSettings(newSettings);
-    // Sync owner contacts to horses by name match
     var ownerContacts = newSettings.ownerContacts || [];
-    if (ownerContacts.length > 0) {
+    var ownerSilks = newSettings.ownerSilks || {};
+    var hasSilks = Object.keys(ownerSilks).length > 0;
+    if (ownerContacts.length > 0 || hasSilks) {
       setHorses(function(prev) {
         return prev.map(function(horse) {
           var ownerName = (horse.owner || "").toLowerCase().trim();
+          var updated = Object.assign({}, horse);
+          // Sync owner contacts
           var match = ownerContacts.find(function(oc) {
             return oc.name.toLowerCase().trim() === ownerName;
           });
-          if (!match) return horse;
-          var updated = Object.assign({}, horse);
-          if (match.phone) updated.ownerPhone = match.phone;
-          if (match.email) updated.ownerEmail = match.email;
+          if (match) {
+            if (match.phone) updated.ownerPhone = match.phone;
+            if (match.email) updated.ownerEmail = match.email;
+          }
+          // Apply owner silks
+          if (hasSilks && ownerSilks[ownerName]) {
+            updated.silk = ownerSilks[ownerName];
+          }
           return updated;
         });
       });
