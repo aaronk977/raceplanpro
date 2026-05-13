@@ -354,9 +354,9 @@ export default function App() {
 
 
   return (
-    <div style={{ minHeight: "100vh", background: C.bg, fontFamily: "Inter, Helvetica Neue, sans-serif", display: "flex", flexDirection: "column" }}>
+    <div style={{ minHeight: "100vh", background: C.bg, fontFamily: "Inter, Helvetica Neue, sans-serif" }}>
       <style dangerouslySetInnerHTML={{ __html: globalCSS }} />
-      <div style={{ background: C.navy, height: 56, display: "flex", alignItems: "center", padding: "0 16px", flexShrink: 0, gap: 10 }}>
+      <div style={{ background: C.navy, height: 56, display: "flex", alignItems: "center", padding: "0 16px", gap: 10, position: "sticky", top: 0, zIndex: 100 }}>
         <button onClick={function() {
           if (window.innerWidth < 768) { setMobileNavOpen(function(o) { return !o; }); }
           else { setSidebarOpen(function(o) { return !o; }); }
@@ -414,8 +414,8 @@ export default function App() {
         </div>
       )}
 
-      <div style={{ display: "flex", flex: 1, minHeight: 0 }}>
-        <div style={{ width: sidebarOpen ? 200 : 52, background: C.sidebar, flexShrink: 0, display: "flex", flexDirection: "column", transition: "width 0.2s", overflow: "hidden", position: "relative" }} className="desktop-only">
+      <div style={{ display: "flex" }}>
+        <div style={{ width: sidebarOpen ? 200 : 52, background: C.sidebar, flexShrink: 0, display: "flex", flexDirection: "column", transition: "width 0.2s", overflow: "hidden", minHeight: "calc(100vh - 56px)", position: "sticky", top: 56 }} className="desktop-only">
           {NAV.map(function(nav) {
             var active = tab === nav.id;
             return (
@@ -447,7 +447,7 @@ export default function App() {
           )}
         </div>
 
-        <div style={{ flex: 1, overflowY: "auto", padding: "14px 16px", minWidth: 0, boxSizing: "border-box" }}>
+        <div style={{ flex: 1, padding: "14px 16px", minWidth: 0, boxSizing: "border-box", minHeight: "calc(100vh - 56px)" }}>
           {tab === "yard" && <YardView horses={horses} setHorses={setHorses} />}
           {tab === "planner" && <RacePlanner horses={horses} setHorses={setHorses} />}
           {tab === "provisional" && <ProvisionalEntries horses={horses} setHorses={setHorses} />}
