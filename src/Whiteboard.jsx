@@ -210,7 +210,7 @@ function RacedayPrint({ horses, entries, setEntries }) {
           return (
             <div key={date} style={{ background: C.card, border: "1px solid " + C.border, borderRadius: 12, padding: "18px 20px", marginBottom: 14 }}>
               <div className="meeting-header" style={{ fontSize: 16, fontWeight: 800, color: C.navy, marginBottom: 12, paddingBottom: 10, borderBottom: "2px solid " + C.border }}>
-                {new Date(date + "T12:00:00").toLocaleDateString("en-IE", { weekday: "long", day: "numeric", month: "long", year: "numeric" })}
+                {(function() { var d = new Date(date + "T12:00:00"); return isNaN(d.getTime()) ? date : d.toLocaleDateString("en-IE", { weekday: "long", day: "numeric", month: "long", year: "numeric" }); })()}
               </div>
               {dayEntries.map(function(entry) {
                 var horse = horses.find(function(h) { return h.id === entry.horseId; });
