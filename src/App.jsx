@@ -25,7 +25,20 @@ const supabase = createClient(SUPABASE_URL, SUPABASE_ANON_KEY);
 
 const globalCSS = ".desktop-only { display: flex !important; } @media (max-width: 767px) { .desktop-only { display: none !important; } } * { box-sizing: border-box; margin: 0; padding: 0; } body { font-family: Inter, Helvetica Neue, sans-serif; } button:hover { opacity: 0.88; } input:focus, select:focus { outline: none; } ::-webkit-scrollbar { width: 4px; } ::-webkit-scrollbar-thumb { background: #b8c8da; border-radius: 2px; } @media print { body * { visibility: hidden; } #print-area, #print-area * { visibility: visible; } #print-area { position: absolute; left: 0; top: 0; } }";
 
-export default function App() {
+export default var ROLE_TABS = {
+  "Trainer":           ["yard","planner","provisional","meds","whiteboard","movements","owners","staff","weights","assistant","content","summary","reminders","procurement","settings"],
+  "Secretary":         ["yard","planner","provisional","meds","whiteboard","movements","owners","staff","weights","assistant","content","summary","reminders","procurement","settings"],
+  "Head Lad":          ["yard","planner","provisional","meds","whiteboard","movements","owners","staff","weights","assistant","content","summary","reminders","procurement","settings"],
+  "Head Girl":         ["yard","planner","provisional","meds","whiteboard","movements","owners","staff","weights","assistant","content","summary","reminders","procurement","settings"],
+  "Assistant Trainer": ["yard","planner","provisional","meds","whiteboard","movements","owners","staff","weights","assistant","content","summary","reminders","procurement","settings"],
+  "Staff":             ["meds","staff","weights","movements","reminders","procurement"],
+  "Vet":               ["yard","meds","movements","weights","summary"],
+  "Owner":             ["owners","whiteboard"]
+};
+
+var ALL_TABS = ["yard","planner","provisional","meds","whiteboard","movements","owners","staff","weights","assistant","content","summary","reminders","procurement","settings"];
+
+function App() {
   const [user, setUser] = useState(null);
   const [authMode, setAuthMode] = useState("login");
   const [showAuth, setShowAuth] = useState(false);
@@ -35,6 +48,8 @@ export default function App() {
   const [authError, setAuthError] = useState("");
   const [appLoading, setAppLoading] = useState(true);
   const [tab, setTab] = useState("yard");
+  // Auto-redirect staff to their first allowed tab
+  var safeTab = allowedTabs.indexOf(tab) >= 0 ? tab : (allowedTabs[0] || "yard");
   const [settings, setSettings] = useState({ yardName: "", trainerName: "", weighDay: "Monday", notifyContacts: [], ownerContacts: [], tier: "Professional", costPeptizole: 18, costAntepsin: 25, costAntibiotics: 15 });
 
   var saveSettings = function(newSettings) {
@@ -76,6 +91,7 @@ export default function App() {
   };
   const [weightsRaw, setWeightsRaw] = useState({});
   const [reminders, setReminders] = useState([]);
+  const [userRole, setUserRole] = useState(null);
   const [ordersRaw, setOrdersRaw] = useState([]);
   const [sidebarOpen, setSidebarOpen] = useState(true);
   const [mobileNavOpen, setMobileNavOpen] = useState(false);
@@ -103,7 +119,7 @@ export default function App() {
       var cached = localStorage.getItem("rpp_settings_" + user.id);
       if (cached) setSettings(JSON.parse(cached));
     } catch(e) {}
-    // Then load from Supabase (authoritative)
+    // Load from Supabase (authoritative)
     supabase.from("yard_settings").select("settings_json").eq("user_id", user.id).single()
       .then(function(res) {
         if (res.data && res.data.settings_json) {
@@ -112,6 +128,28 @@ export default function App() {
             setSettings(s);
             localStorage.setItem("rpp_settings_" + user.id, res.data.settings_json);
           } catch(e) {}
+        }
+      });
+    // Check if this user is a member of someone else's yard
+    supabase.from("yard_members").select("*").eq("member_user_id", user.id)
+      .then(function(res) {
+        if (res.data && res.data.length > 0) {
+          var membership = res.data[0];
+          setUserRole(membership.role);
+          // Load the yard owner's settings instead
+          supabase.from("yard_settings").select("settings_json").eq("user_id", membership.yard_owner_id).single()
+            .then(function(sres) {
+              if (sres.data && sres.data.settings_json) {
+                try { setSettings(JSON.parse(sres.data.settings_json)); } catch(e) {}
+              }
+            });
+        } else {
+          // This is the yard owner - full access
+          setUserRole("Trainer");
+          // Register any pending invites for this email
+          supabase.from("yard_members").update({ member_user_id: user.id, joined_at: new Date().toISOString() })
+            .eq("member_email", user.email).is("member_user_id", null)
+            .then(function() {});
         }
       });
     supabase.from("horses").select("*").eq("user_id", user.id).then(function(res) {
@@ -305,6 +343,7 @@ export default function App() {
   var wbEntries = wbEntriesRaw;
   var medAlerts = horses.filter(function(h) { var d = daysUntil(h.nextRaceDate); return d && d >= 12 && d <= 16; }).length;
 
+  var allowedTabs = userRole ? (ROLE_TABS[userRole] || ALL_TABS) : ALL_TABS;
   var NAV = [
     { id: "yard", label: "My Yard", icon: "🐎" },
     { id: "planner", label: "Race Planner", icon: "📋" },
@@ -321,7 +360,7 @@ export default function App() {
     { id: "reminders", label: "Reminders", icon: "🔔" },
     { id: "procurement", label: "Procurement", icon: "🛒" },
     { id: "settings", label: "Settings", icon: "⚙️" },
-  ];
+  ].filter(function(n) { return allowedTabs.indexOf(n.id) >= 0; });
 
   if (appLoading) return (
     <div style={{ minHeight: "100vh", background: C.bg, display: "flex", alignItems: "center", justifyContent: "center" }}>
@@ -395,7 +434,7 @@ export default function App() {
           {(NAV.find(function(n) { return n.id === tab; }) || {}).label || ""}
         </div>
         <div style={{ marginLeft: "auto", display: "flex", alignItems: "center", gap: 10 }}>
-          <span style={{ fontSize: 11, color: "rgba(255,255,255,0.35)", maxWidth: 120, overflow: "hidden", textOverflow: "ellipsis", whiteSpace: "nowrap", display: "block" }}>{user.email}</span>
+          <div><span style={{ fontSize: 11, color: "rgba(255,255,255,0.35)", maxWidth: 120, overflow: "hidden", textOverflow: "ellipsis", whiteSpace: "nowrap", display: "block" }}>{user.email}</span>{userRole && userRole !== "Trainer" && <span style={{ fontSize: 9, color: C.gold, fontWeight: 700, textTransform: "uppercase", letterSpacing: 0.5 }}>{userRole}</span>}</div>
           <button onClick={handleLogout}
             style={{ background: "rgba(255,255,255,0.08)", border: "1px solid rgba(255,255,255,0.12)", color: "#fff", padding: "5px 12px", borderRadius: 8, fontSize: 12, cursor: "pointer" }}>
             Sign Out
@@ -474,21 +513,21 @@ export default function App() {
         </div>
 
         <div style={{ flex: 1, padding: "14px 16px", minWidth: 0, boxSizing: "border-box", minHeight: "calc(100vh - 56px)" }}>
-          {tab === "yard" && <YardView horses={horses} setHorses={setHorses} settings={settings} />}
-          {tab === "planner" && <RacePlanner horses={horses} setHorses={setHorses} settings={settings} />}
-          {tab === "provisional" && <ProvisionalEntries horses={horses} setHorses={setHorses} settings={settings} />}
-          {tab === "meds" && <MedicationTracker horses={horses} medLogs={medLogs} setMedLogs={setMedLogs} trackedIds={trackedIds} setTrackedIds={setTrackedIdsRaw} settings={settings} />}
-          {tab === "whiteboard" && <RacedayPrint horses={horses} entries={wbEntries} setEntries={setWbEntries} settings={settings} />}
-          {tab === "movements" && <MovementLog horses={horses} settings={settings} />}
-          {tab === "owners" && <OwnerPortal horses={horses} settings={settings} />}
-          {tab === "staff" && <StaffNotify user={user} supabase={supabase} settings={settings} />}
-          {tab === "settings" && <YardSettings settings={settings} setSettings={saveSettings} />}
-          {tab === "weights" && <WeightsTracker horses={horses} weights={weightsRaw} setWeights={setWeights} settings={settings} />}
-          {tab === "assistant" && <YardAssistant horses={horses} setHorses={setHorses} weights={weightsRaw} medLogs={medLogs} setMedLogs={setMedLogs} reminders={reminders} setReminders={setReminders} settings={settings} user={user} supabase={supabase} onNavigate={setTab} />}
-          {tab === "content" && <ContentScheduler horses={horses} settings={settings} />}
-          {tab === "summary" && <DailySummary horses={horses} medLogs={medLogs} weights={weightsRaw} wbEntries={wbEntries} settings={settings} />}
-          {tab === "procurement" && <Procurement user={user} supabase={supabase} orders={ordersRaw} setOrders={setOrders} settings={settings} />}
-          {tab === "reminders" && <Reminders reminders={reminders} setReminders={setReminders} settings={settings} user={user} supabase={supabase} />}
+          {safeTab === "yard" && <YardView horses={horses} setHorses={setHorses} settings={settings} />}
+          {safeTab === "planner" && <RacePlanner horses={horses} setHorses={setHorses} settings={settings} />}
+          {safeTab === "provisional" && <ProvisionalEntries horses={horses} setHorses={setHorses} settings={settings} />}
+          {safeTab === "meds" && <MedicationTracker horses={horses} medLogs={medLogs} setMedLogs={setMedLogs} trackedIds={trackedIds} setTrackedIds={setTrackedIdsRaw} settings={settings} />}
+          {safeTab === "whiteboard" && <RacedayPrint horses={horses} entries={wbEntries} setEntries={setWbEntries} settings={settings} />}
+          {safeTab === "movements" && <MovementLog horses={horses} settings={settings} />}
+          {safeTab === "owners" && <OwnerPortal horses={horses} settings={settings} />}
+          {safeTab === "staff" && <StaffNotify user={user} supabase={supabase} settings={settings} />}
+          {safeTab === "settings" && <YardSettings settings={settings} setSettings={saveSettings} />}
+          {safeTab === "weights" && <WeightsTracker horses={horses} weights={weightsRaw} setWeights={setWeights} settings={settings} />}
+          {safeTab === "assistant" && <YardAssistant horses={horses} setHorses={setHorses} weights={weightsRaw} medLogs={medLogs} setMedLogs={setMedLogs} reminders={reminders} setReminders={setReminders} settings={settings} user={user} supabase={supabase} onNavigate={setTab} />}
+          {safeTab === "content" && <ContentScheduler horses={horses} settings={settings} />}
+          {safeTab === "summary" && <DailySummary horses={horses} medLogs={medLogs} weights={weightsRaw} wbEntries={wbEntries} settings={settings} />}
+          {safeTab === "procurement" && <Procurement user={user} supabase={supabase} orders={ordersRaw} setOrders={setOrders} settings={settings} />}
+          {safeTab === "reminders" && <Reminders reminders={reminders} setReminders={setReminders} settings={settings} user={user} supabase={supabase} />}
         </div>
       </div>
     </div>
