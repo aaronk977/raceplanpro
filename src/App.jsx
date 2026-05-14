@@ -521,7 +521,7 @@ function App() {
           {safeTab === "movements" && <MovementLog horses={horses} settings={settings} />}
           {safeTab === "owners" && <OwnerPortal horses={horses} settings={settings} />}
           {safeTab === "staff" && <StaffNotify user={user} supabase={supabase} settings={settings} />}
-          {safeTab === "settings" && <YardSettings settings={settings} setSettings={saveSettings} />}
+          {safeTab === "settings" && <YardSettings settings={settings} setSettings={saveSettings} supabase={supabase} user={user} />}
           {safeTab === "weights" && <WeightsTracker horses={horses} weights={weightsRaw} setWeights={setWeights} settings={settings} />}
           {safeTab === "assistant" && <YardAssistant horses={horses} setHorses={setHorses} weights={weightsRaw} medLogs={medLogs} setMedLogs={setMedLogs} reminders={reminders} setReminders={setReminders} settings={settings} user={user} supabase={supabase} onNavigate={setTab} />}
           {safeTab === "content" && <ContentScheduler horses={horses} settings={settings} />}
