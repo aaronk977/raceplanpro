@@ -697,7 +697,7 @@ function YardSettings({ settings, setSettings }) {
                   update("yardUsers", users2);
                   update("newUserName", ""); update("newUserEmail", ""); update("showInviteForm", false);
                   // Send WhatsApp invite
-                  window.open("https://wa.me/?text=" + encodeURIComponent("Hi " + edit.newUserName + ", you have been invited to join RacePlan Pro for our yard. Sign up at https://raceplanpro.vercel.app using this email: " + edit.newUserEmail), "_blank");
+                  window.open("https://wa.me/?text=" + encodeURIComponent("Hi " + edit.newUserName + ", you have been invited to join RacePlan Pro for our yard. Sign up at https://raceplanpro.vercel.app using this email: " + edit.newUserEmail + ". Your role: " + (edit.newUserRole || "Staff")), "_blank");
                 }} disabled={!edit.newUserEmail || !edit.newUserName} style={{ fontSize: 12 }}>
                   Add & Send WhatsApp Invite
                 </Btn>
