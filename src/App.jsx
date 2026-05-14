@@ -23,7 +23,7 @@ const SUPABASE_ANON_KEY = import.meta.env.VITE_SUPABASE_ANON_KEY || "";
 const supabase = createClient(SUPABASE_URL, SUPABASE_ANON_KEY);
 
 
-const globalCSS = ".desktop-only { display: flex !important; } @media (max-width: 767px) { .desktop-only { display: none !important; } html, body { overflow-x: hidden; overflow-y: scroll !important; -webkit-overflow-scrolling: touch; height: auto !important; min-height: 100%; } } * { box-sizing: border-box; margin: 0; padding: 0; } body { font-family: Inter, Helvetica Neue, sans-serif; } button:hover { opacity: 0.88; } input:focus, select:focus { outline: none; } ::-webkit-scrollbar { width: 4px; } ::-webkit-scrollbar-thumb { background: #b8c8da; border-radius: 2px; } @media print { body * { visibility: hidden; } #print-area, #print-area * { visibility: visible; } #print-area { position: absolute; left: 0; top: 0; } }";
+const globalCSS = ".desktop-only { display: flex !important; } @media (max-width: 767px) { .desktop-only { display: none !important; } } * { box-sizing: border-box; margin: 0; padding: 0; } body { font-family: Inter, Helvetica Neue, sans-serif; } button:hover { opacity: 0.88; } input:focus, select:focus { outline: none; } ::-webkit-scrollbar { width: 4px; } ::-webkit-scrollbar-thumb { background: #b8c8da; border-radius: 2px; } @media print { body * { visibility: hidden; } #print-area, #print-area * { visibility: visible; } #print-area { position: absolute; left: 0; top: 0; } }";
 
 export default function App() {
   const [user, setUser] = useState(null);
@@ -39,6 +39,16 @@ export default function App() {
 
   var saveSettings = function(newSettings) {
     setSettings(newSettings);
+    // Persist to localStorage for instant reload
+    try { localStorage.setItem("rpp_settings_" + (user ? user.id : "local"), JSON.stringify(newSettings)); } catch(e) {}
+    // Persist to Supabase
+    if (user && supabase) {
+      supabase.from("yard_settings").upsert({
+        user_id: user.id, settings_json: JSON.stringify(newSettings)
+      }, { onConflict: "user_id" }).then(function(r) {
+        if (r.error) console.error("Settings save:", r.error.message);
+      });
+    }
     var ownerContacts = newSettings.ownerContacts || [];
     var ownerSilks = newSettings.ownerSilks || {};
     var hasSilks = Object.keys(ownerSilks).length > 0;
@@ -88,6 +98,22 @@ export default function App() {
 
   useEffect(function() {
     if (!user) { setHorsesRaw([]); setMedLogsRaw({}); setTrackedIdsRaw([]); setWbEntriesRaw([]); return; }
+    // Load settings from localStorage first (instant)
+    try {
+      var cached = localStorage.getItem("rpp_settings_" + user.id);
+      if (cached) setSettings(JSON.parse(cached));
+    } catch(e) {}
+    // Then load from Supabase (authoritative)
+    supabase.from("yard_settings").select("settings_json").eq("user_id", user.id).single()
+      .then(function(res) {
+        if (res.data && res.data.settings_json) {
+          try {
+            var s = JSON.parse(res.data.settings_json);
+            setSettings(s);
+            localStorage.setItem("rpp_settings_" + user.id, res.data.settings_json);
+          } catch(e) {}
+        }
+      });
     supabase.from("horses").select("*").eq("user_id", user.id).then(function(res) {
       if (res.data) setHorsesRaw(res.data.map(function(h) {
         return { id: h.id, name: h.name, sex: h.sex || "Gelding", colour: h.colour || "",
@@ -447,14 +473,14 @@ export default function App() {
           )}
         </div>
 
-        <div style={{ flex: 1, padding: "14px 16px", minWidth: 0, boxSizing: "border-box" }}>
-          {tab === "yard" && <YardView horses={horses} setHorses={setHorses} />}
-          {tab === "planner" && <RacePlanner horses={horses} setHorses={setHorses} />}
-          {tab === "provisional" && <ProvisionalEntries horses={horses} setHorses={setHorses} />}
-          {tab === "meds" && <MedicationTracker horses={horses} medLogs={medLogs} setMedLogs={setMedLogs} trackedIds={trackedIds} setTrackedIds={setTrackedIdsRaw} />}
-          {tab === "whiteboard" && <RacedayPrint horses={horses} entries={wbEntries} setEntries={setWbEntries} />}
-          {tab === "movements" && <MovementLog horses={horses} />}
-          {tab === "owners" && <OwnerPortal horses={horses} />}
+        <div style={{ flex: 1, padding: "14px 16px", minWidth: 0, boxSizing: "border-box", minHeight: "calc(100vh - 56px)" }}>
+          {tab === "yard" && <YardView horses={horses} setHorses={setHorses} settings={settings} />}
+          {tab === "planner" && <RacePlanner horses={horses} setHorses={setHorses} settings={settings} />}
+          {tab === "provisional" && <ProvisionalEntries horses={horses} setHorses={setHorses} settings={settings} />}
+          {tab === "meds" && <MedicationTracker horses={horses} medLogs={medLogs} setMedLogs={setMedLogs} trackedIds={trackedIds} setTrackedIds={setTrackedIdsRaw} settings={settings} />}
+          {tab === "whiteboard" && <RacedayPrint horses={horses} entries={wbEntries} setEntries={setWbEntries} settings={settings} />}
+          {tab === "movements" && <MovementLog horses={horses} settings={settings} />}
+          {tab === "owners" && <OwnerPortal horses={horses} settings={settings} />}
           {tab === "staff" && <StaffNotify user={user} supabase={supabase} settings={settings} />}
           {tab === "settings" && <YardSettings settings={settings} setSettings={saveSettings} />}
           {tab === "weights" && <WeightsTracker horses={horses} weights={weightsRaw} setWeights={setWeights} settings={settings} />}
