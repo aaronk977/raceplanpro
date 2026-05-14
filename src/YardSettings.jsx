@@ -316,7 +316,7 @@ var PLAN_FEATURES = {
   }
 };
 
-function YardSettings({ settings, setSettings }) {
+function YardSettings({ settings, setSettings, supabase, user }) {
   var now = new Date();
   var editState = useState(Object.assign({
     yardName: "", trainerName: "", location: "", trainerLicence: "",
@@ -696,6 +696,13 @@ function YardSettings({ settings, setSettings }) {
                   users2.push({ id: "u_" + Date.now(), name: edit.newUserName, email: edit.newUserEmail, role: edit.newUserRole || "Staff", addedAt: new Date().toISOString() });
                   update("yardUsers", users2);
                   update("newUserName", ""); update("newUserEmail", ""); update("showInviteForm", false);
+                  if (supabase && user) {
+                    supabase.from("yard_members").upsert({
+                      yard_owner_id: user.id, member_email: edit.newUserEmail, role: edit.newUserRole || "Staff"
+                    }, { onConflict: "yard_owner_id,member_email" }).then(function(r) {
+                      if (r.error) console.error("Member invite error:", r.error.message);
+                    });
+                  }
                   // Send WhatsApp invite
                   window.open("https://wa.me/?text=" + encodeURIComponent("Hi " + edit.newUserName + ", you have been invited to join RacePlan Pro for our yard. Sign up at https://raceplanpro.vercel.app using this email: " + edit.newUserEmail + ". Your role: " + (edit.newUserRole || "Staff")), "_blank");
                 }} disabled={!edit.newUserEmail || !edit.newUserName} style={{ fontSize: 12 }}>
@@ -722,6 +729,7 @@ function YardSettings({ settings, setSettings }) {
                     <button onClick={function() {
                       var users2 = (edit.yardUsers || []).filter(function(x) { return x.id !== u.id; });
                       update("yardUsers", users2);
+                      if (supabase && user && u.email) { supabase.from("yard_members").delete().eq("yard_owner_id", user.id).eq("member_email", u.email).then(function() {}); }
                     }} style={{ background: "none", border: "none", color: C.red, cursor: "pointer", fontSize: 13, fontWeight: 700 }}>Remove</button>
                   </div>
                 );
