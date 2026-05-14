@@ -419,7 +419,7 @@ function MedicationTracker({ horses, medLogs, setMedLogs, trackedIds, setTracked
                                   <td key={d} onClick={function() { toggleMed(horse.id, d, mt.id); }}
                                     style={{ padding: "3px", textAlign: "center", cursor: "pointer" }}>
                                     <div onClick={function(e2) { e2.stopPropagation(); toggleMed(horse.id, d, mt.id); }}
-                                    style={{ width: 20, height: 20, borderRadius: 5, margin: "0 auto", background: val ? mt.color : isToday ? C.gold + "20" : C.cardOff, border: "1.5px solid " + (val ? mt.color : isToday ? C.gold : C.border), display: "flex", alignItems: "center", justifyContent: "center", cursor: "pointer" }}>
+                                    style={{ width: 20, height: 20, borderRadius: 5, margin: "0 auto", background: val ? mt.color : C.cardOff, border: "1.5px solid " + (val ? mt.color : isToday ? C.navy : C.border), display: "flex", alignItems: "center", justifyContent: "center", cursor: "pointer" }}>
                                     {val > 1 ? <span style={{ fontSize: 8, color: "#fff", fontWeight: 900 }}>{val}</span> : val === 1 ? <span style={{ fontSize: 9, color: "#fff", fontWeight: 900 }}>✓</span> : null}
                                   </div>
                                   </td>
