@@ -511,7 +511,7 @@ function App() {
           )}
         </div>
 
-        <div style={{ flex: 1, padding: "14px 16px", minWidth: 0, boxSizing: "border-box", minHeight: "calc(100vh - 56px)" }}>
+        <div className="main-content" style={{ flex: 1, padding: "14px 16px", minWidth: 0, boxSizing: "border-box" }}>
           {safeTab === "yard" && <YardView horses={horses} setHorses={setHorses} settings={settings} />}
           {safeTab === "planner" && <RacePlanner horses={horses} setHorses={setHorses} settings={settings} />}
           {safeTab === "provisional" && <ProvisionalEntries horses={horses} setHorses={setHorses} settings={settings} />}
