@@ -48,8 +48,6 @@ function App() {
   const [authError, setAuthError] = useState("");
   const [appLoading, setAppLoading] = useState(true);
   const [tab, setTab] = useState("yard");
-  // Auto-redirect staff to their first allowed tab
-  var safeTab = allowedTabs.indexOf(tab) >= 0 ? tab : (allowedTabs[0] || "yard");
   const [settings, setSettings] = useState({ yardName: "", trainerName: "", weighDay: "Monday", notifyContacts: [], ownerContacts: [], tier: "Professional", costPeptizole: 18, costAntepsin: 25, costAntibiotics: 15 });
 
   var saveSettings = function(newSettings) {
@@ -344,6 +342,7 @@ function App() {
   var medAlerts = horses.filter(function(h) { var d = daysUntil(h.nextRaceDate); return d && d >= 12 && d <= 16; }).length;
 
   var allowedTabs = userRole ? (ROLE_TABS[userRole] || ALL_TABS) : ALL_TABS;
+  var safeTab = allowedTabs.indexOf(tab) >= 0 ? tab : (allowedTabs[0] || "yard");
   var NAV = [
     { id: "yard", label: "My Yard", icon: "🐎" },
     { id: "planner", label: "Race Planner", icon: "📋" },
