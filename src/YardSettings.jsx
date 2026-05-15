@@ -322,6 +322,14 @@ function YardSettings({ settings, setSettings, supabase, user }) {
     yardName: "", trainerName: "", location: "", trainerLicence: "",
     discipline: "National Hunt", weighDay: "Monday",
     notifyContacts: [],
+    treatments: [
+      { id: "si_joints", name: "SI Joints", withdrawalDays: 45, color: "#c0392b", notes: "Sacroiliac joint injection" },
+      { id: "back", name: "Back Treatment", withdrawalDays: 45, color: "#e67e22", notes: "Corticosteroid injection" },
+      { id: "joint_inj", name: "Joint Injection", withdrawalDays: 30, color: "#d97706", notes: "Intra-articular injection" },
+      { id: "tildren", name: "Tildren/Osphos", withdrawalDays: 60, color: "#8e44ad", notes: "Bisphosphonate treatment" },
+      { id: "prp", name: "PRP Treatment", withdrawalDays: 30, color: "#27ae60", notes: "Platelet-rich plasma" },
+      { id: "stem_cell", name: "Stem Cell", withdrawalDays: 90, color: "#2980b9", notes: "Stem cell therapy" }
+    ],
     medications: [
       { id: "pep", name: "Peptizole", costPerUnit: 18, unit: "per day", color: "#1e6fb5", courseDays: 12, withdrawalDays: 4 },
       { id: "ant", name: "Antepsin", costPerUnit: 6.25, unit: "per day", color: "#6d3fc0", courseDays: 12, withdrawalDays: 1 },
@@ -542,8 +550,8 @@ function YardSettings({ settings, setSettings, supabase, user }) {
     setTimeout(function() { setSaved(false); }, 3000);
   }
 
-  var TABS = ["yard", "owners", "users", "contacts", "medications", "silks", "notifications", "subscription"];
-  var TAB_LABELS = { yard: "Yard Details", owners: "Owner Contacts", users: "App Users", contacts: "Staff Contacts", medications: "Medications", silks: "Owner Silks", notifications: "Notifications", subscription: "Subscription" };
+  var TABS = ["yard", "owners", "users", "contacts", "medications", "treatments", "silks", "notifications", "subscription"];
+  var TAB_LABELS = { yard: "Yard Details", owners: "Owner Contacts", users: "App Users", contacts: "Staff Contacts", medications: "Medications", treatments: "Treatments", silks: "Owner Silks", notifications: "Notifications", subscription: "Subscription" };
   var ROLES = ["Trainer", "Head Lad", "Assistant Trainer", "Head Girl", "HR", "Secretary", "Owner Manager", "Vet"];
   var NOTIFY_TYPES = [
     { key: "late_returns", label: "Late returns" },
@@ -951,6 +959,86 @@ function YardSettings({ settings, setSettings, supabase, user }) {
               </div>
             </div>
           )}
+        </div>
+      )}
+
+      {activeTab === "treatments" && (
+        <div>
+          <div style={{ background: C.card, border: "1px solid " + C.border, borderRadius: 14, padding: "18px 20px", marginBottom: 14 }}>
+            <div style={{ fontSize: 15, fontWeight: 800, color: C.navy, marginBottom: 4 }}>Treatment Withdrawal Periods</div>
+            <div style={{ fontSize: 12, color: C.textMid, lineHeight: 1.7 }}>
+              When a horse receives a treatment, log it in My Yard on the horse profile. The app will automatically block entries and flag the horse in Race Planner until the withdrawal period has passed. Treatment withdrawals take priority over medication withdrawals.
+            </div>
+          </div>
+
+          <div style={{ background: C.amberBg, border: "1px solid " + C.amber + "40", borderRadius: 10, padding: "12px 16px", marginBottom: 14, fontSize: 12, color: C.amber, lineHeight: 1.7 }}>
+            <strong>Important:</strong> These withdrawal periods are guidelines. Always confirm with your vet. BHA/HRI rules on specific treatments may vary. The app will flag the earliest possible entry date based on the treatment date you log.
+          </div>
+
+          {(edit.treatments || []).map(function(t, idx) {
+            return (
+              <div key={t.id || idx} style={{ background: C.card, border: "1px solid " + C.border, borderRadius: 12, padding: "14px 16px", marginBottom: 10 }}>
+                <div style={{ display: "grid", gridTemplateColumns: "1fr 80px 1fr auto", gap: 10, alignItems: "end" }}>
+                  <div>
+                    <div style={{ fontSize: 10, fontWeight: 700, color: C.textMid, marginBottom: 3, textTransform: "uppercase" }}>Treatment Name</div>
+                    <input type="text" value={t.name} onChange={function(e) { var v = e.target.value; var ts = (edit.treatments || []).slice(); ts[idx] = Object.assign({}, ts[idx], { name: v }); update("treatments", ts); }}
+                      style={{ width: "100%", padding: "8px 12px", background: C.cardOff, border: "1px solid " + C.border, borderRadius: 8, fontSize: 13, color: C.text }} />
+                  </div>
+                  <div>
+                    <div style={{ fontSize: 10, fontWeight: 700, color: C.textMid, marginBottom: 3, textTransform: "uppercase" }}>Days Off</div>
+                    <input type="number" value={t.withdrawalDays} onChange={function(e) { var v = parseInt(e.target.value); var ts = (edit.treatments || []).slice(); ts[idx] = Object.assign({}, ts[idx], { withdrawalDays: v }); update("treatments", ts); }}
+                      style={{ width: "100%", padding: "8px 12px", background: C.cardOff, border: "1px solid " + C.border, borderRadius: 8, fontSize: 13, color: C.text }} />
+                  </div>
+                  <div>
+                    <div style={{ fontSize: 10, fontWeight: 700, color: C.textMid, marginBottom: 3, textTransform: "uppercase" }}>Notes</div>
+                    <input type="text" value={t.notes || ""} onChange={function(e) { var v = e.target.value; var ts = (edit.treatments || []).slice(); ts[idx] = Object.assign({}, ts[idx], { notes: v }); update("treatments", ts); }}
+                      style={{ width: "100%", padding: "8px 12px", background: C.cardOff, border: "1px solid " + C.border, borderRadius: 8, fontSize: 13, color: C.text }} />
+                  </div>
+                  <button onClick={function() { var ts = (edit.treatments || []).filter(function(_, j) { return j !== idx; }); update("treatments", ts); }}
+                    style={{ background: "none", border: "none", color: C.red, cursor: "pointer", fontSize: 18, padding: "8px" }}>×</button>
+                </div>
+                <div style={{ display: "flex", alignItems: "center", gap: 8, marginTop: 8 }}>
+                  <div style={{ width: 12, height: 12, borderRadius: "50%", background: t.color || C.red }} />
+                  <span style={{ fontSize: 11, color: C.textMid }}>{t.withdrawalDays + " day withdrawal — earliest race date is " + t.withdrawalDays + " days after treatment"}</span>
+                </div>
+              </div>
+            );
+          })}
+
+          <div style={{ background: C.cardOff, border: "1.5px dashed " + C.border, borderRadius: 12, padding: "14px 16px", marginBottom: 14 }}>
+            <div style={{ fontSize: 13, fontWeight: 700, color: C.navy, marginBottom: 10 }}>Add Treatment Type</div>
+            <div style={{ display: "grid", gridTemplateColumns: "1fr 80px 1fr", gap: 10, marginBottom: 10 }}>
+              <div>
+                <div style={{ fontSize: 10, fontWeight: 700, color: C.textMid, marginBottom: 3, textTransform: "uppercase" }}>Name</div>
+                <input type="text" value={edit.newTreatName || ""} onChange={function(e) { update("newTreatName", e.target.value); }}
+                  placeholder="e.g. Hock Injection"
+                  style={{ width: "100%", padding: "8px 12px", background: "#fff", border: "1px solid " + C.border, borderRadius: 8, fontSize: 13, color: C.text }} />
+              </div>
+              <div>
+                <div style={{ fontSize: 10, fontWeight: 700, color: C.textMid, marginBottom: 3, textTransform: "uppercase" }}>Days</div>
+                <input type="number" value={edit.newTreatDays || ""} onChange={function(e) { update("newTreatDays", e.target.value); }}
+                  placeholder="30"
+                  style={{ width: "100%", padding: "8px 12px", background: "#fff", border: "1px solid " + C.border, borderRadius: 8, fontSize: 13, color: C.text }} />
+              </div>
+              <div>
+                <div style={{ fontSize: 10, fontWeight: 700, color: C.textMid, marginBottom: 3, textTransform: "uppercase" }}>Notes</div>
+                <input type="text" value={edit.newTreatNotes || ""} onChange={function(e) { update("newTreatNotes", e.target.value); }}
+                  placeholder="e.g. Corticosteroid"
+                  style={{ width: "100%", padding: "8px 12px", background: "#fff", border: "1px solid " + C.border, borderRadius: 8, fontSize: 13, color: C.text }} />
+              </div>
+            </div>
+            <Btn onClick={function() {
+              if (!edit.newTreatName || !edit.newTreatDays) return;
+              var ts = (edit.treatments || []).slice();
+              ts.push({ id: "t_" + Date.now(), name: edit.newTreatName, withdrawalDays: parseInt(edit.newTreatDays), notes: edit.newTreatNotes || "", color: C.red });
+              update("treatments", ts);
+              update("newTreatName", ""); update("newTreatDays", ""); update("newTreatNotes", "");
+            }} disabled={!edit.newTreatName || !edit.newTreatDays} style={{ fontSize: 12 }}>
+              Add Treatment
+            </Btn>
+          </div>
+
+          <Btn onClick={save} style={{ width: "100%" }}>Save Treatment Settings</Btn>
         </div>
       )}
 
