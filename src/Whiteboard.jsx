@@ -1,20 +1,18 @@
-import React, { useState } from "react";
-import { Btn, Silk, C } from "./shared";
-
 var PRINT_STYLE = [
   "@media print {",
   "  * { -webkit-print-color-adjust: exact !important; print-color-adjust: exact !important; color-adjust: exact !important; }",
   "  body * { visibility: hidden !important; }",
   "  #print-area, #print-area * { visibility: visible !important; }",
-  "  #print-area { position: fixed; left: 0; top: 0; width: 100%; padding: 24px; background: white; }",
-  "  #print-area .horse-row { border-bottom: 2px solid #333 !important; padding: 16px 0 !important; }",
-  "  #print-area .horse-name { font-size: 20pt !important; font-weight: 900 !important; color: #000 !important; text-transform: uppercase; }",
-  "  #print-area .badge-hg { font-size: 13pt !important; padding: 4pt 14pt !important; background: #6d3fc0 !important; color: white !important; border-radius: 6px !important; font-weight: 800 !important; }",
-  "  #print-area .badge-ballot { font-size: 13pt !important; padding: 4pt 14pt !important; background: #d97706 !important; color: white !important; border-radius: 6px !important; font-weight: 800 !important; }",
-  "  #print-area .meeting-header { font-size: 16pt !important; font-weight: 900 !important; color: #000 !important; border-bottom: 3px solid #000 !important; padding-bottom: 8pt !important; margin-bottom: 12pt !important; }",
-  "  #print-area .race-time { font-size: 15pt !important; font-weight: 700 !important; color: #000 !important; min-width: 80pt; }",
-  "  #print-area .venue-ref { font-size: 11pt !important; color: #333 !important; }",
-  "  @page { margin: 1.5cm; size: A4; }",
+  "  #print-area { position: fixed; left: 0; top: 0; width: 100%; padding: 16px 24px; background: white; }",
+  "  #print-area .horse-row { border-bottom: 2.5px solid #222 !important; padding: 14px 0 !important; display: flex; align-items: center; gap: 16px; }",
+  "  #print-area .horse-name { font-size: 26pt !important; font-weight: 900 !important; color: #000 !important; text-transform: uppercase !important; letter-spacing: 0.5pt !important; line-height: 1.1 !important; }",
+  "  #print-area .badge-hg { font-size: 16pt !important; padding: 4pt 14pt !important; background: #6d3fc0 !important; color: #fff !important; border-radius: 6pt !important; font-weight: 800 !important; margin-left: 10pt !important; }",
+  "  #print-area .badge-ballot { font-size: 16pt !important; padding: 4pt 14pt !important; background: #d97706 !important; color: #fff !important; border-radius: 6pt !important; font-weight: 800 !important; margin-left: 6pt !important; }",
+  "  #print-area .meeting-header { font-size: 20pt !important; font-weight: 900 !important; color: #000 !important; border-bottom: 3px solid #000 !important; padding-bottom: 8pt !important; margin-bottom: 8pt !important; text-transform: uppercase !important; letter-spacing: 1pt !important; }",
+  "  #print-area .race-time { font-size: 18pt !important; font-weight: 700 !important; color: #000 !important; min-width: 80pt !important; }",
+  "  #print-area .venue-ref { font-size: 14pt !important; color: #333 !important; min-width: 100pt !important; }",
+  "  #print-area .jockey-line { font-size: 13pt !important; color: #444 !important; margin-top: 3pt !important; }",
+  "  @page { margin: 1.2cm; size: A4; }",
   "}"
 ].join(" ");
 
@@ -231,7 +229,7 @@ function RacedayPrint({ horses, entries, setEntries }) {
                         {hg && <span className="badge-hg" style={{ fontSize: 12, color: "#fff", fontWeight: 700, background: C.purple, padding: "2px 8px", borderRadius: 6, WebkitPrintColorAdjust: "exact", printColorAdjust: "exact" }}>{hg}</span>}
                         {entry.ballotNo && <span className="badge-ballot" style={{ fontSize: 12, color: "#fff", fontWeight: 700, background: C.amber, padding: "2px 8px", borderRadius: 6, WebkitPrintColorAdjust: "exact", printColorAdjust: "exact" }}>{"Ballot " + entry.ballotNo}</span>}
                       </div>
-                      {entry.jockey && <div style={{ fontSize: 12, color: C.textMid, marginTop: 2 }}>{"Jockey: " + entry.jockey}</div>}
+                      {entry.jockey && <div className="jockey-line" style={{ fontSize: 12, color: C.textMid, marginTop: 2 }}>{"Jockey: " + entry.jockey}</div>}
                       {entry.raceName && <div style={{ fontSize: 12, color: C.textMid, marginTop: 2 }}>{entry.raceName}</div>}
                     </div>
                     <button onClick={function() { removeEntry(entry.id); }} style={{ background: "none", border: "none", color: C.red, cursor: "pointer", fontSize: 18, padding: "0 4px" }}>x</button>
