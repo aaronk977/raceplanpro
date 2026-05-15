@@ -62,10 +62,14 @@ function OwnerContactsPanel({ edit, update }) {
         if (!cols[0]) continue;
         var row = {};
         for (var j = 0; j < headers.length; j++) { row[headers[j]] = cols[j] || ""; }
-        var name = row.name || row.owner || row.owner_name || row.full_name || cols[0];
+        // Handle "First Name" + "Last Name" columns from Yardman
+        var firstName = row.first_name || row.firstname || row.forename || "";
+        var lastName = row.last_name || row.lastname || row.surname || "";
+        var combinedName = (firstName + " " + lastName).trim();
+        var name = row.name || row.owner || row.owner_name || row.full_name || row.owner_full_name || combinedName || cols[0];
         if (!name || !name.trim()) continue;
-        var phone = row.phone || row.whatsapp || row.mobile || row.telephone || row.tel || row.contact || "";
-        var email = row.email || row.email_address || row.e_mail || "";
+        var phone = row.phone || row.mobile || row.mobile_no || row.mobile_number || row.whatsapp || row.telephone || row.tel || row.contact || row.cell || "";
+        var email = row.email || row.email_address || row.e_mail || row.emailaddress || "";
         imported.push({ id: "own_" + Date.now() + "_" + i, name: name.trim(), phone: phone.trim(), email: email.trim(), notes: "" });
       }
       if (!imported.length) { setCsvResult("No owners found — check your CSV has name, phone, email columns"); return; }
