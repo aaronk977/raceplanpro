@@ -103,27 +103,15 @@ function DailySummary({ horses, medLogs, weights, wbEntries, settings }) {
   var activeHorses = (horses || []).filter(function(h) { return h.status === "Active"; });
   var racingToday = (wbEntries || []).filter(function(e) { return e.date === selectedDate; });
   var racingSoon = activeHorses.filter(function(h) { var d = daysUntil(h.nextRaceDate); return d && d >= 0 && d <= 7; });
-  // Build todayKey from local date (not UTC) to avoid timezone issues
   var todayKey = now.getFullYear() + "-" + String(now.getMonth() + 1).padStart(2, "0") + "-" + String(now.getDate()).padStart(2, "0");
-  var yesterdayKey = (function() {
-    var y = new Date(now); y.setDate(y.getDate() - 1);
-    return y.getFullYear() + "-" + String(y.getMonth() + 1).padStart(2, "0") + "-" + String(y.getDate()).padStart(2, "0");
-  })();
 
-  // All medications given today only - strict date match
+  // All medications given today - any med type
   var medsGivenToday = [];
   activeHorses.forEach(function(h) {
     var horseMeds = [];
     Object.keys(medLogs || {}).forEach(function(key) {
-      // Parse key from right: horseId_YYYY-MM-DD_medType
-      var lastUnd = key.lastIndexOf("_");
-      var medType = key.slice(lastUnd + 1);
-      var rest = key.slice(0, lastUnd);
-      var dateUnd = rest.lastIndexOf("_");
-      var keyDate = rest.slice(dateUnd + 1);
-      var keyHorseId = rest.slice(0, dateUnd);
-      // Only show if same horse AND today's date AND value > 0
-      if (keyHorseId === h.id && keyDate === todayKey && medLogs[key] > 0) {
+      if (key.indexOf(h.id + "_" + todayKey + "_") === 0 && medLogs[key]) {
+        var medType = key.split("_").slice(-1)[0];
         horseMeds.push(medType);
       }
     });
@@ -214,13 +202,20 @@ function DailySummary({ horses, medLogs, weights, wbEntries, settings }) {
           {racingToday.map(function(e) {
             var horse = (horses || []).find(function(h) { return h.id === e.horseId; });
             return (
-              <div key={e.id} style={{ display: "flex", alignItems: "center", gap: 10, padding: "8px 0", borderBottom: "1px solid " + C.gold + "20" }}>
+              <div key={e.id} style={{ display: "flex", alignItems: "center", gap: 10, padding: "10px 0", borderBottom: "1px solid " + C.gold + "20" }}>
                 {horse && <Silk silk={horse.silk} size={28} />}
                 <div style={{ flex: 1 }}>
-                  <span style={{ fontSize: 14, fontWeight: 700, color: C.text }}>{e.horseName}</span>
-                  <span style={{ fontSize: 12, color: C.textMid, marginLeft: 8 }}>{e.raceName + " · " + e.venue}</span>
+                  <div style={{ display: "flex", alignItems: "center", gap: 8, flexWrap: "wrap" }}>
+                    <span style={{ fontSize: 14, fontWeight: 700, color: C.text }}>{e.horseName}</span>
+                    {(e.headgear || (horse && horse.headgear)) && <span style={{ fontSize: 11, fontWeight: 700, color: "#fff", background: C.purple, padding: "2px 8px", borderRadius: 20 }}>{e.headgear || horse.headgear}</span>}
+                    {e.ballotNo && <span style={{ fontSize: 11, fontWeight: 700, color: "#fff", background: C.amber, padding: "2px 8px", borderRadius: 20 }}>{"Ballot " + e.ballotNo}</span>}
+                  </div>
+                  <div style={{ fontSize: 12, color: C.textMid, marginTop: 2 }}>
+                    {e.raceName + " · " + e.venue}
+                    {e.jockey && <span style={{ marginLeft: 8 }}>{"J: " + e.jockey}</span>}
+                  </div>
                 </div>
-                <span style={{ fontSize: 13, fontWeight: 700, color: C.navy }}>{e.raceTime}</span>
+                <span style={{ fontSize: 14, fontWeight: 800, color: C.navy }}>{e.raceTime}</span>
               </div>
             );
           })}
