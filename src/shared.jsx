@@ -161,7 +161,21 @@ async function getAITake(horse, race) {
 // ─── MEDICATION TRACKER ───────────────────────────────────────────────────────
 
 
-const isEligible = function(horse, race) {
+const isEligible = function(horse, race, settings) {
+  // Check treatment withdrawal - takes priority over everything
+  var treatments = horse.treatments || [];
+  if (treatments.length > 0) {
+    var settingsTreatments = (settings && settings.treatments) || [];
+    var today = new Date(); today.setHours(0,0,0,0);
+    for (var ti = 0; ti < treatments.length; ti++) {
+      var t = treatments[ti];
+      if (!t.date || !t.withdrawalDays) continue;
+      var treatDate = new Date(t.date + "T00:00:00");
+      var clearDate = new Date(treatDate);
+      clearDate.setDate(clearDate.getDate() + parseInt(t.withdrawalDays));
+      if (today < clearDate) return false; // still in withdrawal
+    }
+  }
   if (!horse || !race) return false;
   var age = getAge(horse.dob);
   if (race.minAge && age < race.minAge) return false;
