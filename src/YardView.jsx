@@ -329,7 +329,56 @@ function YardView({ horses, setHorses }) {
                 return (
                   <div key={key}>
                     <div style={{ fontSize: 10, fontWeight: 700, color: C.textMid, marginBottom: 3, textTransform: "uppercase", letterSpacing: 0.5 }}>{field.label}</div>
-                    {field.type === "multi" ? (
+                    {field.type === "treatments" ? (
+                      <div>
+                        <div style={{ display: "flex", flexDirection: "column", gap: 6, marginBottom: 8 }}>
+                          {(editHorse.treatments || []).map(function(t, ti) {
+                            var clearD = new Date(t.date + "T00:00:00");
+                            clearD.setDate(clearD.getDate() + parseInt(t.withdrawalDays || 45));
+                            var daysLeft = Math.ceil((clearD - new Date()) / 86400000);
+                            return (
+                              <div key={ti} style={{ display: "flex", alignItems: "center", gap: 8, background: daysLeft > 0 ? C.red + "08" : C.cardOff, border: "1px solid " + (daysLeft > 0 ? C.red + "30" : C.border), borderRadius: 8, padding: "8px 12px" }}>
+                                <div style={{ flex: 1 }}>
+                                  <span style={{ fontSize: 13, fontWeight: 700, color: daysLeft > 0 ? C.red : C.textMid }}>{t.name}</span>
+                                  <span style={{ fontSize: 11, color: C.textMid, marginLeft: 8 }}>{t.date}</span>
+                                  <span style={{ fontSize: 11, color: C.textMid, marginLeft: 8 }}>{t.withdrawalDays + " days"}</span>
+                                  {daysLeft > 0 && <span style={{ fontSize: 11, color: C.red, fontWeight: 700, marginLeft: 8 }}>{"⛔ " + daysLeft + "d left — clear " + clearD.toLocaleDateString("en-IE", { day: "numeric", month: "short" })}</span>}
+                                  {daysLeft <= 0 && <span style={{ fontSize: 11, color: C.green, fontWeight: 700, marginLeft: 8 }}>✓ Clear</span>}
+                                </div>
+                                <button onClick={function() {
+                                  var ts = (editHorse.treatments || []).filter(function(_, j) { return j !== ti; });
+                                  updateEdit("treatments", ts);
+                                }} style={{ background: "none", border: "none", color: C.red, cursor: "pointer", fontSize: 16 }}>×</button>
+                              </div>
+                            );
+                          })}
+                        </div>
+                        <div style={{ display: "flex", gap: 8, flexWrap: "wrap", alignItems: "flex-end" }}>
+                          <select id={"treat-type-" + editHorse.id}
+                            style={{ padding: "8px 12px", background: C.cardOff, border: "1px solid " + C.border, borderRadius: 8, fontSize: 13, color: C.text }}>
+                            {(settings && settings.treatments || [
+                              { name: "SI Joints", withdrawalDays: 45 },
+                              { name: "Back Treatment", withdrawalDays: 45 },
+                              { name: "Joint Injection", withdrawalDays: 30 },
+                              { name: "Tildren/Osphos", withdrawalDays: 60 },
+                              { name: "PRP Treatment", withdrawalDays: 30 },
+                              { name: "Stem Cell", withdrawalDays: 90 }
+                            ]).map(function(t) { return <option key={t.name} value={t.name + "|" + t.withdrawalDays}>{t.name + " (" + t.withdrawalDays + "d)"}</option>; })}
+                          </select>
+                          <input type="date" id={"treat-date-" + editHorse.id} defaultValue={new Date().toISOString().slice(0,10)}
+                            style={{ padding: "8px 12px", background: C.cardOff, border: "1px solid " + C.border, borderRadius: 8, fontSize: 13, color: C.text }} />
+                          <Btn onClick={function() {
+                            var sel = document.getElementById("treat-type-" + editHorse.id);
+                            var dateEl = document.getElementById("treat-date-" + editHorse.id);
+                            if (!sel || !dateEl) return;
+                            var parts = sel.value.split("|");
+                            var ts = (editHorse.treatments || []).slice();
+                            ts.push({ name: parts[0], withdrawalDays: parseInt(parts[1]), date: dateEl.value });
+                            updateEdit("treatments", ts);
+                          }} style={{ fontSize: 12, padding: "8px 14px" }}>Log Treatment</Btn>
+                        </div>
+                      </div>
+                    ) : field.type === "multi" ? (
                       <div style={{ display: "flex", gap: 7, flexWrap: "wrap" }}>
                         {(field.options || []).map(function(o) {
                           var currentDisc = editHorse.discipline || [];
@@ -380,7 +429,56 @@ function YardView({ horses, setHorses }) {
                 return (
                   <div key={key}>
                     <div style={{ fontSize: 10, fontWeight: 700, color: C.textMid, marginBottom: 3, textTransform: "uppercase", letterSpacing: 0.5 }}>{field.label}</div>
-                    {field.type === "multi" ? (
+                    {field.type === "treatments" ? (
+                      <div>
+                        <div style={{ display: "flex", flexDirection: "column", gap: 6, marginBottom: 8 }}>
+                          {(editHorse.treatments || []).map(function(t, ti) {
+                            var clearD = new Date(t.date + "T00:00:00");
+                            clearD.setDate(clearD.getDate() + parseInt(t.withdrawalDays || 45));
+                            var daysLeft = Math.ceil((clearD - new Date()) / 86400000);
+                            return (
+                              <div key={ti} style={{ display: "flex", alignItems: "center", gap: 8, background: daysLeft > 0 ? C.red + "08" : C.cardOff, border: "1px solid " + (daysLeft > 0 ? C.red + "30" : C.border), borderRadius: 8, padding: "8px 12px" }}>
+                                <div style={{ flex: 1 }}>
+                                  <span style={{ fontSize: 13, fontWeight: 700, color: daysLeft > 0 ? C.red : C.textMid }}>{t.name}</span>
+                                  <span style={{ fontSize: 11, color: C.textMid, marginLeft: 8 }}>{t.date}</span>
+                                  <span style={{ fontSize: 11, color: C.textMid, marginLeft: 8 }}>{t.withdrawalDays + " days"}</span>
+                                  {daysLeft > 0 && <span style={{ fontSize: 11, color: C.red, fontWeight: 700, marginLeft: 8 }}>{"⛔ " + daysLeft + "d left — clear " + clearD.toLocaleDateString("en-IE", { day: "numeric", month: "short" })}</span>}
+                                  {daysLeft <= 0 && <span style={{ fontSize: 11, color: C.green, fontWeight: 700, marginLeft: 8 }}>✓ Clear</span>}
+                                </div>
+                                <button onClick={function() {
+                                  var ts = (editHorse.treatments || []).filter(function(_, j) { return j !== ti; });
+                                  updateEdit("treatments", ts);
+                                }} style={{ background: "none", border: "none", color: C.red, cursor: "pointer", fontSize: 16 }}>×</button>
+                              </div>
+                            );
+                          })}
+                        </div>
+                        <div style={{ display: "flex", gap: 8, flexWrap: "wrap", alignItems: "flex-end" }}>
+                          <select id={"treat-type-" + editHorse.id}
+                            style={{ padding: "8px 12px", background: C.cardOff, border: "1px solid " + C.border, borderRadius: 8, fontSize: 13, color: C.text }}>
+                            {(settings && settings.treatments || [
+                              { name: "SI Joints", withdrawalDays: 45 },
+                              { name: "Back Treatment", withdrawalDays: 45 },
+                              { name: "Joint Injection", withdrawalDays: 30 },
+                              { name: "Tildren/Osphos", withdrawalDays: 60 },
+                              { name: "PRP Treatment", withdrawalDays: 30 },
+                              { name: "Stem Cell", withdrawalDays: 90 }
+                            ]).map(function(t) { return <option key={t.name} value={t.name + "|" + t.withdrawalDays}>{t.name + " (" + t.withdrawalDays + "d)"}</option>; })}
+                          </select>
+                          <input type="date" id={"treat-date-" + editHorse.id} defaultValue={new Date().toISOString().slice(0,10)}
+                            style={{ padding: "8px 12px", background: C.cardOff, border: "1px solid " + C.border, borderRadius: 8, fontSize: 13, color: C.text }} />
+                          <Btn onClick={function() {
+                            var sel = document.getElementById("treat-type-" + editHorse.id);
+                            var dateEl = document.getElementById("treat-date-" + editHorse.id);
+                            if (!sel || !dateEl) return;
+                            var parts = sel.value.split("|");
+                            var ts = (editHorse.treatments || []).slice();
+                            ts.push({ name: parts[0], withdrawalDays: parseInt(parts[1]), date: dateEl.value });
+                            updateEdit("treatments", ts);
+                          }} style={{ fontSize: 12, padding: "8px 14px" }}>Log Treatment</Btn>
+                        </div>
+                      </div>
+                    ) : field.type === "multi" ? (
                       <div style={{ display: "flex", gap: 7, flexWrap: "wrap" }}>
                         {(field.options || []).map(function(o) {
                           var cur = Array.isArray(newHorse[key]) ? newHorse[key] : (newHorse[key] ? [newHorse[key]] : []);
