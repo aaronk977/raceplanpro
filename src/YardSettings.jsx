@@ -1040,7 +1040,6 @@ function YardSettings({ settings, setSettings, supabase, user }) {
 
           <Btn onClick={save} style={{ width: "100%" }}>Save Treatment Settings</Btn>
         </div>
-      </div>
       )}
 
       {activeTab === "silks" && (
