@@ -51,17 +51,33 @@ function WeightsTracker({ horses, weights, setWeights, settings }) {
     return { date: allKeys[0].split("_")[1], value: weights[allKeys[0]] };
   }
 
+  var ALERT_THRESHOLD = 6; // kg - configurable
+
   function getTrend(horseId) {
-    var allKeys = Object.keys(weights || {}).filter(function(k) {
-      return k.indexOf(horseId + "_") === 0 && k.indexOf("_weekly") >= 0;
+    // Use parseWeightKey for accurate date extraction
+    var weeklyKeys = Object.keys(weights || {}).filter(function(k) {
+      var parsed = parseWeightKey(k);
+      return parsed.horseId === horseId && parsed.type === "weekly" && weights[k] > 0;
     });
-    if (allKeys.length < 2) return null;
-    allKeys.sort();
-    var recent = parseFloat(weights[allKeys[allKeys.length - 1]]);
-    var prev = parseFloat(weights[allKeys[allKeys.length - 2]]);
+    if (weeklyKeys.length < 2) return null;
+    weeklyKeys.sort(function(a, b) {
+      return parseWeightKey(a).date.localeCompare(parseWeightKey(b).date);
+    });
+    var recent = parseFloat(weights[weeklyKeys[weeklyKeys.length - 1]]);
+    var prev = parseFloat(weights[weeklyKeys[weeklyKeys.length - 2]]);
     if (isNaN(recent) || isNaN(prev)) return null;
-    var diff = recent - prev;
-    return { diff: Math.round(diff * 10) / 10, up: diff > 0, down: diff < 0 };
+    var diff = Math.round((recent - prev) * 10) / 10;
+    var alert = Math.abs(diff) >= ALERT_THRESHOLD;
+    return {
+      diff: diff,
+      up: diff > 0,
+      down: diff < 0,
+      alert: alert,
+      recentDate: parseWeightKey(weeklyKeys[weeklyKeys.length - 1]).date,
+      prevDate: parseWeightKey(weeklyKeys[weeklyKeys.length - 2]).date,
+      recent: recent,
+      prev: prev
+    };
   }
 
   function parseWeightKey(k) {
@@ -111,7 +127,13 @@ function WeightsTracker({ horses, weights, setWeights, settings }) {
     showToast("All weights saved");
   }
 
-  var activeHorses = (horses || []).filter(function(h) { return h.status !== "Inactive"; });
+  var activeHorses = (horses || []).filter(function(h) { return h.status !== "Inactive"; }).sort(function(a, b) {
+    var aEx = (a.name || "").toUpperCase().indexOf("EX ") === 0 || (a.name || "").toUpperCase().indexOf("(EX)") >= 0;
+    var bEx = (b.name || "").toUpperCase().indexOf("EX ") === 0 || (b.name || "").toUpperCase().indexOf("(EX)") >= 0;
+    if (aEx && !bEx) return -1;
+    if (!aEx && bEx) return 1;
+    return (a.name || "").localeCompare(b.name || "");
+  });
   var filteredHorses = activeHorses.filter(function(h) {
     if (!search) return true;
     return h.name.toLowerCase().indexOf(search.toLowerCase()) >= 0;
@@ -126,6 +148,34 @@ function WeightsTracker({ horses, weights, setWeights, settings }) {
       <div style={{ display: "flex", justifyContent: "space-between", alignItems: "flex-start", marginBottom: 16, flexWrap: "wrap", gap: 10 }}>
         <div>
           <div style={{ fontSize: 22, fontWeight: 800, color: C.text }}>Weights Tracker</div>
+      {(function() {
+        var alerts = filteredHorses.map(function(h) {
+          var t = getTrend(h.id);
+          return t && t.alert ? { horse: h, trend: t } : null;
+        }).filter(Boolean);
+        if (!alerts.length) return null;
+        return (
+          <div style={{ background: C.red + "10", border: "1px solid " + C.red + "30", borderRadius: 10, padding: "10px 16px", marginTop: 8, marginBottom: 4 }}>
+            <div style={{ fontSize: 12, fontWeight: 700, color: C.red, marginBottom: 6, textTransform: "uppercase", letterSpacing: 1 }}>{"⚠️ Significant Weight Changes"}</div>
+            <div style={{ display: "flex", flexDirection: "column", gap: 5 }}>
+              {alerts.map(function(a) {
+                return (
+                  <div key={a.horse.id} style={{ display: "flex", alignItems: "center", gap: 10, fontSize: 13 }}>
+                    <Silk silk={a.horse.silk} size={22} />
+                    <span style={{ fontWeight: 700, color: C.text }}>{a.horse.name}</span>
+                    <span style={{ color: a.trend.down ? C.red : C.amber, fontWeight: 700 }}>
+                      {(a.trend.up ? "▲ +" : "▼ ") + a.trend.diff + "kg"}
+                    </span>
+                    <span style={{ color: C.textMid, fontSize: 11 }}>
+                      {a.trend.prev + "kg → " + a.trend.recent + "kg"}
+                    </span>
+                  </div>
+                );
+              })}
+            </div>
+          </div>
+        );
+      })()}
           <div style={{ fontSize: 13, color: C.textMid, marginTop: 3 }}>
             {"Weekly weigh day: " + weighDay + " — " + totalWeighed + "/" + filteredHorses.length + " weighed today"}
           </div>
