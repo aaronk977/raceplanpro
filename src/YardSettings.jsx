@@ -63,13 +63,27 @@ function OwnerContactsPanel({ edit, update }) {
         var row = {};
         for (var j = 0; j < headers.length; j++) { row[headers[j]] = cols[j] || ""; }
         // Handle "First Name" + "Last Name" columns from Yardman
-        var firstName = row.first_name || row.firstname || row.forename || "";
-        var lastName = row.last_name || row.lastname || row.surname || "";
+        var firstName = row.first_name || row.firstname || row.forename || row["first name"] || "";
+        var lastName = row.last_name || row.lastname || row.surname || row["last name"] || row["surname"] || "";
         var combinedName = (firstName + " " + lastName).trim();
         var name = row.name || row.owner || row.owner_name || row.full_name || row.owner_full_name || combinedName || cols[0];
         if (!name || !name.trim()) continue;
-        var phone = row.phone || row.mobile || row.mobile_no || row.mobile_number || row.whatsapp || row.telephone || row.tel || row.contact || row.cell || "";
-        var email = row.email || row.email_address || row.e_mail || row.emailaddress || "";
+        // Strip leading/trailing quote chars from name
+        name = name.trim().replace(/^["']+|["']+$/g, "").trim();
+        if (!name) continue;
+        // Get all possible phone/email values and route correctly
+        var rawPhone = row.phone || row.mobile || row.mobile_no || row.mobile_number || row.mob || row.whatsapp || row.telephone || row.tel || row.contact || row.cell || row["mobile no"] || row["phone no"] || row["mobile number"] || "";
+        var rawEmail = row.email || row.email_address || row.e_mail || row.emailaddress || row["e-mail"] || row["email address"] || "";
+        // Validate: if rawPhone contains @ it is actually an email
+        var phone = ""; var email = "";
+        if (rawPhone && rawPhone.indexOf("@") >= 0) { email = rawPhone; rawPhone = ""; }
+        phone = rawPhone;
+        // Same for email field - if it looks like a phone number move it
+        if (rawEmail && rawEmail.indexOf("@") < 0 && rawEmail.replace(/[^0-9]/g, "").length > 6) {
+          if (!phone) phone = rawEmail;
+          rawEmail = "";
+        }
+        email = rawEmail;
         imported.push({ id: "own_" + Date.now() + "_" + i, name: name.trim(), phone: phone.trim(), email: email.trim(), notes: "" });
       }
       if (!imported.length) { setCsvResult("No owners found — check your CSV has name, phone, email columns"); return; }
