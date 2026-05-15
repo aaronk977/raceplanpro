@@ -452,7 +452,19 @@ function RacePlanner({ horses, setHorses }) {
                               var label = pair[0]; var sk = pair[1];
                               var v = (analysis.scores || {})[sk] || 0;
                               var c = v >= 7 ? C.green : v >= 5 ? C.amber : C.red;
-                              return (
+                              // Check treatment withdrawal
+                   var treatBlock = null;
+                   var horseTreats = horse.treatments || [];
+                   var nowT = new Date(); nowT.setHours(0,0,0,0);
+                   horseTreats.forEach(function(ht) {
+                     if (!ht.date || !ht.withdrawalDays) return;
+                     var tDate = new Date(ht.date + "T00:00:00");
+                     var clearD = new Date(tDate); clearD.setDate(clearD.getDate() + parseInt(ht.withdrawalDays));
+                     if (nowT < clearD) {
+                       treatBlock = { name: ht.name, clearDate: clearD.toLocaleDateString("en-IE", { day: "numeric", month: "short", year: "numeric" }), daysLeft: Math.ceil((clearD - nowT) / 86400000) };
+                     }
+                   });
+                   return (
                                 <div key={sk} style={{ flex: 1, textAlign: "center", padding: "5px 2px", background: c + "10", borderRadius: 7, border: "1px solid " + c + "20" }}>
                                   <div style={{ fontSize: 14, fontWeight: 800, color: c }}>{v}</div>
                                   <div style={{ fontSize: 8, color: C.textMid, fontWeight: 600 }}>{label}</div>
