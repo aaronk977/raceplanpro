@@ -1,4 +1,4 @@
-import React, { useState } from "react";
+import React, { useState } from "react"; // v2
 import { Btn, Silk, C } from "./shared";
 
 var PRINT_STYLE = [
