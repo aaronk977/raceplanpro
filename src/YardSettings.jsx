@@ -63,27 +63,50 @@ function OwnerContactsPanel({ edit, update }) {
         var row = {};
         for (var j = 0; j < headers.length; j++) { row[headers[j]] = cols[j] || ""; }
         // Handle "First Name" + "Last Name" columns from Yardman
-        var firstName = row.first_name || row.firstname || row.forename || row["first name"] || "";
-        var lastName = row.last_name || row.lastname || row.surname || row["last name"] || row["surname"] || "";
-        var combinedName = (firstName + " " + lastName).trim();
-        var name = row.name || row.owner || row.owner_name || row.full_name || row.owner_full_name || combinedName || cols[0];
+        // Yardman format: Tag, Name, Address1-8, Postcode, HomeTel, WorkTel, Mobile, Email, VatNo, SageCode
+        var name = row.name || row.owner || row.owner_name || row.full_name || "";
         if (!name || !name.trim()) continue;
-        // Strip leading/trailing quote chars from name
         name = name.trim().replace(/^["']+|["']+$/g, "").trim();
         if (!name) continue;
-        // Get all possible phone/email values and route correctly
-        var rawPhone = row.phone || row.mobile || row.mobile_no || row.mobile_number || row.mob || row.whatsapp || row.telephone || row.tel || row.contact || row.cell || row["mobile no"] || row["phone no"] || row["mobile number"] || "";
-        var rawEmail = row.email || row.email_address || row.e_mail || row.emailaddress || row["e-mail"] || row["email address"] || "";
-        // Validate: if rawPhone contains @ it is actually an email
-        var phone = ""; var email = "";
-        if (rawPhone && rawPhone.indexOf("@") >= 0) { email = rawPhone; rawPhone = ""; }
-        phone = rawPhone;
-        // Same for email field - if it looks like a phone number move it
-        if (rawEmail && rawEmail.indexOf("@") < 0 && rawEmail.replace(/[^0-9]/g, "").length > 6) {
-          if (!phone) phone = rawEmail;
-          rawEmail = "";
+
+        // Fix scientific notation numbers like 4.47971E+11 -> phone number
+        function fixSciNotation(val) {
+          if (!val) return "";
+          val = String(val).trim();
+          // Detect scientific notation e.g. 4.47971E+11
+          if (/^[0-9.]+[eE][+\-][0-9]+$/.test(val)) {
+            try {
+              var num = parseFloat(val);
+              return Math.round(num).toString();
+            } catch(ex) { return val; }
+          }
+          return val;
         }
-        email = rawEmail;
+
+        // Get phone from Mobile, HomeTel, WorkTel in that order
+        var rawMobile = fixSciNotation(row.mobile || "");
+        var rawHome = fixSciNotation(row.hometel || row.home_tel || "");
+        var rawWork = fixSciNotation(row.worktel || row.work_tel || "");
+        var rawPhone = rawMobile || rawHome || rawWork || fixSciNotation(row.phone || row.tel || row.telephone || "");
+
+        // Get email
+        var rawEmail = (row.email || row.email_address || "").trim();
+
+        // Validate - swap if in wrong field
+        var phone = ""; var email = "";
+        if (rawPhone && rawPhone.indexOf("@") >= 0) { rawEmail = rawPhone; rawPhone = ""; }
+        if (rawEmail && rawEmail.indexOf("@") < 0 && rawEmail.replace(/[^0-9]/g, "").length > 6) {
+          rawPhone = rawPhone || rawEmail; rawEmail = "";
+        }
+        phone = rawPhone; email = rawEmail;
+
+        // Format Irish mobile: 87... -> +353 87...
+        if (phone && phone.length === 9 && (phone.charAt(0) === "8" || phone.charAt(0) === "0")) {
+          if (phone.charAt(0) === "0") phone = "+353" + phone.slice(1);
+          else phone = "+353" + phone;
+        }
+        // Format if starts with 353
+        if (phone && phone.indexOf("353") === 0 && phone.charAt(0) !== "+") phone = "+" + phone;
         imported.push({ id: "own_" + Date.now() + "_" + i, name: name.trim(), phone: phone.trim(), email: email.trim(), notes: "" });
       }
       if (!imported.length) { setCsvResult("No owners found — check your CSV has name, phone, email columns"); return; }
