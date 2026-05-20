@@ -407,34 +407,137 @@ function YardSettings({ settings, setSettings, supabase, user }) {
   var eircodeStatusState = useState("");
   var eircodeStatus = eircodeStatusState[0]; var setEircodeStatus = eircodeStatusState[1];
 
+  // Irish eircode routing key -> approximate coordinates
+  var EIRCODE_COORDS = {
+    "D01":[53.3441,-6.2675],"D02":[53.3388,-6.2591],"D03":[53.3306,-6.2363],"D04":[53.3139,-6.2197],
+    "D05":[53.3639,-6.2286],"D06":[53.3264,-6.2797],"D07":[53.3486,-6.2983],"D08":[53.3361,-6.2942],
+    "D09":[53.3528,-6.2514],"D10":[53.3369,-6.3133],"D11":[53.3764,-6.2739],"D12":[53.3172,-6.3256],
+    "D13":[53.3831,-6.2269],"D14":[53.2967,-6.2681],"D15":[53.3894,-6.3567],"D16":[53.2894,-6.2933],
+    "D17":[53.3575,-6.2072],"D18":[53.2694,-6.1839],"D20":[53.3092,-6.3669],"D22":[53.3181,-6.3831],
+    "D24":[53.2875,-6.3789],"D6W":[53.3228,-6.3058],
+    "W23":[53.2167,-6.6667],"R51":[53.1500,-6.9167],"W91":[52.6667,-6.9667],
+    "A63":[52.9833,-6.2000],"A67":[52.8667,-6.0833],"A98":[53.0000,-6.0500],
+    "A84":[53.6500,-6.7000],"A85":[53.5833,-6.6167],"C15":[53.7000,-6.3500],
+    "N37":[53.5333,-7.3333],"N41":[53.4167,-7.6167],
+    "E34":[52.6833,-7.9000],"E32":[52.4667,-7.7167],"E41":[52.8000,-7.7500],
+    "X42":[52.2600,-7.1200],"X35":[52.3667,-7.7167],
+    "T12":[51.8985,-8.4756],"T23":[51.8333,-8.3333],"P24":[52.0833,-8.0000],
+    "P25":[51.6667,-8.6333],"P31":[51.9167,-9.0000],"P47":[51.7500,-9.3333],
+    "P43":[51.6667,-8.1667],"P56":[51.5833,-9.0000],"P51":[51.5000,-9.5833],
+    "V92":[52.0597,-9.5039],"V93":[52.1333,-9.8333],"V31":[52.3333,-9.7500],
+    "V94":[52.6650,-8.6238],"V35":[52.5833,-8.8667],
+    "V95":[52.8333,-8.9833],"V14":[53.0000,-8.8333],
+    "H91":[53.2744,-9.0488],"H92":[53.3500,-9.4000],"H54":[53.5000,-9.0500],
+    "H62":[53.1833,-8.5167],"H65":[53.5167,-8.3333],
+    "F28":[53.8500,-9.3000],"F26":[53.6000,-9.7167],"F23":[54.0167,-9.5167],"F31":[53.6833,-9.9167],
+    "F42":[53.6333,-8.1833],"F45":[53.9167,-8.4167],
+    "F91":[54.2761,-8.4761],"F56":[54.1167,-8.5167],
+    "F93":[54.9333,-8.0000],"F94":[54.7167,-8.1333],"F92":[54.6500,-8.1000],
+    "H12":[53.9833,-7.3500],"H18":[54.2500,-6.9667],
+    "A91":[53.9831,-6.3831],"A92":[53.9500,-6.5833],
+    "R35":[53.3500,-7.9000],"R32":[52.9833,-7.4000],
+    "R95":[52.6533,-7.2547],"Y21":[52.3333,-6.4667],"Y35":[52.5000,-6.5333],
+    "R93":[52.8333,-6.9167],"N39":[53.7333,-7.7833],
+    "K32":[53.5833,-6.3333],"K36":[53.5667,-6.3000],"K45":[53.4167,-6.4167],
+    "K56":[53.3333,-6.5000],"K67":[53.2500,-6.5833],"K78":[53.1667,-6.6333]
+  };
+
+  // County/area names for routing keys
+  var EIRCODE_AREAS = {
+    "D":{name:"Dublin"},"W23":{name:"Kildare"},"R51":{name:"Kildare"},
+    "W91":{name:"Kilkenny"},"A63":{name:"Wicklow"},"A67":{name:"Wicklow"},
+    "A98":{name:"Wicklow"},"A84":{name:"Meath"},"A85":{name:"Meath"},
+    "C15":{name:"Meath"},"N37":{name:"Westmeath"},"N41":{name:"Westmeath"},
+    "E34":{name:"Tipperary"},"E32":{name:"Tipperary"},"E41":{name:"Tipperary"},
+    "X42":{name:"Waterford"},"X35":{name:"Waterford"},
+    "T12":{name:"Cork City"},"T23":{name:"Cork"},"P24":{name:"Cork"},
+    "P25":{name:"Cork"},"P31":{name:"Cork"},"P47":{name:"Cork"},
+    "P43":{name:"Cork"},"P56":{name:"Cork"},"P51":{name:"Cork"},
+    "V92":{name:"Kerry"},"V93":{name:"Kerry"},"V31":{name:"Kerry"},
+    "V94":{name:"Limerick"},"V35":{name:"Limerick"},
+    "V95":{name:"Clare"},"V14":{name:"Clare"},
+    "H91":{name:"Galway City"},"H92":{name:"Galway"},"H54":{name:"Galway"},
+    "H62":{name:"Galway"},"H65":{name:"Galway"},
+    "F28":{name:"Mayo"},"F26":{name:"Mayo"},"F23":{name:"Mayo"},"F31":{name:"Mayo"},
+    "F42":{name:"Roscommon"},"F45":{name:"Roscommon"},
+    "F91":{name:"Sligo"},"F56":{name:"Sligo"},
+    "F93":{name:"Donegal"},"F94":{name:"Donegal"},"F92":{name:"Donegal"},
+    "H12":{name:"Cavan"},"H18":{name:"Monaghan"},
+    "A91":{name:"Louth"},"A92":{name:"Louth"},
+    "R35":{name:"Offaly"},"R32":{name:"Laois"},
+    "R95":{name:"Kilkenny"},"Y21":{name:"Wexford"},"Y35":{name:"Wexford"},
+    "R93":{name:"Carlow"},"N39":{name:"Longford"}
+  };
+
   function lookupEircode(code) {
     if (!code || code.trim().length < 3) return;
+    var clean = code.trim().toUpperCase().replace(/\s+/g, "");
     setEircodeLoading(true); setEircodeStatus("Looking up...");
-    var query = encodeURIComponent(code.trim());
-    fetch("https://nominatim.openstreetmap.org/search?q=" + query + "&countrycodes=ie,gb&format=json&limit=1&addressdetails=1", {
-      headers: { "Accept-Language": "en", "User-Agent": "RacePlanPro/1.0" }
-    }).then(function(r) { return r.json(); })
-    .then(function(data) {
-      if (data && data[0]) {
-        var addr = data[0].address || {};
-        var parts = [];
-        if (addr.house_number && addr.road) parts.push(addr.house_number + " " + addr.road);
-        else if (addr.road) parts.push(addr.road);
-        if (addr.suburb) parts.push(addr.suburb);
-        if (addr.town || addr.city || addr.village) parts.push(addr.town || addr.city || addr.village);
-        if (addr.county) parts.push(addr.county);
-        if (addr.state) parts.push(addr.state);
-        var fullAddress = parts.join(", ");
-        update("location", fullAddress);
-        setEircodeStatus("Address found");
-        setTimeout(function() { setEircodeStatus(""); }, 3000);
-      } else {
-        setEircodeStatus("Not found — enter address manually");
-        setTimeout(function() { setEircodeStatus(""); }, 3000);
-      }
-    })
-    .catch(function() { setEircodeStatus("Lookup failed"); })
-    .finally(function() { setEircodeLoading(false); });
+
+    // Try Irish eircode first - extract routing key (first 3 chars)
+    var routingKey = clean.substring(0, 3);
+    if (EIRCODE_COORDS[routingKey]) {
+      var area = EIRCODE_AREAS[routingKey] || EIRCODE_AREAS[routingKey.charAt(0)] || { name: "" };
+      var coords = EIRCODE_COORDS[routingKey];
+      update("yardLat", coords[0]);
+      update("yardLng", coords[1]);
+      // Try Nominatim with the full eircode
+      fetch("https://nominatim.openstreetmap.org/search?q=" + encodeURIComponent(clean + " Ireland") + "&format=json&limit=1&addressdetails=1", {
+        headers: { "Accept-Language": "en" }
+      }).then(function(r) { return r.json(); })
+      .then(function(data) {
+        if (data && data[0]) {
+          var addr = data[0].address || {};
+          var parts = [];
+          if (addr.road) parts.push(addr.road);
+          if (addr.suburb) parts.push(addr.suburb);
+          if (addr.town || addr.city || addr.village) parts.push(addr.town || addr.city || addr.village);
+          if (addr.county) parts.push(addr.county);
+          if (parts.length > 0) {
+            update("location", parts.join(", "));
+            update("yardLat", parseFloat(data[0].lat));
+            update("yardLng", parseFloat(data[0].lon));
+            setEircodeStatus("Address found ✓");
+          } else {
+            update("location", area.name ? "Co. " + area.name : "Ireland");
+            setEircodeStatus("Area found: " + (area.name || routingKey) + " ✓");
+          }
+        } else {
+          update("location", area.name ? "Co. " + area.name : "Ireland");
+          setEircodeStatus("Area identified: " + (area.name || routingKey) + " — add full address below");
+        }
+      })
+      .catch(function() {
+        update("location", area.name ? "Co. " + area.name : "Ireland");
+        setEircodeStatus("Area: " + (area.name || routingKey) + " — add full address below");
+      })
+      .finally(function() {
+        setEircodeLoading(false);
+        setTimeout(function() { setEircodeStatus(""); }, 4000);
+      });
+      return;
+    }
+
+    // Try as UK postcode via postcodes.io
+    fetch("https://api.postcodes.io/postcodes/" + encodeURIComponent(clean))
+      .then(function(r) { return r.json(); })
+      .then(function(data) {
+        if (data.status === 200 && data.result) {
+          var r2 = data.result;
+          update("yardLat", r2.latitude);
+          update("yardLng", r2.longitude);
+          var addr = [r2.admin_ward, r2.admin_district, r2.admin_county || r2.region].filter(Boolean).join(", ");
+          update("location", addr);
+          setEircodeStatus("Address found ✓");
+        } else {
+          setEircodeStatus("Postcode not found — enter address manually");
+        }
+      })
+      .catch(function() { setEircodeStatus("Lookup failed — enter address manually"); })
+      .finally(function() {
+        setEircodeLoading(false);
+        setTimeout(function() { setEircodeStatus(""); }, 4000);
+      });
   }
 
   function updateContact(idx, key, val) {
