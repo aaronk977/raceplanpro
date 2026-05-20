@@ -611,6 +611,23 @@ function YardSettings({ settings, setSettings, supabase, user }) {
         </div>
         <div style={{ display: "flex", gap: 8, alignItems: "center" }}>
           {saved && <span style={{ fontSize: 13, color: C.green, fontWeight: 700 }}>Saved!</span>}
+          <div style={{ display: "grid", gridTemplateColumns: "1fr 1fr", gap: 12, marginTop: 4 }}>
+            <div>
+              <div style={{ fontSize: 11, fontWeight: 700, color: C.textMid, marginBottom: 4, textTransform: "uppercase" }}>Travel cost per km</div>
+              <div style={{ display: "flex", gap: 6, alignItems: "center" }}>
+                <select value={edit.currency || "EUR"} onChange={function(e) { update("currency", e.target.value); }}
+                  style={{ padding: "8px 10px", background: C.cardOff, border: "1px solid " + C.border, borderRadius: 8, fontSize: 13, color: C.text }}>
+                  <option value="EUR">EUR €</option>
+                  <option value="GBP">GBP £</option>
+                </select>
+                <input type="number" step="0.10" min="0" value={edit.costPerKm != null ? edit.costPerKm : 1.5}
+                  onChange={function(e) { update("costPerKm", parseFloat(e.target.value) || 0); }}
+                  placeholder="1.50"
+                  style={{ flex: 1, padding: "8px 12px", background: C.cardOff, border: "1px solid " + C.border, borderRadius: 8, fontSize: 13, color: C.text }} />
+                <span style={{ fontSize: 12, color: C.textMid }}>per km</span>
+              </div>
+            </div>
+          </div>
           <Btn onClick={save}>Save Settings</Btn>
         </div>
       </div>
