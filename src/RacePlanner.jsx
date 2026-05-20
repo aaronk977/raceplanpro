@@ -1,5 +1,5 @@
 import React, { useState } from "react";
-import { Btn, Tag, Silk, FormDots, StatusPill, C, TODAY, daysUntil, canRace, coolingDate, getAge, ANTHROPIC_KEY } from "./shared";
+import { Btn, Tag, Silk, FormDots, StatusPill, C, TODAY, daysUntil, canRace, coolingDate, getAge, ANTHROPIC_KEY, getAnthropicKey } from "./shared";
 
 function getHeaders(settings) { return { "Content-Type": "application/json", "x-api-key": getAnthropicKey(settings),
 "anthropic-version": "2023-06-01", "anthropic-dangerous-direct-browser-access": "true" }; }
