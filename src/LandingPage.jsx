@@ -60,7 +60,7 @@ function LandingPage({ onLogin }) {
           </div>
           <div style={{ display: "grid", gridTemplateColumns: "repeat(auto-fit, minmax(260px, 1fr))", gap: 20 }}>
             {[
-              { icon: "💊", pain: "A horse finishes Peptizole the morning of entries. Nobody notices. You miss the 12pm deadline.", fix: "RacePlan Pro fires a WhatsApp to you and your head lad at 10am: "Butch Cassidy finishes Peptizole today — entry deadline in 2 hours."" },
+              { icon: "💊", pain: "A horse finishes Peptizole the morning of entries. Nobody notices. You miss the 12pm deadline.", fix: "RacePlan Pro fires a WhatsApp at 10am — Butch Cassidy finishes Peptizole today, entry deadline in 2 hours." },
               { icon: "📋", pain: "Race conditions land in your inbox. You spend 30 minutes cross-checking each horse for eligibility by hand.", fix: "Paste the conditions. Our AI reads them, checks your entire yard, and gives you a ranked eligible list in seconds." },
               { icon: "💉", pain: "A horse gets SI joints treated. Six weeks later it goes on the shortlist. Someone forgets about the 45-day rule.", fix: "Every treatment is logged with its withdrawal period. The Race Planner blocks that horse automatically until it's clear." },
               { icon: "⚖️", pain: "A horse has dropped 28kg since last week. You find out on race morning.", fix: "Weight changes over 6kg trigger an instant alert. The whole yard sees it. You act before it becomes a problem." },
