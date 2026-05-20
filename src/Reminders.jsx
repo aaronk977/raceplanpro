@@ -137,18 +137,28 @@ function Reminders({ reminders, setReminders, settings, user, supabase }) {
     });
     saveToSupabase(updated);
 
-    // Send WhatsApp
+    // Send WhatsApp via Twilio
     var phone = (reminder.phone && reminder.phone !== "null") ? reminder.phone : trainerPhone;
     if (phone && reminder.sendWhatsApp !== false) {
       var cleanPhone = phone.split("").filter(function(d) { return (d >= "0" && d <= "9") || d === "+"; }).join("");
       var hoursUntil = Math.round((new Date(reminder.date + "T" + (reminder.time || "09:00") + ":00") - new Date()) / 3600000);
-      var msgParts = ["RacePlan Pro Reminder"];
+      var msgParts = ["*RacePlan Pro Reminder*"];
       if (newCount > 1) msgParts.push("(Reminder " + newCount + " of " + (reminder.maxAttempts || 3) + ")");
       msgParts.push(reminder.text);
       if (reminder.horseName) msgParts.push("Re: " + reminder.horseName);
-      if (hoursUntil > 0) msgParts.push("This is due in approx " + hoursUntil + " hours");
+      if (hoursUntil > 0) msgParts.push("Due in approx " + hoursUntil + " hours");
       msgParts.push("Reply DONE to acknowledge");
-      window.open("https://wa.me/" + cleanPhone + "?text=" + encodeURIComponent(msgParts.join("\n")), "_blank");
+      var msgText = msgParts.join("\n");
+      fetch("/api/send-whatsapp", {
+        method: "POST",
+        headers: { "Content-Type": "application/json" },
+        body: JSON.stringify({ to: cleanPhone, message: msgText })
+      }).then(function(r) { return r.json(); }).then(function(d) {
+        if (d.success) { showToast("WhatsApp sent ✓"); }
+        else { window.open("https://wa.me/" + cleanPhone + "?text=" + encodeURIComponent(msgText), "_blank"); }
+      }).catch(function() {
+        window.open("https://wa.me/" + cleanPhone + "?text=" + encodeURIComponent(msgText), "_blank");
+      });
     }
 
     showToast("Reminder sent (" + newCount + "/" + (reminder.maxAttempts || 3) + "): " + reminder.text.substring(0, 30));
