@@ -406,6 +406,10 @@ function YardSettings({ settings, setSettings, supabase, user }) {
   var eircodeLoading = eircodeLoadingState[0]; var setEircodeLoading = eircodeLoadingState[1];
   var eircodeStatusState = useState("");
   var eircodeStatus = eircodeStatusState[0]; var setEircodeStatus = eircodeStatusState[1];
+  var suggestionsState = useState([]);
+  var addressSuggestions = suggestionsState[0]; var setAddressSuggestions = suggestionsState[1];
+  var debounceTimerState = useState(null);
+  var debounceTimer = debounceTimerState[0]; var setDebounceTimer = debounceTimerState[1];
 
   function handleAddressInput(val) {
     if (debounceTimer) clearTimeout(debounceTimer);
