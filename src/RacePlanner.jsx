@@ -1,12 +1,9 @@
 import React, { useState } from "react";
 import { Btn, Tag, Silk, FormDots, StatusPill, C, TODAY, daysUntil, canRace, coolingDate, getAge, ANTHROPIC_KEY } from "./shared";
 
-var API_HEADERS = {
-  "Content-Type": "application/json",
-  "x-api-key": ANTHROPIC_KEY,
-  "anthropic-version": "2023-06-01",
-  "anthropic-dangerous-direct-browser-access": "true"
-};
+function getHeaders(settings) { return { "Content-Type": "application/json", "x-api-key": getAnthropicKey(settings),
+"anthropic-version": "2023-06-01", "anthropic-dangerous-direct-browser-access": "true" }; }
+var API_HEADERS = getHeaders(null);
 
 async function getAITake(horse, race) {
   var condStr = "";
