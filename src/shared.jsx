@@ -6,6 +6,9 @@ const SUPABASE_ANON_KEY = import.meta.env.VITE_SUPABASE_ANON_KEY || "";
 const supabase = createClient(SUPABASE_URL, SUPABASE_ANON_KEY);
 
 const ANTHROPIC_KEY = import.meta.env.VITE_ANTHROPIC_API_KEY || "";
+function getAnthropicKey(settings) {
+  return (settings && settings.anthropicKey && settings.anthropicKey.trim()) || ANTHROPIC_KEY || "";
+}
 
 const C = {
   bg: "#f0f4f8", navy: "#0a1628", navyMid: "#112240", navyLight: "#1a3360",
@@ -202,5 +205,5 @@ const isEligible = function(horse, race, settings) {
 };
 
 export { Silk, Tag, Btn, FormDots, StatusPill };
-export { C, TODAY, SILKS, ANTHROPIC_KEY };
+export { C, TODAY, SILKS, ANTHROPIC_KEY, getAnthropicKey };
 export { getAge, coolingDate, canRace, daysUntil, getDaysInMonth, isEligible };
