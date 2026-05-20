@@ -417,23 +417,23 @@ function YardSettings({ settings, setSettings, supabase, user }) {
   }
 
   function fetchAddressSuggestions(query) {
-    var googleKey = edit.googleMapsKey || "";
-    if (googleKey) {
-      // Google Places Autocomplete
-      var url = "https://maps.googleapis.com/maps/api/place/autocomplete/json?input=" +
-        encodeURIComponent(query) + "&components=country:ie|country:gb&language=en&key=" + googleKey;
-      fetch("/api/places-proxy?url=" + encodeURIComponent(url))
-        .then(function(r) { return r.json(); })
-        .then(function(data) {
-          if (data.predictions) {
-            setAddressSuggestions(data.predictions.map(function(p) {
-              return { main: p.structured_formatting.main_text, secondary: p.structured_formatting.secondary_text, placeId: p.place_id, full: p.description };
-            }));
-          }
-        }).catch(function() { fetchNominatimSuggestions(query); });
-    } else {
-      fetchNominatimSuggestions(query);
-    }
+    // Always use server-side proxy (keeps API key secure)
+    fetch("/api/places-proxy?type=autocomplete&input=" + encodeURIComponent(query))
+      .then(function(r) { return r.json(); })
+      .then(function(data) {
+        if (data.predictions && data.predictions.length > 0) {
+          setAddressSuggestions(data.predictions.map(function(p) {
+            return {
+              main: p.structured_formatting ? p.structured_formatting.main_text : p.description.split(",")[0],
+              secondary: p.structured_formatting ? p.structured_formatting.secondary_text : p.description,
+              placeId: p.place_id,
+              full: p.description
+            };
+          }));
+        } else {
+          fetchNominatimSuggestions(query);
+        }
+      }).catch(function() { fetchNominatimSuggestions(query); });
   }
 
   function fetchNominatimSuggestions(query) {
@@ -455,9 +455,8 @@ function YardSettings({ settings, setSettings, supabase, user }) {
 
   function selectAddress(suggestion) {
     setAddressSuggestions([]);
-    if (suggestion.placeId && edit.googleMapsKey) {
-      // Geocode the place ID to get coordinates
-      fetch("/api/places-proxy?placeid=" + suggestion.placeId + "&key=" + edit.googleMapsKey)
+    if (suggestion.placeId) {
+      fetch("/api/places-proxy?type=details&placeid=" + suggestion.placeId)
         .then(function(r) { return r.json(); })
         .then(function(data) {
           if (data.result && data.result.geometry) {
@@ -845,8 +844,7 @@ function YardSettings({ settings, setSettings, supabase, user }) {
               { key: "trainerName", label: "Trainer Name", placeholder: "e.g. Gordon Elliott" },
               { key: "location", label: "Location (auto-filled from eircode)", placeholder: "e.g. Robertstown, Co. Meath" },
               { key: "trainerLicence", label: "Trainer Licence No.", placeholder: "e.g. 12345" },
-              { key: "anthropicKey", label: "Anthropic API Key (for AI features)", placeholder: "sk-ant-...", full: true },
-              { key: "googleMapsKey", label: "Google Maps API Key (for address search)", placeholder: "AIza...", type: "password", full: true },
+              { key: "anthropicKey", label: "Anthropic API Key (for AI features)", placeholder: "sk-ant-...", type: "password", full: true },
             ].map(function(field) {
               return (
                 <div key={field.key} style={{ gridColumn: field.full ? "1 / -1" : "auto" }}>
