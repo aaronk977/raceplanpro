@@ -3,7 +3,7 @@ import { Btn, C, ANTHROPIC_KEY } from "./shared";
 
 var API_HEADERS = {
   "Content-Type": "application/json",
-  "x-api-key": (settings && settings.anthropicKey && settings.anthropicKey.trim()) || ANTHROPIC_KEY,
+  "x-api-key": ANTHROPIC_KEY,
   "anthropic-version": "2023-06-01",
   "anthropic-dangerous-direct-browser-access": "true"
 };
