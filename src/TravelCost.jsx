@@ -128,33 +128,44 @@ function TravelCost({ settings }) {
   var numHorses = numHorsesState[0]; var setNumHorses = numHorsesState[1];
 
   useEffect(function() {
-    if (!yardPostcode) return;
-    setLoading(true); setError(""); setYardCoords(null);
-    var query = encodeURIComponent(yardPostcode + ", Ireland");
-    fetch("https://nominatim.openstreetmap.org/search?q=" + query + "&format=json&limit=1", {
-      headers: { "Accept-Language": "en" }
-    }).then(function(r) { return r.json(); })
-    .then(function(data) {
-      if (data && data[0]) {
-        setYardCoords([parseFloat(data[0].lat), parseFloat(data[0].lon)]);
-        setError("");
-      } else {
-        // Try UK
-        var q2 = encodeURIComponent(yardPostcode + ", UK");
-        return fetch("https://nominatim.openstreetmap.org/search?q=" + q2 + "&format=json&limit=1", {
-          headers: { "Accept-Language": "en" }
-        }).then(function(r) { return r.json(); }).then(function(d2) {
-          if (d2 && d2[0]) {
-            setYardCoords([parseFloat(d2[0].lat), parseFloat(d2[0].lon)]);
-          } else {
-            setError("Could not find postcode. Check Yard Settings → Yard Details.");
-          }
-        });
-      }
-    })
-    .catch(function() { setError("Location lookup failed. Check internet connection."); })
-    .finally(function() { setLoading(false); });
-  }, [yardPostcode]);
+    // Use saved coordinates from settings (set when eircode was looked up)
+    var lat = settings && settings.yardLat;
+    var lng = settings && settings.yardLng;
+    if (lat && lng) {
+      setYardCoords([parseFloat(lat), parseFloat(lng)]);
+      setError("");
+      setLoading(false);
+      return;
+    }
+    // Fallback - try to geocode the postcode if no saved coords
+    if (!yardPostcode) { setLoading(false); return; }
+    setLoading(true); setError("");
+    // Try UK postcodes.io first (fast and reliable)
+    var clean = yardPostcode.trim().replace(/\s+/g, "");
+    fetch("https://api.postcodes.io/postcodes/" + encodeURIComponent(clean))
+      .then(function(r) { return r.json(); })
+      .then(function(data) {
+        if (data.status === 200 && data.result) {
+          setYardCoords([data.result.latitude, data.result.longitude]);
+          setError("");
+          setLoading(false);
+        } else {
+          // Try Nominatim
+          return fetch("https://nominatim.openstreetmap.org/search?q=" + encodeURIComponent(yardPostcode + " Ireland") + "&format=json&limit=1")
+            .then(function(r) { return r.json(); })
+            .then(function(d) {
+              if (d && d[0]) {
+                setYardCoords([parseFloat(d[0].lat), parseFloat(d[0].lon)]);
+                setError("");
+              } else {
+                setError("Location not found. Look up your eircode in Yard Settings first.");
+              }
+              setLoading(false);
+            });
+        }
+      })
+      .catch(function() { setError("Lookup failed."); setLoading(false); });
+  }, [yardPostcode, settings && settings.yardLat, settings && settings.yardLng]);
 
   var courses = COURSES[region] || {};
   var filtered = Object.keys(courses).filter(function(name) {
