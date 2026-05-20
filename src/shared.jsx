@@ -181,26 +181,63 @@ const isEligible = function(horse, race, settings) {
   }
   if (!horse || !race) return false;
   var age = getAge(horse.dob);
-  if (race.minAge && age < race.minAge) return false;
-  if (race.maxAge && age > race.maxAge) return false;
-  if (race.sex && race.sex !== "Any") {
-    var sexMap = { "M": ["Mare", "Filly"], "F": ["Filly", "Mare"], "G": ["Gelding"], "C": ["Colt", "Horse"] };
-    var allowed = sexMap[race.sex] || [];
-    if (allowed.length > 0 && !allowed.includes(horse.sex)) return false;
+  // Support both field name conventions (parsed vs manual)
+  var raceMinAge = race.minAge || race.ageMin || null;
+  var raceMaxAge = race.maxAge || race.ageMax || null;
+  var raceSex = race.sex || race.sexRestriction || "Open";
+  var raceMinRating = race.minRating || race.ratingMin || null;
+  var raceMaxRating = race.maxRating || race.ratingMax || null;
+
+  // Age check
+  if (raceMinAge && age && age < raceMinAge) return false;
+  if (raceMaxAge && age && age > raceMaxAge) return false;
+
+  // Sex check - be permissive if Open or not specified
+  if (raceSex && raceSex !== "Open" && raceSex !== "Any") {
+    var mares = ["Mares", "Fillies and Mares"];
+    var fillies = ["Fillies", "Fillies and Mares"];
+    var colts = ["Colts", "Colts and Geldings"];
+    var horseSex = horse.sex || "";
+    if (mares.indexOf(raceSex) >= 0) {
+      if (["Mare", "Filly"].indexOf(horseSex) < 0) return false;
+    } else if (fillies.indexOf(raceSex) >= 0) {
+      if (horseSex !== "Filly") return false;
+    } else if (colts.indexOf(raceSex) >= 0) {
+      if (["Colt", "Horse"].indexOf(horseSex) < 0) return false;
+    }
   }
+
+  // Discipline check - must match horse's disciplines
   if (race.discipline && race.discipline !== "Any") {
     var hDisc = horse.discipline || [];
-    if (hDisc.length > 0 && !hDisc.includes(race.discipline)) return false;
+    // If horse has no discipline set, don't exclude them
+    if (hDisc.length > 0 && hDisc.indexOf(race.discipline) < 0) return false;
   }
-  if (race.isMaidenOnly && !horse.isMaiden) return false;
-  if (race.isNoviceOnly && !horse.isNovice) return false;
-  var rating = 0;
-  if (race.discipline === "Flat") rating = horse.flatRating || horse.nhRating || 0;
-  else if (race.discipline === "Hurdle") rating = horse.hurdleRating || horse.nhRating || 0;
-  else if (race.discipline === "Chase") rating = horse.chaseRating || horse.nhRating || 0;
-  else rating = horse.nhRating || horse.flatRating || horse.hurdleRating || horse.chaseRating || 0;
-  if (race.minRating && rating && rating < race.minRating) return false;
-  if (race.maxRating && rating && rating > race.maxRating) return false;
+
+  // Maiden/Novice check
+  if (race.isMaiden && horse.isMaiden === false) return false;
+  if (race.isNovice && horse.isNovice === false) return false;
+
+  // Rating check - pick correct rating for discipline
+  var rating = null;
+  var disc = race.discipline || "";
+  if (disc === "Flat") {
+    rating = horse.flatRating || null;
+  } else if (disc === "Hurdle") {
+    rating = horse.hurdleRating || horse.nhRating || null;
+  } else if (disc === "Chase") {
+    rating = horse.chaseRating || horse.nhRating || null;
+  } else if (disc === "Bumper") {
+    rating = horse.flatRating || null; // bumpers use flat rating
+  } else {
+    // Unknown discipline - use best available
+    rating = horse.nhRating || horse.flatRating || horse.hurdleRating || horse.chaseRating || null;
+  }
+
+  // Only apply rating filter if horse HAS a rating AND race has a limit
+  if (rating && raceMinRating && rating < raceMinRating) return false;
+  if (rating && raceMaxRating && rating > raceMaxRating) return false;
+
   return true;
 };
 
