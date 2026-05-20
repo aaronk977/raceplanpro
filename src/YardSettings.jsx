@@ -402,6 +402,41 @@ function YardSettings({ settings, setSettings, supabase, user }) {
     setEdit(function(p) { return Object.assign({}, p, { [key]: val }); });
   }
 
+  var eircodeLoadingState = useState(false);
+  var eircodeLoading = eircodeLoadingState[0]; var setEircodeLoading = eircodeLoadingState[1];
+  var eircodeStatusState = useState("");
+  var eircodeStatus = eircodeStatusState[0]; var setEircodeStatus = eircodeStatusState[1];
+
+  function lookupEircode(code) {
+    if (!code || code.trim().length < 3) return;
+    setEircodeLoading(true); setEircodeStatus("Looking up...");
+    var query = encodeURIComponent(code.trim());
+    fetch("https://nominatim.openstreetmap.org/search?q=" + query + "&countrycodes=ie,gb&format=json&limit=1&addressdetails=1", {
+      headers: { "Accept-Language": "en", "User-Agent": "RacePlanPro/1.0" }
+    }).then(function(r) { return r.json(); })
+    .then(function(data) {
+      if (data && data[0]) {
+        var addr = data[0].address || {};
+        var parts = [];
+        if (addr.house_number && addr.road) parts.push(addr.house_number + " " + addr.road);
+        else if (addr.road) parts.push(addr.road);
+        if (addr.suburb) parts.push(addr.suburb);
+        if (addr.town || addr.city || addr.village) parts.push(addr.town || addr.city || addr.village);
+        if (addr.county) parts.push(addr.county);
+        if (addr.state) parts.push(addr.state);
+        var fullAddress = parts.join(", ");
+        update("location", fullAddress);
+        setEircodeStatus("Address found");
+        setTimeout(function() { setEircodeStatus(""); }, 3000);
+      } else {
+        setEircodeStatus("Not found — enter address manually");
+        setTimeout(function() { setEircodeStatus(""); }, 3000);
+      }
+    })
+    .catch(function() { setEircodeStatus("Lookup failed"); })
+    .finally(function() { setEircodeLoading(false); });
+  }
+
   function updateContact(idx, key, val) {
     var contacts = (edit.notifyContacts || []).slice();
     contacts[idx] = Object.assign({}, contacts[idx], { [key]: val });
@@ -648,11 +683,29 @@ function YardSettings({ settings, setSettings, supabase, user }) {
       {activeTab === "yard" && (
         <div style={{ background: C.card, border: "1px solid " + C.border, borderRadius: 14, padding: "20px" }}>
           <div style={{ fontSize: 15, fontWeight: 800, color: C.navy, marginBottom: 16 }}>Yard Details</div>
+          <div style={{ marginBottom: 12 }}>
+            <div style={{ fontSize: 10, fontWeight: 700, color: C.textMid, marginBottom: 4, textTransform: "uppercase" }}>Eircode / Postcode</div>
+            <div style={{ display: "flex", gap: 8, alignItems: "center" }}>
+              <input type="text" value={edit.yardPostcode || ""} onChange={function(e) { update("yardPostcode", e.target.value); }}
+                placeholder="e.g. R14 X5Y2 or BT1 1AA"
+                style={{ flex: 1, padding: "9px 12px", background: C.cardOff, border: "1px solid " + C.border, borderRadius: 8, fontSize: 14, color: C.text }} />
+              <button onClick={function() { lookupEircode(edit.yardPostcode); }}
+                disabled={eircodeLoading || !edit.yardPostcode}
+                style={{ padding: "9px 16px", background: C.navy, border: "none", borderRadius: 8, color: "#fff", fontWeight: 700, fontSize: 13, cursor: "pointer", whiteSpace: "nowrap" }}>
+                {eircodeLoading ? "..." : "Find Address"}
+              </button>
+            </div>
+            {eircodeStatus && (
+              <div style={{ fontSize: 11, color: eircodeStatus === "Address found" ? C.green : C.amber, marginTop: 4 }}>{eircodeStatus}</div>
+            )}
+            <div style={{ fontSize: 11, color: C.textMid, marginTop: 4 }}>Tap Find Address to auto-fill your yard location below</div>
+          </div>
+
           <div style={{ display: "grid", gridTemplateColumns: "1fr 1fr", gap: 12 }}>
             {[
               { key: "yardName", label: "Yard Name", placeholder: "e.g. Closutton Racing" },
               { key: "trainerName", label: "Trainer Name", placeholder: "e.g. Gordon Elliott" },
-              { key: "location", label: "Location", placeholder: "e.g. Robertstown, Co. Meath" },
+              { key: "location", label: "Location (auto-filled from eircode)", placeholder: "e.g. Robertstown, Co. Meath" },
               { key: "trainerLicence", label: "Trainer Licence No.", placeholder: "e.g. 12345" },
               { key: "anthropicKey", label: "Anthropic API Key (for AI features)", placeholder: "sk-ant-...", type: "password", full: true },
             ].map(function(field) {
