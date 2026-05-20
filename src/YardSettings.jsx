@@ -407,39 +407,74 @@ function YardSettings({ settings, setSettings, supabase, user }) {
   var eircodeStatusState = useState("");
   var eircodeStatus = eircodeStatusState[0]; var setEircodeStatus = eircodeStatusState[1];
 
-  // Irish eircode routing key -> approximate coordinates
-  var EIRCODE_COORDS = {
-    "D01":[53.3441,-6.2675],"D02":[53.3388,-6.2591],"D03":[53.3306,-6.2363],"D04":[53.3139,-6.2197],
-    "D05":[53.3639,-6.2286],"D06":[53.3264,-6.2797],"D07":[53.3486,-6.2983],"D08":[53.3361,-6.2942],
-    "D09":[53.3528,-6.2514],"D10":[53.3369,-6.3133],"D11":[53.3764,-6.2739],"D12":[53.3172,-6.3256],
-    "D13":[53.3831,-6.2269],"D14":[53.2967,-6.2681],"D15":[53.3894,-6.3567],"D16":[53.2894,-6.2933],
-    "D17":[53.3575,-6.2072],"D18":[53.2694,-6.1839],"D20":[53.3092,-6.3669],"D22":[53.3181,-6.3831],
-    "D24":[53.2875,-6.3789],"D6W":[53.3228,-6.3058],
-    "W23":[53.2167,-6.6667],"R51":[53.1500,-6.9167],"W91":[52.6667,-6.9667],
-    "A63":[52.9833,-6.2000],"A67":[52.8667,-6.0833],"A98":[53.0000,-6.0500],
-    "A84":[53.6500,-6.7000],"A85":[53.5833,-6.6167],"C15":[53.7000,-6.3500],
-    "N37":[53.5333,-7.3333],"N41":[53.4167,-7.6167],
-    "E34":[52.6833,-7.9000],"E32":[52.4667,-7.7167],"E41":[52.8000,-7.7500],
-    "X42":[52.2600,-7.1200],"X35":[52.3667,-7.7167],
-    "T12":[51.8985,-8.4756],"T23":[51.8333,-8.3333],"P24":[52.0833,-8.0000],
-    "P25":[51.6667,-8.6333],"P31":[51.9167,-9.0000],"P47":[51.7500,-9.3333],
-    "P43":[51.6667,-8.1667],"P56":[51.5833,-9.0000],"P51":[51.5000,-9.5833],
-    "V92":[52.0597,-9.5039],"V93":[52.1333,-9.8333],"V31":[52.3333,-9.7500],
-    "V94":[52.6650,-8.6238],"V35":[52.5833,-8.8667],
-    "V95":[52.8333,-8.9833],"V14":[53.0000,-8.8333],
-    "H91":[53.2744,-9.0488],"H92":[53.3500,-9.4000],"H54":[53.5000,-9.0500],
-    "H62":[53.1833,-8.5167],"H65":[53.5167,-8.3333],
-    "F28":[53.8500,-9.3000],"F26":[53.6000,-9.7167],"F23":[54.0167,-9.5167],"F31":[53.6833,-9.9167],
-    "F42":[53.6333,-8.1833],"F45":[53.9167,-8.4167],
-    "F91":[54.2761,-8.4761],"F56":[54.1167,-8.5167],
-    "F93":[54.9333,-8.0000],"F94":[54.7167,-8.1333],"F92":[54.6500,-8.1000],
-    "H12":[53.9833,-7.3500],"H18":[54.2500,-6.9667],
-    "A91":[53.9831,-6.3831],"A92":[53.9500,-6.5833],
-    "R35":[53.3500,-7.9000],"R32":[52.9833,-7.4000],
-    "R95":[52.6533,-7.2547],"Y21":[52.3333,-6.4667],"Y35":[52.5000,-6.5333],
-    "R93":[52.8333,-6.9167],"N39":[53.7333,-7.7833],
-    "K32":[53.5833,-6.3333],"K36":[53.5667,-6.3000],"K45":[53.4167,-6.4167],
-    "K56":[53.3333,-6.5000],"K67":[53.2500,-6.5833],"K78":[53.1667,-6.6333]
+  function handleAddressInput(val) {
+    if (debounceTimer) clearTimeout(debounceTimer);
+    if (!val || val.trim().length < 3) { setAddressSuggestions([]); return; }
+    var timer = setTimeout(function() {
+      fetchAddressSuggestions(val.trim());
+    }, 350);
+    setDebounceTimer(timer);
+  }
+
+  function fetchAddressSuggestions(query) {
+    var googleKey = edit.googleMapsKey || "";
+    if (googleKey) {
+      // Google Places Autocomplete
+      var url = "https://maps.googleapis.com/maps/api/place/autocomplete/json?input=" +
+        encodeURIComponent(query) + "&components=country:ie|country:gb&language=en&key=" + googleKey;
+      fetch("/api/places-proxy?url=" + encodeURIComponent(url))
+        .then(function(r) { return r.json(); })
+        .then(function(data) {
+          if (data.predictions) {
+            setAddressSuggestions(data.predictions.map(function(p) {
+              return { main: p.structured_formatting.main_text, secondary: p.structured_formatting.secondary_text, placeId: p.place_id, full: p.description };
+            }));
+          }
+        }).catch(function() { fetchNominatimSuggestions(query); });
+    } else {
+      fetchNominatimSuggestions(query);
+    }
+  }
+
+  function fetchNominatimSuggestions(query) {
+    // Free fallback - Nominatim autocomplete
+    fetch("https://nominatim.openstreetmap.org/search?q=" + encodeURIComponent(query) + "&format=json&limit=5&countrycodes=ie,gb&addressdetails=1", {
+      headers: { "Accept-Language": "en" }
+    }).then(function(r) { return r.json(); })
+    .then(function(data) {
+      if (data && data.length > 0) {
+        setAddressSuggestions(data.map(function(d) {
+          var addr = d.address || {};
+          var main = addr.road || addr.hamlet || addr.neighbourhood || d.display_name.split(",")[0];
+          var secondary = [addr.town || addr.city || addr.village, addr.county, addr.state || addr.country].filter(Boolean).join(", ");
+          return { main: main, secondary: secondary, lat: parseFloat(d.lat), lng: parseFloat(d.lon), full: d.display_name };
+        }));
+      }
+    }).catch(function() {});
+  }
+
+  function selectAddress(suggestion) {
+    setAddressSuggestions([]);
+    if (suggestion.placeId && edit.googleMapsKey) {
+      // Geocode the place ID to get coordinates
+      fetch("/api/places-proxy?placeid=" + suggestion.placeId + "&key=" + edit.googleMapsKey)
+        .then(function(r) { return r.json(); })
+        .then(function(data) {
+          if (data.result && data.result.geometry) {
+            var loc = data.result.geometry.location;
+            update("yardLat", loc.lat);
+            update("yardLng", loc.lng);
+          }
+        }).catch(function() {});
+    } else if (suggestion.lat) {
+      update("yardLat", suggestion.lat);
+      update("yardLng", suggestion.lng);
+    }
+    var fullAddr = suggestion.secondary ? suggestion.main + ", " + suggestion.secondary : suggestion.full || suggestion.main;
+    update("location", fullAddr);
+    update("addressSearch", fullAddr);
+    setEircodeStatus("Address set ✓");
+    setTimeout(function() { setEircodeStatus(""); }, 3000);
   };
 
   // County/area names for routing keys
@@ -810,7 +845,8 @@ function YardSettings({ settings, setSettings, supabase, user }) {
               { key: "trainerName", label: "Trainer Name", placeholder: "e.g. Gordon Elliott" },
               { key: "location", label: "Location (auto-filled from eircode)", placeholder: "e.g. Robertstown, Co. Meath" },
               { key: "trainerLicence", label: "Trainer Licence No.", placeholder: "e.g. 12345" },
-              { key: "anthropicKey", label: "Anthropic API Key (for AI features)", placeholder: "sk-ant-...", type: "password", full: true },
+              { key: "anthropicKey", label: "Anthropic API Key (for AI features)", placeholder: "sk-ant-...", full: true },
+              { key: "googleMapsKey", label: "Google Maps API Key (for address search)", placeholder: "AIza...", type: "password", full: true },
             ].map(function(field) {
               return (
                 <div key={field.key} style={{ gridColumn: field.full ? "1 / -1" : "auto" }}>
