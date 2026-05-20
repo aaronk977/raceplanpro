@@ -262,28 +262,47 @@ function App() {
     setWeightsRaw(function(prev) {
       var next = typeof updater === "function" ? updater(prev) : updater;
       if (!user) return next;
-      var changed = [];
-      Object.keys(next).forEach(function(key) {
-        if (next[key] !== prev[key]) changed.push(key);
-      });
-      changed.forEach(function(key) {
-        // key format: horseId_YYYY-MM-DD_type (horseId may contain underscores)
+
+      function parseWKey(key) {
         var lastUnd = key.lastIndexOf("_");
-        var weightType = key.slice(lastUnd + 1);
+        var wType = key.slice(lastUnd + 1);
         var rest = key.slice(0, lastUnd);
         var dateUnd = rest.lastIndexOf("_");
-        var weighDate = rest.slice(dateUnd + 1);
-        var horseId = rest.slice(0, dateUnd);
-        var val = next[key];
-        if (val && weighDate && weighDate.length === 10) {
-          supabase.from("horse_weights").upsert({
-            user_id: user.id, horse_id: horseId, weigh_date: weighDate,
-            weight_type: weightType || "weekly", weight_kg: parseFloat(val)
-          }, { onConflict: "user_id,horse_id,weigh_date,weight_type" }).then(function(r) {
-            if (r.error) console.error("Weight save:", r.error);
-          });
+        return { horseId: rest.slice(0, dateUnd), weighDate: rest.slice(dateUnd + 1), weightType: wType };
+      }
+
+      // Save changed/new keys
+      Object.keys(next).forEach(function(key) {
+        if (next[key] !== prev[key]) {
+          var p = parseWKey(key);
+          if (next[key] && p.weighDate && p.weighDate.length === 10) {
+            supabase.from("horse_weights").upsert({
+              user_id: user.id, horse_id: p.horseId, weigh_date: p.weighDate,
+              weight_type: p.weightType || "weekly", weight_kg: parseFloat(next[key])
+            }, { onConflict: "user_id,horse_id,weigh_date,weight_type" }).then(function(r) {
+              if (r.error) console.error("Weight save:", r.error);
+            });
+          }
         }
       });
+
+      // Delete removed keys from Supabase
+      Object.keys(prev).forEach(function(key) {
+        if (!(key in next)) {
+          var p = parseWKey(key);
+          if (p.weighDate && p.weighDate.length === 10) {
+            supabase.from("horse_weights").delete()
+              .eq("user_id", user.id)
+              .eq("horse_id", p.horseId)
+              .eq("weigh_date", p.weighDate)
+              .eq("weight_type", p.weightType || "weekly")
+              .then(function(r) {
+                if (r.error) console.error("Weight delete:", r.error);
+              });
+          }
+        }
+      });
+
       return next;
     });
   };
