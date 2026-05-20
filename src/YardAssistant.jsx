@@ -1,9 +1,9 @@
 import React, { useState, useEffect, useRef } from "react";
-import { Btn, C, ANTHROPIC_KEY, getAnthropicKey } from "./shared";
+import { Btn, C, ANTHROPIC_KEY } from "./shared";
 
 var API_HEADERS = {
   "Content-Type": "application/json",
-  "x-api-key": getAnthropicKey(settings),
+  "x-api-key": (settings && settings.anthropicKey && settings.anthropicKey.trim()) || ANTHROPIC_KEY,
   "anthropic-version": "2023-06-01",
   "anthropic-dangerous-direct-browser-access": "true"
 };
