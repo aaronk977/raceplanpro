@@ -325,9 +325,21 @@ function App() {
 
   var handleSignup = async function() {
     setAuthLoading(true); setAuthError("");
+    // Check if this email has been invited as staff before creating account
+    var memberCheck = await supabase.from("yard_members").select("role, yard_owner_id").eq("member_email", email.toLowerCase().trim()).maybeSingle();
+    var isInvitedStaff = memberCheck.data && memberCheck.data.yard_owner_id;
     var res = await supabase.auth.signUp({ email, password });
-    if (res.error) setAuthError(res.error.message);
-    else setAuthError("Account created! You can now log in.");
+    if (res.error) {
+      setAuthError(res.error.message);
+    } else if (res.data && res.data.user) {
+      // Link staff member to yard immediately
+      if (isInvitedStaff) {
+        await supabase.from("yard_members").update({ member_user_id: res.data.user.id, joined_at: new Date().toISOString() }).eq("member_email", email.toLowerCase().trim());
+        setAuthError("Account created as " + memberCheck.data.role + ". Please log in.");
+      } else {
+        setAuthError("Yard account created. Please log in.");
+      }
+    }
     setAuthLoading(false);
   };
 
@@ -404,7 +416,7 @@ function App() {
             style={{ width: "100%", padding: "12px", background: C.navy, color: "#fff", border: "none", borderRadius: 10, fontSize: 15, fontWeight: 800, cursor: "pointer" }}>
             {authMode === "login" ? "Log In" : "Create Account"}
           </button>
-          {authMode === "signup" && <div style={{ fontSize: 12, color: C.textMid, textAlign: "center", marginTop: 12 }}>14-day free trial · No credit card required</div>}
+          {authMode === "signup" && <div style={{ fontSize: 12, color: C.textMid, textAlign: "center", marginTop: 12, lineHeight: 1.6 }}>14-day free trial · No credit card required</div>}
         </div>
       </div>
     </div>
