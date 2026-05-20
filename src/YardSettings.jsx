@@ -856,21 +856,40 @@ function YardSettings({ settings, setSettings, supabase, user }) {
         <div style={{ background: C.card, border: "1px solid " + C.border, borderRadius: 14, padding: "20px" }}>
           <div style={{ fontSize: 15, fontWeight: 800, color: C.navy, marginBottom: 16 }}>Yard Details</div>
           <div style={{ marginBottom: 12 }}>
-            <div style={{ fontSize: 10, fontWeight: 700, color: C.textMid, marginBottom: 4, textTransform: "uppercase" }}>Eircode / Postcode</div>
-            <div style={{ display: "flex", gap: 8, alignItems: "center" }}>
-              <input type="text" value={edit.yardPostcode || ""} onChange={function(e) { update("yardPostcode", e.target.value); }}
-                placeholder="e.g. R14 X5Y2 or BT1 1AA"
-                style={{ flex: 1, padding: "9px 12px", background: C.cardOff, border: "1px solid " + C.border, borderRadius: 8, fontSize: 14, color: C.text }} />
-              <button onClick={function() { lookupEircode(edit.yardPostcode); }}
-                disabled={eircodeLoading || !edit.yardPostcode}
-                style={{ padding: "9px 16px", background: C.navy, border: "none", borderRadius: 8, color: "#fff", fontWeight: 700, fontSize: 13, cursor: "pointer", whiteSpace: "nowrap" }}>
-                {eircodeLoading ? "..." : "Find Address"}
-              </button>
+            <div style={{ fontSize: 10, fontWeight: 700, color: C.textMid, marginBottom: 4, textTransform: "uppercase" }}>Yard Address</div>
+            <div style={{ position: "relative" }}>
+              <input type="text"
+                value={edit.addressSearch || edit.location || ""}
+                onChange={function(e) {
+                  update("addressSearch", e.target.value);
+                  handleAddressInput(e.target.value);
+                }}
+                placeholder="Start typing your address or eircode..."
+                autoComplete="off"
+                style={{ width: "100%", padding: "10px 14px", background: C.cardOff, border: "1px solid " + C.border, borderRadius: 8, fontSize: 14, color: C.text, boxSizing: "border-box" }} />
+              {addressSuggestions.length > 0 && (
+                <div style={{ position: "absolute", top: "100%", left: 0, right: 0, background: "#fff", border: "1px solid " + C.border, borderRadius: 8, boxShadow: "0 4px 24px rgba(0,0,0,0.12)", zIndex: 999, maxHeight: 260, overflowY: "auto" }}>
+                  {addressSuggestions.map(function(s, i) {
+                    return (
+                      <div key={i}
+                        onClick={function() { selectAddress(s); }}
+                        style={{ padding: "11px 14px", cursor: "pointer", borderBottom: i < addressSuggestions.length - 1 ? "1px solid #f0f0f0" : "none", display: "flex", alignItems: "flex-start", gap: 10 }}>
+                        <span style={{ fontSize: 16, marginTop: 1, flexShrink: 0 }}>📍</span>
+                        <div>
+                          <div style={{ fontSize: 13, fontWeight: 600, color: "#111" }}>{s.main}</div>
+                          <div style={{ fontSize: 11, color: "#888", marginTop: 2 }}>{s.secondary}</div>
+                        </div>
+                      </div>
+                    );
+                  })}
+                  <div style={{ padding: "8px 14px", fontSize: 10, color: "#aaa", textAlign: "right", borderTop: "1px solid #f0f0f0" }}>Powered by Google</div>
+                </div>
+              )}
             </div>
             {eircodeStatus && (
-              <div style={{ fontSize: 11, color: eircodeStatus === "Address found" ? C.green : C.amber, marginTop: 4 }}>{eircodeStatus}</div>
+              <div style={{ fontSize: 11, marginTop: 4, color: eircodeStatus.indexOf("✓") >= 0 ? C.green : C.amber }}>{eircodeStatus}</div>
             )}
-            <div style={{ fontSize: 11, color: C.textMid, marginTop: 4 }}>Tap Find Address to auto-fill your yard location below</div>
+            <div style={{ fontSize: 11, color: C.textMid, marginTop: 4 }}>Type your address or eircode — suggestions will appear</div>
           </div>
 
           <div style={{ display: "grid", gridTemplateColumns: "1fr 1fr", gap: 12 }}>
