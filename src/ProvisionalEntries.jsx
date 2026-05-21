@@ -63,6 +63,42 @@ function ProvisionalEntries({ horses, setHorses, settings }) {
     });
   }
 
+  var showAddMapState = useState({});
+  var showAddMap = showAddMapState[0]; var setShowAddMap = showAddMapState[1];
+  var entryMapState = useState({});
+  var entryMap = entryMapState[0]; var setEntryMap = entryMapState[1];
+
+  function toggleShowAdd(horseId) {
+    setShowAddMap(function(prev) {
+      var next = Object.assign({}, prev);
+      next[horseId] = !prev[horseId];
+      return next;
+    });
+  }
+
+  function updateEntry(horseId, key, val) {
+    setEntryMap(function(prev) {
+      var cur = prev[horseId] || { raceName: "", venue: "", date: "", raceRef: "", note: "" };
+      var next = Object.assign({}, prev);
+      next[horseId] = Object.assign({}, cur, { [key]: val });
+      return next;
+    });
+  }
+
+  function addEntryForHorse(horseId) {
+    var entry = entryMap[horseId] || {};
+    if (!entry.raceName && !entry.venue) return;
+    var newEntry = Object.assign({ id: "pe_" + Date.now() }, entry);
+    setHorses(function(prev) {
+      return prev.map(function(h) {
+        if (h.id !== horseId) return h;
+        return Object.assign({}, h, { provisionalEntries: (h.provisionalEntries || []).concat([newEntry]) });
+      });
+    });
+    setEntryMap(function(prev) { var next = Object.assign({}, prev); next[horseId] = { raceName: "", venue: "", date: "", raceRef: "", note: "" }; return next; });
+    setShowAddMap(function(prev) { var next = Object.assign({}, prev); next[horseId] = false; return next; });
+  }
+
   var allProvisional = [];
   activeHorses.forEach(function(hh) {
     var entries = hh.provisionalEntries || [];
@@ -141,25 +177,8 @@ function ProvisionalEntries({ horses, setHorses, settings }) {
 
       {activeHorses.map(function(horse) {
         var horseEntries = horse.provisionalEntries || [];
-        var showAddState = useState(false);
-        var showAdd = showAddState[0]; var setShowAdd = showAddState[1];
-        var entryState = useState({ raceName: "", venue: "", date: "", raceRef: "", note: "" });
-        var entry = entryState[0]; var setEntry = entryState[1];
-
-        function addEntryLocal() {
-          if (!entry.raceName && !entry.venue) return;
-          var newEntry = Object.assign({ id: "pe_" + Date.now() }, entry);
-          setHorses(function(prev) {
-            return prev.map(function(h) {
-              if (h.id !== horse.id) return h;
-              return Object.assign({}, h, { provisionalEntries: (h.provisionalEntries || []).concat([newEntry]) });
-            });
-          });
-          setEntry({ raceName: "", venue: "", date: "", raceRef: "", note: "" });
-          setShowAdd(false);
-        }
-
-        if (horseEntries.length === 0 && !showAdd) return null;
+        var showAdd = !!showAddMap[horse.id];
+        var entry = entryMap[horse.id] || { raceName: "", venue: "", date: "", raceRef: "", note: "" };
 
         return (
           <div key={horse.id} style={{ background: C.card, border: "1px solid " + C.border, borderRadius: 12, padding: "14px 16px", marginBottom: 12 }}>
@@ -169,7 +188,7 @@ function ProvisionalEntries({ horses, setHorses, settings }) {
                 <div style={{ fontSize: 15, fontWeight: 700, color: C.text }}>{horse.name}</div>
                 <div style={{ fontSize: 12, color: C.textMid }}>{horse.owner + " - " + horseEntries.length + " provisional target(s)"}</div>
               </div>
-              <Btn variant="ghost" onClick={function() { setShowAdd(function(p) { return !p; }); }}>
+              <Btn variant="ghost" onClick={function() { toggleShowAdd(horse.id); }}>
                 {showAdd ? "Cancel" : "+ Add Target"}
               </Btn>
             </div>
@@ -210,7 +229,7 @@ function ProvisionalEntries({ horses, setHorses, settings }) {
                         <div style={{ fontSize: 10, fontWeight: 700, color: C.textMid, marginBottom: 4, textTransform: "uppercase" }}>{field.label}</div>
                         <input type={field.type || "text"} placeholder={field.placeholder}
                           value={entry[field.key]}
-                          onChange={function(e) { var v = e.target.value; var k = field.key; setEntry(function(prev) { return Object.assign({}, prev, { [k]: v }); }); }}
+                          onChange={function(e) { var v = e.target.value; var k = field.key; updateEntry(horse.id, k, v); }}
                           style={{ width: "100%", padding: "8px 12px", background: "#fff", border: "1px solid " + C.border, borderRadius: 8, fontSize: 13, color: C.text }} />
                       </div>
                     );
@@ -220,7 +239,7 @@ function ProvisionalEntries({ horses, setHorses, settings }) {
                   <div style={{ fontSize: 10, fontWeight: 700, color: C.textMid, marginBottom: 4, textTransform: "uppercase" }}>Notes / Conditions</div>
                   <input type="text" placeholder="e.g. If ground stays soft"
                     value={entry.note}
-                    onChange={function(e) { var v = e.target.value; setEntry(function(prev) { return Object.assign({}, prev, { note: v }); }); }}
+                    onChange={function(e) { var v = e.target.value; updateEntry(horse.id, "note", v); }}
                     style={{ width: "100%", padding: "8px 12px", background: "#fff", border: "1px solid " + C.border, borderRadius: 8, fontSize: 13, color: C.text }} />
                 </div>
                 {entry.date && (function() {
@@ -247,8 +266,8 @@ function ProvisionalEntries({ horses, setHorses, settings }) {
                   );
                 })()}
                 <div style={{ display: "flex", gap: 8 }}>
-                  <Btn onClick={addEntryLocal}>Save Target</Btn>
-                  <Btn variant="ghost" onClick={function() { setShowAdd(false); }}>Cancel</Btn>
+                  <Btn onClick={function() { addEntryForHorse(horse.id); }}>Save Target</Btn>
+                  <Btn variant="ghost" onClick={function() { toggleShowAdd(horse.id); }}>Cancel</Btn>
                 </div>
               </div>
             )}
