@@ -213,8 +213,8 @@ function RacedayPrint({ horses, entries, setEntries }) {
         {sortedDates.map(function(date) {
           var dayEntries = grouped[date];
           var dObj = new Date(date + "T12:00:00");
-          var dayName = isNaN(dObj.getTime()) ? "" : dObj.toLocaleDateString("en-IE", { weekday: "long" }).toUpperCase();
-          var dateStr = isNaN(dObj.getTime()) ? date : dObj.toLocaleDateString("en-IE", { day: "numeric", month: "long", year: "numeric" });
+          var venue = dayEntries[0] ? (dayEntries[0].venue || "").toUpperCase() : "";
+          var dayName = (isNaN(dObj.getTime()) ? "" : dObj.toLocaleDateString("en-IE", { weekday: "long" }).toUpperCase()) + (venue ? " " + venue : "");
           var mtgEntry = dayEntries.find(function(e) { return e.meetingNo; });
           var mtgNum = mtgEntry ? mtgEntry.meetingNo.toString().split("").filter(function(c){return c>="0"&&c<="9";}).join("") : "";
           return (
@@ -222,7 +222,7 @@ function RacedayPrint({ horses, entries, setEntries }) {
               <div className="meeting-header" style={{ marginBottom: 16, paddingBottom: 14, borderBottom: "3px solid " + C.navy }}>
                 <div style={{ fontSize: 72, fontWeight: 900, color: C.navy, lineHeight: 1, letterSpacing: -2, textTransform: "uppercase" }}>{dayName}</div>
                 <div style={{ fontSize: 36, fontWeight: 800, color: C.navy, lineHeight: 1.2, marginTop: 4 }}>{dateStr}</div>
-                {mtgNum ? <div style={{ fontSize: 28, fontWeight: 800, color: C.textMid, marginTop: 6 }}>{"Meeting " + mtgNum}</div> : null}
+                {mtgNum ? <div style={{ fontSize: 22, fontWeight: 700, color: C.textMid, marginTop: 4 }}>{"Meeting " + mtgNum}</div> : null}
               </div>
               {dayEntries.map(function(entry) {
                 var horse = horses.find(function(h) { return h.id === entry.horseId; });
@@ -231,10 +231,10 @@ function RacedayPrint({ horses, entries, setEntries }) {
                 var hg = entry.headgear || (horse && horse.headgear) || "";
                 return (
                   <div key={entry.id} className="horse-row" style={{ display: "flex", alignItems: "flex-start", gap: 14, padding: "12px 0", borderBottom: "1px solid " + C.border }}>
-                    <div className="venue-ref" style={{ minWidth: 140, fontWeight: 600 }}>
-                      <div style={{ fontSize: 14, fontWeight: 800, color: C.navy }}>{entry.venue}</div>
-                      {entry.meetingNo && <div style={{ fontSize: 12, color: C.textMid }}>{"Mtg " + entry.meetingNo.toString().split("").filter(function(c){return c>="0"&&c<="9";}).join("")}</div>}
-                      {entry.raceRef && <div style={{ fontSize: 28, fontWeight: 900, color: C.navy, lineHeight: 1, marginTop: 2 }}>{entry.raceRef}</div>}
+                  <div key={entry.id} className="horse-row" style={{ display: "flex", alignItems: "center", gap: 14, padding: "10px 0", borderBottom: "1px solid " + C.cardOff }}>
+                    <div className="venue-ref" style={{ minWidth: 100, textAlign: "center" }}>
+                      {entry.raceRef ? <div style={{ fontSize: 48, fontWeight: 900, color: C.navy, lineHeight: 1 }}>{entry.raceRef}</div> : <div style={{ fontSize: 13, fontWeight: 700, color: C.textMid }}>{entry.venue}</div>}
+                      {entry.raceRef && <div style={{ fontSize: 11, color: C.textMid, marginTop: 2 }}>{entry.venue}</div>}
                     </div>
                     <div className="race-time" style={{ minWidth: 80, fontSize: 14, fontWeight: 700, color: C.navy }}>{entry.raceTime}</div>
                     <div style={{ flex: 1 }}>
