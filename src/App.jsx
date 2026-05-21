@@ -336,10 +336,25 @@ function App() {
     });
   };
 
+  var rememberMeState = useState(false);
+  var rememberMe = rememberMeState[0]; var setRememberMe = rememberMeState[1];
+  var resetSentState = useState(false);
+  var resetSent = resetSentState[0]; var setResetSent = resetSentState[1];
+
   var handleLogin = async function() {
     setAuthLoading(true); setAuthError("");
     var res = await supabase.auth.signInWithPassword({ email, password });
-    if (res.error) setAuthError(res.error.message);
+    if (res.error) { setAuthError(res.error.message); }
+    else if (rememberMe) { localStorage.setItem("rpp_remember", email); }
+    setAuthLoading(false);
+  };
+
+  var handleForgotPassword = async function() {
+    if (!email) { setAuthError("Enter your email address first"); return; }
+    setAuthLoading(true); setAuthError("");
+    var res = await supabase.auth.resetPasswordForEmail(email, { redirectTo: window.location.origin });
+    if (res.error) { setAuthError(res.error.message); }
+    else { setResetSent(true); setAuthError(""); }
     setAuthLoading(false);
   };
 
