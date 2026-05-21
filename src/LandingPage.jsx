@@ -10,6 +10,8 @@ var WHITE = "#ffffff";
 function LandingPage({ onLogin }) {
   var demoOpenState = useState(false);
   var demoOpen = demoOpenState[0]; var setDemoOpen = demoOpenState[1];
+  var demoOpen2State = useState(false);
+  var demoOpen2 = demoOpen2State[0]; var setDemoOpen2 = demoOpen2State[1];
   var calcCourseState = useState("Leopardstown");
   var calcCourse = calcCourseState[0]; var setCalcCourse = calcCourseState[1];
 
@@ -93,8 +95,51 @@ function LandingPage({ onLogin }) {
         </div>
       </div>
 
-      {/* THE NUMBERS */}
+      {/* DEMO SECTION */}
       <div style={{ background: NAVY, padding: "70px 24px" }}>
+        <div style={{ maxWidth: 900, margin: "0 auto", textAlign: "center" }}>
+          <div style={{ display: "inline-block", background: "rgba(201,168,76,0.15)", border: "1px solid rgba(201,168,76,0.3)", borderRadius: 20, padding: "6px 16px", fontSize: 12, color: GOLD, fontWeight: 700, letterSpacing: 1, textTransform: "uppercase", marginBottom: 20 }}>
+            Live Demo
+          </div>
+          <h2 style={{ fontSize: "clamp(24px, 4vw, 38px)", fontWeight: 900, color: WHITE, marginBottom: 12 }}>See it in action</h2>
+          <p style={{ color: "rgba(255,255,255,0.55)", fontSize: 15, marginBottom: 36, maxWidth: 520, margin: "0 auto 36px" }}>
+            Click play to watch a full walkthrough of RacePlan Pro — from login through every feature.
+          </p>
+          <div style={{ position: "relative", borderRadius: 16, overflow: "hidden", border: "2px solid rgba(201,168,76,0.3)", boxShadow: "0 24px 60px rgba(0,0,0,0.4)", maxWidth: 820, margin: "0 auto" }}>
+            {demoOpen2 ? (
+              <div style={{ position: "relative" }}>
+                <iframe
+                  src="/demo.html"
+                  style={{ width: "100%", height: 500, border: "none", display: "block" }}
+                  title="RacePlan Pro Demo"
+                />
+                <button onClick={function() { setDemoOpen2(false); }}
+                  style={{ position: "absolute", top: 12, right: 12, background: "rgba(0,0,0,0.6)", border: "none", color: "#fff", width: 32, height: 32, borderRadius: "50%", cursor: "pointer", fontSize: 16, display: "flex", alignItems: "center", justifyContent: "center" }}>
+                  ✕
+                </button>
+              </div>
+            ) : (
+              <div onClick={function() { setDemoOpen2(true); }}
+                style={{ background: "linear-gradient(135deg, #0a1628 0%, #1a2d4a 100%)", height: 400, display: "flex", flexDirection: "column", alignItems: "center", justifyContent: "center", cursor: "pointer", position: "relative" }}>
+                <div style={{ position: "absolute", inset: 0, backgroundImage: "radial-gradient(circle at 50% 50%, rgba(201,168,76,0.08) 0%, transparent 70%)" }} />
+                <div style={{ width: 80, height: 80, borderRadius: "50%", background: GOLD, display: "flex", alignItems: "center", justifyContent: "center", fontSize: 32, marginBottom: 20, boxShadow: "0 0 0 16px rgba(201,168,76,0.15)" }}>
+                  ▶
+                </div>
+                <div style={{ fontSize: 18, fontWeight: 800, color: WHITE, marginBottom: 8 }}>Watch the full demo</div>
+                <div style={{ fontSize: 14, color: "rgba(255,255,255,0.45)" }}>2 minutes · All features · Interactive</div>
+                <div style={{ display: "grid", gridTemplateColumns: "repeat(5, 1fr)", gap: 8, marginTop: 32, maxWidth: 400 }}>
+                  {["Login", "Race Planner", "Medications", "Whiteboard", "AI Assistant"].map(function(f) {
+                    return <div key={f} style={{ background: "rgba(255,255,255,0.06)", borderRadius: 6, padding: "6px 4px", fontSize: 10, color: "rgba(255,255,255,0.5)", textAlign: "center" }}>{f}</div>;
+                  })}
+                </div>
+              </div>
+            )}
+          </div>
+        </div>
+      </div>
+
+      {/* THE NUMBERS */}
+      <div style={{ background: '#f5f7fa', padding: "70px 24px" }}>
         <div style={{ maxWidth: 860, margin: "0 auto", textAlign: "center" }}>
           <h2 style={{ fontSize: "clamp(24px, 4vw, 38px)", fontWeight: 900, color: WHITE, marginBottom: 12 }}>The numbers that matter</h2>
           <p style={{ color: "rgba(255,255,255,0.55)", fontSize: 15, marginBottom: 50 }}>Racing is a business. Here is what the admin problem actually costs.</p>
