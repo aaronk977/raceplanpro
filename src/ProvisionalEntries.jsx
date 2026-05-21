@@ -278,9 +278,26 @@ function ProvisionalEntries({ horses, setHorses, settings }) {
                 { name: "Antepsin", courseDays: 12, withdrawalDays: 1 }
               ];
               var raceDate = new Date(e.date + "T00:00:00");
-              var fmt = function(d) { return d.toLocaleDateString("en-IE", { day: "numeric", month: "short" }); };
               var today3 = new Date(); today3.setHours(0,0,0,0);
               var dLeft = daysUntil(e.date);
+              var raceStr = raceDate.toLocaleDateString("en-IE", { day: "numeric", month: "short", year: "numeric" });
+              var medCards = rawMeds.filter(function(m) { return m.courseDays; }).map(function(med, mi) {
+                var wDays = med.withdrawalDays != null ? parseInt(med.withdrawalDays) : 4;
+                var cDays = parseInt(med.courseDays) || 12;
+                var startDate = new Date(raceDate); startDate.setDate(startDate.getDate() - (wDays + cDays));
+                var finishDate = new Date(raceDate); finishDate.setDate(finishDate.getDate() - wDays);
+                var urgent = startDate <= today3;
+                var startStr = urgent ? "Start NOW" : "Start " + startDate.toLocaleDateString("en-IE", { day: "numeric", month: "short" });
+                var finishStr = "Finish " + finishDate.toLocaleDateString("en-IE", { day: "numeric", month: "short" });
+                return (
+                  <div key={mi} style={{ background: urgent ? C.red + "10" : C.card, border: "1px solid " + (urgent ? C.red + "40" : C.border), borderRadius: 8, padding: "5px 10px", fontSize: 12 }}>
+                    <span style={{ fontWeight: 700, color: urgent ? C.red : C.navy }}>{(med.name || med.label) + ": "}</span>
+                    <span style={{ color: urgent ? C.red : C.green }}>{startStr}</span>
+                    <span style={{ color: C.textMid }}>{" - "}</span>
+                    <span style={{ color: C.red }}>{finishStr}</span>
+                  </div>
+                );
+              });
               return (
                 <div key={i} style={{ background: C.cardOff, border: "1px solid " + C.border, borderRadius: 10, padding: "12px 14px", marginBottom: 8 }}>
                   <div style={{ display: "flex", alignItems: "center", gap: 12, marginBottom: 8 }}>
@@ -290,7 +307,7 @@ function ProvisionalEntries({ horses, setHorses, settings }) {
                       <span style={{ color: C.textMid, marginLeft: 8, fontSize: 12 }}>{e.raceName + "  -  " + e.venue}</span>
                     </div>
                     <div style={{ textAlign: "right" }}>
-                      <div style={{ fontSize: 13, fontWeight: 700, color: C.navy }}>{fmt(raceDate)}</div>
+                      <div style={{ fontSize: 13, fontWeight: 700, color: C.navy }}>{raceStr}</div>
                       <div style={{ fontSize: 11, fontWeight: 700, color: dLeft <= 16 ? C.red : dLeft <= 30 ? C.amber : C.green }}>{dLeft > 0 ? dLeft + "d away" : "Past"}</div>
                     </div>
                   </div>
