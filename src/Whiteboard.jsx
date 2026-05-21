@@ -231,11 +231,11 @@ function RacedayPrint({ horses, entries, setEntries }) {
                 var hg = entry.headgear || (horse && horse.headgear) || "";
                 return (
                   <div key={entry.id} className="horse-row" style={{ display: "flex", alignItems: "flex-start", gap: 14, padding: "12px 0", borderBottom: "1px solid " + C.border }}>
-                    <div className="venue-ref" style={{ minWidth: 130, fontSize: 13, color: C.textMid, fontWeight: 600 }}>
                     <div className="venue-ref" style={{ minWidth: 140, fontWeight: 600 }}>
                       <div style={{ fontSize: 14, fontWeight: 800, color: C.navy }}>{entry.venue}</div>
                       {entry.meetingNo && <div style={{ fontSize: 12, color: C.textMid }}>{"Mtg " + entry.meetingNo.toString().split("").filter(function(c){return c>="0"&&c<="9";}).join("")}</div>}
                       {entry.raceRef && <div style={{ fontSize: 28, fontWeight: 900, color: C.navy, lineHeight: 1, marginTop: 2 }}>{entry.raceRef}</div>}
+                    </div>
                     <div className="race-time" style={{ minWidth: 80, fontSize: 14, fontWeight: 700, color: C.navy }}>{entry.raceTime}</div>
                     <div style={{ flex: 1 }}>
                       <div style={{ display: "flex", alignItems: "center", gap: 8, flexWrap: "wrap" }}>
