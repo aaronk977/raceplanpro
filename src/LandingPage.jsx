@@ -40,7 +40,7 @@ function LandingPage({ onLogin }) {
     <div style={{ fontFamily: "Inter, Helvetica Neue, sans-serif", background: WHITE, color: NAVY, overflowX: "hidden" }}>
 
       {/* NAV */}
-      <div style={{ position: "sticky", top: 0, background: "rgba(10,22,40,0.97)", backdropFilter: "blur(10px)", zIndex: 100, padding: "0 24px", height: 60, display: "flex", alignItems: "center", justifyContent: "space-between" }}>
+      <div style={{ position: "sticky", top: 0, background: "rgba(10,22,40,0.97)", backdropFilter: "blur(10px)", zIndex: 100, padding: "0 16px", height: 56, display: "flex", alignItems: "center", justifyContent: "space-between" }}>
         <div style={{ display: "flex", alignItems: "center", gap: 10 }}>
           <span style={{ fontSize: 22 }}>🏇</span>
           <span style={{ fontWeight: 900, fontSize: 18, color: WHITE, letterSpacing: -0.5 }}>RacePlan <span style={{ color: GOLD }}>Pro</span></span>
@@ -52,7 +52,7 @@ function LandingPage({ onLogin }) {
       </div>
 
       {/* HERO */}
-      <div style={{ background: "linear-gradient(135deg, " + NAVY + " 0%, #1a2d4a 100%)", padding: "80px 24px 70px", textAlign: "center", position: "relative", overflow: "hidden" }}>
+      <div style={{ background: "linear-gradient(135deg, " + NAVY + " 0%, #1a2d4a 100%)", padding: "clamp(48px, 10vw, 80px) clamp(16px, 4vw, 24px) clamp(40px, 8vw, 70px)", textAlign: "center", position: "relative", overflow: "hidden" }}>
         <div style={{ position: "absolute", top: 0, left: 0, right: 0, bottom: 0, backgroundImage: "radial-gradient(circle at 20% 50%, rgba(201,168,76,0.08) 0%, transparent 60%), radial-gradient(circle at 80% 50%, rgba(26,122,74,0.08) 0%, transparent 60%)" }} />
         <div style={{ position: "relative", maxWidth: 760, margin: "0 auto" }}>
           <div style={{ display: "inline-block", background: "rgba(201,168,76,0.15)", border: "1px solid rgba(201,168,76,0.3)", borderRadius: 20, padding: "6px 16px", fontSize: 12, color: GOLD, fontWeight: 700, letterSpacing: 1, textTransform: "uppercase", marginBottom: 24 }}>
@@ -65,7 +65,7 @@ function LandingPage({ onLogin }) {
           <p style={{ fontSize: 18, color: "rgba(255,255,255,0.7)", maxWidth: 580, margin: "0 auto 36px", lineHeight: 1.7 }}>
             The first AI-powered yard management app built specifically for professional racing trainers in Ireland and the UK. Entries, medications, owner communications and raceday management at your fingertips.
           </p>
-          <div style={{ display: "flex", gap: 12, justifyContent: "center", flexWrap: "wrap" }}>
+          <div style={{ display: "flex", gap: 12, justifyContent: "center", flexWrap: "wrap", padding: "0 8px" }}>
             <button onClick={function() { setDemoOpen(true); }} style={{ background: GOLD, border: "none", color: NAVY, padding: "16px 32px", borderRadius: 10, cursor: "pointer", fontSize: 16, fontWeight: 900, letterSpacing: -0.3 }}>Book a Demo</button>
             <button onClick={onLogin} style={{ background: "rgba(255,255,255,0.08)", border: "1px solid rgba(255,255,255,0.2)", color: WHITE, padding: "16px 32px", borderRadius: 10, cursor: "pointer", fontSize: 16, fontWeight: 700 }}>Get Started Free</button>
           </div>
@@ -73,13 +73,13 @@ function LandingPage({ onLogin }) {
       </div>
 
       {/* PAIN POINTS */}
-      <div style={{ background: LIGHT, padding: "70px 24px" }}>
+      <div style={{ background: LIGHT, padding: "clamp(40px, 8vw, 70px) clamp(16px, 4vw, 24px)" }}>
         <div style={{ maxWidth: 900, margin: "0 auto" }}>
           <div style={{ textAlign: "center", marginBottom: 50 }}>
             <h2 style={{ fontSize: "clamp(26px, 4vw, 40px)", fontWeight: 900, color: NAVY, marginBottom: 12 }}>Sound familiar?</h2>
             <p style={{ fontSize: 16, color: "#666", maxWidth: 560, margin: "0 auto" }}>Every trainer in Ireland and the UK is dealing with the same daily fire-fighting. We built RacePlan Pro to put it out.</p>
           </div>
-          <div style={{ display: "grid", gridTemplateColumns: "repeat(auto-fit, minmax(260px, 1fr))", gap: 20 }}>
+          <div style={{ display: "grid", gridTemplateColumns: "repeat(auto-fit, minmax(min(260px, 100%), 1fr))", gap: 20 }}>
             {[
               { icon: "💊", pain: "A horse finishes a medication course the morning of entries. Nobody notices. You miss the deadline.", fix: "RacePlan Pro fires a WhatsApp alert before every entry deadline — so you always know which horses are clear to enter." },
               { icon: "📋", pain: "Race conditions land in your inbox. You spend 30 minutes cross-checking each horse for eligibility by hand.", fix: "Paste the conditions. Our AI reads them, checks your entire yard and gives you a ranked eligible list in seconds." },
@@ -102,7 +102,7 @@ function LandingPage({ onLogin }) {
       </div>
 
       {/* DEMO SECTION */}
-      <div style={{ background: NAVY, padding: "70px 24px" }}>
+      <div style={{ background: NAVY, padding: "clamp(40px, 8vw, 70px) clamp(16px, 4vw, 24px)" }}>
         <div style={{ maxWidth: 900, margin: "0 auto", textAlign: "center" }}>
           <div style={{ display: "inline-block", background: "rgba(201,168,76,0.15)", border: "1px solid rgba(201,168,76,0.3)", borderRadius: 20, padding: "6px 16px", fontSize: 12, color: GOLD, fontWeight: 700, letterSpacing: 1, textTransform: "uppercase", marginBottom: 20 }}>
             Live Demo
@@ -116,7 +116,7 @@ function LandingPage({ onLogin }) {
               <div style={{ position: "relative" }}>
                 <iframe
                   src="/demo.html"
-                  style={{ width: "100%", height: 500, border: "none", display: "block" }}
+                  style={{ width: "100%", height: "clamp(300px, 60vw, 520px)", border: "none", display: "block" }}
                   title="RacePlan Pro Demo"
                 />
                 <button onClick={function() { setDemoOpen2(false); }}
@@ -126,7 +126,7 @@ function LandingPage({ onLogin }) {
               </div>
             ) : (
               <div onClick={function() { setDemoOpen2(true); }}
-                style={{ background: "linear-gradient(135deg, #0a1628 0%, #1a2d4a 100%)", height: 400, display: "flex", flexDirection: "column", alignItems: "center", justifyContent: "center", cursor: "pointer", position: "relative" }}>
+                style={{ background: "linear-gradient(135deg, #0a1628 0%, #1a2d4a 100%)", height: "clamp(260px, 50vw, 400px)", display: "flex", flexDirection: "column", alignItems: "center", justifyContent: "center", cursor: "pointer", position: "relative" }}>
                 <div style={{ position: "absolute", inset: 0, backgroundImage: "radial-gradient(circle at 50% 50%, rgba(201,168,76,0.08) 0%, transparent 70%)" }} />
                 <div style={{ width: 80, height: 80, borderRadius: "50%", background: GOLD, display: "flex", alignItems: "center", justifyContent: "center", fontSize: 32, marginBottom: 20, boxShadow: "0 0 0 16px rgba(201,168,76,0.15)" }}>
                   ▶
@@ -145,11 +145,11 @@ function LandingPage({ onLogin }) {
       </div>
 
       {/* THE NUMBERS */}
-      <div style={{ background: NAVY, padding: "70px 24px" }}>
+      <div style={{ background: NAVY, padding: "clamp(40px, 8vw, 70px) clamp(16px, 4vw, 24px)" }}>
         <div style={{ maxWidth: 860, margin: "0 auto", textAlign: "center" }}>
           <h2 style={{ fontSize: "clamp(24px, 4vw, 38px)", fontWeight: 900, color: WHITE, marginBottom: 12 }}>The numbers that matter</h2>
           <p style={{ color: "rgba(255,255,255,0.55)", fontSize: 15, marginBottom: 50 }}>Racing is a business. Here is what the admin problem actually costs.</p>
-          <div style={{ display: "grid", gridTemplateColumns: "repeat(auto-fit, minmax(180px, 1fr))", gap: 20 }}>
+          <div style={{ display: "grid", gridTemplateColumns: "repeat(auto-fit, minmax(150px, 1fr))", gap: 20 }}>
             {[
               { number: "1", unit: "missed entry", sub: "can cost tens of thousands in potential prize money", color: RED },
               { number: "5-10", unit: "hours", sub: "lost every week to manual admin for trainer and secretary combined", color: GOLD },
@@ -171,9 +171,9 @@ function LandingPage({ onLogin }) {
       </div>
 
       {/* RACE PLANNER FEATURE */}
-      <div style={{ padding: "70px 24px", background: WHITE }}>
+      <div style={{ padding: "clamp(40px, 8vw, 70px) clamp(16px, 4vw, 24px)", background: WHITE }}>
         <div style={{ maxWidth: 860, margin: "0 auto" }}>
-          <div style={{ display: "grid", gridTemplateColumns: "1fr 1fr", gap: 50, alignItems: "center" }}>
+          <div style={{ display: "grid", gridTemplateColumns: "repeat(auto-fit, minmax(280px, 1fr))", gap: 32, alignItems: "center" }}>
             <div>
               <div style={{ fontSize: 12, fontWeight: 700, color: GOLD, letterSpacing: 1, textTransform: "uppercase", marginBottom: 12 }}>Race Planning</div>
               <h2 style={{ fontSize: "clamp(22px, 3vw, 34px)", fontWeight: 900, color: NAVY, marginBottom: 16, lineHeight: 1.2 }}>Stop cross-referencing by hand</h2>
@@ -217,9 +217,9 @@ function LandingPage({ onLogin }) {
       </div>
 
       {/* TRAVEL CALCULATOR FEATURE */}
-      <div style={{ padding: "70px 24px", background: LIGHT }}>
+      <div style={{ padding: "clamp(40px, 8vw, 70px) clamp(16px, 4vw, 24px)", background: LIGHT }}>
         <div style={{ maxWidth: 860, margin: "0 auto" }}>
-          <div style={{ display: "grid", gridTemplateColumns: "1fr 1fr", gap: 50, alignItems: "center" }}>
+          <div style={{ display: "grid", gridTemplateColumns: "repeat(auto-fit, minmax(280px, 1fr))", gap: 32, alignItems: "center" }}>
             <div style={{ background: WHITE, borderRadius: 16, padding: "24px", border: "1px solid #e8ecf0" }}>
               <div style={{ fontSize: 12, fontWeight: 700, color: "#888", marginBottom: 16, textTransform: "uppercase", letterSpacing: 0.5 }}>Travel Cost Calculator</div>
               <div style={{ fontSize: 12, color: "#888", marginBottom: 12 }}>From: Co. Tipperary yard</div>
@@ -273,7 +273,7 @@ function LandingPage({ onLogin }) {
       </div>
 
       {/* WHAT IT DOES */}
-      <div style={{ padding: "70px 24px", background: WHITE }}>
+      <div style={{ padding: "clamp(40px, 8vw, 70px) clamp(16px, 4vw, 24px)", background: WHITE }}>
         <div style={{ maxWidth: 900, margin: "0 auto" }}>
           <div style={{ textAlign: "center", marginBottom: 50 }}>
             <h2 style={{ fontSize: "clamp(24px, 4vw, 38px)", fontWeight: 900, color: NAVY, marginBottom: 12 }}>Everything in one place. On your phone.</h2>
@@ -304,10 +304,10 @@ function LandingPage({ onLogin }) {
       </div>
 
       {/* WHAT IT IS / IS NOT */}
-      <div style={{ background: LIGHT, padding: "50px 24px" }}>
+      <div style={{ background: LIGHT, padding: "clamp(32px, 6vw, 50px) clamp(16px, 4vw, 24px)" }}>
         <div style={{ maxWidth: 680, margin: "0 auto", textAlign: "center" }}>
           <h2 style={{ fontSize: "clamp(22px, 3vw, 32px)", fontWeight: 900, color: NAVY, marginBottom: 24 }}>What RacePlan Pro is and is not</h2>
-          <div style={{ display: "grid", gridTemplateColumns: "1fr 1fr", gap: 20, textAlign: "left" }}>
+          <div style={{ display: "grid", gridTemplateColumns: "repeat(auto-fit, minmax(220px, 1fr))", gap: 16, textAlign: "left" }}>
             <div style={{ background: WHITE, borderRadius: 12, padding: "20px", border: "1px solid #e8ecf0" }}>
               <div style={{ fontSize: 13, fontWeight: 800, color: GREEN, marginBottom: 12, textTransform: "uppercase", letterSpacing: 0.5 }}>It is</div>
               {["Yard management at your fingertips","AI-powered race eligibility checking","Medication and treatment compliance","Real-time alerts before deadlines","A professional owner comms tool","Mobile-first, works on any phone"].map(function(t, i) {
@@ -325,7 +325,7 @@ function LandingPage({ onLogin }) {
       </div>
 
       {/* BETA */}
-      <div style={{ background: WHITE, padding: "60px 24px" }}>
+      <div style={{ background: WHITE, padding: "clamp(36px, 7vw, 60px) clamp(16px, 4vw, 24px)" }}>
         <div style={{ maxWidth: 580, margin: "0 auto", textAlign: "center" }}>
           <div style={{ display: "inline-block", background: "rgba(201,168,76,0.12)", border: "1px solid rgba(201,168,76,0.3)", borderRadius: 20, padding: "6px 16px", fontSize: 12, color: GOLD, fontWeight: 700, letterSpacing: 1, textTransform: "uppercase", marginBottom: 20 }}>Beta Access</div>
           <h2 style={{ fontSize: "clamp(24px, 4vw, 38px)", fontWeight: 900, color: NAVY, marginBottom: 16 }}>Free during beta.</h2>
@@ -341,13 +341,13 @@ function LandingPage({ onLogin }) {
       </div>
 
       {/* CTA */}
-      <div style={{ background: "linear-gradient(135deg, " + NAVY + " 0%, #1a2d4a 100%)", padding: "70px 24px", textAlign: "center" }}>
+      <div style={{ background: "linear-gradient(135deg, " + NAVY + " 0%, #1a2d4a 100%)", padding: "clamp(40px, 8vw, 70px) clamp(16px, 4vw, 24px)", textAlign: "center" }}>
         <div style={{ maxWidth: 580, margin: "0 auto" }}>
           <h2 style={{ fontSize: "clamp(26px, 4vw, 42px)", fontWeight: 900, color: WHITE, marginBottom: 16 }}>Ready to see it in your yard?</h2>
           <p style={{ fontSize: 16, color: "rgba(255,255,255,0.6)", marginBottom: 32, lineHeight: 1.7 }}>
             Book a 20-minute demo. We will walk through the app live using your yard setup. No commitment, no pitch — just the product.
           </p>
-          <div style={{ display: "flex", gap: 12, justifyContent: "center", flexWrap: "wrap" }}>
+          <div style={{ display: "flex", gap: 12, justifyContent: "center", flexWrap: "wrap", padding: "0 8px" }}>
             <button onClick={function() { setDemoOpen(true); }} style={{ background: GOLD, border: "none", color: NAVY, padding: "16px 36px", borderRadius: 10, cursor: "pointer", fontSize: 16, fontWeight: 900 }}>Book a Demo</button>
             <button onClick={onLogin} style={{ background: "transparent", border: "2px solid rgba(255,255,255,0.3)", color: WHITE, padding: "16px 36px", borderRadius: 10, cursor: "pointer", fontSize: 16, fontWeight: 700 }}>Start Free</button>
           </div>
