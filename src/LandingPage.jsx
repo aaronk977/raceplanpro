@@ -16,6 +16,8 @@ function LandingPage({ onLogin }) {
   var demoNameState = useState(""); var demoName = demoNameState[0]; var setDemoName = demoNameState[1];
   var demoYardState = useState(""); var demoYard = demoYardState[0]; var setDemoYard = demoYardState[1];
   var demoSentState = useState(false); var demoSent = demoSentState[0]; var setDemoSent = demoSentState[1];
+  var showPrivacyState = useState(false); var showPrivacy = showPrivacyState[0]; var setShowPrivacy = showPrivacyState[1];
+  var showTermsState = useState(false); var showTerms = showTermsState[0]; var setShowTerms = showTermsState[1];
   var calcCourseState = useState("Leopardstown");
   var calcCourse = calcCourseState[0]; var setCalcCourse = calcCourseState[1];
 
@@ -358,8 +360,65 @@ function LandingPage({ onLogin }) {
           <span style={{ fontSize: 18 }}>🏇</span>
           <span style={{ fontWeight: 900, fontSize: 15, color: WHITE }}>RacePlan <span style={{ color: GOLD }}>Pro</span></span>
         </div>
-        <p style={{ fontSize: 12, color: "rgba(255,255,255,0.25)", margin: 0 }}>Built for trainers, by people who understand racing. Ireland and UK. 2026 RacePlan Pro.</p>
+        <p style={{ fontSize: 12, color: "rgba(255,255,255,0.25)", margin: "0 0 8px" }}>{"\u00a9 2026 RacePlan Pro. All rights reserved. Built for trainers, by people who understand racing. Ireland and UK."}</p>
+        <div style={{ display: "flex", gap: 16, justifyContent: "center", flexWrap: "wrap" }}>
+          <span onClick={function() { setShowPrivacy(true); }} style={{ fontSize: 11, color: "rgba(255,255,255,0.3)", cursor: "pointer", textDecoration: "underline" }}>Privacy Policy</span>
+          <span onClick={function() { setShowTerms(true); }} style={{ fontSize: 11, color: "rgba(255,255,255,0.3)", cursor: "pointer", textDecoration: "underline" }}>Terms of Use</span>
+          <a href="mailto:hello@raceplanpro.com" style={{ fontSize: 11, color: "rgba(255,255,255,0.3)", textDecoration: "underline" }}>hello@raceplanpro.com</a>
+        </div>
       </div>
+
+      {/* PRIVACY POLICY MODAL */}
+      {showPrivacy && (
+        <div onClick={function() { setShowPrivacy(false); }} style={{ position: "fixed", inset: 0, background: "rgba(0,0,0,0.7)", zIndex: 999, display: "flex", alignItems: "center", justifyContent: "center", padding: 20 }}>
+          <div onClick={function(e) { e.stopPropagation(); }} style={{ background: WHITE, borderRadius: 16, padding: "36px 32px", maxWidth: 580, width: "100%", maxHeight: "80vh", overflowY: "auto" }}>
+            <div style={{ fontSize: 20, fontWeight: 900, color: NAVY, marginBottom: 16 }}>Privacy Policy</div>
+            <div style={{ fontSize: 13, color: "#444", lineHeight: 1.8 }}>
+              <p style={{ marginBottom: 12 }}><strong>Last updated: May 2026</strong></p>
+              <p style={{ marginBottom: 12 }}>RacePlan Pro ("we", "us", "our") is committed to protecting your personal data. This policy explains how we collect, use and protect information you provide when using our platform.</p>
+              <p style={{ marginBottom: 8 }}><strong>What we collect</strong></p>
+              <p style={{ marginBottom: 12 }}>We collect your name, email address, yard information and data you enter into the platform (horses, medications, entries). We do not sell your data to any third party.</p>
+              <p style={{ marginBottom: 8 }}><strong>How we use it</strong></p>
+              <p style={{ marginBottom: 12 }}>Your data is used solely to provide the RacePlan Pro service. Yard data is private to your account and not shared with other trainers or third parties.</p>
+              <p style={{ marginBottom: 8 }}><strong>Data storage</strong></p>
+              <p style={{ marginBottom: 12 }}>Data is stored securely on Supabase infrastructure hosted in the EU. We use industry-standard encryption in transit and at rest.</p>
+              <p style={{ marginBottom: 8 }}><strong>Your rights</strong></p>
+              <p style={{ marginBottom: 12 }}>You may request deletion of your account and all associated data at any time by emailing hello@raceplanpro.com. Under GDPR you have the right to access, rectify and erase your personal data.</p>
+              <p style={{ marginBottom: 8 }}><strong>Cookies</strong></p>
+              <p style={{ marginBottom: 12 }}>We use only essential cookies required for authentication. We do not use tracking or advertising cookies.</p>
+              <p style={{ marginBottom: 8 }}><strong>Contact</strong></p>
+              <p>For any privacy queries contact hello@raceplanpro.com</p>
+            </div>
+            <button onClick={function() { setShowPrivacy(false); }} style={{ marginTop: 20, width: "100%", background: NAVY, border: "none", color: WHITE, padding: "12px", borderRadius: 8, cursor: "pointer", fontWeight: 700 }}>Close</button>
+          </div>
+        </div>
+      )}
+
+      {/* TERMS OF USE MODAL */}
+      {showTerms && (
+        <div onClick={function() { setShowTerms(false); }} style={{ position: "fixed", inset: 0, background: "rgba(0,0,0,0.7)", zIndex: 999, display: "flex", alignItems: "center", justifyContent: "center", padding: 20 }}>
+          <div onClick={function(e) { e.stopPropagation(); }} style={{ background: WHITE, borderRadius: 16, padding: "36px 32px", maxWidth: 580, width: "100%", maxHeight: "80vh", overflowY: "auto" }}>
+            <div style={{ fontSize: 20, fontWeight: 900, color: NAVY, marginBottom: 16 }}>Terms of Use</div>
+            <div style={{ fontSize: 13, color: "#444", lineHeight: 1.8 }}>
+              <p style={{ marginBottom: 12 }}><strong>Last updated: May 2026</strong></p>
+              <p style={{ marginBottom: 12 }}>By accessing or using RacePlan Pro you agree to these terms. If you do not agree, do not use the platform.</p>
+              <p style={{ marginBottom: 8 }}><strong>Intellectual Property</strong></p>
+              <p style={{ marginBottom: 12 }}>{"\u00a9 2026 RacePlan Pro. All rights reserved. The RacePlan Pro name, logo, software, design and content are the exclusive property of RacePlan Pro. Unauthorised copying, reproduction, distribution or modification of any part of this platform is strictly prohibited."}</p>
+              <p style={{ marginBottom: 8 }}><strong>Use of the Platform</strong></p>
+              <p style={{ marginBottom: 12 }}>RacePlan Pro is licensed for use by professional racing trainers and their authorised staff for yard management purposes only. You may not resell, sublicense or share access with unauthorised parties.</p>
+              <p style={{ marginBottom: 8 }}><strong>Accuracy of Information</strong></p>
+              <p style={{ marginBottom: 12 }}>While we strive for accuracy, RacePlan Pro does not guarantee the completeness or accuracy of eligibility calculations, medication schedules or race conditions parsing. Trainers remain responsible for verifying all entries and declarations with the relevant racing authority.</p>
+              <p style={{ marginBottom: 8 }}><strong>Limitation of Liability</strong></p>
+              <p style={{ marginBottom: 12 }}>RacePlan Pro shall not be liable for any missed entries, incorrect declarations, regulatory penalties or financial losses arising from use of the platform.</p>
+              <p style={{ marginBottom: 8 }}><strong>Termination</strong></p>
+              <p style={{ marginBottom: 12 }}>We reserve the right to suspend or terminate accounts that breach these terms or misuse the platform.</p>
+              <p style={{ marginBottom: 8 }}><strong>Governing Law</strong></p>
+              <p>These terms are governed by the laws of Ireland.</p>
+            </div>
+            <button onClick={function() { setShowTerms(false); }} style={{ marginTop: 20, width: "100%", background: NAVY, border: "none", color: WHITE, padding: "12px", borderRadius: 8, cursor: "pointer", fontWeight: 700 }}>Close</button>
+          </div>
+        </div>
+      )}
 
       {/* DEMO MODAL */}
       {demoOpen && (
