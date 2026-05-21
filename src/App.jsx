@@ -483,6 +483,10 @@ function App() {
   );
 
 
+  // Mobile detection
+  var isMobileState = useState(typeof window !== "undefined" && window.innerWidth < 640);
+  var isMobile = isMobileState[0]; var setIsMobile = isMobileState[1];
+
   return (
     <div className="app-wrapper" style={{ minHeight: "100vh", background: C.bg, fontFamily: "Inter, Helvetica Neue, sans-serif" }}>
       <style dangerouslySetInnerHTML={{ __html: globalCSS }} />
@@ -596,6 +600,30 @@ function App() {
           {safeTab === "reminders" && <Reminders reminders={reminders} setReminders={setReminders} settings={settings} user={user} supabase={supabase} />}
         </div>
       </div>
+      {isMobile && (
+        <div style={{ position: "fixed", bottom: 0, left: 0, right: 0, background: C.navy, borderTop: "1px solid rgba(255,255,255,0.1)", display: "flex", zIndex: 50, paddingBottom: "env(safe-area-inset-bottom)" }}>
+          {[
+            { id: "summary", icon: "📊", label: "Today" },
+            { id: "yard", icon: "🐎", label: "Yard" },
+            { id: "planner", icon: "🏁", label: "Races" },
+            { id: "meds", icon: "💊", label: "Meds" },
+            { id: "assistant", icon: "🤖", label: "AI" },
+          ].filter(function(t) { return allowedTabs.indexOf(t.id) >= 0; }).map(function(t) {
+            return (
+              <button key={t.id} onClick={function() { setSafeTab(t.id); }}
+                style={{ flex: 1, padding: "8px 4px 6px", background: "none", border: "none", color: safeTab === t.id ? C.gold : "rgba(255,255,255,0.4)", cursor: "pointer", display: "flex", flexDirection: "column", alignItems: "center", gap: 2 }}>
+                <span style={{ fontSize: 20 }}>{t.icon}</span>
+                <span style={{ fontSize: 9, fontWeight: safeTab === t.id ? 700 : 400 }}>{t.label}</span>
+              </button>
+            );
+          })}
+          <button onClick={function() { setSafeTab("settings"); }}
+            style={{ flex: 1, padding: "8px 4px 6px", background: "none", border: "none", color: safeTab === "settings" ? C.gold : "rgba(255,255,255,0.4)", cursor: "pointer", display: "flex", flexDirection: "column", alignItems: "center", gap: 2 }}>
+            <span style={{ fontSize: 20 }}>{"\u22EF"}</span>
+            <span style={{ fontSize: 9 }}>More</span>
+          </button>
+        </div>
+      )}
     </div>
   );
 }
