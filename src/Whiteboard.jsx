@@ -13,7 +13,10 @@ var PRINT_STYLE = [
   "  #print-area .badge-ballot { font-size: 16pt !important; padding: 4pt 14pt !important; background: #d97706 !important; color: #fff !important; border-radius: 6pt !important; font-weight: 800 !important; margin-left: 6pt !important; }",
   "  #print-area .meeting-header { font-size: 20pt !important; font-weight: 900 !important; color: #000 !important; border-bottom: 3px solid #000 !important; padding-bottom: 8pt !important; margin-bottom: 8pt !important; text-transform: uppercase !important; letter-spacing: 1pt !important; }",
   "  #print-area .race-time { font-size: 18pt !important; font-weight: 700 !important; color: #000 !important; min-width: 80pt !important; }",
-  "  #print-area .venue-ref { font-size: 14pt !important; color: #333 !important; min-width: 100pt !important; }",
+  "  #print-area .venue-ref { min-width: 110pt !important; }",
+  "  #print-area .venue-ref div:first-child { font-size: 14pt !important; color: #000 !important; font-weight: 800 !important; }",
+  "  #print-area .venue-ref div:nth-child(2) { font-size: 11pt !important; color: #555 !important; }",
+  "  #print-area .venue-ref div:nth-child(3) { font-size: 28pt !important; color: #000 !important; font-weight: 900 !important; line-height: 1 !important; }",
   "  #print-area .jockey-line { font-size: 13pt !important; color: #444 !important; margin-top: 3pt !important; }",
   "  @page { margin: 1.2cm; size: A4; }",
   "}"
