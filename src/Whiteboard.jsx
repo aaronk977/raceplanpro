@@ -2,26 +2,26 @@ import React, { useState } from "react"; // v2
 import { Btn, Silk, C } from "./shared";
 
 var PRINT_STYLE = [
-"@media print {"
-"  * { -webkit-print-color-adjust: exact !important; print-color-adjust: exact !important; }"
-"  body > *:not(#print-area) { display: none !important; }"
-"  #print-area { display: block !important; position: static !important; width: 100% !important; padding: 8px 16px !important; background: white !important; }"
-"  #print-area > div { page-break-inside: avoid !important; margin-bottom: 24pt !important; border: none !important; box-shadow: none !important; border-radius: 0 !important; }"
-"  #print-area .horse-row { border-bottom: 2pt solid #222 !important; padding: 12pt 0 !important; display: flex !important; align-items: center !important; }"
-"  #print-area .venue-ref { min-width: 90pt !important; text-align: center !important; }"
-"  #print-area .venue-ref div:first-child { font-size: 36pt !important; font-weight: 900 !important; color: #000 !important; line-height: 1 !important; }"
-"  #print-area .venue-ref div:last-child { font-size: 9pt !important; color: #555 !important; }"
-"  #print-area .race-time { font-size: 18pt !important; font-weight: 700 !important; color: #000 !important; min-width: 70pt !important; }"
-"  #print-area .horse-name { font-size: 26pt !important; font-weight: 900 !important; color: #000 !important; text-transform: uppercase !important; }"
-"  #print-area .badge-hg { font-size: 14pt !important; padding: 3pt 10pt !important; }"
-"  #print-area .badge-ballot { font-size: 14pt !important; padding: 3pt 10pt !important; }"
-"  #print-area .jockey-line { font-size: 12pt !important; color: #444 !important; }"
-"  #print-area .meeting-header div:first-child { font-size: 48pt !important; font-weight: 900 !important; line-height: 1 !important; }"
-"  #print-area .meeting-header div:nth-child(2) { font-size: 24pt !important; font-weight: 700 !important; }"
-"  #print-area .meeting-header div:nth-child(3) { font-size: 16pt !important; color: #666 !important; }"
-"  button { display: none !important; }"
-"  @page { margin: 1cm; size: A4; }"
-"}"
+"@media print {",
+"  * { -webkit-print-color-adjust: exact !important; print-color-adjust: exact !important; }",
+"  body > *:not(#print-area) { display: none !important; }",
+"  #print-area { display: block !important; position: static !important; width: 100% !important; padding: 8px 16px !important; background: white !important; }",
+"  #print-area > div { page-break-inside: avoid !important; margin-bottom: 24pt !important; border: none !important; box-shadow: none !important; border-radius: 0 !important; }",
+"  #print-area .horse-row { border-bottom: 2pt solid #222 !important; padding: 12pt 0 !important; display: flex !important; align-items: center !important; }",
+"  #print-area .venue-ref { min-width: 90pt !important; text-align: center !important; }",
+"  #print-area .venue-ref div:first-child { font-size: 36pt !important; font-weight: 900 !important; color: #000 !important; line-height: 1 !important; }",
+"  #print-area .venue-ref div:last-child { font-size: 9pt !important; color: #555 !important; }",
+"  #print-area .race-time { font-size: 18pt !important; font-weight: 700 !important; color: #000 !important; min-width: 70pt !important; }",
+"  #print-area .horse-name { font-size: 26pt !important; font-weight: 900 !important; color: #000 !important; text-transform: uppercase !important; }",
+"  #print-area .badge-hg { font-size: 14pt !important; padding: 3pt 10pt !important; }",
+"  #print-area .badge-ballot { font-size: 14pt !important; padding: 3pt 10pt !important; }",
+"  #print-area .jockey-line { font-size: 12pt !important; color: #444 !important; }",
+"  #print-area .meeting-header div:first-child { font-size: 48pt !important; font-weight: 900 !important; line-height: 1 !important; }",
+"  #print-area .meeting-header div:nth-child(2) { font-size: 24pt !important; font-weight: 700 !important; }",
+"  #print-area .meeting-header div:nth-child(3) { font-size: 16pt !important; color: #666 !important; }",
+"  button { display: none !important; }",
+"  @page { margin: 1cm; size: A4; }",
+"}",
 ].join(" ");
 
 function RacedayPrint({ horses, entries, setEntries }) {
