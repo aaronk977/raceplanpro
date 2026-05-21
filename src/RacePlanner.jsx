@@ -401,10 +401,11 @@ function RacePlanner({ horses, setHorses }) {
                         <Silk silk={horse.silk} size={36} />
                         <div style={{ flex: 1 }}>
                           <div style={{ display: "flex", alignItems: "center", gap: 8, flexWrap: "wrap" }}>
-                            <span style={{ fontSize: 15, fontWeight: 700, color: C.text }}>{horse.name}</span>
+                             <span style={{ fontSize: 15, fontWeight: 700, color: treatBlock ? C.amber : C.text }}>{horse.name}</span>
                             <StatusPill status={horse.status} activationDate={horse.activationDate} />
                             {horse.headgear && <Tag color={C.purple}>{horse.headgear}</Tag>}
                           </div>
+                             {treatBlock && <span style={{ fontSize: 11, color: "#fff", fontWeight: 700, background: C.amber, padding: "3px 10px", borderRadius: 20 }}>{ "Can enter from " + treatBlock.clearDate}</span>}
                           <div style={{ display: "flex", gap: 8, flexWrap: "wrap", fontSize: 12, color: C.textMid, marginTop: 2 }}>
                             <span>{getAge(horse.dob) + "yo " + horse.sex}</span>
                             {horse.nhRating && <span>{"NH " + horse.nhRating}</span>}
