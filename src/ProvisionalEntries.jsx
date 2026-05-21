@@ -184,15 +184,15 @@ function ProvisionalEntries({ horses, setHorses, settings }) {
                       <Tag color={C.gold}>Provisional</Tag>
                     </div>
                     <div style={{ display: "flex", gap: 10, flexWrap: "wrap", fontSize: 12, color: C.textMid }}>
-                      <span>{"📍 " + e.venue}</span>
-                      {e.date && <span>{"📅 " + new Date(e.date).toLocaleDateString("en-IE", { weekday: "short", day: "numeric", month: "short" })}</span>}
+                      <span>{" " + e.venue}</span>
+                      {e.date && <span>{" " + new Date(e.date).toLocaleDateString("en-IE", { weekday: "short", day: "numeric", month: "short" })}</span>}
                       {e.date && daysUntil(e.date) && (
                         <span style={{ color: daysUntil(e.date) <= 16 ? C.amber : C.textMid, fontWeight: 600 }}>
                           {daysUntil(e.date) > 0 ? daysUntil(e.date) + "d" : "past"}
                         </span>
                       )}
                     </div>
-                    {e.note && <div style={{ fontSize: 12, color: C.textMid, fontStyle: "italic", marginTop: 4 }}>{"💬 " + e.note}</div>}
+                    {e.note && <div style={{ fontSize: 12, color: C.textMid, fontStyle: "italic", marginTop: 4 }}>{" " + e.note}</div>}
                   </div>
                   <Btn variant="ghost" onClick={function() { removeEntry(horse.id, e.id); }} style={{ padding: "4px 8px", fontSize: 11, color: C.red, borderColor: C.red }}>Remove</Btn>
                 </div>
