@@ -12,6 +12,10 @@ function LandingPage({ onLogin }) {
   var demoOpen = demoOpenState[0]; var setDemoOpen = demoOpenState[1];
   var demoOpen2State = useState(false);
   var demoOpen2 = demoOpen2State[0]; var setDemoOpen2 = demoOpen2State[1];
+  var demoEmailState = useState(""); var demoEmail = demoEmailState[0]; var setDemoEmail = demoEmailState[1];
+  var demoNameState = useState(""); var demoName = demoNameState[0]; var setDemoName = demoNameState[1];
+  var demoYardState = useState(""); var demoYard = demoYardState[0]; var setDemoYard = demoYardState[1];
+  var demoSentState = useState(false); var demoSent = demoSentState[0]; var setDemoSent = demoSentState[1];
   var calcCourseState = useState("Leopardstown");
   var calcCourse = calcCourseState[0]; var setCalcCourse = calcCourseState[1];
 
@@ -363,13 +367,39 @@ function LandingPage({ onLogin }) {
           <div onClick={function(e) { e.stopPropagation(); }} style={{ background: WHITE, borderRadius: 16, padding: "36px 32px", maxWidth: 440, width: "100%" }}>
             <div style={{ fontSize: 22, fontWeight: 900, color: NAVY, marginBottom: 8 }}>Book a Demo</div>
             <p style={{ fontSize: 14, color: "#555", marginBottom: 20, lineHeight: 1.6 }}>
-              A 20-minute call. We walk through RacePlan Pro live and set it up for your yard on the spot if you want to go ahead.
+              Leave your details and we will be in touch within 24 hours to arrange a 20-minute walkthrough.
             </p>
-            <a href={"mailto:hello@raceplanpro.com?subject=Demo Request&body=Hi, I would like to book a demo of RacePlan Pro."}
-              style={{ display: "block", background: NAVY, color: WHITE, padding: "14px", borderRadius: 10, textAlign: "center", fontWeight: 800, fontSize: 15, textDecoration: "none", marginBottom: 10 }}>
-              Email hello@raceplanpro.com
-            </a>
-            <button onClick={function() { setDemoOpen(false); }} style={{ width: "100%", background: LIGHT, border: "none", color: "#888", padding: "10px", borderRadius: 8, cursor: "pointer", fontSize: 13 }}>Close</button>
+            <div style={{ marginBottom: 12 }}>
+              <div style={{ fontSize: 11, fontWeight: 700, color: "#888", textTransform: "uppercase", letterSpacing: 0.5, marginBottom: 5 }}>Your Name</div>
+              <input type="text" value={demoName} onChange={function(e) { setDemoName(e.target.value); }}
+                placeholder="e.g. John Murphy"
+                style={{ width: "100%", padding: "11px 14px", border: "1.5px solid #dde3ec", borderRadius: 8, fontSize: 14, color: NAVY, fontFamily: "inherit", outline: "none", boxSizing: "border-box" }} />
+            </div>
+            <div style={{ marginBottom: 12 }}>
+              <div style={{ fontSize: 11, fontWeight: 700, color: "#888", textTransform: "uppercase", letterSpacing: 0.5, marginBottom: 5 }}>Email Address</div>
+              <input type="email" value={demoEmail} onChange={function(e) { setDemoEmail(e.target.value); }}
+                placeholder="trainer@example.com"
+                style={{ width: "100%", padding: "11px 14px", border: "1.5px solid #dde3ec", borderRadius: 8, fontSize: 14, color: NAVY, fontFamily: "inherit", outline: "none", boxSizing: "border-box" }} />
+            </div>
+            <div style={{ marginBottom: 16 }}>
+              <div style={{ fontSize: 11, fontWeight: 700, color: "#888", textTransform: "uppercase", letterSpacing: 0.5, marginBottom: 5 }}>Yard / Phone (optional)</div>
+              <input type="text" value={demoYard} onChange={function(e) { setDemoYard(e.target.value); }}
+                placeholder="e.g. Murphy Racing, Co. Tipperary"
+                style={{ width: "100%", padding: "11px 14px", border: "1.5px solid #dde3ec", borderRadius: 8, fontSize: 14, color: NAVY, fontFamily: "inherit", outline: "none", boxSizing: "border-box" }} />
+            </div>
+            {demoSent ? (
+              <div style={{ background: "#f0fdf4", border: "1px solid #86efac", borderRadius: 10, padding: "14px", textAlign: "center", marginBottom: 10 }}>
+                <div style={{ fontSize: 16, fontWeight: 800, color: GREEN }}>Request sent!</div>
+                <div style={{ fontSize: 13, color: "#555", marginTop: 4 }}>We will be in touch at {demoEmail} within 24 hours.</div>
+              </div>
+            ) : (
+              <a href={"mailto:hello@raceplanpro.com?subject=Demo Request from " + encodeURIComponent(demoName) + "&body=Name: " + encodeURIComponent(demoName) + "%0AEmail: " + encodeURIComponent(demoEmail) + "%0AYard: " + encodeURIComponent(demoYard) + "%0A%0APlease book me a demo of RacePlan Pro."}
+                onClick={function() { if(demoEmail) setDemoSent(true); }}
+                style={{ display: "block", background: demoEmail ? NAVY : "#ccc", color: WHITE, padding: "14px", borderRadius: 10, textAlign: "center", fontWeight: 800, fontSize: 15, textDecoration: "none", marginBottom: 10, cursor: demoEmail ? "pointer" : "not-allowed" }}>
+                Send Demo Request
+              </a>
+            )}
+            <button onClick={function() { setDemoOpen(false); setDemoSent(false); }} style={{ width: "100%", background: "#f5f7fa", border: "none", color: "#888", padding: "10px", borderRadius: 8, cursor: "pointer", fontSize: 13 }}>Close</button>
           </div>
         </div>
       )}
