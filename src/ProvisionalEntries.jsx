@@ -1,7 +1,7 @@
 import React, { useState } from "react";
 import { Btn, Tag, Silk, C, daysUntil, ANTHROPIC_KEY } from "./shared";
 
-function ProvisionalEntries({ horses, setHorses }) {
+function ProvisionalEntries({ horses, setHorses, settings }) {
   var showAddState = useState(null);
   var showAdd = showAddState[0]; var setShowAdd = showAddState[1];
   var entryState = useState({ venue: "", date: "", raceName: "", raceRef: "", note: "" });
@@ -227,6 +227,38 @@ function ProvisionalEntries({ horses, setHorses }) {
                     onChange={function(e) { var v = e.target.value; setEntry(function(prev) { return Object.assign({}, prev, { note: v }); }); }}
                     style={{ width: "100%", padding: "8px 12px", background: "#fff", border: "1px solid " + C.border, borderRadius: 8, fontSize: 13, color: C.text }} />
                 </div>
+                {entry.date && (function() {
+                    var rawMeds = (settings && settings.medications) || [
+                      { name: "Peptizole", courseDays: 12, withdrawalDays: 4 },
+                      { name: "Antepsin", courseDays: 12, withdrawalDays: 1 }
+                    ];
+                    var raceDate = new Date(entry.date + "T00:00:00");
+                    var fmt = function(d) { return d.toLocaleDateString("en-IE", { day: "numeric", month: "short" }); };
+                    return (
+                      <div style={{ background: "#eaf4ff", border: "1px solid #bee3f8", borderRadius: 10, padding: "12px 14px", marginBottom: 10 }}>
+                        <div style={{ fontSize: 11, fontWeight: 700, color: C.navy, textTransform: "uppercase", letterSpacing: 0.5, marginBottom: 8 }}>
+                          Medication Schedule for this race
+                        </div>
+                        {rawMeds.filter(function(m) { return m.courseDays; }).map(function(med) {
+                          var wDays = med.withdrawalDays != null ? parseInt(med.withdrawalDays) : 4;
+                          var cDays = parseInt(med.courseDays) || 12;
+                          var latestFinish = new Date(raceDate); latestFinish.setDate(latestFinish.getDate() - wDays);
+                          var latestStart = new Date(raceDate); latestStart.setDate(latestStart.getDate() - (wDays + cDays));
+                          return (
+                            <div key={med.name || med.label} style={{ display: "flex", alignItems: "center", flexWrap: "wrap", gap: 6, padding: "6px 0", borderBottom: "1px solid #bee3f8", fontSize: 13 }}>
+                              <span style={{ fontWeight: 700, color: C.navy, minWidth: 90 }}>{med.name || med.label}</span>
+                              <span style={{ color: C.green, fontWeight: 600 }}>Start by {fmt(latestStart)}</span>
+                              <span style={{ color: C.textMid }}>·</span>
+                              <span style={{ color: C.red, fontWeight: 600 }}>Finish by {fmt(latestFinish)}</span>
+                            </div>
+                          );
+                        })}
+                        <div style={{ fontSize: 11, color: C.textMid, marginTop: 6 }}>
+                          Finish medication before these dates to be clear to enter.
+                        </div>
+                      </div>
+                    );
+                  })()}
                 <div style={{ display: "flex", gap: 8 }}>
                   <Btn onClick={function() { addEntry(horse.id); }}>Save Target</Btn>
                   <Btn variant="ghost" onClick={function() { setShowAdd(null); }}>Cancel</Btn>
