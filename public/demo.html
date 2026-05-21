@@ -1,0 +1,1660 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0">
+<title>RacePlan Pro — Interactive Demo</title>
+<style>
+  @import url('https://fonts.googleapis.com/css2?family=Bebas+Neue&family=DM+Sans:wght@300;400;500;600;700;800&display=swap');
+
+  :root {
+    --navy: #0a1628;
+    --navy2: #1a2d4a;
+    --gold: #c9a84c;
+    --gold2: #f0c040;
+    --green: #1a7a4a;
+    --red: #c0392b;
+    --card: #ffffff;
+    --bg: #f0f4f8;
+    --border: #dde3ec;
+    --text: #0a1628;
+    --mid: #6b7a99;
+    --purple: #6d3fc0;
+    --amber: #d97706;
+  }
+
+  * { box-sizing: border-box; margin: 0; padding: 0; }
+
+  body {
+    font-family: 'DM Sans', sans-serif;
+    background: #050d1a;
+    color: white;
+    height: 100vh;
+    overflow: hidden;
+    display: flex;
+    flex-direction: column;
+  }
+
+  /* Custom cursor */
+  #cursor {
+    position: fixed;
+    width: 28px;
+    height: 28px;
+    border-radius: 50%;
+    background: var(--gold2);
+    pointer-events: none;
+    z-index: 9999;
+    transform: translate(-50%, -50%);
+    transition: transform 0.1s, width 0.2s, height 0.2s, opacity 0.2s;
+    box-shadow: 0 0 0 4px rgba(240,192,64,0.25), 0 0 20px rgba(240,192,64,0.4);
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    font-size: 12px;
+  }
+
+  #cursor.clicking {
+    transform: translate(-50%, -50%) scale(0.7);
+    background: white;
+  }
+
+  #cursor-trail {
+    position: fixed;
+    width: 8px;
+    height: 8px;
+    border-radius: 50%;
+    background: rgba(240,192,64,0.5);
+    pointer-events: none;
+    z-index: 9998;
+    transform: translate(-50%, -50%);
+    transition: left 0.15s ease, top 0.15s ease;
+  }
+
+  /* Header bar */
+  #header {
+    background: var(--navy);
+    padding: 12px 24px;
+    display: flex;
+    align-items: center;
+    justify-content: space-between;
+    border-bottom: 1px solid rgba(255,255,255,0.08);
+    flex-shrink: 0;
+  }
+
+  #header .logo {
+    font-family: 'DM Sans', sans-serif;
+    font-weight: 800;
+    font-size: 20px;
+    color: white;
+    display: flex;
+    align-items: center;
+    gap: 8px;
+  }
+
+  #header .logo span { color: var(--gold); }
+
+  /* Screen container */
+  #screen-wrap {
+    flex: 1;
+    position: relative;
+    overflow: hidden;
+  }
+
+  .screen {
+    position: absolute;
+    inset: 0;
+    opacity: 0;
+    transform: translateY(20px);
+    transition: opacity 0.5s ease, transform 0.5s ease;
+    pointer-events: none;
+  }
+
+  .screen.active {
+    opacity: 1;
+    transform: translateY(0);
+    pointer-events: all;
+  }
+
+  /* App chrome mockup */
+  .app-chrome {
+    width: 100%;
+    height: 100%;
+    display: flex;
+    flex-direction: column;
+    background: var(--bg);
+  }
+
+  .app-topbar {
+    background: var(--navy);
+    height: 52px;
+    display: flex;
+    align-items: center;
+    padding: 0 20px;
+    gap: 12px;
+    flex-shrink: 0;
+  }
+
+  .app-topbar .yard-name {
+    font-weight: 800;
+    font-size: 15px;
+    color: white;
+  }
+
+  .app-topbar .badge {
+    background: var(--gold);
+    color: var(--navy);
+    padding: 3px 10px;
+    border-radius: 20px;
+    font-size: 11px;
+    font-weight: 700;
+  }
+
+  .app-body {
+    display: flex;
+    flex: 1;
+    overflow: hidden;
+  }
+
+  .app-sidebar {
+    width: 180px;
+    background: #0f1e38;
+    padding: 12px 8px;
+    display: flex;
+    flex-direction: column;
+    gap: 2px;
+    flex-shrink: 0;
+    transition: width 0.4s ease, opacity 0.4s ease, padding 0.4s ease;
+    overflow: hidden;
+  }
+
+  .app-sidebar.collapsed {
+    width: 0;
+    padding: 0;
+    opacity: 0;
+  }
+
+  .nav-item {
+    display: flex;
+    align-items: center;
+    gap: 10px;
+    padding: 9px 12px;
+    border-radius: 8px;
+    font-size: 12.5px;
+    color: rgba(255,255,255,0.5);
+    cursor: pointer;
+    transition: all 0.15s;
+  }
+
+  .nav-item.active {
+    background: rgba(201,168,76,0.15);
+    color: var(--gold);
+    font-weight: 700;
+  }
+
+  .nav-item .icon { font-size: 16px; width: 20px; text-align: center; }
+
+  .app-content {
+    flex: 1;
+    overflow-y: auto;
+    padding: 20px;
+  }
+
+  /* Cards */
+  .card {
+    background: white;
+    border-radius: 12px;
+    padding: 16px;
+    border: 1px solid var(--border);
+    margin-bottom: 12px;
+  }
+
+  .card-title {
+    font-size: 13px;
+    font-weight: 700;
+    color: var(--navy);
+    margin-bottom: 12px;
+    display: flex;
+    align-items: center;
+    gap: 8px;
+  }
+
+  .stat-grid {
+    display: grid;
+    grid-template-columns: repeat(4, 1fr);
+    gap: 12px;
+    margin-bottom: 16px;
+  }
+
+  .stat-card {
+    background: white;
+    border-radius: 12px;
+    padding: 16px;
+    border: 1px solid var(--border);
+  }
+
+  .stat-label { font-size: 10px; font-weight: 700; color: var(--mid); text-transform: uppercase; letter-spacing: 0.5px; margin-bottom: 6px; }
+  .stat-value { font-size: 28px; font-weight: 900; color: var(--navy); }
+  .stat-value.gold { color: var(--gold); }
+  .stat-value.green { color: var(--green); }
+  .stat-value.red { color: var(--red); }
+
+  /* Horse rows */
+  .horse-row {
+    display: flex;
+    align-items: center;
+    gap: 12px;
+    padding: 10px 14px;
+    border-radius: 10px;
+    background: white;
+    border: 1px solid var(--border);
+    margin-bottom: 8px;
+    transition: all 0.2s;
+  }
+
+  .horse-row.highlight {
+    border-color: var(--gold);
+    background: rgba(201,168,76,0.04);
+    box-shadow: 0 0 0 2px rgba(201,168,76,0.2);
+  }
+
+  .silk { width: 28px; height: 28px; border-radius: 4px; display: flex; align-items: center; justify-content: center; font-size: 18px; }
+  .horse-name { font-weight: 700; font-size: 14px; color: var(--navy); flex: 1; }
+  .horse-meta { font-size: 11px; color: var(--mid); }
+
+  .badge-tag {
+    padding: 3px 10px;
+    border-radius: 20px;
+    font-size: 11px;
+    font-weight: 700;
+  }
+
+  .badge-green { background: rgba(26,122,74,0.12); color: var(--green); }
+  .badge-red { background: rgba(192,57,43,0.1); color: var(--red); }
+  .badge-gold { background: rgba(201,168,76,0.15); color: #a07830; }
+  .badge-blue { background: rgba(10,22,40,0.08); color: var(--navy); }
+  .badge-purple { background: rgba(109,63,192,0.12); color: var(--purple); }
+
+  /* Med grid */
+  .med-dot {
+    width: 24px;
+    height: 24px;
+    border-radius: 6px;
+    border: 2px solid var(--border);
+    display: inline-flex;
+    align-items: center;
+    justify-content: center;
+    font-size: 10px;
+    font-weight: 700;
+    color: var(--mid);
+    cursor: pointer;
+  }
+
+  .med-dot.given { border-color: #1e6fb5; background: #1e6fb5; color: white; }
+  .med-dot.given2 { border-color: #d97706; background: #d97706; color: white; font-size: 9px; }
+
+  /* Race planner */
+  .race-card {
+    background: white;
+    border-radius: 12px;
+    padding: 16px;
+    border: 1px solid var(--border);
+    margin-bottom: 10px;
+  }
+
+  .race-title { font-size: 14px; font-weight: 800; color: var(--navy); }
+  .race-meta { font-size: 11px; color: var(--mid); margin-top: 3px; }
+
+  .eligible-row {
+    display: flex;
+    align-items: center;
+    gap: 10px;
+    padding: 8px 12px;
+    border-radius: 8px;
+    margin-bottom: 6px;
+  }
+
+  .eligible-row.yes { background: rgba(26,122,74,0.07); border: 1px solid rgba(26,122,74,0.2); }
+  .eligible-row.no { background: rgba(192,57,43,0.06); border: 1px solid rgba(192,57,43,0.15); }
+
+  .dot-green { width: 8px; height: 8px; border-radius: 50%; background: var(--green); flex-shrink: 0; }
+  .dot-red { width: 8px; height: 8px; border-radius: 50%; background: var(--red); flex-shrink: 0; }
+
+  /* AI bubble */
+  .ai-bubble {
+    background: var(--navy);
+    color: white;
+    padding: 12px 16px;
+    border-radius: 0 12px 12px 12px;
+    font-size: 13px;
+    line-height: 1.6;
+    max-width: 85%;
+    margin-bottom: 10px;
+  }
+
+  .user-bubble {
+    background: var(--gold);
+    color: var(--navy);
+    padding: 10px 14px;
+    border-radius: 12px 0 12px 12px;
+    font-size: 13px;
+    font-weight: 600;
+    max-width: 75%;
+    align-self: flex-end;
+    margin-left: auto;
+    margin-bottom: 10px;
+  }
+
+  /* Whiteboard */
+  .wb-meeting {
+    background: var(--navy);
+    color: white;
+    padding: 10px 16px;
+    border-radius: 10px 10px 0 0;
+    font-size: 14px;
+    font-weight: 800;
+    display: flex;
+    align-items: center;
+    justify-content: space-between;
+  }
+
+  .wb-row {
+    display: flex;
+    align-items: center;
+    gap: 12px;
+    padding: 10px 16px;
+    border-bottom: 1px solid var(--border);
+    background: white;
+  }
+
+  .wb-time { font-size: 14px; font-weight: 700; color: var(--navy); width: 60px; }
+  .wb-horse { font-size: 16px; font-weight: 900; color: var(--navy); flex: 1; text-transform: uppercase; }
+
+  /* Travel calculator */
+  .course-btn {
+    padding: 8px 16px;
+    border-radius: 20px;
+    border: 2px solid var(--border);
+    background: white;
+    font-size: 12px;
+    font-weight: 700;
+    color: var(--navy);
+    cursor: pointer;
+    transition: all 0.15s;
+  }
+
+  .course-btn.active {
+    border-color: var(--navy);
+    background: var(--navy);
+    color: white;
+  }
+
+  /* Controls */
+  #controls {
+    background: var(--navy);
+    padding: 12px 24px;
+    display: flex;
+    align-items: center;
+    gap: 16px;
+    flex-shrink: 0;
+    border-top: 1px solid rgba(255,255,255,0.08);
+  }
+
+  .ctrl-btn {
+    width: 36px;
+    height: 36px;
+    border-radius: 50%;
+    border: none;
+    background: rgba(255,255,255,0.1);
+    color: white;
+    font-size: 14px;
+    cursor: pointer;
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    transition: background 0.15s;
+  }
+
+  .ctrl-btn:hover { background: rgba(255,255,255,0.2); }
+  .ctrl-btn.primary { background: var(--gold); color: var(--navy); width: 44px; height: 44px; font-size: 16px; }
+
+  .progress-wrap {
+    flex: 1;
+    height: 4px;
+    background: rgba(255,255,255,0.1);
+    border-radius: 2px;
+    overflow: hidden;
+    cursor: pointer;
+  }
+
+  #progress-bar {
+    height: 100%;
+    background: var(--gold);
+    border-radius: 2px;
+    transition: width 0.1s linear;
+  }
+
+  .step-dots {
+    display: flex;
+    gap: 6px;
+    align-items: center;
+  }
+
+  .step-dot {
+    width: 6px;
+    height: 6px;
+    border-radius: 50%;
+    background: rgba(255,255,255,0.2);
+    transition: all 0.2s;
+    cursor: pointer;
+  }
+
+  .step-dot.active {
+    background: var(--gold);
+    width: 20px;
+    border-radius: 3px;
+  }
+
+  #screen-label {
+    font-size: 12px;
+    color: rgba(255,255,255,0.4);
+    min-width: 180px;
+    text-align: right;
+  }
+
+  /* Tooltip */
+  .tooltip {
+    position: absolute;
+    background: var(--gold);
+    color: var(--navy);
+    padding: 6px 12px;
+    border-radius: 20px;
+    font-size: 12px;
+    font-weight: 700;
+    white-space: nowrap;
+    pointer-events: none;
+    opacity: 0;
+    transition: opacity 0.3s;
+    z-index: 100;
+    transform: translateX(-50%);
+  }
+
+  .tooltip.show { opacity: 1; }
+
+  /* Login screen */
+  .login-wrap {
+    width: 100%;
+    height: 100%;
+    background: linear-gradient(135deg, var(--navy) 0%, #1a2d4a 100%);
+    display: flex;
+    align-items: center;
+    justify-content: center;
+  }
+
+  .login-card {
+    background: white;
+    border-radius: 16px;
+    padding: 40px 36px;
+    width: 360px;
+    box-shadow: 0 24px 60px rgba(0,0,0,0.3);
+  }
+
+  .login-logo { text-align: center; font-size: 28px; font-weight: 900; color: var(--navy); margin-bottom: 4px; }
+  .login-logo span { color: var(--gold); }
+  .login-sub { text-align: center; font-size: 12px; color: var(--mid); margin-bottom: 28px; }
+
+  .login-field {
+    margin-bottom: 14px;
+  }
+
+  .login-field label { font-size: 11px; font-weight: 700; color: var(--mid); text-transform: uppercase; letter-spacing: 0.5px; display: block; margin-bottom: 5px; }
+
+  .login-field input {
+    width: 100%;
+    padding: 11px 14px;
+    border: 1.5px solid var(--border);
+    border-radius: 8px;
+    font-size: 14px;
+    color: var(--navy);
+    font-family: 'DM Sans', sans-serif;
+    outline: none;
+    transition: border-color 0.2s;
+  }
+
+  .login-field input.focused { border-color: var(--navy); }
+
+  .login-btn {
+    width: 100%;
+    padding: 13px;
+    background: var(--navy);
+    color: white;
+    border: none;
+    border-radius: 8px;
+    font-size: 15px;
+    font-weight: 700;
+    cursor: pointer;
+    margin-top: 6px;
+    font-family: 'DM Sans', sans-serif;
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    gap: 8px;
+  }
+
+  .spinner {
+    width: 16px;
+    height: 16px;
+    border: 2px solid rgba(255,255,255,0.3);
+    border-top-color: white;
+    border-radius: 50%;
+    animation: spin 0.7s linear infinite;
+    display: none;
+  }
+
+  @keyframes spin { to { transform: rotate(360deg); } }
+
+  /* Weight chart */
+  .weight-bar {
+    display: flex;
+    align-items: flex-end;
+    gap: 6px;
+    height: 60px;
+    margin-top: 8px;
+  }
+
+  .w-bar {
+    flex: 1;
+    border-radius: 4px 4px 0 0;
+    min-width: 20px;
+    transition: height 0.3s;
+    position: relative;
+  }
+
+  /* Alert banner */
+  .alert-banner {
+    background: rgba(192,57,43,0.08);
+    border: 1px solid rgba(192,57,43,0.25);
+    border-radius: 10px;
+    padding: 12px 16px;
+    margin-bottom: 14px;
+    display: flex;
+    align-items: center;
+    gap: 10px;
+  }
+
+  .alert-banner .alert-text { font-size: 13px; font-weight: 700; color: var(--red); }
+
+  /* Typing animation */
+  @keyframes blink { 0%,100%{opacity:1} 50%{opacity:0} }
+  .cursor-blink { animation: blink 1s infinite; }
+
+  /* Ripple effect */
+  .ripple {
+    position: absolute;
+    border-radius: 50%;
+    background: rgba(240,192,64,0.3);
+    transform: scale(0);
+    animation: ripple-anim 0.6s ease-out;
+    pointer-events: none;
+  }
+
+  @keyframes ripple-anim {
+    to { transform: scale(4); opacity: 0; }
+  }
+
+  /* Glow pulse on highlighted elements */
+  @keyframes pulse-glow {
+    0%,100% { box-shadow: 0 0 0 0 rgba(240,192,64,0.4); }
+    50% { box-shadow: 0 0 0 6px rgba(240,192,64,0.1); }
+  }
+
+  .pulsing { animation: pulse-glow 1.5s infinite; }
+
+  /* Toast */
+  #toast {
+    position: fixed;
+    bottom: 80px;
+    left: 50%;
+    transform: translateX(-50%) translateY(20px);
+    background: var(--green);
+    color: white;
+    padding: 10px 20px;
+    border-radius: 20px;
+    font-size: 13px;
+    font-weight: 700;
+    opacity: 0;
+    transition: all 0.3s;
+    z-index: 1000;
+    pointer-events: none;
+  }
+
+  #toast.show { opacity: 1; transform: translateX(-50%) translateY(0); }
+</style>
+</head>
+<body>
+
+<div id="cursor"></div>
+<div id="cursor-trail"></div>
+<div id="toast">✓ WhatsApp sent successfully</div>
+
+<!-- Header -->
+<div id="header">
+  <div class="logo">🏇 RacePlan <span>Pro</span></div>
+  <div style="display:flex;align-items:center;gap:16px">
+    <div style="font-size:12px;color:rgba(255,255,255,0.4)" id="screen-label">1 / 10 — Login</div>
+  </div>
+</div>
+
+<!-- Screen container -->
+<div id="screen-wrap">
+
+  <!-- SCREEN 1: LOGIN -->
+  <div class="screen active" id="s1">
+    <div class="login-wrap">
+      <div class="login-card">
+        <div class="login-logo">🏇 RacePlan <span>Pro</span></div>
+        <div class="login-sub">Yard management for professional trainers</div>
+        <div class="login-field">
+          <label>Email</label>
+          <input type="email" id="login-email" value="" placeholder="trainer@example.com">
+        </div>
+        <div class="login-field">
+          <label>Password</label>
+          <input type="password" id="login-pass" value="" placeholder="••••••••">
+        </div>
+        <button class="login-btn" id="login-btn">
+          <span id="login-text">Log In</span>
+          <div class="spinner" id="login-spinner"></div>
+        </button>
+        <div style="text-align:center;margin-top:16px;font-size:12px;color:var(--mid)">Beta access · Free for founding trainers</div>
+      </div>
+    </div>
+  </div>
+
+  <!-- SCREEN 2: DAILY SUMMARY -->
+  <div class="screen" id="s2">
+    <div class="app-chrome">
+      <div class="app-topbar">
+        <span style="font-size:20px">🏇</span>
+        <span class="yard-name">Ballymore Racing</span>
+        <span class="badge">Beta</span>
+        <span style="flex:1"></span>
+        <span style="font-size:12px;color:rgba(255,255,255,0.4)">Wed 20 May 2026</span>
+      </div>
+      <div class="app-body">
+        <div class="app-sidebar">
+          <div class="nav-item active"><span class="icon">📊</span>Daily Summary</div>
+          <div class="nav-item"><span class="icon">🐎</span>My Yard</div>
+          <div class="nav-item"><span class="icon">🏁</span>Race Planner</div>
+          <div class="nav-item"><span class="icon">💊</span>Medications</div>
+          <div class="nav-item"><span class="icon">🖨️</span>Whiteboard</div>
+          <div class="nav-item"><span class="icon">⚖️</span>Weights</div>
+          <div class="nav-item"><span class="icon">🔔</span>Reminders</div>
+          <div class="nav-item"><span class="icon">🤖</span>AI Assistant</div>
+          <div class="nav-item"><span class="icon">🚛</span>Travel Cost</div>
+          <div class="nav-item"><span class="icon">⚙️</span>Settings</div>
+        </div>
+        <div class="app-content">
+          <div style="font-size:22px;font-weight:900;color:var(--navy);margin-bottom:4px">Daily Summary</div>
+          <div style="font-size:13px;color:var(--mid);margin-bottom:16px">Wednesday 20 May 2026</div>
+          <div class="stat-grid">
+            <div class="stat-card"><div class="stat-label">Active Horses</div><div class="stat-value">147</div></div>
+            <div class="stat-card"><div class="stat-label">Racing Today</div><div class="stat-value gold">3</div></div>
+            <div class="stat-card"><div class="stat-label">Racing This Week</div><div class="stat-value">7</div></div>
+            <div class="stat-card"><div class="stat-label">Meds Given Today</div><div class="stat-value green">12</div></div>
+          </div>
+          <div class="card" id="racing-today-card">
+            <div class="card-title">🏇 Racing Today</div>
+            <div class="horse-row" id="race-horse-1">
+              <div class="silk">🔵</div>
+              <div style="flex:1">
+                <div class="horse-name">Silver Dawn</div>
+                <div class="horse-meta">2m Hurdle · Leopardstown · Good to Soft</div>
+              </div>
+              <span class="badge-tag badge-purple">Hood</span>
+              <span style="font-size:15px;font-weight:800;color:var(--navy)">14:15</span>
+            </div>
+            <div class="horse-row">
+              <div class="silk">🔴</div>
+              <div style="flex:1">
+                <div class="horse-name">Dark Horizon</div>
+                <div class="horse-meta">1m4f Flat · Curragh · Good</div>
+              </div>
+              <span class="badge-tag badge-gold">J: C. Keane</span>
+              <span style="font-size:15px;font-weight:800;color:var(--navy)">15:45</span>
+            </div>
+            <div class="horse-row">
+              <div class="silk">🟢</div>
+              <div style="flex:1">
+                <div class="horse-name">Mountain Breeze</div>
+                <div class="horse-meta">2m4f Chase · Punchestown · Soft</div>
+              </div>
+              <span class="badge-tag badge-green">Ballot 4</span>
+              <span style="font-size:15px;font-weight:800;color:var(--navy)">16:30</span>
+            </div>
+          </div>
+          <div class="card">
+            <div class="card-title">💊 Medication — Today</div>
+            <div class="horse-row">
+              <div class="silk">🔵</div>
+              <div class="horse-name">Bright Future</div>
+              <span class="badge-tag badge-blue">Peptizole</span>
+              <span class="badge-tag badge-blue" style="margin-left:4px">Antepsin</span>
+            </div>
+            <div class="horse-row">
+              <div class="silk">🟡</div>
+              <div class="horse-name">Ocean Wind</div>
+              <span class="badge-tag badge-gold">Antibiotics</span>
+            </div>
+          </div>
+        </div>
+      </div>
+    </div>
+  </div>
+
+  <!-- SCREEN 3: MY YARD -->
+  <div class="screen" id="s3">
+    <div class="app-chrome">
+      <div class="app-topbar">
+        <span style="font-size:20px">🏇</span>
+        <span class="yard-name">Ballymore Racing</span>
+        <span style="flex:1"></span>
+      </div>
+      <div class="app-body">
+        <div class="app-sidebar">
+          <div class="nav-item"><span class="icon">📊</span>Daily Summary</div>
+          <div class="nav-item active"><span class="icon">🐎</span>My Yard</div>
+          <div class="nav-item"><span class="icon">🏁</span>Race Planner</div>
+          <div class="nav-item"><span class="icon">💊</span>Medications</div>
+          <div class="nav-item"><span class="icon">🖨️</span>Whiteboard</div>
+          <div class="nav-item"><span class="icon">⚖️</span>Weights</div>
+          <div class="nav-item"><span class="icon">🔔</span>Reminders</div>
+          <div class="nav-item"><span class="icon">🤖</span>AI Assistant</div>
+          <div class="nav-item"><span class="icon">🚛</span>Travel Cost</div>
+          <div class="nav-item"><span class="icon">⚙️</span>Settings</div>
+        </div>
+        <div class="app-content">
+          <div style="display:flex;align-items:center;justify-content:space-between;margin-bottom:16px">
+            <div style="font-size:22px;font-weight:900;color:var(--navy)">My Yard <span style="font-size:14px;color:var(--mid);font-weight:500">147 horses</span></div>
+            <button style="background:var(--navy);color:white;border:none;padding:8px 16px;border-radius:8px;font-size:13px;font-weight:700;cursor:pointer">+ Add Horse</button>
+          </div>
+          <div class="horse-row" style="border-left:3px solid var(--gold)">
+            <div class="silk">⚡</div>
+            <div style="flex:1">
+              <div class="horse-name">EX Calibre</div>
+              <div class="horse-meta">8yo · GB · NH · OR 142</div>
+            </div>
+            <span class="badge-tag badge-gold">EX Racer</span>
+            <span class="badge-tag badge-green">Active</span>
+          </div>
+          <div class="horse-row" style="border-left:3px solid var(--gold)">
+            <div class="silk">⚡</div>
+            <div style="flex:1">
+              <div class="horse-name">EX Factor</div>
+              <div class="horse-meta">7yo · IRE · NH · OR 138</div>
+            </div>
+            <span class="badge-tag badge-gold">EX Racer</span>
+            <span class="badge-tag badge-green">Active</span>
+          </div>
+          <div class="horse-row" id="highlight-horse">
+            <div class="silk">🔵</div>
+            <div style="flex:1">
+              <div class="horse-name">Silver Dawn</div>
+              <div class="horse-meta">5yo · IRE · Hurdle · OR 135</div>
+            </div>
+            <span class="badge-tag badge-blue">2m-2m4f</span>
+            <span class="badge-tag badge-green">Active</span>
+          </div>
+          <div class="horse-row">
+            <div class="silk">🔴</div>
+            <div style="flex:1">
+              <div class="horse-name">Dark Horizon</div>
+              <div class="horse-meta">4yo · GB · Flat · OR 92</div>
+            </div>
+            <span class="badge-tag badge-blue">1m2f-1m4f</span>
+            <span class="badge-tag badge-green">Active</span>
+          </div>
+          <div class="horse-row">
+            <div class="silk">🟢</div>
+            <div style="flex:1">
+              <div class="horse-name">Mountain Breeze</div>
+              <div class="horse-meta">7yo · IRE · Chase · OR 148</div>
+            </div>
+            <span class="badge-tag badge-blue">2m4f-3m</span>
+            <span class="badge-tag badge-red">⛔ Treatment 12d</span>
+          </div>
+          <div class="horse-row">
+            <div class="silk">🟡</div>
+            <div style="flex:1">
+              <div class="horse-name">Ocean Wind</div>
+              <div class="horse-meta">6yo · IRE · Flat · OR 88</div>
+            </div>
+            <span class="badge-tag badge-blue">7f-1m</span>
+            <span class="badge-tag badge-green">Active</span>
+          </div>
+        </div>
+      </div>
+    </div>
+  </div>
+
+  <!-- SCREEN 4: RACE PLANNER -->
+  <div class="screen" id="s4">
+    <div class="app-chrome">
+      <div class="app-topbar">
+        <span style="font-size:20px">🏇</span>
+        <span class="yard-name">Ballymore Racing</span>
+      </div>
+      <div class="app-body">
+        <div class="app-sidebar">
+          <div class="nav-item"><span class="icon">📊</span>Daily Summary</div>
+          <div class="nav-item"><span class="icon">🐎</span>My Yard</div>
+          <div class="nav-item active"><span class="icon">🏁</span>Race Planner</div>
+          <div class="nav-item"><span class="icon">💊</span>Medications</div>
+          <div class="nav-item"><span class="icon">🖨️</span>Whiteboard</div>
+          <div class="nav-item"><span class="icon">⚖️</span>Weights</div>
+          <div class="nav-item"><span class="icon">🔔</span>Reminders</div>
+          <div class="nav-item"><span class="icon">🤖</span>AI Assistant</div>
+          <div class="nav-item"><span class="icon">🚛</span>Travel Cost</div>
+          <div class="nav-item"><span class="icon">⚙️</span>Settings</div>
+        </div>
+        <div class="app-content">
+          <div style="font-size:22px;font-weight:900;color:var(--navy);margin-bottom:16px">Race Planner</div>
+          <div class="card" style="border:2px solid var(--navy)">
+            <div class="card-title">📋 Leopardstown — Wed 27 May 2026</div>
+            <div class="race-card">
+              <div style="display:flex;align-items:center;justify-content:space-between">
+                <div>
+                  <div class="race-title">Beginners Chase (Grade 2)</div>
+                  <div class="race-meta">2m · Soft · €45,000 · 5yo+ · Rated 120-145</div>
+                </div>
+                <span class="badge-tag badge-gold">3 Eligible</span>
+              </div>
+              <div style="margin-top:12px">
+                <div class="eligible-row yes">
+                  <div class="dot-green"></div>
+                  <div style="flex:1">
+                    <span style="font-size:13px;font-weight:700;color:var(--navy)">Silver Dawn</span>
+                    <span style="font-size:11px;color:var(--mid);margin-left:8px">OR 135 · 5yo · Soft winner</span>
+                  </div>
+                  <span class="badge-tag badge-green">✓ Eligible</span>
+                </div>
+                <div class="eligible-row yes">
+                  <div class="dot-green"></div>
+                  <div style="flex:1">
+                    <span style="font-size:13px;font-weight:700;color:var(--navy)">Bright Future</span>
+                    <span style="font-size:11px;color:var(--mid);margin-left:8px">OR 128 · 6yo</span>
+                  </div>
+                  <span class="badge-tag badge-green">✓ Eligible</span>
+                </div>
+                <div class="eligible-row no">
+                  <div class="dot-red"></div>
+                  <div style="flex:1">
+                    <span style="font-size:13px;font-weight:700;color:var(--mid)">Mountain Breeze</span>
+                    <span style="font-size:11px;color:var(--red);margin-left:8px">⛔ Treatment withdrawal — clear 1 Jun</span>
+                  </div>
+                  <span class="badge-tag badge-red">Blocked</span>
+                </div>
+                <div class="eligible-row no">
+                  <div class="dot-red"></div>
+                  <div style="flex:1">
+                    <span style="font-size:13px;font-weight:700;color:var(--mid)">Ocean Wind</span>
+                    <span style="font-size:11px;color:var(--red);margin-left:8px">Flat horse — discipline mismatch</span>
+                  </div>
+                  <span class="badge-tag badge-red">Not eligible</span>
+                </div>
+              </div>
+            </div>
+            <div class="card" style="background:#f8fafb;margin-top:8px;border:none">
+              <div style="font-size:11px;font-weight:700;color:var(--mid);margin-bottom:8px;text-transform:uppercase">🤖 AI Analysis — Silver Dawn</div>
+              <div style="font-size:13px;color:var(--navy);line-height:1.7">Silver Dawn is an ideal fit for this Grade 2 beginners chase at 2m on soft ground. By Stowaway out of a bumper winner, the breeding strongly suits soft ground and a stamina test. OR 135 sits comfortably within the 120-145 rating band — 10lb below the ceiling which is the sweet spot for a novice chaser. Won over 2m1f at Navan on heavy in January which directly translates. <strong>VERDICT: Ideal pick.</strong></div>
+            </div>
+          </div>
+        </div>
+      </div>
+    </div>
+  </div>
+
+  <!-- SCREEN 5: MEDICATIONS -->
+  <div class="screen" id="s5">
+    <div class="app-chrome">
+      <div class="app-topbar">
+        <span style="font-size:20px">🏇</span>
+        <span class="yard-name">Ballymore Racing</span>
+      </div>
+      <div class="app-body">
+        <div class="app-sidebar">
+          <div class="nav-item"><span class="icon">📊</span>Daily Summary</div>
+          <div class="nav-item"><span class="icon">🐎</span>My Yard</div>
+          <div class="nav-item"><span class="icon">🏁</span>Race Planner</div>
+          <div class="nav-item active"><span class="icon">💊</span>Medications</div>
+          <div class="nav-item"><span class="icon">🖨️</span>Whiteboard</div>
+          <div class="nav-item"><span class="icon">⚖️</span>Weights</div>
+          <div class="nav-item"><span class="icon">🔔</span>Reminders</div>
+          <div class="nav-item"><span class="icon">🤖</span>AI Assistant</div>
+          <div class="nav-item"><span class="icon">🚛</span>Travel Cost</div>
+          <div class="nav-item"><span class="icon">⚙️</span>Settings</div>
+        </div>
+        <div class="app-content">
+          <div style="font-size:22px;font-weight:900;color:var(--navy);margin-bottom:4px">Medication Tracker</div>
+          <div style="font-size:12px;color:var(--mid);margin-bottom:16px">Peptizole (12d · 4d withdrawal) · Antepsin (12d · 1d withdrawal) · Antibiotics (5d · 0d withdrawal)</div>
+          <div class="alert-banner" id="med-alert">
+            <span style="font-size:18px">⚠️</span>
+            <div class="alert-text">Silver Dawn finishes Peptizole today — entry deadline at 12pm. Clear to enter from tomorrow.</div>
+          </div>
+          <div class="card">
+            <div style="display:flex;align-items:center;gap:8px;margin-bottom:12px">
+              <div style="background:var(--navy);color:white;padding:6px 14px;border-radius:20px;font-size:12px;font-weight:700">Daily Entry</div>
+              <div style="color:var(--mid);padding:6px 14px;border-radius:20px;font-size:12px;font-weight:700;cursor:pointer">Monthly Grid</div>
+              <span style="margin-left:auto;font-size:13px;color:var(--navy);font-weight:700">Wed 20 May</span>
+            </div>
+            <div class="horse-row" id="med-row-1">
+              <div class="silk">🔵</div>
+              <div class="horse-name" style="flex:1">Silver Dawn</div>
+              <div class="med-dot given" title="Peptizole given">✓</div>
+              <div class="med-dot" style="margin-left:6px;border-color:var(--purple);color:var(--purple)" title="Antepsin">An</div>
+              <div class="med-dot" style="margin-left:6px" title="Antibiotics">Ab</div>
+            </div>
+            <div class="horse-row">
+              <div class="silk">🟡</div>
+              <div class="horse-name" style="flex:1">Ocean Wind</div>
+              <div class="med-dot" style="border-color:#1e6fb5;color:#1e6fb5" title="Peptizole">Pe</div>
+              <div class="med-dot given2" style="margin-left:6px" title="Antibiotics - 2 doses">1/2</div>
+              <div class="med-dot" style="margin-left:6px" title="Antepsin">An</div>
+            </div>
+            <div class="horse-row">
+              <div class="silk">🔴</div>
+              <div class="horse-name" style="flex:1">Dark Horizon</div>
+              <div class="med-dot given" title="Peptizole">✓</div>
+              <div class="med-dot given" style="margin-left:6px;background:var(--purple);border-color:var(--purple)" title="Antepsin">✓</div>
+              <div class="med-dot" style="margin-left:6px" title="Antibiotics">Ab</div>
+            </div>
+          </div>
+        </div>
+      </div>
+    </div>
+  </div>
+
+  <!-- SCREEN 6: WHITEBOARD -->
+  <div class="screen" id="s6">
+    <div class="app-chrome">
+      <div class="app-topbar">
+        <span style="font-size:20px">🏇</span>
+        <span class="yard-name">Ballymore Racing</span>
+      </div>
+      <div class="app-body">
+        <div class="app-sidebar">
+          <div class="nav-item"><span class="icon">📊</span>Daily Summary</div>
+          <div class="nav-item"><span class="icon">🐎</span>My Yard</div>
+          <div class="nav-item"><span class="icon">🏁</span>Race Planner</div>
+          <div class="nav-item"><span class="icon">💊</span>Medications</div>
+          <div class="nav-item active"><span class="icon">🖨️</span>Whiteboard</div>
+          <div class="nav-item"><span class="icon">⚖️</span>Weights</div>
+          <div class="nav-item"><span class="icon">🔔</span>Reminders</div>
+          <div class="nav-item"><span class="icon">🤖</span>AI Assistant</div>
+          <div class="nav-item"><span class="icon">🚛</span>Travel Cost</div>
+          <div class="nav-item"><span class="icon">⚙️</span>Settings</div>
+        </div>
+        <div class="app-content">
+          <div style="display:flex;align-items:center;justify-content:space-between;margin-bottom:16px">
+            <div style="font-size:22px;font-weight:900;color:var(--navy)">Raceday Whiteboard</div>
+            <button id="print-btn" style="background:var(--navy);color:white;border:none;padding:8px 16px;border-radius:8px;font-size:13px;font-weight:700;cursor:pointer">🖨️ Print</button>
+          </div>
+          <div style="border-radius:12px;overflow:hidden;border:1px solid var(--border)">
+            <div class="wb-meeting">
+              <span>LEOPARDSTOWN — Wednesday 27 May 2026</span>
+              <span style="font-size:12px;color:rgba(255,255,255,0.5)">Good to Soft</span>
+            </div>
+            <div class="wb-row">
+              <div class="wb-time">14:15</div>
+              <div class="silk">🔵</div>
+              <div class="wb-horse">SILVER DAWN</div>
+              <span class="badge-tag badge-purple">Hood</span>
+              <span style="font-size:12px;color:var(--mid);margin-left:8px">C. Keane</span>
+            </div>
+            <div class="wb-row">
+              <div class="wb-time">15:45</div>
+              <div class="silk">🔴</div>
+              <div class="wb-horse">DARK HORIZON</div>
+              <span style="font-size:12px;color:var(--mid)">B. Cooper</span>
+            </div>
+            <div class="wb-meeting" style="border-radius:0">
+              <span>CURRAGH — Wednesday 27 May 2026</span>
+              <span style="font-size:12px;color:rgba(255,255,255,0.5)">Good</span>
+            </div>
+            <div class="wb-row">
+              <div class="wb-time">16:00</div>
+              <div class="silk">🟢</div>
+              <div class="wb-horse">OCEAN WIND</div>
+              <span class="badge-tag badge-gold">Ballot 3</span>
+              <span style="font-size:12px;color:var(--mid);margin-left:8px">D. McMonagle</span>
+            </div>
+            <div class="wb-row" style="border-bottom:none">
+              <div class="wb-time">17:30</div>
+              <div class="silk">🟡</div>
+              <div class="wb-horse">BRIGHT FUTURE</div>
+              <span style="font-size:12px;color:var(--mid)">R. Moore</span>
+            </div>
+          </div>
+        </div>
+      </div>
+    </div>
+  </div>
+
+  <!-- SCREEN 7: WEIGHTS -->
+  <div class="screen" id="s7">
+    <div class="app-chrome">
+      <div class="app-topbar">
+        <span style="font-size:20px">🏇</span>
+        <span class="yard-name">Ballymore Racing</span>
+      </div>
+      <div class="app-body">
+        <div class="app-sidebar">
+          <div class="nav-item"><span class="icon">📊</span>Daily Summary</div>
+          <div class="nav-item"><span class="icon">🐎</span>My Yard</div>
+          <div class="nav-item"><span class="icon">🏁</span>Race Planner</div>
+          <div class="nav-item"><span class="icon">💊</span>Medications</div>
+          <div class="nav-item"><span class="icon">🖨️</span>Whiteboard</div>
+          <div class="nav-item active"><span class="icon">⚖️</span>Weights</div>
+          <div class="nav-item"><span class="icon">🔔</span>Reminders</div>
+          <div class="nav-item"><span class="icon">🤖</span>AI Assistant</div>
+          <div class="nav-item"><span class="icon">🚛</span>Travel Cost</div>
+          <div class="nav-item"><span class="icon">⚙️</span>Settings</div>
+        </div>
+        <div class="app-content">
+          <div style="font-size:22px;font-weight:900;color:var(--navy);margin-bottom:8px">Weights Tracker</div>
+          <div class="alert-banner">
+            <span style="font-size:18px">⚠️</span>
+            <div>
+              <div class="alert-text">Significant weight changes detected</div>
+              <div style="font-size:12px;color:var(--red);margin-top:3px">Ocean Wind ▼ -8kg (480kg → 472kg) · Mountain Breeze ▲ +7kg</div>
+            </div>
+          </div>
+          <div class="card" id="weight-card">
+            <div class="card-title">Weekly Weights — Week 20</div>
+            <div class="horse-row horse-row" style="border-left:3px solid var(--red)">
+              <div class="silk">🟡</div>
+              <div style="flex:1">
+                <div class="horse-name">Ocean Wind</div>
+                <div class="horse-meta">Last: 472kg</div>
+              </div>
+              <div style="text-align:right">
+                <div style="font-size:18px;font-weight:900;color:var(--red)">▼ -8kg</div>
+                <div style="font-size:11px;color:var(--mid)">480 → 472</div>
+              </div>
+              <span style="font-size:18px;margin-left:8px">⚠️</span>
+            </div>
+            <div class="horse-row" style="border-left:3px solid var(--amber)">
+              <div class="silk">🟢</div>
+              <div style="flex:1">
+                <div class="horse-name">Mountain Breeze</div>
+                <div class="horse-meta">Last: 542kg</div>
+              </div>
+              <div style="text-align:right">
+                <div style="font-size:18px;font-weight:900;color:var(--amber)">▲ +7kg</div>
+                <div style="font-size:11px;color:var(--mid)">535 → 542</div>
+              </div>
+            </div>
+            <div class="horse-row">
+              <div class="silk">🔵</div>
+              <div style="flex:1">
+                <div class="horse-name">Silver Dawn</div>
+                <div class="horse-meta">Last: 498kg</div>
+              </div>
+              <div style="text-align:right">
+                <div style="font-size:15px;font-weight:700;color:var(--green)">▲ +2kg</div>
+                <div style="font-size:11px;color:var(--mid)">496 → 498</div>
+              </div>
+            </div>
+          </div>
+        </div>
+      </div>
+    </div>
+  </div>
+
+  <!-- SCREEN 8: AI ASSISTANT -->
+  <div class="screen" id="s8">
+    <div class="app-chrome">
+      <div class="app-topbar">
+        <span style="font-size:20px">🏇</span>
+        <span class="yard-name">Ballymore Racing</span>
+      </div>
+      <div class="app-body">
+        <div class="app-sidebar">
+          <div class="nav-item"><span class="icon">📊</span>Daily Summary</div>
+          <div class="nav-item"><span class="icon">🐎</span>My Yard</div>
+          <div class="nav-item"><span class="icon">🏁</span>Race Planner</div>
+          <div class="nav-item"><span class="icon">💊</span>Medications</div>
+          <div class="nav-item"><span class="icon">🖨️</span>Whiteboard</div>
+          <div class="nav-item"><span class="icon">⚖️</span>Weights</div>
+          <div class="nav-item"><span class="icon">🔔</span>Reminders</div>
+          <div class="nav-item active"><span class="icon">🤖</span>AI Assistant</div>
+          <div class="nav-item"><span class="icon">🚛</span>Travel Cost</div>
+          <div class="nav-item"><span class="icon">⚙️</span>Settings</div>
+        </div>
+        <div class="app-content" style="display:flex;flex-direction:column;height:100%;padding:16px">
+          <div style="font-size:20px;font-weight:900;color:var(--navy);margin-bottom:12px">AI Yard Assistant</div>
+          <div style="flex:1;display:flex;flex-direction:column;gap:8px;overflow-y:auto;margin-bottom:12px" id="chat-area">
+            <div class="ai-bubble">Good morning. 3 horses racing today. Silver Dawn finishes Peptizole — entry deadline at 12pm. Ocean Wind down 8kg — worth noting before today's race.</div>
+            <div class="user-bubble">Start Silver Dawn on Peptizole today</div>
+            <div class="ai-bubble" id="ai-response">Done:<br>✓ Silver Dawn started on Peptizole — Day 1 of 12. Course completes 1 June 2026. Clear to enter from 5 June.</div>
+            <div class="user-bubble" id="user-msg2" style="display:none">Remind me to call owners about Leopardstown Thursday 9am</div>
+            <div class="ai-bubble" id="ai-response2" style="display:none">Done:<br>✓ Reminder saved for Thursday 22 May at 09:00 — Call owners re Leopardstown<br><span style="font-size:11px;color:rgba(255,255,255,0.5);margin-top:4px;display:block">Go to Reminders tab to send WhatsApp now or it will fire automatically at 09:00</span></div>
+          </div>
+          <div style="display:flex;gap:8px;align-items:center">
+            <input id="chat-input" style="flex:1;padding:10px 14px;border:1.5px solid var(--border);border-radius:10px;font-size:13px;color:var(--navy);font-family:DM Sans,sans-serif;outline:none" placeholder="Ask anything or give a command..." value="">
+            <button style="width:40px;height:40px;border-radius:10px;background:var(--navy);border:none;color:white;font-size:18px;cursor:pointer">🎤</button>
+            <button id="send-btn" style="padding:10px 18px;background:var(--navy);border:none;color:white;border-radius:10px;font-weight:700;font-size:13px;cursor:pointer">Send</button>
+          </div>
+        </div>
+      </div>
+    </div>
+  </div>
+
+  <!-- SCREEN 9: TRAVEL COST -->
+  <div class="screen" id="s9">
+    <div class="app-chrome">
+      <div class="app-topbar">
+        <span style="font-size:20px">🏇</span>
+        <span class="yard-name">Ballymore Racing</span>
+      </div>
+      <div class="app-body">
+        <div class="app-sidebar">
+          <div class="nav-item"><span class="icon">📊</span>Daily Summary</div>
+          <div class="nav-item"><span class="icon">🐎</span>My Yard</div>
+          <div class="nav-item"><span class="icon">🏁</span>Race Planner</div>
+          <div class="nav-item"><span class="icon">💊</span>Medications</div>
+          <div class="nav-item"><span class="icon">🖨️</span>Whiteboard</div>
+          <div class="nav-item"><span class="icon">⚖️</span>Weights</div>
+          <div class="nav-item"><span class="icon">🔔</span>Reminders</div>
+          <div class="nav-item"><span class="icon">🤖</span>AI Assistant</div>
+          <div class="nav-item active"><span class="icon">🚛</span>Travel Cost</div>
+          <div class="nav-item"><span class="icon">⚙️</span>Settings</div>
+        </div>
+        <div class="app-content">
+          <div style="font-size:22px;font-weight:900;color:var(--navy);margin-bottom:4px">Travel Cost Calculator</div>
+          <div style="font-size:13px;color:var(--mid);margin-bottom:16px">From: Co. Tipperary · Rate: €1.50/km</div>
+          <div style="display:flex;flex-wrap:wrap;gap:8px;margin-bottom:16px" id="course-buttons">
+            <button class="course-btn active" onclick="selectCourse(this,'Leopardstown',48)">Leopardstown</button>
+            <button class="course-btn" onclick="selectCourse(this,'Curragh',61)">The Curragh</button>
+            <button class="course-btn" onclick="selectCourse(this,'Galway',94)">Galway</button>
+            <button class="course-btn" onclick="selectCourse(this,'Punchestown',67)">Punchestown</button>
+            <button class="course-btn" onclick="selectCourse(this,'Cheltenham',312)">Cheltenham</button>
+            <button class="course-btn" onclick="selectCourse(this,'Navan',142)">Navan</button>
+          </div>
+          <div class="card" id="travel-result" style="border:2px solid var(--navy)">
+            <div style="font-size:18px;font-weight:900;color:var(--navy);margin-bottom:16px" id="travel-course">Leopardstown</div>
+            <div style="display:grid;grid-template-columns:1fr 1fr 1fr;gap:12px">
+              <div style="background:var(--bg);border-radius:10px;padding:14px;text-align:center">
+                <div style="font-size:11px;color:var(--mid);font-weight:700;text-transform:uppercase;margin-bottom:4px">Distance</div>
+                <div style="font-size:24px;font-weight:900;color:var(--navy)" id="travel-km">48 km</div>
+                <div style="font-size:10px;color:var(--mid)">each way</div>
+              </div>
+              <div style="background:var(--bg);border-radius:10px;padding:14px;text-align:center">
+                <div style="font-size:11px;color:var(--mid);font-weight:700;text-transform:uppercase;margin-bottom:4px">Return</div>
+                <div style="font-size:24px;font-weight:900;color:var(--navy)" id="travel-return">96 km</div>
+                <div style="font-size:10px;color:var(--mid)">round trip</div>
+              </div>
+              <div style="background:var(--navy);border-radius:10px;padding:14px;text-align:center">
+                <div style="font-size:11px;color:rgba(255,255,255,0.5);font-weight:700;text-transform:uppercase;margin-bottom:4px">Per Horse</div>
+                <div style="font-size:24px;font-weight:900;color:white" id="travel-cost">€144</div>
+                <div style="font-size:10px;color:rgba(255,255,255,0.4)">@€1.50/km</div>
+              </div>
+            </div>
+            <div style="margin-top:12px;background:rgba(26,122,74,0.08);border:1px solid rgba(26,122,74,0.2);border-radius:10px;padding:14px;display:flex;justify-content:space-between;align-items:center">
+              <div style="font-size:13px;color:var(--navy);font-weight:600">2 horses travelling</div>
+              <div style="font-size:26px;font-weight:900;color:var(--green)" id="travel-total">€288</div>
+            </div>
+          </div>
+        </div>
+      </div>
+    </div>
+  </div>
+
+  <!-- SCREEN 10: REMINDERS + WHATSAPP -->
+  <div class="screen" id="s10">
+    <div class="app-chrome">
+      <div class="app-topbar">
+        <span style="font-size:20px">🏇</span>
+        <span class="yard-name">Ballymore Racing</span>
+      </div>
+      <div class="app-body">
+        <div class="app-sidebar">
+          <div class="nav-item"><span class="icon">📊</span>Daily Summary</div>
+          <div class="nav-item"><span class="icon">🐎</span>My Yard</div>
+          <div class="nav-item"><span class="icon">🏁</span>Race Planner</div>
+          <div class="nav-item"><span class="icon">💊</span>Medications</div>
+          <div class="nav-item"><span class="icon">🖨️</span>Whiteboard</div>
+          <div class="nav-item"><span class="icon">⚖️</span>Weights</div>
+          <div class="nav-item active"><span class="icon">🔔</span>Reminders</div>
+          <div class="nav-item"><span class="icon">🤖</span>AI Assistant</div>
+          <div class="nav-item"><span class="icon">🚛</span>Travel Cost</div>
+          <div class="nav-item"><span class="icon">⚙️</span>Settings</div>
+        </div>
+        <div class="app-content">
+          <div style="font-size:22px;font-weight:900;color:var(--navy);margin-bottom:16px">Reminders</div>
+          <div class="horse-row" id="reminder-row" style="flex-direction:column;align-items:flex-start;gap:8px">
+            <div style="display:flex;align-items:center;gap:12px;width:100%">
+              <div style="flex:1">
+                <div style="font-size:14px;font-weight:700;color:var(--navy)">Call owners re Leopardstown</div>
+                <div style="font-size:12px;color:var(--mid);margin-top:2px">Thu 22 May · 09:00 · +353876543210</div>
+              </div>
+              <button id="wa-send-btn" style="background:#25D366;color:white;border:none;padding:8px 16px;border-radius:8px;font-size:12px;font-weight:700;cursor:pointer;display:flex;align-items:center;gap:6px">
+                <span>💬</span> Send WhatsApp
+              </button>
+            </div>
+          </div>
+          <div class="horse-row" style="flex-direction:column;align-items:flex-start;gap:6px">
+            <div style="display:flex;align-items:center;gap:12px;width:100%">
+              <div style="flex:1">
+                <div style="font-size:14px;font-weight:700;color:var(--navy)">Vet visit — Ocean Wind weight check</div>
+                <div style="font-size:12px;color:var(--mid);margin-top:2px">Fri 23 May · 10:00 · Ocean Wind</div>
+              </div>
+              <button style="background:#25D366;color:white;border:none;padding:8px 16px;border-radius:8px;font-size:12px;font-weight:700;cursor:pointer">💬 Send</button>
+            </div>
+          </div>
+          <div class="horse-row" style="flex-direction:column;align-items:flex-start;gap:6px">
+            <div style="display:flex;align-items:center;gap:12px;width:100%">
+              <div style="flex:1">
+                <div style="font-size:14px;font-weight:700;color:var(--navy)">Declaration deadline — Silver Dawn Leopardstown</div>
+                <div style="font-size:12px;color:var(--mid);margin-top:2px">Mon 26 May · 10:00 · Silver Dawn</div>
+              </div>
+              <button style="background:#25D366;color:white;border:none;padding:8px 16px;border-radius:8px;font-size:12px;font-weight:700;cursor:pointer">💬 Send</button>
+            </div>
+          </div>
+        </div>
+      </div>
+    </div>
+  </div>
+
+</div>
+
+<!-- Controls -->
+<div id="controls">
+  <button class="ctrl-btn" id="prev-btn" onclick="changeScreen(-1)">‹</button>
+  <button class="ctrl-btn primary" id="play-btn" onclick="togglePlay()">⏸</button>
+  <button class="ctrl-btn" id="next-btn" onclick="changeScreen(1)">›</button>
+  <div class="progress-wrap" onclick="seekProgress(event)">
+    <div id="progress-bar" style="width:0%"></div>
+  </div>
+  <div class="step-dots" id="step-dots"></div>
+  <div id="screen-label" style="font-size:12px;color:rgba(255,255,255,0.4);min-width:200px;text-align:right"></div>
+</div>
+
+<script>
+var SCREENS = [
+  { id: 's1', label: 'Login', duration: 5000 },
+  { id: 's2', label: 'Daily Summary', duration: 6000 },
+  { id: 's3', label: 'My Yard', duration: 5000 },
+  { id: 's4', label: 'Race Planner', duration: 8000 },
+  { id: 's5', label: 'Medication Tracker', duration: 6000 },
+  { id: 's6', label: 'Raceday Whiteboard', duration: 5000 },
+  { id: 's7', label: 'Weights Tracker', duration: 5000 },
+  { id: 's8', label: 'AI Assistant', duration: 7000 },
+  { id: 's9', label: 'Travel Calculator', duration: 6000 },
+  { id: 's10', label: 'Reminders + WhatsApp', duration: 6000 },
+];
+
+var current = 0;
+var playing = true;
+var timer = null;
+var progressTimer = null;
+var progressStart = 0;
+var progressDuration = 0;
+
+// Build step dots
+var dotsEl = document.getElementById('step-dots');
+SCREENS.forEach(function(s, i) {
+  var d = document.createElement('div');
+  d.className = 'step-dot' + (i === 0 ? ' active' : '');
+  d.onclick = function() { goTo(i); };
+  dotsEl.appendChild(d);
+});
+
+// Cursor
+var cursor = document.getElementById('cursor');
+var trail = document.getElementById('cursor-trail');
+var cx = window.innerWidth / 2, cy = window.innerHeight / 2;
+
+function moveCursorTo(x, y, dur) {
+  dur = dur || 600;
+  var sx = cx, sy = cy;
+  var start = null;
+  function animate(ts) {
+    if (!start) start = ts;
+    var p = Math.min((ts - start) / dur, 1);
+    var ease = p < 0.5 ? 2*p*p : -1+(4-2*p)*p;
+    cx = sx + (x - sx) * ease;
+    cy = sy + (y - sy) * ease;
+    cursor.style.left = cx + 'px';
+    cursor.style.top = cy + 'px';
+    setTimeout(function() {
+      trail.style.left = cx + 'px';
+      trail.style.top = cy + 'px';
+    }, 80);
+    if (p < 1) requestAnimationFrame(animate);
+  }
+  requestAnimationFrame(animate);
+}
+
+function clickAt(x, y) {
+  moveCursorTo(x, y, 400);
+  setTimeout(function() {
+    cursor.classList.add('clicking');
+    // Ripple
+    var r = document.createElement('div');
+    r.className = 'ripple';
+    r.style.left = (x - 20) + 'px';
+    r.style.top = (y - 20) + 'px';
+    r.style.width = '40px';
+    r.style.height = '40px';
+    document.body.appendChild(r);
+    setTimeout(function() { r.remove(); }, 600);
+    setTimeout(function() { cursor.classList.remove('clicking'); }, 300);
+  }, 420);
+}
+
+// Screen actions - cursor choreography per screen
+var screenActions = {
+  's1': function() {
+    // Type email
+    setTimeout(function() {
+      var emailInput = document.getElementById('login-email');
+      var rect = emailInput.getBoundingClientRect();
+      clickAt(rect.left + rect.width/2, rect.top + rect.height/2);
+      emailInput.classList.add('focused');
+      var txt = 'trainer@ballymore.ie';
+      var i = 0;
+      var ti = setInterval(function() {
+        if (i <= txt.length) { emailInput.value = txt.substring(0,i); i++; }
+        else clearInterval(ti);
+      }, 60);
+    }, 800);
+    setTimeout(function() {
+      var passInput = document.getElementById('login-pass');
+      var rect = passInput.getBoundingClientRect();
+      clickAt(rect.left + rect.width/2, rect.top + rect.height/2);
+      document.getElementById('login-email').classList.remove('focused');
+      passInput.classList.add('focused');
+      var txt2 = '••••••••';
+      var j = 0;
+      var tj = setInterval(function() {
+        if (j <= txt2.length) { passInput.value = txt2.substring(0,j); j++; }
+        else clearInterval(tj);
+      }, 80);
+    }, 2200);
+    setTimeout(function() {
+      var btn = document.getElementById('login-btn');
+      var rect = btn.getBoundingClientRect();
+      clickAt(rect.left + rect.width/2, rect.top + rect.height/2);
+      document.getElementById('login-spinner').style.display = 'block';
+      document.getElementById('login-text').textContent = 'Logging in...';
+    }, 3800);
+  },
+  's2': function() {
+    setTimeout(function() {
+      var c = document.getElementById('racing-today-card');
+      var rect = c.getBoundingClientRect();
+      moveCursorTo(rect.left + rect.width/2, rect.top + 20, 500);
+    }, 600);
+    setTimeout(function() {
+      var r = document.getElementById('race-horse-1');
+      r.classList.add('highlight', 'pulsing');
+      var rect = r.getBoundingClientRect();
+      moveCursorTo(rect.left + rect.width/2, rect.top + rect.height/2, 500);
+    }, 1800);
+  },
+  's3': function() {
+    setTimeout(function() {
+      var h = document.getElementById('highlight-horse');
+      var rect = h.getBoundingClientRect();
+      clickAt(rect.left + 100, rect.top + rect.height/2);
+      h.classList.add('highlight', 'pulsing');
+    }, 1200);
+  },
+  's4': function() {
+    setTimeout(function() {
+      var rows = document.querySelectorAll('.eligible-row.yes');
+      if (rows[0]) {
+        var rect = rows[0].getBoundingClientRect();
+        moveCursorTo(rect.left + rect.width/2, rect.top + rect.height/2, 600);
+        rows[0].style.transform = 'scale(1.01)';
+      }
+    }, 1000);
+    setTimeout(function() {
+      var aiBox = document.querySelector('.card[style*="background:#f8fafb"]');
+      if (aiBox) {
+        var rect = aiBox.getBoundingClientRect();
+        moveCursorTo(rect.left + rect.width/2, rect.top + 20, 700);
+      }
+    }, 3500);
+  },
+  's5': function() {
+    setTimeout(function() {
+      var alert = document.getElementById('med-alert');
+      var rect = alert.getBoundingClientRect();
+      moveCursorTo(rect.left + rect.width/2, rect.top + rect.height/2, 500);
+      alert.style.background = 'rgba(192,57,43,0.14)';
+    }, 800);
+    setTimeout(function() {
+      var row = document.getElementById('med-row-1');
+      var dots = row.querySelectorAll('.med-dot');
+      if (dots[1]) {
+        var rect = dots[1].getBoundingClientRect();
+        clickAt(rect.left + rect.width/2, rect.top + rect.height/2);
+        dots[1].classList.add('given');
+        dots[1].style.background = 'var(--purple)';
+        dots[1].style.borderColor = 'var(--purple)';
+        dots[1].style.color = 'white';
+        dots[1].textContent = '✓';
+      }
+    }, 2500);
+  },
+  's6': function() {
+    setTimeout(function() {
+      var btn = document.getElementById('print-btn');
+      var rect = btn.getBoundingClientRect();
+      moveCursorTo(rect.left + rect.width/2, rect.top + rect.height/2, 500);
+      btn.style.background = 'var(--gold)';
+      btn.style.color = 'var(--navy)';
+    }, 1500);
+    setTimeout(function() {
+      var rows = document.querySelectorAll('.wb-row');
+      if (rows[0]) {
+        var rect = rows[0].getBoundingClientRect();
+        moveCursorTo(rect.left + 200, rect.top + rect.height/2, 600);
+      }
+    }, 3000);
+  },
+  's7': function() {
+    setTimeout(function() {
+      var card = document.getElementById('weight-card');
+      var rect = card.getBoundingClientRect();
+      moveCursorTo(rect.left + rect.width/2, rect.top + 40, 500);
+    }, 800);
+  },
+  's8': function() {
+    setTimeout(function() {
+      var input = document.getElementById('chat-input');
+      var rect = input.getBoundingClientRect();
+      clickAt(rect.left + 200, rect.top + rect.height/2);
+      var txt = 'Remind me to call owners about Leopardstown Thursday 9am';
+      var i = 0;
+      var ti = setInterval(function() {
+        if (i <= txt.length) { input.value = txt.substring(0,i); i++; }
+        else clearInterval(ti);
+      }, 40);
+    }, 1500);
+    setTimeout(function() {
+      var btn = document.getElementById('send-btn');
+      var rect = btn.getBoundingClientRect();
+      clickAt(rect.left + rect.width/2, rect.top + rect.height/2);
+      document.getElementById('user-msg2').style.display = 'block';
+      document.getElementById('ai-response2').style.display = 'block';
+      document.getElementById('chat-input').value = '';
+      var chat = document.getElementById('chat-area');
+      chat.scrollTop = chat.scrollHeight;
+    }, 4800);
+  },
+  's9': function() {
+    setTimeout(function() {
+      var btns = document.querySelectorAll('.course-btn');
+      if (btns[2]) {
+        var rect = btns[2].getBoundingClientRect();
+        clickAt(rect.left + rect.width/2, rect.top + rect.height/2);
+        selectCourse(btns[2], 'Galway', 94);
+      }
+    }, 1200);
+    setTimeout(function() {
+      var btns = document.querySelectorAll('.course-btn');
+      if (btns[4]) {
+        var rect = btns[4].getBoundingClientRect();
+        clickAt(rect.left + rect.width/2, rect.top + rect.height/2);
+        selectCourse(btns[4], 'Cheltenham', 312);
+      }
+    }, 3500);
+  },
+  's10': function() {
+    setTimeout(function() {
+      var btn = document.getElementById('wa-send-btn');
+      var rect = btn.getBoundingClientRect();
+      moveCursorTo(rect.left + rect.width/2, rect.top + rect.height/2, 600);
+    }, 1200);
+    setTimeout(function() {
+      var btn = document.getElementById('wa-send-btn');
+      var rect = btn.getBoundingClientRect();
+      clickAt(rect.left + rect.width/2, rect.top + rect.height/2);
+      btn.textContent = '✓ Sent!';
+      btn.style.background = 'var(--green)';
+      showToast('✓ WhatsApp sent to +353876543210');
+    }, 2500);
+  }
+};
+
+function selectCourse(btn, name, km) {
+  document.querySelectorAll('.course-btn').forEach(function(b) { b.classList.remove('active'); });
+  btn.classList.add('active');
+  var ret = km * 2;
+  var cost = (ret * 1.5).toFixed(0);
+  var total = (ret * 1.5 * 2).toFixed(0);
+  document.getElementById('travel-course').textContent = name;
+  document.getElementById('travel-km').textContent = km + ' km';
+  document.getElementById('travel-return').textContent = ret + ' km';
+  document.getElementById('travel-cost').textContent = '€' + cost;
+  document.getElementById('travel-total').textContent = '€' + total;
+}
+
+function showToast(msg) {
+  var t = document.getElementById('toast');
+  t.textContent = msg;
+  t.classList.add('show');
+  setTimeout(function() { t.classList.remove('show'); }, 3000);
+}
+
+function goTo(idx) {
+  // Clear current screen highlights
+  document.querySelectorAll('.highlight, .pulsing').forEach(function(el) {
+    el.classList.remove('highlight', 'pulsing');
+    el.style.transform = '';
+  });
+
+  var prev = document.getElementById(SCREENS[current].id);
+  if (prev) prev.classList.remove('active');
+
+  current = Math.max(0, Math.min(idx, SCREENS.length - 1));
+
+  var next = document.getElementById(SCREENS[current].id);
+  if (next) next.classList.add('active');
+
+  // Update dots
+  document.querySelectorAll('.step-dot').forEach(function(d, i) {
+    d.classList.toggle('active', i === current);
+  });
+
+  // Update label
+  document.getElementById('screen-label').textContent = (current+1) + ' / ' + SCREENS.length + ' — ' + SCREENS[current].label;
+
+  // Reset progress
+  clearInterval(progressTimer);
+  progressStart = Date.now();
+  progressDuration = SCREENS[current].duration;
+
+  if (playing) {
+    startProgress();
+    scheduleNext();
+  }
+
+  // Run screen actions
+  if (screenActions[SCREENS[current].id]) {
+    screenActions[SCREENS[current].id]();
+  }
+
+  // Move cursor to center of screen
+  var sw = document.getElementById('screen-wrap');
+  var rect = sw.getBoundingClientRect();
+  moveCursorTo(rect.left + rect.width/2, rect.top + rect.height/2, 300);
+
+  // Show sidebar briefly then collapse
+  var sidebars = document.querySelectorAll('#' + SCREENS[current].id + ' .app-sidebar');
+  sidebars.forEach(function(sb) {
+    sb.classList.remove('collapsed');
+  });
+  setTimeout(function() {
+    sidebars.forEach(function(sb) {
+      sb.classList.add('collapsed');
+    });
+  }, 1800);
+}
+
+function startProgress() {
+  clearInterval(progressTimer);
+  progressTimer = setInterval(function() {
+    var elapsed = Date.now() - progressStart;
+    var pct = Math.min((elapsed / progressDuration) * 100, 100);
+    document.getElementById('progress-bar').style.width = pct + '%';
+  }, 50);
+}
+
+function scheduleNext() {
+  clearTimeout(timer);
+  timer = setTimeout(function() {
+    if (current < SCREENS.length - 1) {
+      goTo(current + 1);
+    } else {
+      goTo(0);
+    }
+  }, SCREENS[current].duration);
+}
+
+function changeScreen(dir) {
+  goTo(current + dir);
+}
+
+function togglePlay() {
+  playing = !playing;
+  document.getElementById('play-btn').textContent = playing ? '⏸' : '▶';
+  if (playing) {
+    scheduleNext();
+    startProgress();
+  } else {
+    clearTimeout(timer);
+    clearInterval(progressTimer);
+  }
+}
+
+function seekProgress(e) {
+  var rect = e.currentTarget.getBoundingClientRect();
+  var pct = (e.clientX - rect.left) / rect.width;
+  var idx = Math.floor(pct * SCREENS.length);
+  goTo(Math.max(0, Math.min(idx, SCREENS.length - 1)));
+}
+
+// Init cursor position
+cursor.style.left = (window.innerWidth/2) + 'px';
+cursor.style.top = (window.innerHeight/2) + 'px';
+trail.style.left = (window.innerWidth/2) + 'px';
+trail.style.top = (window.innerHeight/2) + 'px';
+
+// Start
+goTo(0);
+</script>
+</body>
+</html>
