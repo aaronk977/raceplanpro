@@ -230,7 +230,6 @@ function RacedayPrint({ horses, entries, setEntries }) {
                 if (!displayName) return null;
                 var hg = entry.headgear || (horse && horse.headgear) || "";
                 return (
-                  <div key={entry.id} className="horse-row" style={{ display: "flex", alignItems: "flex-start", gap: 14, padding: "12px 0", borderBottom: "1px solid " + C.border }}>
                   <div key={entry.id} className="horse-row" style={{ display: "flex", alignItems: "center", gap: 14, padding: "10px 0", borderBottom: "1px solid " + C.cardOff }}>
                     <div className="venue-ref" style={{ minWidth: 100, textAlign: "center" }}>
                       {entry.raceRef ? <div style={{ fontSize: 48, fontWeight: 900, color: C.navy, lineHeight: 1 }}>{entry.raceRef}</div> : <div style={{ fontSize: 13, fontWeight: 700, color: C.textMid }}>{entry.venue}</div>}
