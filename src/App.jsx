@@ -48,6 +48,8 @@ function App() {
   const [password, setPassword] = useState("");
   const [authLoading, setAuthLoading] = useState(false);
   const [authError, setAuthError] = useState("");
+  var isMobileState = useState(typeof window !== "undefined" && window.innerWidth < 640);
+  var isMobile = isMobileState[0];
   const [appLoading, setAppLoading] = useState(true);
   const [tab, setTab] = useState("yard");
   const [settings, setSettings] = useState({ yardName: "", trainerName: "", weighDay: "Monday", notifyContacts: [], ownerContacts: [], tier: "Professional", costPeptizole: 18, costAntepsin: 25, costAntibiotics: 15 });
@@ -482,10 +484,6 @@ function App() {
     />
   );
 
-
-  // Mobile detection
-  var isMobileState = useState(typeof window !== "undefined" && window.innerWidth < 640);
-  var isMobile = isMobileState[0]; var setIsMobile = isMobileState[1];
 
   return (
     <div className="app-wrapper" style={{ minHeight: "100vh", background: C.bg, fontFamily: "Inter, Helvetica Neue, sans-serif" }}>
