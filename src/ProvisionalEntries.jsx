@@ -269,27 +269,54 @@ function ProvisionalEntries({ horses, setHorses, settings }) {
         );
       })}
 
-      {allProvisional.length > 0 && (
-        <div style={{ background: C.card, border: "1px solid " + C.border, borderRadius: 12, padding: "14px 18px", marginTop: 20 }}>
-          <div style={{ fontSize: 13, fontWeight: 700, color: C.text, marginBottom: 12 }}>All Provisional Targets — by date</div>
-          {allProvisional.filter(function(e) { return e.date; }).sort(function(a, b) { return new Date(a.date) - new Date(b.date); }).map(function(e, i) {
-            return (
-              <div key={i} style={{ display: "flex", alignItems: "center", gap: 12, padding: "8px 0", borderBottom: "1px solid " + C.border }}>
-                <Silk silk={e.horse.silk} size={24} />
-                <div style={{ flex: 1, fontSize: 13 }}>
-                  <span style={{ fontWeight: 700, color: C.text }}>{e.horse.name}</span>
-                  <span style={{ color: C.textMid, marginLeft: 8 }}>{e.raceName + " · " + e.venue}</span>
-                  {e.raceRef && <span style={{ color: C.textDim, marginLeft: 6, fontSize: 11 }}>{e.raceRef}</span>}
+        {allProvisional.length > 0 && (
+          <div style={{ background: C.card, border: "1px solid " + C.border, borderRadius: 12, padding: "14px 18px", marginTop: 20 }}>
+            <div style={{ fontSize: 13, fontWeight: 700, color: C.text, marginBottom: 12 }}>All Provisional Targets</div>
+            {allProvisional.filter(function(e) { return e.date; }).sort(function(a, b) { return new Date(a.date) - new Date(b.date); }).map(function(e, i) {
+              var rawMeds = (settings && settings.medications) || [
+                { name: "Peptizole", courseDays: 12, withdrawalDays: 4 },
+                { name: "Antepsin", courseDays: 12, withdrawalDays: 1 }
+              ];
+              var raceDate = new Date(e.date + "T00:00:00");
+              var fmt = function(d) { return d.toLocaleDateString("en-IE", { day: "numeric", month: "short" }); };
+              var today3 = new Date(); today3.setHours(0,0,0,0);
+              var dLeft = daysUntil(e.date);
+              return (
+                <div key={i} style={{ background: C.cardOff, border: "1px solid " + C.border, borderRadius: 10, padding: "12px 14px", marginBottom: 8 }}>
+                  <div style={{ display: "flex", alignItems: "center", gap: 12, marginBottom: 8 }}>
+                    <Silk silk={e.horse.silk} size={26} />
+                    <div style={{ flex: 1 }}>
+                      <span style={{ fontWeight: 700, fontSize: 14, color: C.text }}>{e.horse.name}</span>
+                      <span style={{ color: C.textMid, marginLeft: 8, fontSize: 12 }}>{e.raceName + " · " + e.venue}</span>
+                    </div>
+                    <div style={{ textAlign: "right" }}>
+                      <div style={{ fontSize: 13, fontWeight: 700, color: C.navy }}>{fmt(raceDate)}</div>
+                      <div style={{ fontSize: 11, fontWeight: 700, color: dLeft <= 16 ? C.red : dLeft <= 30 ? C.amber : C.green }}>{dLeft > 0 ? dLeft + "d away" : "Past"}</div>
+                    </div>
+                  </div>
+                  <div style={{ display: "flex", flexWrap: "wrap", gap: 6 }}>
+                    {rawMeds.filter(function(m) { return m.courseDays; }).map(function(med) {
+                      var wDays = med.withdrawalDays != null ? parseInt(med.withdrawalDays) : 4;
+                      var cDays = parseInt(med.courseDays) || 12;
+                      var startDate = new Date(raceDate); startDate.setDate(startDate.getDate() - (wDays + cDays));
+                      var finishDate = new Date(raceDate); finishDate.setDate(finishDate.getDate() - wDays);
+                      var urgent = startDate <= today3;
+                      return (
+                        <div key={med.name || med.label} style={{ background: urgent ? C.red + "10" : C.card, border: "1px solid " + (urgent ? C.red + "40" : C.border), borderRadius: 8, padding: "5px 10px", fontSize: 12 }}>
+                          <span style={{ fontWeight: 700, color: urgent ? C.red : C.navy }}>{med.name || med.label}: </span>
+                          <span style={{ color: urgent ? C.red : C.green }}>{urgent ? "Start NOW" : "Start " + fmt(startDate)}</span>
+                          <span style={{ color: C.textMid }}> · </span>
+                          <span style={{ color: C.red }}>Finish {fmt(finishDate)}</span>
+                        </div>
+                      );
+                    })}
+                  </div>
                 </div>
-                <span style={{ fontSize: 12, color: C.textMid }}>{new Date(e.date).toLocaleDateString("en-IE", { day: "numeric", month: "short" })}</span>
-                <span style={{ fontSize: 12, fontWeight: 700, color: daysUntil(e.date) <= 16 ? C.amber : C.textMid }}>
-                  {daysUntil(e.date) > 0 ? daysUntil(e.date) + "d" : "past"}
-                </span>
-              </div>
-            );
-          })}
-        </div>
-      )}
+              );
+            })}
+          </div>
+        )}
+      </div>
     </div>
   );
 }
