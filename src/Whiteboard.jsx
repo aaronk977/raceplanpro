@@ -200,7 +200,63 @@ function RacedayPrint({ horses, entries, setEntries }) {
           </label>
           <Btn onClick={function() { setShowAdd(true); }}>+ Add Entry</Btn>
           <Btn variant="ghost" onClick={function() { if (window.confirm("Clear all entries?")) setEntries(function() { return []; }); }} style={{ color: C.red, borderColor: C.red, fontSize: 12 }}>Clear All</Btn>
-          <Btn variant="gold" onClick={function() { window.print(); }}>Print</Btn>
+          <Btn variant="gold" onClick={function() {
+            var style = [
+              "@page { size: A4; margin: 1cm; }",
+              "body { font-family: Arial, Helvetica, sans-serif; margin: 0; padding: 16px; background: white; color: black; }",
+              ".day-block { margin-bottom: 32pt; page-break-inside: avoid; }",
+              ".day-header { border-bottom: 4pt solid #000; padding-bottom: 10pt; margin-bottom: 14pt; }",
+              ".day-name { font-size: 52pt; font-weight: 900; line-height: 1; text-transform: uppercase; color: #000; }",
+              ".day-date { font-size: 26pt; font-weight: 700; color: #000; margin-top: 4pt; }",
+              ".meeting-num { font-size: 16pt; color: #555; margin-top: 4pt; }",
+              ".horse-row { display: flex; align-items: center; gap: 14pt; border-bottom: 1.5pt solid #ccc; padding: 10pt 0; }",
+              ".race-ref { min-width: 70pt; text-align: center; font-size: 42pt; font-weight: 900; color: #000; line-height: 1; }",
+              ".race-venue { font-size: 9pt; color: #666; text-align: center; }",
+              ".race-time { min-width: 70pt; font-size: 20pt; font-weight: 700; color: #000; }",
+              ".horse-info { flex: 1; }",
+              ".horse-name { font-size: 30pt; font-weight: 900; text-transform: uppercase; color: #000; line-height: 1.1; }",
+              ".horse-meta { font-size: 12pt; color: #444; margin-top: 4pt; }"
+            ].join(" ");
+            var grouped2 = {};
+            entries.forEach(function(e) { var d = e.date || "no-date"; if (!grouped2[d]) grouped2[d] = []; grouped2[d].push(e); });
+            var sortedD = Object.keys(grouped2).sort();
+            var body2 = sortedD.map(function(date) {
+              var dObj2 = new Date(date + "T12:00:00");
+              var dName = isNaN(dObj2.getTime()) ? "" : dObj2.toLocaleDateString("en-IE", { weekday: "long" }).toUpperCase();
+              var dStr = isNaN(dObj2.getTime()) ? date : dObj2.toLocaleDateString("en-IE", { day: "numeric", month: "long", year: "numeric" });
+              var dayEnts = grouped2[date];
+              var mtgE = dayEnts.find(function(e) { return e.meetingNo; });
+              var mtgN = mtgE ? mtgE.meetingNo.toString().split("").filter(function(c){return c>="0"&&c<="9";}).join("") : "";
+              var venue0 = dayEnts[0] ? (dayEnts[0].venue || "").toUpperCase() : "";
+              var rows = dayEnts.map(function(entry) {
+                var h = horses.find(function(x) { return x.id === entry.horseId; });
+                var name = h ? h.name : (entry.horseName || "");
+                if (!name) return "";
+                var mtgS = (entry.meetingNo || "").toString();
+                var mtgNs = mtgS.split("").filter(function(c){return c>="0"&&c<="9";}).join("");
+                var ref = entry.raceRef || (mtgS.length > 0 && isNaN(parseInt(mtgS[mtgS.length-1])) ? mtgS[mtgS.length-1] : "");
+                var hg = entry.headgear || (h && h.headgear) || "";
+                var jock = entry.jockey || (h && h.jockey) || "";
+                var ballot = entry.ballotPosition ? "Ballot " + entry.ballotPosition : "";
+                return "<div class='horse-row'>" +
+                  "<div><div class='race-ref'>" + ref + "</div><div class='race-venue'>" + (entry.venue || "") + "</div></div>" +
+                  "<div class='race-time'>" + (entry.raceTime || "") + "</div>" +
+                  "<div class='horse-info'><div class='horse-name'>" + name.toUpperCase() + "</div>" +
+                  "<div class='horse-meta'>" + [hg, jock, ballot].filter(Boolean).join(" | ") + "</div></div>" +
+                  "</div>";
+              }).join("");
+              return "<div class='day-block'><div class='day-header'>" +
+                "<div class='day-name'>" + dName + (venue0 ? " " + venue0 : "") + "</div>" +
+                "<div class='day-date'>" + dStr + "</div>" +
+                (mtgN ? "<div class='meeting-num'>Meeting " + mtgN + "</div>" : "") +
+                "</div>" + rows + "</div>";
+            }).join("");
+            var win = window.open("", "_blank");
+            win.document.write("<html><head><title>RacePlan Pro - Whiteboard</title><style>" + style + "</style></head><body>" + body2 + "</body></html>");
+            win.document.close();
+            win.focus();
+            setTimeout(function() { win.print(); }, 600);
+          }}>Print / PDF</Btn>
         </div>
       </div>
 
