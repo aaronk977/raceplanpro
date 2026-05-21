@@ -447,6 +447,23 @@ function App() {
             onChange={function(e) { setPassword(e.target.value); }}
             onKeyDown={function(e) { if (e.key === "Enter") authMode === "login" ? handleLogin() : handleSignup(); }}
             style={{ width: "100%", padding: "11px 14px", marginBottom: 16, background: C.cardOff, border: "1px solid " + C.border, borderRadius: 10, fontSize: 14, color: C.text }} />
+          {authMode === "login" && (
+            <div style={{ display: "flex", alignItems: "center", justifyContent: "space-between", marginBottom: 12 }}>
+              <label style={{ display: "flex", alignItems: "center", gap: 6, fontSize: 13, color: C.textMid, cursor: "pointer" }}>
+                <input type="checkbox" checked={rememberMe} onChange={function(e) { setRememberMe(e.target.checked); }} style={{ cursor: "pointer" }} />
+                Remember me
+              </label>
+              <button onClick={handleForgotPassword} disabled={authLoading}
+                style={{ background: "none", border: "none", color: C.navy, fontSize: 13, cursor: "pointer", textDecoration: "underline", padding: 0, fontWeight: 600 }}>
+                Forgot password?
+              </button>
+            </div>
+          )}
+          {resetSent && (
+            <div style={{ background: "#f0fdf4", border: "1px solid #86efac", borderRadius: 8, padding: "10px 12px", fontSize: 13, color: "#166534", marginBottom: 10, textAlign: "center" }}>
+              Password reset email sent. Check your inbox.
+            </div>
+          )}
           {authError && <div style={{ fontSize: 13, color: C.red, marginBottom: 12, fontWeight: 600 }}>{authError}</div>}
           <button onClick={function() { authMode === "login" ? handleLogin() : handleSignup(); }}
             style={{ width: "100%", padding: "12px", background: C.navy, color: "#fff", border: "none", borderRadius: 10, fontSize: 15, fontWeight: 800, cursor: "pointer" }}>
