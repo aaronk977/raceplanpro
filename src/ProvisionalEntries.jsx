@@ -82,7 +82,7 @@ function ProvisionalEntries({ horses, setHorses, settings }) {
       if (!med.courseDays) continue;
       var wDays = med.withdrawalDays != null ? parseInt(med.withdrawalDays) : 4;
       var cDays = parseInt(med.courseDays) || 12;
-      var startDate = new Date(raceDate); startDate.setDate(startDate.getDate() - (wDays + cDays));
+      var startDate = new Date(raceDate); startDate.setDate(startDate.getDate() - (wDays + cDays - 1));
       var finishDate = new Date(raceDate); finishDate.setDate(finishDate.getDate() - wDays);
       var urgent = startDate <= today3;
       var startStr = urgent ? "Start NOW" : "Start " + startDate.toLocaleDateString("en-IE", { day: "numeric", month: "short" });
