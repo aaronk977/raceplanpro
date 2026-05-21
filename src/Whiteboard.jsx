@@ -224,7 +224,7 @@ function RacedayPrint({ horses, entries, setEntries }) {
                 {(function() {
                   var mtgEntry = dayEntries.find(function(e) { return e.meetingNo; });
                   if (!mtgEntry) return null;
-                  var mtgNum = mtgEntry.meetingNo.toString().replace(/[^0-9]/g, "");
+                  var mtgNum = mtgEntry.meetingNo.toString().split("").filter(function(c){return c>="0"&&c<="9";}).join("");
                   return mtgNum ? <div style={{ fontSize: 28, fontWeight: 800, color: C.textMid, marginTop: 6 }}>{"Meeting " + mtgNum}</div> : null;
                 })()}
               </div>
@@ -238,7 +238,7 @@ function RacedayPrint({ horses, entries, setEntries }) {
                     <div className="venue-ref" style={{ minWidth: 130, fontSize: 13, color: C.textMid, fontWeight: 600 }}>
                     <div className="venue-ref" style={{ minWidth: 140, fontWeight: 600 }}>
                       <div style={{ fontSize: 14, fontWeight: 800, color: C.navy }}>{entry.venue}</div>
-                      {entry.meetingNo && <div style={{ fontSize: 12, color: C.textMid }}>{"Mtg " + entry.meetingNo.toString().replace(/[^0-9]/g, "")}</div>}
+                      {entry.meetingNo && <div style={{ fontSize: 12, color: C.textMid }}>{"Mtg " + entry.meetingNo.toString().split("").filter(function(c){return c>="0"&&c<="9";}).join("")}</div>}
                       {entry.raceRef && <div style={{ fontSize: 28, fontWeight: 900, color: C.navy, lineHeight: 1, marginTop: 2 }}>{entry.raceRef}</div>}
                     <div className="race-time" style={{ minWidth: 80, fontSize: 14, fontWeight: 700, color: C.navy }}>{entry.raceTime}</div>
                     <div style={{ flex: 1 }}>
