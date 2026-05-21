@@ -227,6 +227,7 @@ function RacedayPrint({ horses, entries, setEntries }) {
                   var mtgNum = mtgEntry.meetingNo.toString().replace(/[^0-9]/g, "");
                   return mtgNum ? <div style={{ fontSize: 28, fontWeight: 800, color: C.textMid, marginTop: 6 }}>{"Meeting " + mtgNum}</div> : null;
                 })()}
+              </div>
               {dayEntries.map(function(entry) {
                 var horse = horses.find(function(h) { return h.id === entry.horseId; });
                 var displayName = horse ? horse.name : entry.horseName;
