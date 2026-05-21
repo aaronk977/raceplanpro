@@ -6,7 +6,8 @@ var PRINT_STYLE = [
   "  * { -webkit-print-color-adjust: exact !important; print-color-adjust: exact !important; color-adjust: exact !important; }",
   "  body * { visibility: hidden !important; }",
   "  #print-area, #print-area * { visibility: visible !important; }",
-  "  #print-area { position: fixed; left: 0; top: 0; width: 100%; padding: 16px 24px; background: white; }",
+  "  #print-area { position: static !important; width: 100% !important; padding: 8px 16px !important; background: white !important; }",
+  "  #print-area > div { page-break-inside: avoid; margin-bottom: 20pt; }",
   "  #print-area .horse-row { border-bottom: 2.5px solid #222 !important; padding: 14px 0 !important; display: flex; align-items: center; gap: 16px; }",
   "  #print-area .horse-name { font-size: 26pt !important; font-weight: 900 !important; color: #000 !important; text-transform: uppercase !important; letter-spacing: 0.5pt !important; line-height: 1.1 !important; }",
   "  #print-area .badge-hg { font-size: 16pt !important; padding: 4pt 14pt !important; background: #6d3fc0 !important; color: #fff !important; border-radius: 6pt !important; font-weight: 800 !important; margin-left: 10pt !important; }",
@@ -223,9 +224,9 @@ function RacedayPrint({ horses, entries, setEntries }) {
                 {(function() {
                   var mtgEntry = dayEntries.find(function(e) { return e.meetingNo; });
                   if (!mtgEntry) return null;
-                  return <div style={{ fontSize: 28, fontWeight: 800, color: C.textMid, marginTop: 6 }}>{"Meeting " + mtgEntry.meetingNo}</div>;
+                  var mtgNum = mtgEntry.meetingNo.toString().replace(/[^0-9]/g, "");
+                  return mtgNum ? <div style={{ fontSize: 28, fontWeight: 800, color: C.textMid, marginTop: 6 }}>{"Meeting " + mtgNum}</div> : null;
                 })()}
-              </div>
               {dayEntries.map(function(entry) {
                 var horse = horses.find(function(h) { return h.id === entry.horseId; });
                 var displayName = horse ? horse.name : entry.horseName;
