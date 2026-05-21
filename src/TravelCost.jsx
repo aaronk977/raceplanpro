@@ -177,8 +177,8 @@ function TravelCost({ settings }) {
     var coords = courses[selected];
     var km = haversine(yardCoords[0], yardCoords[1], coords[0], coords[1]);
     var totalKm = returnTrip ? km * 2 : km;
-    var costPerHorse = Math.round(totalKm * ratePerKm * 100) / 100;
-    var totalCost = Math.round(costPerHorse * numHorses * 100) / 100;
+    var totalCost = Math.round(totalKm * ratePerKm * 100) / 100;
+    var costPerHorse = Math.round(totalCost / numHorses * 100) / 100;
     calcResult = { km: km, totalKm: totalKm, costPerHorse: costPerHorse, totalCost: totalCost };
   }
 
@@ -283,7 +283,7 @@ function TravelCost({ settings }) {
               </div>
               {numHorses > 1 && (
                 <div style={{ background: C.green + "15", border: "1px solid " + C.green + "40", borderRadius: 10, padding: "14px 16px", textAlign: "center" }}>
-                  <div style={{ fontSize: 13, color: C.textMid, marginBottom: 4 }}>{numHorses + " horses × " + symbol + calcResult.costPerHorse.toFixed(2)}</div>
+                  <div style={{ fontSize: 13, color: C.textMid, marginBottom: 4 }}>{"Total cost " + symbol + calcResult.totalCost.toFixed(2) + " split " + numHorses + " ways"}</div>
                   <div style={{ fontSize: 26, fontWeight: 900, color: C.green }}>{symbol + calcResult.totalCost.toFixed(2)}</div>
                   <div style={{ fontSize: 11, color: C.textMid }}>total travel charge</div>
                 </div>
