@@ -126,7 +126,7 @@ function LandingPage({ onLogin }) {
                   ▶
                 </div>
                 <div style={{ fontSize: 18, fontWeight: 800, color: WHITE, marginBottom: 8 }}>Watch the full demo</div>
-                <div style={{ fontSize: 14, color: "rgba(255,255,255,0.45)" }}>2 minutes · All features · Interactive</div>
+                <div style={{ fontSize: 14, color: "rgba(255,255,255,0.65)" }}>2 minutes · All features · Interactive</div>
                 <div style={{ display: "grid", gridTemplateColumns: "repeat(5, 1fr)", gap: 8, marginTop: 32, maxWidth: 400 }}>
                   {["Login", "Race Planner", "Medications", "Whiteboard", "AI Assistant"].map(function(f) {
                     return <div key={f} style={{ background: "rgba(255,255,255,0.06)", borderRadius: 6, padding: "6px 4px", fontSize: 10, color: "rgba(255,255,255,0.5)", textAlign: "center" }}>{f}</div>;
@@ -154,9 +154,9 @@ function LandingPage({ onLogin }) {
             ].map(function(stat, i) {
               return (
                 <div key={i} style={{ background: "rgba(255,255,255,0.05)", border: "1px solid rgba(255,255,255,0.08)", borderRadius: 14, padding: "24px 16px" }}>
-                  <div style={{ fontSize: 36, fontWeight: 900, color: stat.color, lineHeight: 1 }}>{stat.number}</div>
+                  <div style={{ fontSize: 36, fontWeight: 900, color: stat.color, lineHeight: 1, textShadow: "0 0 20px currentColor" }}>{stat.number}</div>
                   <div style={{ fontSize: 14, color: WHITE, fontWeight: 700, margin: "6px 0 4px" }}>{stat.unit}</div>
-                  <div style={{ fontSize: 12, color: "rgba(255,255,255,0.45)", lineHeight: 1.5 }}>{stat.sub}</div>
+                  <div style={{ fontSize: 12, color: "rgba(255,255,255,0.65)", lineHeight: 1.5 }}>{stat.sub}</div>
                 </div>
               );
             })}
