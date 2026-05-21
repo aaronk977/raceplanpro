@@ -217,6 +217,7 @@ function RacedayPrint({ horses, entries, setEntries }) {
           var venue = dayEntries[0] ? (dayEntries[0].venue || "").toUpperCase() : "";
           var dayName = (isNaN(dObj.getTime()) ? "" : dObj.toLocaleDateString("en-IE", { weekday: "long" }).toUpperCase()) + (venue ? " " + venue : "");
           var mtgEntry = dayEntries.find(function(e) { return e.meetingNo; });
+          var dateStr = isNaN(dObj.getTime()) ? date : dObj.toLocaleDateString("en-IE", { day: "numeric", month: "long", year: "numeric" });
           var mtgNum = mtgEntry ? mtgEntry.meetingNo.toString().split("").filter(function(c){return c>="0"&&c<="9";}).join("") : "";
           return (
             <div key={date} style={{ background: C.card, border: "1px solid " + C.border, borderRadius: 12, padding: "18px 20px", marginBottom: 16 }}>
