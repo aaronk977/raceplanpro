@@ -195,7 +195,7 @@ function YardAssistant({ horses, setHorses, weights, medLogs, setMedLogs, remind
       "Categories: health, gallop, racing, farrier, general.",
       "Match horse names loosely — if someone says Butch just match Butch Cassidy etc.",
       "If no action needed, just respond normally without ACTIONS.",
-      "MEDICATION TIMING: To run in a race, horse must FINISH medication at least [withdrawalDays] days before. Course takes [courseDays] days. So START = race date minus (courseDays + withdrawalDays). FINISH = race date minus withdrawalDays. E.g. Peptizole 12d course 4d withdrawal: for a race on 6 Jun, FINISH by 2 Jun, START by 21 May. Never say start 3-4 days before - that is completely wrong.",
+      "MEDICATION TIMING: To run in a race, horse must FINISH medication at least [withdrawalDays] days before. Course takes [courseDays] days. So START = race date minus (courseDays + withdrawalDays - 1). FINISH = race date minus withdrawalDays. E.g. Peptizole 12d course 4d withdrawal: for a race on 6 Jun, FINISH by 2 Jun, START by 22 May (inclusive counting - day 1 of course counts as the start day). Never say start 3-4 days before - that is completely wrong.",
       "Be brief and practical."
     ].join(" ");
   }
