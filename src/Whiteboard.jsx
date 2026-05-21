@@ -232,12 +232,12 @@ function RacedayPrint({ horses, entries, setEntries }) {
                 var hg = entry.headgear || (horse && horse.headgear) || "";
                 var mtgStr = (entry.meetingNo || "").toString();
                 var mtgNums = mtgStr.split("").filter(function(c){return c>="0"&&c<="9";}).join("");
-                var raceRef = entry.raceRef || mtgStr.replace(mtgNums, "") || "";
+                var raceRef = entry.raceRef || (mtgStr.length > 0 && isNaN(parseInt(mtgStr[mtgStr.length-1])) ? mtgStr[mtgStr.length-1] : "");
                 return (
                   <div key={entry.id} className="horse-row" style={{ display: "flex", alignItems: "center", gap: 14, padding: "10px 0", borderBottom: "1px solid " + C.cardOff }}>
                     <div className="venue-ref" style={{ minWidth: 100, textAlign: "center" }}>
                       {raceRef ? <div style={{ fontSize: 48, fontWeight: 900, color: C.navy, lineHeight: 1 }}>{raceRef}</div> : null}
-                      {entry.raceRef && <div style={{ fontSize: 11, color: C.textMid, marginTop: 2 }}>{entry.venue}</div>}
+                      <div style={{ fontSize: 11, color: C.textMid, marginTop: 2 }}>{entry.venue}</div>
                     </div>
                     <div className="race-time" style={{ minWidth: 80, fontSize: 14, fontWeight: 700, color: C.navy }}>{entry.raceTime}</div>
                     <div style={{ flex: 1 }}>
