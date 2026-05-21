@@ -2,25 +2,26 @@ import React, { useState } from "react"; // v2
 import { Btn, Silk, C } from "./shared";
 
 var PRINT_STYLE = [
-  "@media print {",
-  "  * { -webkit-print-color-adjust: exact !important; print-color-adjust: exact !important; color-adjust: exact !important; }",
-  "  body * { visibility: hidden !important; }",
-  "  #print-area, #print-area * { visibility: visible !important; }",
-  "  #print-area { position: static !important; width: 100% !important; padding: 8px 16px !important; background: white !important; }",
-  "  #print-area > div { page-break-inside: avoid; margin-bottom: 20pt; }",
-  "  #print-area .horse-row { border-bottom: 2.5px solid #222 !important; padding: 14px 0 !important; display: flex; align-items: center; gap: 16px; }",
-  "  #print-area .horse-name { font-size: 26pt !important; font-weight: 900 !important; color: #000 !important; text-transform: uppercase !important; letter-spacing: 0.5pt !important; line-height: 1.1 !important; }",
-  "  #print-area .badge-hg { font-size: 16pt !important; padding: 4pt 14pt !important; background: #6d3fc0 !important; color: #fff !important; border-radius: 6pt !important; font-weight: 800 !important; margin-left: 10pt !important; }",
-  "  #print-area .badge-ballot { font-size: 16pt !important; padding: 4pt 14pt !important; background: #d97706 !important; color: #fff !important; border-radius: 6pt !important; font-weight: 800 !important; margin-left: 6pt !important; }",
-  "  #print-area .meeting-header { font-size: 20pt !important; font-weight: 900 !important; color: #000 !important; border-bottom: 3px solid #000 !important; padding-bottom: 8pt !important; margin-bottom: 8pt !important; text-transform: uppercase !important; letter-spacing: 1pt !important; }",
-  "  #print-area .race-time { font-size: 18pt !important; font-weight: 700 !important; color: #000 !important; min-width: 80pt !important; }",
-  "  #print-area .venue-ref { min-width: 110pt !important; }",
-  "  #print-area .venue-ref div:first-child { font-size: 14pt !important; color: #000 !important; font-weight: 800 !important; }",
-  "  #print-area .venue-ref div:nth-child(2) { font-size: 11pt !important; color: #555 !important; }",
-  "  #print-area .venue-ref div:nth-child(3) { font-size: 28pt !important; color: #000 !important; font-weight: 900 !important; line-height: 1 !important; }",
-  "  #print-area .jockey-line { font-size: 13pt !important; color: #444 !important; margin-top: 3pt !important; }",
-  "  @page { margin: 1.2cm; size: A4; }",
-  "}"
+"@media print {"
+"  * { -webkit-print-color-adjust: exact !important; print-color-adjust: exact !important; }"
+"  body > *:not(#print-area) { display: none !important; }"
+"  #print-area { display: block !important; position: static !important; width: 100% !important; padding: 8px 16px !important; background: white !important; }"
+"  #print-area > div { page-break-inside: avoid !important; margin-bottom: 24pt !important; border: none !important; box-shadow: none !important; border-radius: 0 !important; }"
+"  #print-area .horse-row { border-bottom: 2pt solid #222 !important; padding: 12pt 0 !important; display: flex !important; align-items: center !important; }"
+"  #print-area .venue-ref { min-width: 90pt !important; text-align: center !important; }"
+"  #print-area .venue-ref div:first-child { font-size: 36pt !important; font-weight: 900 !important; color: #000 !important; line-height: 1 !important; }"
+"  #print-area .venue-ref div:last-child { font-size: 9pt !important; color: #555 !important; }"
+"  #print-area .race-time { font-size: 18pt !important; font-weight: 700 !important; color: #000 !important; min-width: 70pt !important; }"
+"  #print-area .horse-name { font-size: 26pt !important; font-weight: 900 !important; color: #000 !important; text-transform: uppercase !important; }"
+"  #print-area .badge-hg { font-size: 14pt !important; padding: 3pt 10pt !important; }"
+"  #print-area .badge-ballot { font-size: 14pt !important; padding: 3pt 10pt !important; }"
+"  #print-area .jockey-line { font-size: 12pt !important; color: #444 !important; }"
+"  #print-area .meeting-header div:first-child { font-size: 48pt !important; font-weight: 900 !important; line-height: 1 !important; }"
+"  #print-area .meeting-header div:nth-child(2) { font-size: 24pt !important; font-weight: 700 !important; }"
+"  #print-area .meeting-header div:nth-child(3) { font-size: 16pt !important; color: #666 !important; }"
+"  button { display: none !important; }"
+"  @page { margin: 1cm; size: A4; }"
+"}"
 ].join(" ");
 
 function RacedayPrint({ horses, entries, setEntries }) {
@@ -229,10 +230,13 @@ function RacedayPrint({ horses, entries, setEntries }) {
                 var displayName = horse ? horse.name : entry.horseName;
                 if (!displayName) return null;
                 var hg = entry.headgear || (horse && horse.headgear) || "";
+                var mtgStr = (entry.meetingNo || "").toString();
+                var mtgNums = mtgStr.split("").filter(function(c){return c>="0"&&c<="9";}).join("");
+                var raceRef = entry.raceRef || mtgStr.replace(mtgNums, "") || "";
                 return (
                   <div key={entry.id} className="horse-row" style={{ display: "flex", alignItems: "center", gap: 14, padding: "10px 0", borderBottom: "1px solid " + C.cardOff }}>
                     <div className="venue-ref" style={{ minWidth: 100, textAlign: "center" }}>
-                      {entry.raceRef ? <div style={{ fontSize: 48, fontWeight: 900, color: C.navy, lineHeight: 1 }}>{entry.raceRef}</div> : <div style={{ fontSize: 13, fontWeight: 700, color: C.textMid }}>{entry.venue}</div>}
+                      {raceRef ? <div style={{ fontSize: 48, fontWeight: 900, color: C.navy, lineHeight: 1 }}>{raceRef}</div> : null}
                       {entry.raceRef && <div style={{ fontSize: 11, color: C.textMid, marginTop: 2 }}>{entry.venue}</div>}
                     </div>
                     <div className="race-time" style={{ minWidth: 80, fontSize: 14, fontWeight: 700, color: C.navy }}>{entry.raceTime}</div>
