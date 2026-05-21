@@ -139,7 +139,7 @@ function LandingPage({ onLogin }) {
       </div>
 
       {/* THE NUMBERS */}
-      <div style={{ background: '#f5f7fa', padding: "70px 24px" }}>
+      <div style={{ background: NAVY, padding: "70px 24px" }}>
         <div style={{ maxWidth: 860, margin: "0 auto", textAlign: "center" }}>
           <h2 style={{ fontSize: "clamp(24px, 4vw, 38px)", fontWeight: 900, color: WHITE, marginBottom: 12 }}>The numbers that matter</h2>
           <p style={{ color: "rgba(255,255,255,0.55)", fontSize: 15, marginBottom: 50 }}>Racing is a business. Here is what the admin problem actually costs.</p>
