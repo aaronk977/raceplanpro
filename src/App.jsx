@@ -12,6 +12,7 @@ import StaffNotify from "./StaffNotify";
 import YardSettings from "./YardSettings";
 import LandingPage from "./LandingPage";
 import TravelCost from "./TravelCost";
+import Trotters from "./Trotters";
 import WeightsTracker from "./WeightsTracker";
 import YardAssistant from "./YardAssistant";
 import ContentScheduler from "./ContentScheduler";
@@ -28,13 +29,13 @@ try { if (SUPABASE_URL && SUPABASE_ANON_KEY) supabase = createClient(SUPABASE_UR
 const globalCSS = ".desktop-only { display: flex !important; } * { box-sizing: border-box; margin: 0; padding: 0; } body { font-family: Inter, Helvetica Neue, sans-serif; } button:hover { opacity: 0.88; } input:focus, select:focus { outline: none; } ::-webkit-scrollbar { width: 4px; } ::-webkit-scrollbar-thumb { background: #b8c8da; border-radius: 2px; } @media print { body * { visibility: hidden; } #print-area, #print-area * { visibility: visible; } #print-area { position: absolute; left: 0; top: 0; } } @media (max-width: 767px) { .desktop-only { display: none !important; } html, body { overflow-x: hidden; overflow-y: scroll !important; -webkit-overflow-scrolling: touch; height: auto !important; } } @media (min-width: 768px) { .app-wrapper { height: 100vh; overflow: hidden; } .main-content { overflow-y: auto; height: calc(100vh - 56px); } }";
 
 var ROLE_TABS = {
-  "Trainer":           ["yard","planner","provisional","meds","whiteboard","movements","owners","staff","weights","assistant","content","summary","reminders","procurement","travel","settings"],
+  "Trainer":           ["yard","planner","provisional","meds","whiteboard","movements","owners","staff","weights","trotters","assistant","content","summary","reminders","procurement","travel","settings"],
   "Secretary":         ["yard","planner","provisional","meds","whiteboard","movements","owners","staff","weights","assistant","content","summary","reminders","procurement","travel","settings"],
-  "Head Lad":          ["yard","planner","provisional","meds","whiteboard","movements","owners","staff","weights","assistant","content","summary","reminders","procurement","travel","settings"],
-  "Head Girl":         ["yard","planner","provisional","meds","whiteboard","movements","owners","staff","weights","assistant","content","summary","reminders","procurement","travel","settings"],
-  "Assistant Trainer": ["yard","planner","provisional","meds","whiteboard","movements","owners","staff","weights","assistant","content","summary","reminders","procurement","travel","settings"],
+  "Head Lad":          ["yard","planner","provisional","meds","whiteboard","movements","owners","staff","weights","trotters","assistant","content","summary","reminders","procurement","travel","settings"],
+  "Head Girl":         ["yard","planner","provisional","meds","whiteboard","movements","owners","staff","weights","trotters","assistant","content","summary","reminders","procurement","travel","settings"],
+  "Assistant Trainer": ["yard","planner","provisional","meds","whiteboard","movements","owners","staff","weights","trotters","assistant","content","summary","reminders","procurement","travel","settings"],
   "Staff":             ["meds","staff","weights","movements","reminders","procurement"],
-  "Vet":               ["yard","meds","movements","weights","summary"],
+  "Vet":               ["yard","meds","movements","weights","trotters","summary"],
   "Owner":             ["owners","whiteboard"]
 };
 
@@ -408,6 +409,7 @@ function App() {
     { id: "summary", label: "Daily Summary", icon: "📊" },
     { id: "reminders", label: "Reminders", icon: "🔔" },
     { id: "procurement", label: "Procurement", icon: "🛒" },
+    { id: "trotters", label: "Trotters", icon: "🐎" },
     { id: "travel", label: "Travel Cost", icon: "🚛" },
     { id: "settings", label: "Settings", icon: "⚙️" },
   ].filter(function(n) { return allowedTabs.indexOf(n.id) >= 0; });
@@ -588,6 +590,7 @@ function App() {
           {safeTab === "movements" && <MovementLog horses={horses} settings={settings} />}
           {safeTab === "owners" && <OwnerPortal horses={horses} settings={settings} />}
           {safeTab === "staff" && <StaffNotify user={user} supabase={supabase} settings={settings} />}
+          {safeTab === "trotters" && <Trotters horses={horses} user={user} supabase={supabase} />}
           {safeTab === "travel" && <TravelCost settings={settings} />}
           {safeTab === "settings" && <YardSettings settings={settings} setSettings={saveSettings} supabase={supabase} user={user} />}
           {safeTab === "weights" && <WeightsTracker horses={horses} weights={weightsRaw} setWeights={setWeights} settings={settings} />}
