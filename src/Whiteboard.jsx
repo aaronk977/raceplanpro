@@ -160,7 +160,7 @@ function RacedayPrint({ horses, entries, setEntries }) {
         setEntries(function(prev) { return prev.concat(imported); });
         var matched = 0;
         for (var mi = 0; mi < imported.length; mi++) { if (imported[mi].horseId) matched++; }
-        setCsvStatus(imported.length + " entries imported — " + matched + " horses matched");
+        setCsvStatus(imported.length + " entries imported - " + matched + " horses matched");
         setTimeout(function() { setCsvStatus(null); }, 5000);
       } catch (err) {
         console.error(err);
@@ -210,8 +210,18 @@ function RacedayPrint({ horses, entries, setEntries }) {
           var dayEntries = grouped[date];
           return (
             <div key={date} style={{ background: C.card, border: "1px solid " + C.border, borderRadius: 12, padding: "18px 20px", marginBottom: 14 }}>
-              <div className="meeting-header" style={{ fontSize: 16, fontWeight: 800, color: C.navy, marginBottom: 12, paddingBottom: 10, borderBottom: "2px solid " + C.border }}>
-                {(function() { var d = new Date(date + "T12:00:00"); return isNaN(d.getTime()) ? date : d.toLocaleDateString("en-IE", { weekday: "long", day: "numeric", month: "long", year: "numeric" }); })()}
+              <div className="meeting-header" style={{ marginBottom: 16, paddingBottom: 14, borderBottom: "3px solid " + C.navy }}>
+                <div style={{ fontSize: 72, fontWeight: 900, color: C.navy, lineHeight: 1, letterSpacing: -2, textTransform: "uppercase" }}>
+                  {(function() { var d = new Date(date + "T12:00:00"); return isNaN(d.getTime()) ? "" : d.toLocaleDateString("en-IE", { weekday: "long" }); })()}
+                </div>
+                <div style={{ fontSize: 36, fontWeight: 800, color: C.navy, lineHeight: 1.2, marginTop: 4 }}>
+                  {(function() { var d = new Date(date + "T12:00:00"); return isNaN(d.getTime()) ? date : d.toLocaleDateString("en-IE", { day: "numeric", month: "long", year: "numeric" }); })()}
+                </div>
+                {(function() {
+                  var mtgEntry = dayEntries.find(function(e) { return e.meetingNo; });
+                  if (!mtgEntry) return null;
+                  return <div style={{ fontSize: 28, fontWeight: 800, color: C.textMid, marginTop: 6 }}>{"Meeting " + mtgEntry.meetingNo}</div>;
+                })()}
               </div>
               {dayEntries.map(function(entry) {
                 var horse = horses.find(function(h) { return h.id === entry.horseId; });
