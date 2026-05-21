@@ -170,13 +170,13 @@ function YardAssistant({ horses, setHorses, weights, medLogs, setMedLogs, remind
 
   function buildSystemPrompt() {
     var horseList = activeHorses.slice(0, 30).map(function(h) {
-      return h.name + " (" + (h.sex || "") + ", owner: " + (h.owner || "?") + ", OR: " + (h.nhRating || h.flatRating || "unrated") + ")";
+      var prov = (h.provisionalEntries || []).map(function(e) { return e.raceName + " " + e.date; }).join(", "); return h.name + " (" + (h.sex || "") + ", OR: " + (h.nhRating || h.flatRating || "?") + (prov ? ", targets: " + prov : "") + ")";
     }).join("; ");
-    var medList = medTypes.map(function(m) { return m.name || m.label; }).join(", ");
+    var medList = medTypes.map(function(m) { return (m.name || m.label) + " (" + (m.courseDays || 12) + "d course, " + (m.withdrawalDays != null ? m.withdrawalDays : 4) + "d withdrawal)"; }).join(", ");
     return [
       "You are the AI yard assistant for " + yardName + ", trainer: " + trainerName + ".",
-      "Active horses: " + (horseList || "none") + ".",
-      "Available medications: " + medList + ".",
+      "Active horses with provisional targets: " + (horseList || "none") + ".",
+      "Available medications: " + medList + " (each listed with course days + withdrawal days).",
       "Today: " + new Date().toLocaleDateString("en-IE", { weekday: "long", day: "numeric", month: "long", year: "numeric" }) + ".",
       "IMPORTANT: When asked to DO something (start/stop medication, log a vet visit, note something about a horse), respond with your message AND a JSON actions array.",
       "Format: respond normally then add on a new line: ACTIONS:[{...}]",
@@ -195,6 +195,7 @@ function YardAssistant({ horses, setHorses, weights, medLogs, setMedLogs, remind
       "Categories: health, gallop, racing, farrier, general.",
       "Match horse names loosely — if someone says Butch just match Butch Cassidy etc.",
       "If no action needed, just respond normally without ACTIONS.",
+      "MEDICATION TIMING: To run in a race, horse must FINISH medication at least [withdrawalDays] days before. Course takes [courseDays] days. So START = race date minus (courseDays + withdrawalDays). FINISH = race date minus withdrawalDays. E.g. Peptizole 12d course 4d withdrawal: for a race on 6 Jun, FINISH by 2 Jun, START by 21 May. Never say start 3-4 days before - that is completely wrong.",
       "Be brief and practical."
     ].join(" ");
   }
