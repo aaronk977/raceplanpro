@@ -107,7 +107,7 @@ function ProvisionalEntries({ horses, setHorses, settings }) {
           <div>
             <div style={{ fontSize: 14, fontWeight: 700, color: C.text, marginBottom: 2 }}>HRI Provisional Summaries</div>
             <div style={{ fontSize: 12, color: C.textMid }}>
-              {lastFetch ? "Last parsed: " + new Date(lastFetch).toLocaleString("en-IE") : "No data yet — paste a provisional summary"}
+              {lastFetch ? "Last parsed: " + new Date(lastFetch).toLocaleString("en-IE") : "No data yet - paste a provisional summary"}
             </div>
           </div>
           <Btn onClick={function() { setShowProvPaste(!showProvPaste); }} disabled={fetchStatus === "fetching"} style={{ fontSize: 12, padding: "8px 16px" }}>
@@ -167,7 +167,7 @@ function ProvisionalEntries({ horses, setHorses, settings }) {
               <Silk silk={horse.silk} size={36} />
               <div style={{ flex: 1 }}>
                 <div style={{ fontSize: 15, fontWeight: 700, color: C.text }}>{horse.name}</div>
-                <div style={{ fontSize: 12, color: C.textMid }}>{horse.owner + " — " + horseEntries.length + " provisional target" + (horseEntries.length !== 1 ? "s" : "")}</div>
+                <div style={{ fontSize: 12, color: C.textMid }}>{horse.owner + " - " + horseEntries.length + " provisional target" + (horseEntries.length !== 1 ? "s" : "")}</div>
               </div>
               <Btn variant="gold" onClick={function() { setShowAdd(isAdding ? null : horse.id); }} style={{ fontSize: 12, padding: "6px 14px" }}>
                 {isAdding ? "Cancel" : "+ Add Target"}
@@ -248,7 +248,7 @@ function ProvisionalEntries({ horses, setHorses, settings }) {
                             <div key={med.name || med.label} style={{ display: "flex", alignItems: "center", flexWrap: "wrap", gap: 6, padding: "6px 0", borderBottom: "1px solid #bee3f8", fontSize: 13 }}>
                               <span style={{ fontWeight: 700, color: C.navy, minWidth: 90 }}>{med.name || med.label}</span>
                               <span style={{ color: C.green, fontWeight: 600 }}>Start by {fmt(latestStart)}</span>
-                              <span style={{ color: C.textMid }}>·</span>
+                              <span style={{ color: C.textMid }}> - </span>
                               <span style={{ color: C.red, fontWeight: 600 }}>Finish by {fmt(latestFinish)}</span>
                             </div>
                           );
@@ -287,7 +287,7 @@ function ProvisionalEntries({ horses, setHorses, settings }) {
                     <Silk silk={e.horse.silk} size={26} />
                     <div style={{ flex: 1 }}>
                       <span style={{ fontWeight: 700, fontSize: 14, color: C.text }}>{e.horse.name}</span>
-                      <span style={{ color: C.textMid, marginLeft: 8, fontSize: 12 }}>{e.raceName + " · " + e.venue}</span>
+                      <span style={{ color: C.textMid, marginLeft: 8, fontSize: 12 }}>{e.raceName + "  -  " + e.venue}</span>
                     </div>
                     <div style={{ textAlign: "right" }}>
                       <div style={{ fontSize: 13, fontWeight: 700, color: C.navy }}>{fmt(raceDate)}</div>
@@ -305,7 +305,7 @@ function ProvisionalEntries({ horses, setHorses, settings }) {
                         <div key={med.name || med.label} style={{ background: urgent ? C.red + "10" : C.card, border: "1px solid " + (urgent ? C.red + "40" : C.border), borderRadius: 8, padding: "5px 10px", fontSize: 12 }}>
                           <span style={{ fontWeight: 700, color: urgent ? C.red : C.navy }}>{med.name || med.label}: </span>
                           <span style={{ color: urgent ? C.red : C.green }}>{urgent ? "Start NOW" : "Start " + fmt(startDate)}</span>
-                          <span style={{ color: C.textMid }}> · </span>
+                          <span style={{ color: C.textMid }}>  -  </span>
                           <span style={{ color: C.red }}>Finish {fmt(finishDate)}</span>
                         </div>
                       );
