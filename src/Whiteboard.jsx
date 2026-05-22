@@ -33,7 +33,7 @@ function RacedayPrint({ horses, entries, setEntries }) {
   var neState = useState(emptyNe);
   var ne = neState[0]; var setNe = neState[1];
 
-  var HEADGEAR = { "H": "Hood", "T": "Tongue Strap", "TS": "Tongue Strap", "TT": "Tongue Tie", "B": "Blinkers", "BL": "Blinkers", "C": "Cheekpieces", "CP": "Cheekpieces", "V": "Visor", "EM": "Ear Muffs" };
+  var HEADGEAR = { "H": "Hood", "T": "Tongue Strap", "TT": "Tongue Tie", "B": "Blinkers", "BL": "Blinkers", "C": "Cheekpieces", "CP": "Cheekpieces", "V": "Visor", "EM": "Ear Muffs" };
 
   var MONTH_MAP = { jan:1,feb:2,mar:3,apr:4,may:5,jun:6,jul:7,aug:8,sep:9,oct:10,nov:11,dec:12,
     january:1,february:2,march:3,april:4,june:6,july:7,august:8,september:9,october:10,november:11,december:12 };
@@ -295,13 +295,12 @@ function RacedayPrint({ horses, entries, setEntries }) {
       <div id="print-area">
         {sortedDates.map(function(date) {
           var dayEntries = grouped[date];
-          var rawVenue = (dayEntries[0] && dayEntries[0].venue) ? dayEntries[0].venue : ""; var dayVenue = rawVenue.toUpperCase(); var dayName = (isNaN(dObj.getTime()) ? "" : dObj.toLocaleDateString("en-IE", { weekday: "long" }).toUpperCase()) + (dayVenue ? " " + dayVenue : "");
-          var venue = dayEntries[0] ? (dayEntries[0].venue || "").toUpperCase() : "";
-          var dateKey = date.split("_")[0]; var venueKey = date.split("_").slice(1).join("_");
-          var dayVenue = (dayEntries[0] && dayEntries[0].venue) ? dayEntries[0].venue.toUpperCase() : ""; var dayName = (isNaN(dObj.getTime()) ? "" : dObj.toLocaleDateString("en-IE", { weekday: "long" }).toUpperCase()) + (dayVenue ? " " + dayVenue : "");
-          var mtgEntry = dayEntries.find(function(e) { return e.meetingNo; });
+          var dObj = new Date(date + "T12:00:00");
+          var dayName = (isNaN(dObj.getTime()) ? "" : dObj.toLocaleDateString("en-IE", { weekday: "long" }).toUpperCase()) + ((dayEntries[0] && dayEntries[0].venue) ? " " + dayEntries[0].venue.toUpperCase() : "");
           var dateStr = isNaN(dObj.getTime()) ? date : dObj.toLocaleDateString("en-IE", { day: "numeric", month: "long", year: "numeric" });
+          var mtgEntry = dayEntries.find(function(e) { return e.meetingNo; });
           var mtgNum = mtgEntry ? mtgEntry.meetingNo.toString().split("").filter(function(c){return c>="0"&&c<="9";}).join("") : "";
+          var groupMeetingName = "";
           return (
             <div key={date} style={{ background: C.card, border: "1px solid " + C.border, borderRadius: 12, padding: "18px 20px", marginBottom: 16 }}>
               <div className="meeting-header" style={{ marginBottom: 16, paddingBottom: 14, borderBottom: "3px solid " + C.navy }}>
