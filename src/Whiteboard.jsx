@@ -178,9 +178,8 @@ function RacedayPrint({ horses, entries, setEntries }) {
             date: parsedDate,
             raceTime: row.time || row.race_time || "",
             raceName: row.race_name || row.racename || "",
-            raceName: row.race_name || row.racename || row.race || "",  // HRI: race_name or race column
             meetingName: "",  // HRI Race column is individual race name not meeting name
-            raceRef: (function() { var m = (row.meeting || "").toString().trim(); if (!m) return ""; var last = m[m.length - 1]; return (last >= "A" && last <= "Z") ? last : ""; }()),
+            raceRef: (function() { var m = (row.meeting || "").toString().trim(); var last = m.length > 0 ? m[m.length-1] : ""; return (last >= "A" && last <= "Z") ? last : ""; }()),
             ballotNo: ballotNo,
             headgear: headgear,
             jockey: row.jockey || "",
@@ -206,9 +205,6 @@ function RacedayPrint({ horses, entries, setEntries }) {
     if (!ent.date) continue;
     if (!grouped[ent.date]) grouped[ent.date] = [];
     grouped[ent.date].push(ent);
-    var groupKey = ent.date + "_" + (mtgNum || (ent.venue || "unknown").toUpperCase());
-    if (!grouped[groupKey]) grouped[groupKey] = [];
-    grouped[groupKey].push(ent);
   }
   var sortedDates = Object.keys(grouped).sort();
 
