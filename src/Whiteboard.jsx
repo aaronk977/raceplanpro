@@ -177,7 +177,7 @@ function RacedayPrint({ horses, entries, setEntries }) {
             id: "e_" + Date.now() + "_" + i,
             horseId: horse ? horse.id : "",
             horseName: horseName,
-            venue: row.venue || row.racecourse || row.course || (row.race_name ? row.race_name.split(" ")[0] : "") || "",
+            venue: row.venue || row.racecourse || row.course || row.track || row.location || "",
             date: parsedDate,
             raceTime: row.time || row.race_time || "",
             raceName: row.race_name || row.racename || "",
@@ -295,7 +295,7 @@ function RacedayPrint({ horses, entries, setEntries }) {
       <div id="print-area">
         {sortedDates.map(function(date) {
           var dayEntries = grouped[date];
-var dateKeyStr = date; var dObj = new Date(dateKeyStr + "T12:00:00"); var dayVenue2 = (dayEntries[0] && dayEntries[0].venue) ? dayEntries[0].venue.toUpperCase() : ""; var groupMeetingName = (dayEntries[0] && dayEntries[0].meetingName) ? dayEntries[0].meetingName : "";
+          var rawVenue = (dayEntries[0] && dayEntries[0].venue) ? dayEntries[0].venue : ""; var dayVenue = (rawVenue && rawVenue.length < 20) ? rawVenue.toUpperCase() : ""; var dayName = (isNaN(dObj.getTime()) ? "" : dObj.toLocaleDateString("en-IE", { weekday: "long" }).toUpperCase()) + (dayVenue ? " " + dayVenue : "");
           var venue = dayEntries[0] ? (dayEntries[0].venue || "").toUpperCase() : "";
           var dateKey = date.split("_")[0]; var venueKey = date.split("_").slice(1).join("_");
           var dayVenue = (dayEntries[0] && dayEntries[0].venue) ? dayEntries[0].venue.toUpperCase() : ""; var dayName = (isNaN(dObj.getTime()) ? "" : dObj.toLocaleDateString("en-IE", { weekday: "long" }).toUpperCase()) + (dayVenue ? " " + dayVenue : "");
@@ -322,7 +322,7 @@ var dateKeyStr = date; var dObj = new Date(dateKeyStr + "T12:00:00"); var dayVen
                   <div key={entry.id} className="horse-row" style={{ display: "flex", alignItems: "center", gap: 14, padding: "10px 0", borderBottom: "1px solid " + C.cardOff }}>
                     <div className="venue-ref" style={{ minWidth: 100, textAlign: "center" }}>
                       {raceRef ? <div style={{ fontSize: 48, fontWeight: 900, color: C.navy, lineHeight: 1 }}>{raceRef}</div> : null}
-                      <div style={{ fontSize: 11, color: C.textMid, marginTop: 2 }}>{entry.venue}</div>
+                      {entry.venue && entry.venue.length < 20 && <div style={{ fontSize: 11, color: C.textMid, marginTop: 2 }}>{entry.venue}</div>}
                     </div>
                     <div className="race-time" style={{ minWidth: 80, fontSize: 14, fontWeight: 700, color: C.navy }}>{entry.raceTime}</div>
                     <div style={{ flex: 1 }}>
