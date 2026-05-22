@@ -151,7 +151,7 @@ function RacedayPrint({ horses, entries, setEntries }) {
             id: "e_" + Date.now() + "_" + i,
             horseId: horse ? horse.id : "",
             horseName: horseName,
-            venue: row.race || row.venue || row.racecourse || row.course || "",
+            venue: row.venue || row.racecourse || row.course || row.track || row.location || "",
             date: parsedDate,
             raceTime: row.time || row.race_time || "",
             raceName: row.race_name || row.racename || "",
@@ -180,8 +180,11 @@ function RacedayPrint({ horses, entries, setEntries }) {
   for (var gi = 0; gi < entries.length; gi++) {
     var ent = entries[gi];
     if (!ent.date) continue;
-    if (!grouped[ent.date + "_" + (ent.venue || "").toUpperCase()]) grouped[ent.date + "_" + (ent.venue || "").toUpperCase()] = [];
-    grouped[ent.date + "_" + (ent.venue || "").toUpperCase()].push(ent);
+    var mtgRaw = (ent.meetingNo || "").toString();
+    var mtgNum = mtgRaw.split("").filter(function(c){return c>="0"&&c<="9";}).join("");
+    var groupKey = ent.date + "_" + (mtgNum || (ent.venue || "unknown").toUpperCase());
+    if (!grouped[groupKey]) grouped[groupKey] = [];
+    grouped[groupKey].push(ent);
   }
   var sortedDates = Object.keys(grouped).sort(function(a, b) { var da = a.split("_")[0]; var db = b.split("_")[0]; if (da !== db) return da.localeCompare(db); return a.localeCompare(b); });
 
@@ -218,7 +221,7 @@ function RacedayPrint({ horses, entries, setEntries }) {
               ".horse-meta { font-size: 12pt; color: #444; margin-top: 4pt; }"
             ].join(" ");
             var grouped2 = {};
-            entries.forEach(function(e) { var d = (e.date || "no-date") + "_" + (e.venue || "").toUpperCase(); if (!grouped2[d]) grouped2[d] = []; grouped2[d].push(e); });
+            entries.forEach(function(e) { var mtgR2 = (e.meetingNo||"").toString(); var mtgN2 = mtgR2.split("").filter(function(c){return c>="0"&&c<="9";}).join(""); var d = (e.date || "no-date") + "_" + (mtgN2 || (e.venue||"unknown").toUpperCase()); if (!grouped2[d]) grouped2[d] = []; grouped2[d].push(e); });
             var sortedD = Object.keys(grouped2).sort();
             var body2 = sortedD.map(function(date) {
               var dateKey2 = date.split("_")[0]; var venueKey2 = date.split("_").slice(1).join(" "); var dObj2 = new Date(dateKey2 + "T12:00:00");
@@ -227,7 +230,7 @@ function RacedayPrint({ horses, entries, setEntries }) {
               var dayEnts = grouped2[date];
               var mtgE = dayEnts.find(function(e) { return e.meetingNo; });
               var mtgN = mtgE ? mtgE.meetingNo.toString().split("").filter(function(c){return c>="0"&&c<="9";}).join("") : "";
-              var venue0 = dayEnts[0] ? (dayEnts[0].venue || "").toUpperCase() : "";
+              var venue0 = dayEnts[0] ? (dayEnts[0].venue || date.split("_").slice(1).join(" ") || "").toUpperCase() : "";
               var rows = dayEnts.map(function(entry) {
                 var h = horses.find(function(x) { return x.id === entry.horseId; });
                 var name = h ? h.name : (entry.horseName || "");
@@ -272,7 +275,7 @@ function RacedayPrint({ horses, entries, setEntries }) {
           var dateKeyStr = date.split("_")[0]; var dObj = new Date(dateKeyStr + "T12:00:00");
           var venue = dayEntries[0] ? (dayEntries[0].venue || "").toUpperCase() : "";
           var dateKey = date.split("_")[0]; var venueKey = date.split("_").slice(1).join("_");
-          var venueFromKey = date.split("_").slice(1).join(" "); var dayName = (isNaN(dObj.getTime()) ? "" : dObj.toLocaleDateString("en-IE", { weekday: "long" }).toUpperCase()) + (venueFromKey ? " " + venueFromKey : "");
+          var groupVenue = (dayEntries[0] && dayEntries[0].venue) ? dayEntries[0].venue.toUpperCase() : date.split("_").slice(1).join(" "); var dayName = (isNaN(dObj.getTime()) ? "" : dObj.toLocaleDateString("en-IE", { weekday: "long" }).toUpperCase()) + (groupVenue ? " " + groupVenue : "");
           var mtgEntry = dayEntries.find(function(e) { return e.meetingNo; });
           var dateStr = isNaN(dObj.getTime()) ? date : dObj.toLocaleDateString("en-IE", { day: "numeric", month: "long", year: "numeric" });
           var mtgNum = mtgEntry ? mtgEntry.meetingNo.toString().split("").filter(function(c){return c>="0"&&c<="9";}).join("") : "";
