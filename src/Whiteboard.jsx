@@ -158,6 +158,9 @@ function RacedayPrint({ horses, entries, setEntries }) {
           var headgear = HEADGEAR[extrasRaw] || (extrasRaw.length > 0 && extrasRaw.length <= 4 ? extrasRaw : "");
           var statusRaw = row.status || "";
           var ballotRaw = statusRaw || row.ballot || row.ballot_no || "";
+          var mtgStr = (row.meeting || "").toString().trim();
+          var mtgLast = mtgStr.length > 0 ? mtgStr[mtgStr.length - 1] : "";
+          var raceRefVal = (mtgLast >= "A" && mtgLast <= "Z") ? mtgLast : "";
           // Extract ballot number from "Ballot Entry Liable For Ballot (8)" -> "Ballot 8"
           var ballotNo = "";
           if (ballotRaw.toLowerCase().indexOf("ballot") >= 0) {
@@ -179,7 +182,7 @@ function RacedayPrint({ horses, entries, setEntries }) {
             raceTime: row.time || row.race_time || "",
             raceName: row.race_name || row.racename || "",
             meetingName: "",  // HRI Race column is individual race name not meeting name
-            raceRef: (function() { var m = (row.meeting || "").toString().trim(); var last = m.length > 0 ? m[m.length-1] : ""; return (last >= "A" && last <= "Z") ? last : ""; }()),
+            raceRef: raceRefVal,
             ballotNo: ballotNo,
             headgear: headgear,
             jockey: row.jockey || "",
