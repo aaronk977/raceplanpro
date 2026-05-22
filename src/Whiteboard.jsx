@@ -29,7 +29,7 @@ function RacedayPrint({ horses, entries, setEntries }) {
   var showAdd = showAddState[0]; var setShowAdd = showAddState[1];
   var csvStatusState = useState(null);
   var csvStatus = csvStatusState[0]; var setCsvStatus = csvStatusState[1];
-  var emptyNe = { horseId: "", meetingNo: "", raceRef: "", venue: "", date: "", raceTime: "", raceName: "", ballotNo: "", headgear: "", jockey: "" };
+  var emptyNe = { horseId: "", meetingNo: "", meetingName: "", raceRef: "", venue: "", date: "", raceTime: "", raceName: "", ballotNo: "", headgear: "", jockey: "" };
   var neState = useState(emptyNe);
   var ne = neState[0]; var setNe = neState[1];
 
@@ -154,8 +154,9 @@ function RacedayPrint({ horses, entries, setEntries }) {
             venue: row.venue || row.racecourse || row.course || row.track || row.location || "",
             date: parsedDate,
             raceTime: row.time || row.race_time || "",
-            raceName: row.race_name || row.racename || "",
-            meetingNo: row.meeting || row.meeting_no || "",
+            raceName: row.race_name || row.racename || "",  // HRI CSV: "Race Name" column = individual race
+            raceName: row.race_name || row.racename || "",  // HRI CSV: "Race Name" column = individual race
+            meetingName: row.race || "",  // HRI CSV: "Race" column = meeting name e.g. Fairyhouse Evening Meeting
             raceRef: row.race_ref || row.raceref || "",
             ballotNo: ballotNo,
             headgear: headgear,
@@ -210,7 +211,7 @@ function RacedayPrint({ horses, entries, setEntries }) {
               ".day-block { margin-bottom: 32pt; page-break-inside: avoid; }",
               ".day-header { border-bottom: 4pt solid #000; padding-bottom: 10pt; margin-bottom: 14pt; }",
               ".day-name { font-size: 52pt; font-weight: 900; line-height: 1; text-transform: uppercase; color: #000; }",
-              ".day-date { font-size: 26pt; font-weight: 700; color: #000; margin-top: 4pt; }",
+              ".day-date { font-size: 26pt; font-weight: 700; color: #000; margin-top: 4pt; }", ".day-venue { font-size: 20pt; font-weight: 800; color: #000; margin-top: 2pt; }", ".day-meeting-name { font-size: 22pt; font-weight: 800; color: #111; margin-top: 4pt; }",
               ".meeting-num { font-size: 16pt; color: #555; margin-top: 4pt; }",
               ".horse-row { display: flex; align-items: center; gap: 14pt; border-bottom: 1.5pt solid #ccc; padding: 10pt 0; }",
               ".race-ref { min-width: 70pt; text-align: center; font-size: 42pt; font-weight: 900; color: #000; line-height: 1; }",
@@ -249,8 +250,8 @@ function RacedayPrint({ horses, entries, setEntries }) {
                   "</div>";
               }).join("");
               return "<div class='day-block'><div class='day-header'>" +
-                "<div class='day-name'>" + dName + (venue0 ? " " + venue0 : "") + "</div>" +
-                "<div class='day-date'>" + dStr + "</div>" +
+                "<div class='day-name'>" + dName + "</div>" + (venue0 ? "<div class='day-venue'>" + venue0 + "</div>" : "") +
+                "<div class='day-date'>" + dStr + "</div>" + (dayEnts[0] && dayEnts[0].meetingName ? "<div class='day-meeting-name'>" + dayEnts[0].meetingName + "</div>" : "") +
                 (mtgN ? "<div class='meeting-num'>Meeting " + mtgN + "</div>" : "") +
                 "</div>" + rows + "</div>";
             }).join("");
@@ -275,7 +276,7 @@ function RacedayPrint({ horses, entries, setEntries }) {
           var dateKeyStr = date.split("_")[0]; var dObj = new Date(dateKeyStr + "T12:00:00");
           var venue = dayEntries[0] ? (dayEntries[0].venue || "").toUpperCase() : "";
           var dateKey = date.split("_")[0]; var venueKey = date.split("_").slice(1).join("_");
-          var inferredVenue = (dayEntries[0] && dayEntries[0].venue) ? dayEntries[0].venue : ((dayEntries[0] && dayEntries[0].raceName) ? dayEntries[0].raceName.split(" ")[0] : ""); var groupVenue = inferredVenue.toUpperCase(); var dayName = (isNaN(dObj.getTime()) ? "" : dObj.toLocaleDateString("en-IE", { weekday: "long" }).toUpperCase()) + (groupVenue ? " " + groupVenue : "");
+          var inferredVenue = (dayEntries[0] && dayEntries[0].venue) ? dayEntries[0].venue : ((dayEntries[0] && dayEntries[0].raceName) ? dayEntries[0].raceName.split(" ")[0] : ""); var groupVenue = inferredVenue.toUpperCase(); var groupMeetingName = (dayEntries[0] && dayEntries[0].meetingName) ? dayEntries[0].meetingName : ""; var dayName = (isNaN(dObj.getTime()) ? "" : dObj.toLocaleDateString("en-IE", { weekday: "long" }).toUpperCase()) + (groupVenue ? " " + groupVenue : "");
           var mtgEntry = dayEntries.find(function(e) { return e.meetingNo; });
           var dateStr = isNaN(dObj.getTime()) ? date : dObj.toLocaleDateString("en-IE", { day: "numeric", month: "long", year: "numeric" });
           var mtgNum = mtgEntry ? mtgEntry.meetingNo.toString().split("").filter(function(c){return c>="0"&&c<="9";}).join("") : "";
@@ -284,6 +285,7 @@ function RacedayPrint({ horses, entries, setEntries }) {
               <div className="meeting-header" style={{ marginBottom: 16, paddingBottom: 14, borderBottom: "3px solid " + C.navy }}>
                 <div style={{ fontSize: 72, fontWeight: 900, color: C.navy, lineHeight: 1, letterSpacing: -2, textTransform: "uppercase" }}>{dayName}</div>
                 <div style={{ fontSize: 36, fontWeight: 800, color: C.navy, lineHeight: 1.2, marginTop: 4 }}>{dateStr}</div>
+                {groupMeetingName && <div style={{ fontSize: 28, fontWeight: 800, color: C.navy, marginTop: 6, letterSpacing: -0.5 }}>{groupMeetingName}</div>}
                 {mtgNum ? <div style={{ fontSize: 22, fontWeight: 700, color: C.textMid, marginTop: 4 }}>{"Meeting " + mtgNum}</div> : null}
               </div>
               {dayEntries.map(function(entry) {
