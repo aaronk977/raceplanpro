@@ -12,6 +12,8 @@ function Trotters({ horses, user, supabase }) {
   var form = formState[0]; var setForm = formState[1];
   var savingState = useState(false);
   var saving = savingState[0]; var setSaving = savingState[1];
+  var showHistoryState = useState(false);
+  var showHistory = showHistoryState[0]; var setShowHistory = showHistoryState[1];
   var filterDateState = useState(new Date().toISOString().slice(0,10));
   var filterDate = filterDateState[0]; var setFilterDate = filterDateState[1];
 
@@ -60,6 +62,13 @@ function Trotters({ horses, user, supabase }) {
     supabase.from("trotters").update({ outcome: outcome }).eq("id", id).then(function() {});
   }
 
+  function updateNotes(id, notes) {
+    setEntries(function(prev) {
+      return prev.map(function(e) { return e.id === id ? Object.assign({}, e, { notes: notes }) : e; });
+    });
+    supabase.from("trotters").update({ notes: notes }).eq("id", id).then(function() {});
+  }
+
   function deleteEntry(id) {
     setEntries(function(prev) { return prev.filter(function(e) { return e.id !== id; }); });
     supabase.from("trotters").delete().eq("id", id).then(function() {});
@@ -100,16 +109,22 @@ function Trotters({ horses, user, supabase }) {
                   <div style={{ fontSize: 16, fontWeight: 800, color: "#fff" }}>{e.horse_name}</div>
                   {e.reason && <div style={{ fontSize: 12, color: "rgba(255,255,255,0.5)", marginTop: 1 }}>{e.reason}</div>}
                 </div>
-                <div style={{ display: "flex", gap: 6 }}>
-                  {["Sound", "Lame", "Slight Lameness", "Needs Vet"].map(function(o) {
-                    var active = e.outcome === o;
-                    return (
-                      <button key={o} onClick={function() { updateOutcome(e.id, o); }}
-                        style={{ padding: "5px 10px", borderRadius: 20, border: "1.5px solid " + (active ? outcomeColor(o) : "rgba(255,255,255,0.2)"), background: active ? outcomeBg(o) : "transparent", color: active ? outcomeColor(o) : "rgba(255,255,255,0.5)", fontSize: 11, fontWeight: 700, cursor: "pointer", whiteSpace: "nowrap" }}>
-                        {o}
-                      </button>
-                    );
-                  })}
+                <div style={{ display: "flex", flexDirection: "column", gap: 6, minWidth: 280 }}>
+                  <div style={{ display: "flex", gap: 6, flexWrap: "wrap" }}>
+                    {["Sound", "Lame", "Slight Lameness", "Needs Vet"].map(function(o) {
+                      var active = e.outcome === o;
+                      return (
+                        <button key={o} onClick={function() { updateOutcome(e.id, o); }}
+                          style={{ padding: "5px 10px", borderRadius: 20, border: "1.5px solid " + (active ? outcomeColor(o) : "rgba(255,255,255,0.2)"), background: active ? outcomeBg(o) : "transparent", color: active ? outcomeColor(o) : "rgba(255,255,255,0.5)", fontSize: 11, fontWeight: 700, cursor: "pointer", whiteSpace: "nowrap" }}>
+                          {o}
+                        </button>
+                      );
+                    })}
+                  </div>
+                  <input type="text" placeholder="Notes e.g. n/f lame, 3/10 lame LF..."
+                    defaultValue={e.notes || ""}
+                    onBlur={function(ev) { updateNotes(e.id, ev.target.value); }}
+                    style={{ padding: "6px 10px", borderRadius: 8, border: "1px solid rgba(255,255,255,0.2)", background: "rgba(255,255,255,0.08)", color: "#fff", fontSize: 12, width: "100%" }} />
                 </div>
               </div>
             );
@@ -154,7 +169,11 @@ function Trotters({ horses, user, supabase }) {
                       );
                     })}
                   </div>
-                  {e.notes && <div style={{ fontSize: 12, color: C.textMid, marginTop: 8, fontStyle: "italic" }}>{e.notes}</div>}
+                  <input type="text" placeholder="Notes e.g. n/f lame, 3/10 lame LF..."
+                    defaultValue={e.notes || ""}
+                    onBlur={function(ev) { updateNotes(e.id, ev.target.value); }}
+                    style={{ marginTop: 8, padding: "7px 10px", borderRadius: 8, border: "1px solid " + C.border, background: C.cardOff, color: C.text, fontSize: 12, width: "100%" }} />
+                  {e.notes && <div style={{ fontSize: 12, color: C.textMid, marginTop: 4, fontStyle: "italic" }}>{e.notes}</div>}
                 </div>
                 <button onClick={function() { if (window.confirm("Remove this entry?")) deleteEntry(e.id); }}
                   style={{ background: "none", border: "none", color: C.red, cursor: "pointer", fontSize: 18, padding: "2px 6px" }}>x</button>
@@ -163,6 +182,47 @@ function Trotters({ horses, user, supabase }) {
           })}
         </div>
       )}
+
+      {/* HISTORY */}
+      <div style={{ marginTop: 24 }}>
+        <button onClick={function() { setShowHistory(function(p) { return !p; }); }}
+          style={{ background: "none", border: "none", color: C.textMid, fontSize: 13, cursor: "pointer", fontWeight: 600, padding: 0, display: "flex", alignItems: "center", gap: 6 }}>
+          {showHistory ? "Hide" : "Show"} full trot history
+          <span style={{ fontSize: 11 }}>{showHistory ? "v" : ">"}</span>
+        </button>
+        {showHistory && (
+          <div style={{ marginTop: 12 }}>
+            {activeHorses.filter(function(h) {
+              return entries.some(function(e) { return e.horse_id === h.id; });
+            }).sort(function(a,b){return a.name.localeCompare(b.name);}).map(function(h) {
+              var horseHistory = entries.filter(function(e) { return e.horse_id === h.id; }).sort(function(a,b){ return b.date.localeCompare(a.date); });
+              if (horseHistory.length === 0) return null;
+              return (
+                <div key={h.id} style={{ background: C.card, border: "1px solid " + C.border, borderRadius: 12, padding: "14px 16px", marginBottom: 10 }}>
+                  <div style={{ fontSize: 15, fontWeight: 800, color: C.text, marginBottom: 10 }}>{h.name}</div>
+                  {horseHistory.map(function(e) {
+                    return (
+                      <div key={e.id} style={{ display: "flex", alignItems: "flex-start", gap: 12, padding: "8px 0", borderBottom: "1px solid " + C.cardOff }}>
+                        <div style={{ minWidth: 90, fontSize: 12, color: C.textMid }}>
+                          <div style={{ fontWeight: 700, color: C.text }}>{new Date(e.date + "T12:00:00").toLocaleDateString("en-IE", { day: "numeric", month: "short", year: "numeric" })}</div>
+                          <div>{e.time}</div>
+                        </div>
+                        <div style={{ flex: 1 }}>
+                          {e.reason && <div style={{ fontSize: 12, color: C.textMid, marginBottom: 3 }}>{e.reason}</div>}
+                          <div style={{ display: "flex", alignItems: "center", gap: 8, flexWrap: "wrap" }}>
+                            <span style={{ fontSize: 13, fontWeight: 700, color: outcomeColor(e.outcome) }}>{e.outcome}</span>
+                            {e.notes && <span style={{ fontSize: 12, color: C.text, fontStyle: "italic" }}>{e.notes}</span>}
+                          </div>
+                        </div>
+                      </div>
+                    );
+                  })}
+                </div>
+              );
+            })}
+          </div>
+        )}
+      </div>
 
       {/* ADD MODAL */}
       {showAdd && (
