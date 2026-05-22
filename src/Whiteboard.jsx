@@ -130,7 +130,18 @@ function RacedayPrint({ horses, entries, setEntries }) {
           if (!cols[0]) continue;
           var row = {};
           for (var j = 0; j < headers.length; j++) { row[headers[j]] = cols[j] || ""; }
-          var horseName = row.horse || row.horse_name || row.name || cols[0];
+          var rawHorseName = row.horse || row.horse_name || row.name || cols[0];
+          // Strip headgear that may be appended to horse name in HRI CSV
+          var hgTerms = ["Tongue Strap", "Tongue Tie", "Hood", "Blinkers", "Cheekpieces", "Visor", "Eyeshield", "Nosebands", "TT", "TS"];
+          var horseName = rawHorseName;
+          var extractedHG = "";
+          for (var hgi = 0; hgi < hgTerms.length; hgi++) {
+            if (horseName.indexOf(hgTerms[hgi]) >= 0) {
+              extractedHG = hgTerms[hgi];
+              horseName = horseName.replace(hgTerms[hgi], "").trim();
+              break;
+            }
+          }
           if (!horseName) continue;
           var nl = horseName.toLowerCase().trim();
           var horse = null;
@@ -143,10 +154,22 @@ function RacedayPrint({ horses, entries, setEntries }) {
           if (rawDate) {
             parsedDate = parseDate(rawDate);
           }
-          var extrasRaw = (row.extras || row.extra || row.headgear || "").trim().toUpperCase();
+          var extrasRaw = (row.extras || row.extra || row.headgear || extractedHG || "").trim().toUpperCase();
           var headgear = HEADGEAR[extrasRaw] || (extrasRaw.length > 0 && extrasRaw.length <= 4 ? extrasRaw : "");
           var statusRaw = row.status || "";
-          var ballotNo = statusRaw.toLowerCase().indexOf("ballot") >= 0 ? statusRaw : (row.ballot || row.ballot_no || "");
+          var ballotRaw = statusRaw || row.ballot || row.ballot_no || "";
+          // Extract ballot number from "Ballot Entry Liable For Ballot (8)" -> "Ballot 8"
+          var ballotNo = "";
+          if (ballotRaw.toLowerCase().indexOf("ballot") >= 0) {
+            var pOpen = ballotRaw.lastIndexOf("(");
+            var pClose = ballotRaw.lastIndexOf(")");
+            if (pOpen >= 0 && pClose > pOpen) {
+              var num = ballotRaw.slice(pOpen + 1, pClose).trim();
+              ballotNo = num ? "Ballot " + num : "Balloted";
+            } else {
+              ballotNo = "Balloted";
+            }
+          }
           imported.push({
             id: "e_" + Date.now() + "_" + i,
             horseId: horse ? horse.id : "",
@@ -154,9 +177,9 @@ function RacedayPrint({ horses, entries, setEntries }) {
             venue: row.venue || row.racecourse || row.course || row.track || row.location || "",
             date: parsedDate,
             raceTime: row.time || row.race_time || "",
-            raceName: row.race_name || row.racename || "",  // HRI CSV: "Race Name" column = individual race
-            raceName: row.race_name || row.racename || "",  // HRI CSV: "Race Name" column = individual race
-            meetingName: row.race || "",  // HRI CSV: "Race" column = meeting name e.g. Fairyhouse Evening Meeting
+            raceName: row.race_name || row.racename || row.race || "",  // HRI: race_name or race column
+            raceName: row.race_name || row.racename || row.race || "",  // HRI: race_name or race column
+            meetingName: "",  // HRI Race column is individual race name not meeting name
             raceRef: row.race_ref || row.raceref || "",
             ballotNo: ballotNo,
             headgear: headgear,
