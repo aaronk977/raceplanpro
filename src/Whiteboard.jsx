@@ -222,7 +222,7 @@ function RacedayPrint({ horses, entries, setEntries }) {
             var sortedD = Object.keys(grouped2).sort();
             var body2 = sortedD.map(function(date) {
               var dateKey2 = date.split("_")[0]; var venueKey2 = date.split("_").slice(1).join(" "); var dObj2 = new Date(dateKey2 + "T12:00:00");
-              var dName = (isNaN(dObj2.getTime()) ? "" : dObj2.toLocaleDateString("en-IE", { weekday: "long" }).toUpperCase()) + (venueKey2 ? " " + venueKey2 : ""); var dNameX = dName; dName = dNameX; var _dName = (isNaN(dObj2.getTime()) ? "" : dObj2.toLocaleDateString("en-IE", { weekday: "long" }).toUpperCase();
+                var dName = (isNaN(dObj2.getTime()) ? "" : dObj2.toLocaleDateString("en-IE", { weekday: "long" }).toUpperCase()) + (venueKey2 ? " " + venueKey2 : "");
               var dStr = isNaN(dObj2.getTime()) ? date : dObj2.toLocaleDateString("en-IE", { day: "numeric", month: "long", year: "numeric" });
               var dayEnts = grouped2[date];
               var mtgE = dayEnts.find(function(e) { return e.meetingNo; });
