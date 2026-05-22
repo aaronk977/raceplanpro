@@ -295,7 +295,7 @@ function RacedayPrint({ horses, entries, setEntries }) {
       <div id="print-area">
         {sortedDates.map(function(date) {
           var dayEntries = grouped[date];
-          var dateKeyStr = date;
+var dateKeyStr = date; var dObj = new Date(dateKeyStr + "T12:00:00");
           var venue = dayEntries[0] ? (dayEntries[0].venue || "").toUpperCase() : "";
           var dateKey = date.split("_")[0]; var venueKey = date.split("_").slice(1).join("_");
           var dayVenue = (dayEntries[0] && dayEntries[0].venue) ? dayEntries[0].venue.toUpperCase() : ""; var dayName = (isNaN(dObj.getTime()) ? "" : dObj.toLocaleDateString("en-IE", { weekday: "long" }).toUpperCase()) + (dayVenue ? " " + dayVenue : "");
