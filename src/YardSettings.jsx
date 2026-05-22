@@ -956,16 +956,16 @@ function YardSettings({ settings, setSettings, supabase, user }) {
           <div style={{ background: C.card, border: "1px solid " + C.border, borderRadius: 14, padding: "18px 20px", marginBottom: 14 }}>
             <div style={{ fontSize: 14, fontWeight: 700, color: C.navy, marginBottom: 10 }}>Share Login Link</div>
             <div style={{ background: C.cardOff, border: "1px solid " + C.border, borderRadius: 9, padding: "12px 16px", fontFamily: "monospace", fontSize: 14, color: C.text, marginBottom: 10, wordBreak: "break-all" }}>
-              https://raceplanpro.vercel.app
+              " + window.location.origin + "
             </div>
             <div style={{ display: "flex", gap: 8 }}>
               <Btn onClick={function() {
                 if (navigator.clipboard) {
-                  navigator.clipboard.writeText("https://raceplanpro.vercel.app");
+                  navigator.clipboard.writeText("" + window.location.origin + "");
                 }
               }} style={{ fontSize: 12 }}>Copy Link</Btn>
               <Btn variant="ghost" onClick={function() {
-                window.open("https://wa.me/?text=" + encodeURIComponent("You have been invited to RacePlan Pro. Sign up here: https://raceplanpro.vercel.app"), "_blank");
+                window.open("https://wa.me/?text=" + encodeURIComponent("You have been invited to RacePlan Pro. Sign up here: " + window.location.origin), "_blank");
               }} style={{ fontSize: 12 }}>Share via WhatsApp</Btn>
             </div>
           </div>
@@ -1018,7 +1018,7 @@ function YardSettings({ settings, setSettings, supabase, user }) {
                     });
                   }
                   // Send WhatsApp invite
-                  window.open("https://wa.me/?text=" + encodeURIComponent("Hi " + edit.newUserName + ", you have been invited to join RacePlan Pro for our yard. Sign up at https://raceplanpro.vercel.app using this email: " + edit.newUserEmail + ". Your role: " + (edit.newUserRole || "Staff")), "_blank");
+                  window.open("https://wa.me/?text=" + encodeURIComponent("Hi " + edit.newUserName + ", you have been invited to join RacePlan Pro for our yard. Sign up at: " + window.location.origin + "\nUse this email: " + edit.newUserEmail + "\nYour role: " + (edit.newUserRole || "Staff")), "_blank");
                 }} disabled={!edit.newUserEmail || !edit.newUserName} style={{ fontSize: 12 }}>
                   Add & Send WhatsApp Invite
                 </Btn>
