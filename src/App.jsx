@@ -593,7 +593,7 @@ function App() {
           {safeTab === "owners" && <OwnerPortal horses={horses} settings={settings} />}
           {safeTab === "staff" && <StaffNotify user={user} supabase={supabase} settings={settings} />}
           {safeTab === "trotters" && <Trotters horses={horses} user={user} supabase={supabase} />}
-          {safeTab === "checklist" && <RaceDayChecklist horses={horses} user={user} supabase={supabase} />}
+          {safeTab === "checklist" && <RaceDayChecklist horses={horses} wbEntries={wbEntries} user={user} supabase={supabase} />}
           {safeTab === "travel" && <TravelCost settings={settings} />}
           {safeTab === "settings" && <YardSettings settings={settings} setSettings={saveSettings} supabase={supabase} user={user} />}
           {safeTab === "weights" && <WeightsTracker horses={horses} weights={weightsRaw} setWeights={setWeights} settings={settings} />}
