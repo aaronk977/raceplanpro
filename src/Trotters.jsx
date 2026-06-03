@@ -3,199 +3,282 @@ import { Btn, C } from "./shared";
 
 var OUTCOMES = ["Pending", "Sound", "Lame", "Slight Lameness", "Needs Vet", "Monitor"];
 
+function outcomeColor(o) {
+  if (o === "Sound") return C.green;
+  if (o === "Lame" || o === "Needs Vet") return C.red;
+  if (o === "Slight Lameness" || o === "Monitor") return C.amber;
+  return C.textMid;
+}
+
+function outcomeBg(o) {
+  if (o === "Sound") return C.green + "15";
+  if (o === "Lame" || o === "Needs Vet") return C.red + "12";
+  if (o === "Slight Lameness" || o === "Monitor") return C.amber + "15";
+  return C.cardOff;
+}
+
 function Trotters({ horses, user, supabase }) {
   var entriesState = useState([]);
   var entries = entriesState[0]; var setEntries = entriesState[1];
-  var showAddState = useState(false);
-  var showAdd = showAddState[0]; var setShowAdd = showAddState[1];
-  var formState = useState({ horseId: "", date: new Date().toISOString().slice(0,10), time: "08:00", reason: "", outcome: "Pending", notes: "" });
-  var form = formState[0]; var setForm = formState[1];
+  var filterDateState = useState(new Date().toISOString().slice(0, 10));
+  var filterDate = filterDateState[0]; var setFilterDate = filterDateState[1];
+  var viewState = useState("today");
+  var view = viewState[0]; var setView = viewState[1];
+
+  // Multi-select state for scheduling
+  var selectedState = useState({});
+  var selected = selectedState[0]; var setSelected = selectedState[1];
+  var schedTimeState = useState("08:00");
+  var schedTime = schedTimeState[0]; var setSchedTime = schedTimeState[1];
+  var schedReasonState = useState("");
+  var schedReason = schedReasonState[0]; var setSchedReason = schedReasonState[1];
+  var schedDateState = useState(new Date().toISOString().slice(0, 10));
+  var schedDate = schedDateState[0]; var setSchedDate = schedDateState[1];
+  var showScheduleState = useState(false);
+  var showSchedule = showScheduleState[0]; var setShowSchedule = showScheduleState[1];
+  var searchState = useState("");
+  var search = searchState[0]; var setSearch = searchState[1];
   var savingState = useState(false);
   var saving = savingState[0]; var setSaving = savingState[1];
   var showHistoryState = useState(false);
   var showHistory = showHistoryState[0]; var setShowHistory = showHistoryState[1];
-  var filterDateState = useState(new Date().toISOString().slice(0,10));
-  var filterDate = filterDateState[0]; var setFilterDate = filterDateState[1];
 
-  var TODAY = new Date().toISOString().slice(0,10);
+  var TODAY = new Date().toISOString().slice(0, 10);
+  var activeHorses = horses.filter(function(h) { return h.status !== "Retired" && h.status !== "Sold"; });
 
   useEffect(function() {
     if (!user || !supabase) return;
-    supabase.from("trotters").select("*").eq("user_id", user.id).order("date", { ascending: true }).then(function(res) {
-      if (res.data) setEntries(res.data);
-    });
+    supabase.from("trotters").select("*").eq("user_id", user.id)
+      .order("date", { ascending: false })
+      .then(function(res) { if (res.data) setEntries(res.data); });
   }, [user]);
 
-  function updateForm(key, val) {
-    setForm(function(prev) { return Object.assign({}, prev, { [key]: val }); });
+  function toggleSelect(horseId) {
+    setSelected(function(prev) {
+      var next = Object.assign({}, prev);
+      if (next[horseId]) delete next[horseId];
+      else next[horseId] = true;
+      return next;
+    });
   }
 
-  function saveEntry() {
-    if (!form.horseId || !form.date) return;
+  function selectAll() {
+    var filtered = getFilteredHorses();
+    var next = {};
+    filtered.forEach(function(h) { next[h.id] = true; });
+    setSelected(next);
+  }
+
+  function clearSelected() { setSelected({}); }
+
+  function scheduleSelected() {
+    if (Object.keys(selected).length === 0) return;
     setSaving(true);
-    var horse = horses.find(function(h) { return h.id === form.horseId; });
-    var record = {
-      user_id: user.id,
-      horse_id: form.horseId,
-      horse_name: horse ? horse.name : "",
-      date: form.date,
-      time: form.time,
-      reason: form.reason,
-      outcome: form.outcome,
-      notes: form.notes,
-      created_at: new Date().toISOString()
-    };
-    supabase.from("trotters").insert(record).select().then(function(res) {
-      if (res.data && res.data[0]) {
-        setEntries(function(prev) { return prev.concat(res.data[0]); });
-      }
-      setSaving(false);
-      setShowAdd(false);
-      setForm({ horseId: "", date: new Date().toISOString().slice(0,10), time: "08:00", reason: "", outcome: "Pending", notes: "" });
+    var records = Object.keys(selected).map(function(horseId) {
+      var horse = horses.find(function(h) { return h.id === horseId; });
+      return {
+        user_id: user.id,
+        horse_id: horseId,
+        horse_name: horse ? horse.name : "",
+        date: schedDate,
+        time: schedTime,
+        reason: schedReason,
+        outcome: "Pending",
+        notes: "",
+        created_at: new Date().toISOString()
+      };
     });
+    supabase.from("trotters").insert(records).select()
+      .then(function(res) {
+        if (res.data) setEntries(function(prev) { return res.data.concat(prev); });
+        setSaving(false);
+        setSelected({});
+        setShowSchedule(false);
+        setSchedReason("");
+        setView("today");
+        setFilterDate(schedDate);
+      });
   }
 
   function updateOutcome(id, outcome) {
     setEntries(function(prev) {
       return prev.map(function(e) { return e.id === id ? Object.assign({}, e, { outcome: outcome }) : e; });
     });
-    supabase.from("trotters").update({ outcome: outcome }).eq("id", id).then(function() {});
+    if (supabase) supabase.from("trotters").update({ outcome: outcome }).eq("id", id).then(function() {});
   }
 
   function updateNotes(id, notes) {
     setEntries(function(prev) {
       return prev.map(function(e) { return e.id === id ? Object.assign({}, e, { notes: notes }) : e; });
     });
-    supabase.from("trotters").update({ notes: notes }).eq("id", id).then(function() {});
+    if (supabase) supabase.from("trotters").update({ notes: notes }).eq("id", id).then(function() {});
   }
 
   function deleteEntry(id) {
     setEntries(function(prev) { return prev.filter(function(e) { return e.id !== id; }); });
-    supabase.from("trotters").delete().eq("id", id).then(function() {});
+    if (supabase) supabase.from("trotters").delete().eq("id", id).then(function() {});
   }
 
-  var todayEntries = entries.filter(function(e) { return e.date === TODAY; }).sort(function(a, b) { return (a.time || "").localeCompare(b.time || ""); });
-  var filteredEntries = entries.filter(function(e) { return e.date === filterDate; }).sort(function(a, b) { return (a.time || "").localeCompare(b.time || ""); });
-  var activeHorses = horses.filter(function(h) { return h.status !== "Retired" && h.status !== "Sold"; });
-
-  function outcomeColor(o) {
-    if (o === "Sound") return C.green;
-    if (o === "Lame" || o === "Needs Vet") return C.red;
-    if (o === "Slight Lameness" || o === "Monitor") return C.amber;
-    return C.textMid;
+  function getFilteredHorses() {
+    var q = search.trim().toLowerCase();
+    return activeHorses.filter(function(h) {
+      return !q || h.name.toLowerCase().indexOf(q) >= 0;
+    }).sort(function(a, b) { return a.name.localeCompare(b.name); });
   }
 
-  function outcomeBg(o) {
-    if (o === "Sound") return C.green + "15";
-    if (o === "Lame" || o === "Needs Vet") return C.red + "12";
-    if (o === "Slight Lameness" || o === "Monitor") return C.amber + "15";
-    return C.cardOff;
-  }
+  var todayEntries = entries.filter(function(e) { return e.date === filterDate; })
+    .sort(function(a, b) { return (a.time || "").localeCompare(b.time || ""); });
+
+  var selectedCount = Object.keys(selected).length;
 
   return (
-    <div style={{ maxWidth: 760, margin: "0 auto" }}>
+    <div style={{ maxWidth: 800, margin: "0 auto" }}>
 
-      {/* TODAY BANNER */}
-      {todayEntries.length > 0 && (
-        <div style={{ background: C.navy, borderRadius: 14, padding: "16px 20px", marginBottom: 20 }}>
-          <div style={{ fontSize: 13, fontWeight: 700, color: C.gold, marginBottom: 12, textTransform: "uppercase", letterSpacing: 0.5 }}>
-            {"Horses to see trot today - " + todayEntries.length + " scheduled"}
-          </div>
-          {todayEntries.map(function(e) {
-            return (
-              <div key={e.id} style={{ display: "flex", alignItems: "center", gap: 12, padding: "8px 0", borderBottom: "1px solid rgba(255,255,255,0.08)" }}>
-                <div style={{ fontSize: 15, fontWeight: 900, color: "#fff", minWidth: 50 }}>{e.time}</div>
-                <div style={{ flex: 1 }}>
-                  <div style={{ fontSize: 16, fontWeight: 800, color: "#fff" }}>{e.horse_name}</div>
-                  {e.reason && <div style={{ fontSize: 12, color: "rgba(255,255,255,0.5)", marginTop: 1 }}>{e.reason}</div>}
-                </div>
-                <div style={{ display: "flex", flexDirection: "column", gap: 6, minWidth: 280 }}>
-                  <div style={{ display: "flex", gap: 6, flexWrap: "wrap" }}>
-                    {["Sound", "Lame", "Slight Lameness", "Needs Vet"].map(function(o) {
-                      var active = e.outcome === o;
-                      return (
-                        <button key={o} onClick={function() { updateOutcome(e.id, o); }}
-                          style={{ padding: "5px 10px", borderRadius: 20, border: "1.5px solid " + (active ? outcomeColor(o) : "rgba(255,255,255,0.2)"), background: active ? outcomeBg(o) : "transparent", color: active ? outcomeColor(o) : "rgba(255,255,255,0.5)", fontSize: 11, fontWeight: 700, cursor: "pointer", whiteSpace: "nowrap" }}>
-                          {o}
-                        </button>
-                      );
-                    })}
-                  </div>
-                  <input type="text" placeholder="Notes e.g. n/f lame, 3/10 lame LF..."
-                    defaultValue={e.notes || ""}
-                    onBlur={function(ev) { updateNotes(e.id, ev.target.value); }}
-                    style={{ padding: "6px 10px", borderRadius: 8, border: "1px solid rgba(255,255,255,0.2)", background: "rgba(255,255,255,0.08)", color: "#fff", fontSize: 12, width: "100%" }} />
-                </div>
-              </div>
-            );
-          })}
-        </div>
-      )}
-
-      {/* HEADER */}
+      {/* Header */}
       <div style={{ display: "flex", alignItems: "center", justifyContent: "space-between", marginBottom: 16, flexWrap: "wrap", gap: 10 }}>
         <div style={{ fontSize: 22, fontWeight: 800, color: C.text }}>Trotters</div>
-        <div style={{ display: "flex", gap: 8, alignItems: "center" }}>
-          <input type="date" value={filterDate} onChange={function(e) { setFilterDate(e.target.value); }}
+        <div style={{ display: "flex", gap: 8, flexWrap: "wrap", alignItems: "center" }}>
+          <input type="date" value={filterDate} onChange={function(e) { setFilterDate(e.target.value); setView("today"); }}
             style={{ padding: "8px 12px", background: C.card, border: "1px solid " + C.border, borderRadius: 8, fontSize: 13, color: C.text }} />
-          <Btn onClick={function() { setShowAdd(true); }}>+ Schedule Trot</Btn>
+          <Btn onClick={function() { setView(view === "schedule" ? "today" : "schedule"); setSelected({}); }}>
+            {view === "schedule" ? "Cancel" : "+ Schedule Trot"}
+          </Btn>
         </div>
       </div>
 
-      {/* FILTERED LIST */}
-      {filteredEntries.length === 0 ? (
-        <div style={{ background: C.card, border: "1.5px dashed " + C.border, borderRadius: 12, padding: "40px 20px", textAlign: "center", color: C.textMid, fontSize: 14 }}>
-          No horses scheduled to trot on this date
-        </div>
-      ) : (
-        <div>
-          {filteredEntries.map(function(e) {
-            return (
-              <div key={e.id} style={{ background: C.card, border: "1px solid " + C.border, borderRadius: 12, padding: "14px 16px", marginBottom: 10, display: "flex", alignItems: "flex-start", gap: 14 }}>
-                <div style={{ minWidth: 52, textAlign: "center" }}>
-                  <div style={{ fontSize: 16, fontWeight: 800, color: C.navy }}>{e.time}</div>
-                </div>
-                <div style={{ flex: 1 }}>
-                  <div style={{ fontSize: 17, fontWeight: 800, color: C.text, marginBottom: 2 }}>{e.horse_name}</div>
-                  {e.reason && <div style={{ fontSize: 12, color: C.textMid, marginBottom: 8 }}>{e.reason}</div>}
-                  <div style={{ display: "flex", gap: 6, flexWrap: "wrap" }}>
-                    {OUTCOMES.map(function(o) {
-                      var active = e.outcome === o;
-                      return (
-                        <button key={o} onClick={function() { updateOutcome(e.id, o); }}
-                          style={{ padding: "5px 12px", borderRadius: 20, border: "1.5px solid " + (active ? outcomeColor(o) : C.border), background: active ? outcomeBg(o) : "transparent", color: active ? outcomeColor(o) : C.textMid, fontSize: 12, fontWeight: active ? 700 : 400, cursor: "pointer" }}>
-                          {o}
-                        </button>
-                      );
-                    })}
+      {/* SCHEDULE VIEW */}
+      {view === "schedule" && (
+        <div style={{ background: C.card, border: "1px solid " + C.border, borderRadius: 14, padding: "18px 20px", marginBottom: 16 }}>
+          <div style={{ fontSize: 15, fontWeight: 800, color: C.navy, marginBottom: 14 }}>Select horses to trot</div>
+
+          {/* Schedule options */}
+          <div style={{ display: "grid", gridTemplateColumns: "1fr 1fr 1fr", gap: 10, marginBottom: 14 }}>
+            <div>
+              <div style={{ fontSize: 10, fontWeight: 700, color: C.textMid, marginBottom: 4, textTransform: "uppercase" }}>Date</div>
+              <input type="date" value={schedDate} onChange={function(e) { setSchedDate(e.target.value); }}
+                style={{ width: "100%", padding: "8px 10px", background: C.cardOff, border: "1px solid " + C.border, borderRadius: 8, fontSize: 13, color: C.text }} />
+            </div>
+            <div>
+              <div style={{ fontSize: 10, fontWeight: 700, color: C.textMid, marginBottom: 4, textTransform: "uppercase" }}>Time</div>
+              <input type="time" value={schedTime} onChange={function(e) { setSchedTime(e.target.value); }}
+                style={{ width: "100%", padding: "8px 10px", background: C.cardOff, border: "1px solid " + C.border, borderRadius: 8, fontSize: 13, color: C.text }} />
+            </div>
+            <div>
+              <div style={{ fontSize: 10, fontWeight: 700, color: C.textMid, marginBottom: 4, textTransform: "uppercase" }}>Reason</div>
+              <input type="text" value={schedReason} onChange={function(e) { setSchedReason(e.target.value); }}
+                placeholder="e.g. Routine soundness"
+                style={{ width: "100%", padding: "8px 10px", background: C.cardOff, border: "1px solid " + C.border, borderRadius: 8, fontSize: 13, color: C.text }} />
+            </div>
+          </div>
+
+          {/* Search + select all */}
+          <div style={{ display: "flex", gap: 8, marginBottom: 10, alignItems: "center" }}>
+            <input type="text" value={search} onChange={function(e) { setSearch(e.target.value); }}
+              placeholder="Search horses..."
+              style={{ flex: 1, padding: "8px 12px", background: C.cardOff, border: "1px solid " + C.border, borderRadius: 8, fontSize: 13, color: C.text }} />
+            <Btn variant="ghost" onClick={selectAll} style={{ fontSize: 12 }}>Select All</Btn>
+            {selectedCount > 0 && <Btn variant="ghost" onClick={clearSelected} style={{ fontSize: 12 }}>Clear</Btn>}
+          </div>
+
+          {/* Horse grid */}
+          <div style={{ display: "grid", gridTemplateColumns: "repeat(auto-fill, minmax(160px, 1fr))", gap: 6, maxHeight: 320, overflowY: "auto", marginBottom: 14 }}>
+            {getFilteredHorses().map(function(horse) {
+              var isSel = !!selected[horse.id];
+              return (
+                <div key={horse.id} onClick={function() { toggleSelect(horse.id); }}
+                  style={{ display: "flex", alignItems: "center", gap: 8, padding: "9px 12px", borderRadius: 10, cursor: "pointer", border: "2px solid " + (isSel ? C.gold : C.border), background: isSel ? C.gold + "10" : C.cardOff, transition: "all 0.15s" }}>
+                  <div style={{ width: 18, height: 18, borderRadius: 4, border: "2px solid " + (isSel ? C.gold : C.border), background: isSel ? C.gold : "transparent", flexShrink: 0, display: "flex", alignItems: "center", justifyContent: "center" }}>
+                    {isSel && <span style={{ color: C.navy, fontSize: 12, fontWeight: 900, lineHeight: 1 }}>v</span>}
                   </div>
-                  <input type="text" placeholder="Notes e.g. n/f lame, 3/10 lame LF..."
-                    defaultValue={e.notes || ""}
-                    onBlur={function(ev) { updateNotes(e.id, ev.target.value); }}
-                    style={{ marginTop: 8, padding: "7px 10px", borderRadius: 8, border: "1px solid " + C.border, background: C.cardOff, color: C.text, fontSize: 12, width: "100%" }} />
-                  {e.notes && <div style={{ fontSize: 12, color: C.textMid, marginTop: 4, fontStyle: "italic" }}>{e.notes}</div>}
+                  <span style={{ fontSize: 13, fontWeight: isSel ? 700 : 400, color: C.text, overflow: "hidden", textOverflow: "ellipsis", whiteSpace: "nowrap" }}>{horse.name}</span>
                 </div>
-                <button onClick={function() { if (window.confirm("Remove this entry?")) deleteEntry(e.id); }}
-                  style={{ background: "none", border: "none", color: C.red, cursor: "pointer", fontSize: 18, padding: "2px 6px" }}>x</button>
-              </div>
-            );
-          })}
+              );
+            })}
+          </div>
+
+          {/* Schedule button */}
+          <div style={{ display: "flex", alignItems: "center", gap: 12 }}>
+            <Btn onClick={scheduleSelected} disabled={saving || selectedCount === 0}>
+              {saving ? "Saving..." : "Schedule " + (selectedCount > 0 ? selectedCount + " horse" + (selectedCount > 1 ? "s" : "") : "selected horses")}
+            </Btn>
+            {selectedCount > 0 && (
+              <span style={{ fontSize: 13, color: C.textMid }}>{selectedCount + " selected"}</span>
+            )}
+          </div>
+        </div>
+      )}
+
+      {/* TODAY VIEW */}
+      {view === "today" && (
+        <div>
+          {todayEntries.length === 0 ? (
+            <div style={{ background: C.card, border: "1.5px dashed " + C.border, borderRadius: 12, padding: "40px 20px", textAlign: "center", color: C.textMid, fontSize: 14 }}>
+              No horses scheduled to trot on {filterDate === TODAY ? "today" : filterDate}
+            </div>
+          ) : (
+            <div>
+              {filterDate === TODAY && (
+                <div style={{ background: C.navy, borderRadius: 12, padding: "12px 16px", marginBottom: 12, fontSize: 13, fontWeight: 700, color: C.gold }}>
+                  {todayEntries.length + " horse" + (todayEntries.length > 1 ? "s" : "") + " to see trot today"}
+                </div>
+              )}
+              {todayEntries.map(function(e) {
+                return (
+                  <div key={e.id} style={{ background: C.card, border: "1px solid " + (e.outcome !== "Pending" ? outcomeColor(e.outcome) + "40" : C.border), borderRadius: 12, padding: "14px 16px", marginBottom: 10 }}>
+                    <div style={{ display: "flex", alignItems: "center", gap: 12, marginBottom: 10 }}>
+                      <div style={{ minWidth: 52, textAlign: "center" }}>
+                        <div style={{ fontSize: 16, fontWeight: 800, color: C.navy }}>{e.time}</div>
+                      </div>
+                      <div style={{ flex: 1 }}>
+                        <div style={{ fontSize: 16, fontWeight: 800, color: C.text }}>{e.horse_name}</div>
+                        {e.reason && <div style={{ fontSize: 12, color: C.textMid, marginTop: 1 }}>{e.reason}</div>}
+                      </div>
+                      {e.outcome !== "Pending" && (
+                        <span style={{ fontSize: 12, fontWeight: 700, color: outcomeColor(e.outcome), background: outcomeBg(e.outcome), padding: "3px 10px", borderRadius: 20 }}>{e.outcome}</span>
+                      )}
+                      <button onClick={function() { if (window.confirm("Remove?")) deleteEntry(e.id); }}
+                        style={{ background: "none", border: "none", color: C.red, cursor: "pointer", fontSize: 18, padding: "2px 6px" }}>x</button>
+                    </div>
+
+                    {/* Outcome buttons */}
+                    <div style={{ display: "flex", gap: 6, flexWrap: "wrap", marginBottom: 8 }}>
+                      {OUTCOMES.map(function(o) {
+                        var active = e.outcome === o;
+                        return (
+                          <button key={o} onClick={function() { updateOutcome(e.id, o); }}
+                            style={{ padding: "5px 12px", borderRadius: 20, border: "1.5px solid " + (active ? outcomeColor(o) : C.border), background: active ? outcomeBg(o) : "transparent", color: active ? outcomeColor(o) : C.textMid, fontSize: 12, fontWeight: active ? 700 : 400, cursor: "pointer", transition: "all 0.15s" }}>
+                            {o}
+                          </button>
+                        );
+                      })}
+                    </div>
+
+                    {/* Notes */}
+                    <input type="text" placeholder="Notes e.g. n/f lame, 3/10 lame LF..."
+                      defaultValue={e.notes || ""}
+                      onBlur={function(ev) { updateNotes(e.id, ev.target.value); }}
+                      style={{ width: "100%", padding: "7px 10px", borderRadius: 8, border: "1px solid " + C.border, background: C.cardOff, color: C.text, fontSize: 12 }} />
+                  </div>
+                );
+              })}
+            </div>
+          )}
         </div>
       )}
 
       {/* HISTORY */}
-      <div style={{ marginTop: 24 }}>
+      <div style={{ marginTop: 20 }}>
         <button onClick={function() { setShowHistory(function(p) { return !p; }); }}
-          style={{ background: "none", border: "none", color: C.textMid, fontSize: 13, cursor: "pointer", fontWeight: 600, padding: 0, display: "flex", alignItems: "center", gap: 6 }}>
+          style={{ background: "none", border: "none", color: C.textMid, fontSize: 13, cursor: "pointer", fontWeight: 600, padding: 0 }}>
           {showHistory ? "Hide" : "Show"} full trot history
-          <span style={{ fontSize: 11 }}>{showHistory ? "v" : ">"}</span>
         </button>
         {showHistory && (
           <div style={{ marginTop: 12 }}>
             {activeHorses.filter(function(h) {
               return entries.some(function(e) { return e.horse_id === h.id; });
-            }).sort(function(a,b){return a.name.localeCompare(b.name);}).map(function(h) {
-              var horseHistory = entries.filter(function(e) { return e.horse_id === h.id; }).sort(function(a,b){ return b.date.localeCompare(a.date); });
+            }).sort(function(a, b) { return a.name.localeCompare(b.name); }).map(function(h) {
+              var horseHistory = entries.filter(function(e) { return e.horse_id === h.id; })
+                .sort(function(a, b) { return b.date.localeCompare(a.date); });
               if (horseHistory.length === 0) return null;
               return (
                 <div key={h.id} style={{ background: C.card, border: "1px solid " + C.border, borderRadius: 12, padding: "14px 16px", marginBottom: 10 }}>
@@ -224,65 +307,6 @@ function Trotters({ horses, user, supabase }) {
         )}
       </div>
 
-      {/* ADD MODAL */}
-      {showAdd && (
-        <div onClick={function() { setShowAdd(false); }} style={{ position: "fixed", inset: 0, background: "rgba(0,0,0,0.5)", zIndex: 500, display: "flex", alignItems: "center", justifyContent: "center", padding: 20 }}>
-          <div onClick={function(e) { e.stopPropagation(); }} style={{ background: C.card, borderRadius: 16, padding: "24px", maxWidth: 440, width: "100%", maxHeight: "90vh", overflowY: "auto" }}>
-            <div style={{ fontSize: 17, fontWeight: 800, color: C.text, marginBottom: 16 }}>Schedule Trot</div>
-            <div style={{ display: "grid", gridTemplateColumns: "1fr 1fr", gap: 10, marginBottom: 10 }}>
-              <div style={{ gridColumn: "1 / -1" }}>
-                <div style={{ fontSize: 10, fontWeight: 700, color: C.textMid, marginBottom: 4, textTransform: "uppercase" }}>Horse</div>
-                <select value={form.horseId} onChange={function(e) { updateForm("horseId", e.target.value); }}
-                  style={{ width: "100%", padding: "9px 12px", background: C.cardOff, border: "1px solid " + C.border, borderRadius: 8, fontSize: 14, color: C.text }}>
-                  <option value="">Select horse...</option>
-                  {activeHorses.sort(function(a,b){return a.name.localeCompare(b.name);}).map(function(h) {
-                    return <option key={h.id} value={h.id}>{h.name}</option>;
-                  })}
-                </select>
-              </div>
-              <div>
-                <div style={{ fontSize: 10, fontWeight: 700, color: C.textMid, marginBottom: 4, textTransform: "uppercase" }}>Date</div>
-                <input type="date" value={form.date} onChange={function(e) { updateForm("date", e.target.value); }}
-                  style={{ width: "100%", padding: "9px 12px", background: C.cardOff, border: "1px solid " + C.border, borderRadius: 8, fontSize: 14, color: C.text }} />
-              </div>
-              <div>
-                <div style={{ fontSize: 10, fontWeight: 700, color: C.textMid, marginBottom: 4, textTransform: "uppercase" }}>Time</div>
-                <input type="time" value={form.time} onChange={function(e) { updateForm("time", e.target.value); }}
-                  style={{ width: "100%", padding: "9px 12px", background: C.cardOff, border: "1px solid " + C.border, borderRadius: 8, fontSize: 14, color: C.text }} />
-              </div>
-              <div style={{ gridColumn: "1 / -1" }}>
-                <div style={{ fontSize: 10, fontWeight: 700, color: C.textMid, marginBottom: 4, textTransform: "uppercase" }}>Reason (optional)</div>
-                <input type="text" value={form.reason} onChange={function(e) { updateForm("reason", e.target.value); }}
-                  placeholder="e.g. Slight stiffness after work, routine check"
-                  style={{ width: "100%", padding: "9px 12px", background: C.cardOff, border: "1px solid " + C.border, borderRadius: 8, fontSize: 14, color: C.text }} />
-              </div>
-              <div style={{ gridColumn: "1 / -1" }}>
-                <div style={{ fontSize: 10, fontWeight: 700, color: C.textMid, marginBottom: 8, textTransform: "uppercase" }}>Initial Assessment</div>
-                <div style={{ display: "flex", flexWrap: "wrap", gap: 6 }}>
-                  {OUTCOMES.map(function(o) {
-                    return (
-                      <button key={o} onClick={function() { updateForm("outcome", o); }}
-                        style={{ padding: "6px 14px", borderRadius: 20, border: "1.5px solid " + (form.outcome === o ? outcomeColor(o) : C.border), background: form.outcome === o ? outcomeBg(o) : "transparent", color: form.outcome === o ? outcomeColor(o) : C.textMid, fontSize: 13, fontWeight: form.outcome === o ? 700 : 400, cursor: "pointer" }}>
-                        {o}
-                      </button>
-                    );
-                  })}
-                </div>
-              </div>
-              <div style={{ gridColumn: "1 / -1" }}>
-                <div style={{ fontSize: 10, fontWeight: 700, color: C.textMid, marginBottom: 4, textTransform: "uppercase" }}>Notes</div>
-                <textarea value={form.notes} onChange={function(e) { updateForm("notes", e.target.value); }}
-                  placeholder="Any additional notes..."
-                  style={{ width: "100%", padding: "9px 12px", background: C.cardOff, border: "1px solid " + C.border, borderRadius: 8, fontSize: 13, color: C.text, resize: "vertical", minHeight: 60 }} />
-              </div>
-            </div>
-            <div style={{ display: "flex", gap: 8 }}>
-              <Btn onClick={saveEntry} disabled={saving || !form.horseId}>{saving ? "Saving..." : "Save"}</Btn>
-              <Btn variant="ghost" onClick={function() { setShowAdd(false); }}>Cancel</Btn>
-            </div>
-          </div>
-        </div>
-      )}
     </div>
   );
 }
