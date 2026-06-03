@@ -33,6 +33,64 @@ function YardView({ horses, setHorses }) {
     return t;
   }
 
+  function handleOwnerImport(e) {
+    var file = e.target.files[0];
+    if (!file) return;
+    e.target.value = "";
+    var reader = new FileReader();
+    reader.onload = function(ev) {
+      try {
+        var text = ev.target.result;
+        var rawLines = text.split("\n").filter(function(l) { return l.trim(); });
+        var sep = rawLines[0].indexOf("\t") >= 0 ? "\t" : ",";
+        var headers = rawLines[0].split(sep).map(function(h) {
+          return h.trim().toLowerCase().replace(/\s+/g, "_").replace(/[^a-z0-9_]/g, "");
+        });
+        var updateMap = {};
+        for (var i = 1; i < rawLines.length; i++) {
+          var cols = rawLines[i].split(sep).map(function(c) {
+            var t = c.trim();
+            if (t.length > 1 && t[0] === '"' && t[t.length-1] === '"') return t.slice(1,-1);
+            return t;
+          });
+          var row = {};
+          for (var j = 0; j < headers.length; j++) row[headers[j]] = cols[j] || "";
+          var horseName = (row.horse || row.horse_name || row.name || cols[0] || "").trim();
+          if (!horseName) continue;
+          var phone = (row.mobile || row.phone || row.telephone || row.owner_mobile || row.owner_phone || "").trim();
+          var email = (row.email || row.owner_email || row.email_address || "").trim();
+          var owner = (row.owner || row.owner_name || row.ownername || "").trim();
+          if (phone || email || owner) {
+            updateMap[horseName.toLowerCase()] = { phone: phone, email: email, owner: owner };
+          }
+        }
+        var matched = 0;
+        setHorses(function(prev) {
+          return prev.map(function(h) {
+            var key = h.name.toLowerCase().trim();
+            if (updateMap[key]) {
+              matched++;
+              var u = updateMap[key];
+              return Object.assign({}, h, {
+                ownerPhone: u.phone || h.ownerPhone,
+                ownerEmail: u.email || h.ownerEmail,
+                owner: u.owner || h.owner,
+              });
+            }
+            return h;
+          });
+        });
+        var total = Object.keys(updateMap).length;
+        setCsvStatus("Owner import: " + matched + " of " + total + " horses matched");
+        setTimeout(function() { setCsvStatus(null); }, 5000);
+      } catch(err) {
+        setCsvStatus("Error reading owner file - use CSV format");
+        setTimeout(function() { setCsvStatus(null); }, 4000);
+      }
+    };
+    reader.readAsText(file);
+  }
+
   function handleCSV(e) {
     var file = e.target.files[0];
     if (!file) return;
@@ -60,8 +118,12 @@ function YardView({ horses, setHorses }) {
           imported.push({
             id: "h_" + Date.now() + "_" + i,
             name: name, dob: yof ? yof + "-01-01" : "", sex: sex,
-            colour: row.colour || row.color || "", owner: row.owner || "",
-            ownerPhone: "", ownerEmail: "", status: status, activationDate: null,
+            colour: row.colour || row.color || "",
+            owner: row.owner || row.owner_name || row.ownername || "",
+            trainer: row.trainer || "",
+            ownerPhone: row.owner_phone || row.ownerphone || row.phone || row.mobile || row.tel || row.telephone || row.owner_mobile || "",
+            ownerEmail: row.owner_email || row.owneremail || row.email || row.email_address || "",
+            status: status, activationDate: null,
             nhRating: null, flatRating: null, hurdleRating: null, chaseRating: null, awtRating: null,
             discipline: [], surface: "Turf", headgear: "", jockey: "", trainer: "",
             nextRaceDate: "", notes: "", isEBF: false, isMaiden: true, isNovice: false,
@@ -251,6 +313,10 @@ function YardView({ horses, setHorses }) {
             Import Ratings CSV
             <input type="file" accept=".csv,.tsv,.txt" onChange={handleRatingsCSV} style={{ display: "none" }} />
           </label>
+          <label style={{ background: C.card, border: "1px solid " + C.border, borderRadius: 8, padding: "7px 14px", fontSize: 13, fontWeight: 600, cursor: "pointer", color: C.text }} title="CSV with columns: Horse, Owner, Mobile, Email">
+            Import Owners
+            <input type="file" accept=".csv,.tsv,.txt" style={{ display: "none" }} onChange={handleOwnerImport} />
+          </label>
           <Btn variant="ghost" onClick={function() { if (window.confirm("Remove all horses? This cannot be undone.")) setHorses(function() { return []; }); }} style={{ color: C.red, borderColor: C.red, fontSize: 12 }}>Clear Yard</Btn>
           <Btn onClick={function() { setShowAdd(true); }}>+ Add Horse</Btn>
         </div>
@@ -290,7 +356,7 @@ function YardView({ horses, setHorses }) {
                   {h.hurdleRating && <span>{"Hrd: " + h.hurdleRating}</span>}
                   {h.chaseRating && <span>{"Chs: " + h.chaseRating}</span>}
                   {h.nhRating && !h.flatRating && !h.hurdleRating && !h.chaseRating && <span>{"OR: " + h.nhRating}</span>}
-                  <span>{"Owner: " + (h.owner || "—")}</span>
+                  <span>{"Owner: " + (h.owner || "-")}</span>
                   {h.ownerPhone && (
                     <a href={"https://wa.me/" + h.ownerPhone.split("").filter(function(d) { return d >= "0" && d <= "9"; }).join("")}
                       target="_blank" rel="noreferrer"
@@ -319,7 +385,7 @@ function YardView({ horses, setHorses }) {
         <div style={{ position: "fixed", inset: 0, background: "rgba(10,22,40,0.6)", zIndex: 500, display: "flex", alignItems: "center", justifyContent: "center", padding: 20 }}>
           <div style={{ background: C.card, borderRadius: 16, width: "100%", maxWidth: 480, maxHeight: "90vh", overflowY: "auto", boxShadow: C.shadowMd }}>
             <div style={{ background: C.navy, padding: "16px 20px", display: "flex", justifyContent: "space-between", alignItems: "center", position: "sticky", top: 0 }}>
-              <div style={{ fontSize: 15, fontWeight: 700, color: "#fff" }}>{"Edit — " + editHorse.name}</div>
+              <div style={{ fontSize: 15, fontWeight: 700, color: "#fff" }}>{"Edit - " + editHorse.name}</div>
               <button onClick={function() { setEditHorse(null); }} style={{ background: "rgba(255,255,255,0.1)", border: "none", color: "#fff", width: 28, height: 28, borderRadius: 6, cursor: "pointer" }}>x</button>
             </div>
             <div style={{ padding: 20, display: "flex", flexDirection: "column", gap: 11 }}>
@@ -342,7 +408,7 @@ function YardView({ horses, setHorses }) {
                                   <span style={{ fontSize: 13, fontWeight: 700, color: daysLeft > 0 ? C.red : C.textMid }}>{t.name}</span>
                                   <span style={{ fontSize: 11, color: C.textMid, marginLeft: 8 }}>{t.date}</span>
                                   <span style={{ fontSize: 11, color: C.textMid, marginLeft: 8 }}>{t.withdrawalDays + " days"}</span>
-                                  {daysLeft > 0 && <span style={{ fontSize: 11, color: C.red, fontWeight: 700, marginLeft: 8 }}>{"⛔ " + daysLeft + "d left — clear " + clearD.toLocaleDateString("en-IE", { day: "numeric", month: "short" })}</span>}
+                                  {daysLeft > 0 && <span style={{ fontSize: 11, color: C.red, fontWeight: 700, marginLeft: 8 }}>{"⛔ " + daysLeft + "d left - clear " + clearD.toLocaleDateString("en-IE", { day: "numeric", month: "short" })}</span>}
                                   {daysLeft <= 0 && <span style={{ fontSize: 11, color: C.green, fontWeight: 700, marginLeft: 8 }}>✓ Clear</span>}
                                 </div>
                                 <button onClick={function() {
@@ -442,7 +508,7 @@ function YardView({ horses, setHorses }) {
                                   <span style={{ fontSize: 13, fontWeight: 700, color: daysLeft > 0 ? C.red : C.textMid }}>{t.name}</span>
                                   <span style={{ fontSize: 11, color: C.textMid, marginLeft: 8 }}>{t.date}</span>
                                   <span style={{ fontSize: 11, color: C.textMid, marginLeft: 8 }}>{t.withdrawalDays + " days"}</span>
-                                  {daysLeft > 0 && <span style={{ fontSize: 11, color: C.red, fontWeight: 700, marginLeft: 8 }}>{"⛔ " + daysLeft + "d left — clear " + clearD.toLocaleDateString("en-IE", { day: "numeric", month: "short" })}</span>}
+                                  {daysLeft > 0 && <span style={{ fontSize: 11, color: C.red, fontWeight: 700, marginLeft: 8 }}>{"⛔ " + daysLeft + "d left - clear " + clearD.toLocaleDateString("en-IE", { day: "numeric", month: "short" })}</span>}
                                   {daysLeft <= 0 && <span style={{ fontSize: 11, color: C.green, fontWeight: 700, marginLeft: 8 }}>✓ Clear</span>}
                                 </div>
                                 <button onClick={function() {
