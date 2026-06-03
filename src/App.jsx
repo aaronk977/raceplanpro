@@ -31,10 +31,10 @@ const globalCSS = ".desktop-only { display: flex !important; } * { box-sizing: b
 
 var ROLE_TABS = {
   "Trainer":           ["yard","planner","provisional","meds","whiteboard","movements","owners","staff","weights","trotters","checklist","assistant","content","summary","reminders","procurement","travel","settings"],
-  "Secretary":         ["yard","planner","provisional","meds","whiteboard","movements","owners","staff","weights","assistant","content","summary","reminders","procurement","travel","settings"],
-  "Head Lad":          ["yard","planner","provisional","meds","whiteboard","movements","owners","staff","weights","trotters","assistant","content","summary","reminders","procurement","travel","settings"],
-  "Head Girl":         ["yard","planner","provisional","meds","whiteboard","movements","owners","staff","weights","trotters","assistant","content","summary","reminders","procurement","travel","settings"],
-  "Assistant Trainer": ["yard","planner","provisional","meds","whiteboard","movements","owners","staff","weights","trotters","assistant","content","summary","reminders","procurement","travel","settings"],
+  "Secretary":         ["yard","planner","provisional","meds","whiteboard","movements","owners","staff","weights","trotters","checklist","assistant","content","summary","reminders","procurement","travel","settings"],
+  "Head Lad":          ["yard","planner","provisional","meds","whiteboard","movements","owners","staff","weights","trotters","checklist","assistant","content","summary","reminders","procurement","travel","settings"],
+  "Head Girl":         ["yard","planner","provisional","meds","whiteboard","movements","owners","staff","weights","trotters","checklist","assistant","content","summary","reminders","procurement","travel","settings"],
+  "Assistant Trainer": ["yard","planner","provisional","meds","whiteboard","movements","owners","staff","weights","trotters","checklist","assistant","content","summary","reminders","procurement","travel","settings"],
   "Staff":             ["meds","staff","weights","movements","reminders","procurement"],
   "Vet":               ["yard","meds","movements","weights","trotters","summary"],
   "Owner":             ["owners","whiteboard"]
