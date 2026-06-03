@@ -39,7 +39,7 @@ var RETURN_CHECKLIST = [
   { id: "r_kit", label: "All other kit accounted for" },
 ];
 
-function RaceDayChecklist({ horses, user, supabase }) {
+function RaceDayChecklist({ horses, wbEntries, user, supabase }) {
   var dateState = useState(new Date().toISOString().slice(0, 10));
   var selectedDate = dateState[0]; var setSelectedDate = dateState[1];
   var checklistsState = useState({});
@@ -53,10 +53,17 @@ function RaceDayChecklist({ horses, user, supabase }) {
 
   var TODAY = new Date().toISOString().slice(0, 10);
 
-  // Get runners for selected date from whiteboard entries (passed via horses)
+  // Only show horses with whiteboard entries for selected date
+  var dateEntries = (wbEntries || []).filter(function(e) { return e.date === selectedDate; });
+  var runnerIds = dateEntries.map(function(e) { return e.horseId; });
   var todayRunners = horses.filter(function(h) {
-    return h.status !== "Retired" && h.status !== "Sold";
+    return runnerIds.indexOf(h.id) >= 0;
   });
+  // Also carry raceTime and venue per horse from whiteboard
+  function getRaceInfo(horseId) {
+    var e = dateEntries.find(function(e) { return e.horseId === horseId; });
+    return e ? { time: e.raceTime || "", venue: e.venue || "", raceName: e.raceName || "", raceRef: e.raceRef || "", headgear: e.headgear || "", ballotNo: e.ballotNo || "" } : {};
+  }
 
   function getChecklist(horseId) {
     return checklists[horseId] || { checks: {}, returnChecks: {}, notes: "", returned: false, customItems: [] };
@@ -190,6 +197,16 @@ function RaceDayChecklist({ horses, user, supabase }) {
               style={{ padding: "14px 18px", cursor: "pointer", display: "flex", alignItems: "center", gap: 14 }}>
               <div style={{ flex: 1 }}>
                 <div style={{ fontSize: 16, fontWeight: 800, color: C.text }}>{horse.name}</div>
+                {(function() {
+                  var ri = getRaceInfo(horse.id);
+                  return ri.time || ri.venue ? (
+                    <div style={{ fontSize: 12, color: C.textMid, marginTop: 2 }}>
+                      {[ri.time, ri.venue, ri.raceRef, ri.raceName].filter(Boolean).join(" - ")}
+                      {ri.headgear ? <span style={{ marginLeft: 6, background: C.purple, color: "#fff", padding: "1px 6px", borderRadius: 10, fontSize: 11, fontWeight: 700 }}>{ri.headgear}</span> : null}
+                      {ri.ballotNo ? <span style={{ marginLeft: 4, background: C.amber, color: "#fff", padding: "1px 6px", borderRadius: 10, fontSize: 11, fontWeight: 700 }}>{ri.ballotNo}</span> : null}
+                    </div>
+                  ) : null;
+                })()}
                 <div style={{ display: "flex", gap: 12, marginTop: 4, alignItems: "center" }}>
                   <div style={{ fontSize: 12, color: C.textMid }}>
                     <span style={{ color: allDone ? C.green : C.amber, fontWeight: 700 }}>{prog.done}/{prog.total}</span>
