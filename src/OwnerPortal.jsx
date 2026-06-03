@@ -32,6 +32,12 @@ function OwnerPortal({ horses }) {
   var bulkSelected = bulkSelectedState[0]; var setBulkSelected = bulkSelectedState[1];
   var activeTabState = useState("horses");
   var activeTab = activeTabState[0]; var setActiveTab = activeTabState[1];
+  var editPhoneState = useState("");
+  var editPhone = editPhoneState[0]; var setEditPhone = editPhoneState[1];
+  var editEmailState = useState("");
+  var editEmail = editEmailState[0]; var setEditEmail = editEmailState[1];
+  var editingContactState = useState(false);
+  var editingContact = editingContactState[0]; var setEditingContact = editingContactState[1];
 
   var ownerMap = {};
   for (var i = 0; i < horses.length; i++) {
@@ -203,15 +209,16 @@ function OwnerPortal({ horses }) {
     <div style={{ maxWidth: 800, margin: "0 auto" }}>
       {/* Header */}
       <div style={{ display: "flex", justifyContent: "space-between", alignItems: "center", marginBottom: 14, flexWrap: "wrap", gap: 8 }}>
-        <Btn variant="ghost" onClick={function() { setSelOwner(null); setShowComposer(false); setActiveTab("horses"); }} style={{ fontSize: 12 }}>
+        <Btn variant="ghost" onClick={function() { setSelOwner(null); setShowComposer(false); setActiveTab("horses"); setEditingContact(false); }} style={{ fontSize: 12 }}>
           {"< All Owners"}
         </Btn>
         <div style={{ display: "flex", gap: 6, flexWrap: "wrap" }}>
-          {selOwner.phone && (
-            <Btn onClick={function() { setShowComposer(!showComposer); setMessage(""); setTemplate(MESSAGE_TEMPLATES[0]); }} style={{ background: "#25D366", fontSize: 12 }}>
-              WhatsApp
-            </Btn>
-          )}
+          <Btn onClick={function() {
+            if (!selOwner.phone) { setEditPhone(""); setEditEmail(""); setEditingContact(true); return; }
+            setShowComposer(!showComposer); setMessage(""); setTemplate(MESSAGE_TEMPLATES[0]);
+          }} style={{ background: selOwner.phone ? "#25D366" : C.border, fontSize: 12 }}>
+            {selOwner.phone ? "WhatsApp" : "+ Add phone"}
+          </Btn>
           {selOwner.phone && (
             <a href={"tel:" + selOwner.phone}
               style={{ background: C.blueBg, border: "1px solid " + C.border, color: C.navy, padding: "7px 12px", borderRadius: 8, fontSize: 12, fontWeight: 700, textDecoration: "none" }}>
@@ -228,9 +235,32 @@ function OwnerPortal({ horses }) {
       </div>
 
       <div style={{ fontSize: 20, fontWeight: 800, color: C.text, marginBottom: 4 }}>{selOwner.name}</div>
-      <div style={{ fontSize: 12, color: C.textMid, marginBottom: 14 }}>
-        {selOwner.phone || "No phone"} {selOwner.email ? "  - " + selOwner.email : ""}
-      </div>
+      {editingContact ? (
+        <div style={{ display: "flex", gap: 8, flexWrap: "wrap", marginBottom: 14, alignItems: "center" }}>
+          <input type="tel" value={editPhone} onChange={function(e) { setEditPhone(e.target.value); }}
+            placeholder="+353 87 123 4567"
+            style={{ padding: "7px 10px", border: "1px solid " + C.border, borderRadius: 8, fontSize: 13, color: C.text, width: 160 }} />
+          <input type="email" value={editEmail} onChange={function(e) { setEditEmail(e.target.value); }}
+            placeholder="owner@email.com"
+            style={{ padding: "7px 10px", border: "1px solid " + C.border, borderRadius: 8, fontSize: 13, color: C.text, width: 200 }} />
+          <Btn onClick={function() {
+            setSelOwner(function(prev) { return Object.assign({}, prev, { phone: editPhone || prev.phone, email: editEmail || prev.email }); });
+            setEditingContact(false);
+          }} style={{ fontSize: 12 }}>Save</Btn>
+          <Btn variant="ghost" onClick={function() { setEditingContact(false); }} style={{ fontSize: 12 }}>Cancel</Btn>
+        </div>
+      ) : (
+        <div style={{ display: "flex", alignItems: "center", gap: 10, marginBottom: 14 }}>
+          <span style={{ fontSize: 12, color: selOwner.phone ? C.textMid : C.red }}>
+            {selOwner.phone || "No phone number"}
+          </span>
+          {selOwner.email && <span style={{ fontSize: 12, color: C.textMid }}>{selOwner.email}</span>}
+          <button onClick={function() { setEditPhone(selOwner.phone || ""); setEditEmail(selOwner.email || ""); setEditingContact(true); }}
+            style={{ background: "none", border: "1px solid " + C.border, borderRadius: 6, padding: "2px 8px", fontSize: 11, color: C.textMid, cursor: "pointer" }}>
+            {selOwner.phone ? "Edit" : "+ Add phone"}
+          </button>
+        </div>
+      )}
 
       {/* Message composer */}
       {showComposer && (
