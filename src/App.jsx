@@ -40,7 +40,7 @@ var ROLE_TABS = {
   "Owner":             ["owners","whiteboard"]
 };
 
-var ALL_TABS = ["yard","planner","provisional","meds","whiteboard","movements","owners","staff","weights","assistant","content","summary","reminders","procurement","settings"];
+var ALL_TABS = ["yard","planner","provisional","meds","whiteboard","movements","owners","staff","weights","trotters","checklist","assistant","content","summary","reminders","procurement","travel","settings"];
 
 function App() {
   const [user, setUser] = useState(null);
@@ -412,6 +412,7 @@ function App() {
     { id: "procurement", label: "Procurement", icon: "🛒" },
     { id: "trotters", label: "Trotters", icon: "🐎" },
     { id: "travel", label: "Travel Cost", icon: "🚛" },
+    { id: "checklist", label: "Race Day", icon: "v" },
     { id: "settings", label: "Settings", icon: "⚙️" },
   ].filter(function(n) { return allowedTabs.indexOf(n.id) >= 0; });
 
