@@ -1,7 +1,7 @@
 import React, { useState } from "react";
 import { Btn, Tag, Silk, FormDots, StatusPill, C, TODAY, daysUntil, canRace, coolingDate, getAge, ANTHROPIC_KEY } from "./shared";
 
-var API_HEADERS = { "Content-Type": "application/json", "x-api-key": ANTHROPIC_KEY, "anthropic-version": "2023-06-01", "anthropic-dangerous-direct-browser-access": "true" };
+// API_HEADERS removed - using server-side proxy
 
 async function getAITake(horse, race) {
   var condStr = "";
@@ -28,8 +28,8 @@ async function getAITake(horse, race) {
     + " Check eligibility carefully - flag maiden/novice restrictions, rating ceiling, sex restrictions."
     + " Consider distance preference, going, course record, breeding, handicap mark vs ceiling."
     + " Return ONLY JSON: { overall: 0-100, verdict: string, scores: { handicap_edge: 0-10, class_fit: 0-10, conditions_match: 0-10, timing: 0-10, cuteness: 0-10 }, bullets: [{icon: emoji, title: string, point: string}], warnings: [string] }";
-  var res = await fetch("https://api.anthropic.com/v1/messages", {
-    method: "POST", headers: API_HEADERS,
+  var res = await fetch("/api/claude", {
+    method: "POST", headers: { "Content-Type": "application/json" },
     body: JSON.stringify({ model: "claude-sonnet-4-20250514", max_tokens: 800, messages: [{ role: "user", content: prompt }] })
   });
   var data = await res.json();
@@ -87,7 +87,7 @@ function RacePlanner({ horses, setHorses }) {
   function getEligible(race) {
     return activeHorses.filter(function(horse) {
 
-      // Age check — horse must have a dob to pass age-restricted races
+      // Age check - horse must have a dob to pass age-restricted races
       var age = getAge(horse.dob);
       if (race.ageMin && race.ageMin > 0) {
         if (!horse.dob) return false;
@@ -98,7 +98,7 @@ function RacePlanner({ horses, setHorses }) {
         if (age > race.ageMax) return false;
       }
 
-      // Discipline check — if race has a discipline, horse must match it
+      // Discipline check - if race has a discipline, horse must match it
       // If horse has no discipline set, only allow if it could plausibly run
       if (race.discipline) {
         var rawDisc = horse.discipline || [];
@@ -133,7 +133,7 @@ function RacePlanner({ horses, setHorses }) {
         if (race.sexRestriction === "Colts & Geldings" && males.indexOf(horse.sex) < 0) return false;
       }
 
-      // Maiden / Novice — only show if race flag matches horse flag
+      // Maiden / Novice - only show if race flag matches horse flag
       if (race.isMaiden && !horse.isMaiden) return false;
       if (race.isNovice && !horse.isNovice) return false;
 
@@ -160,8 +160,8 @@ function RacePlanner({ horses, setHorses }) {
     if (!pasteText.trim()) return;
     setFetchStatus("fetching");
     try {
-      var res = await fetch("https://api.anthropic.com/v1/messages", {
-        method: "POST", headers: API_HEADERS,
+      var res = await fetch("/api/claude", {
+        method: "POST", headers: { "Content-Type": "application/json" },
         body: JSON.stringify({
           model: "claude-sonnet-4-20250514", max_tokens: 8000,
           messages: [{ role: "user", content: "You are an expert HRI and BHA race conditions parser. Parse every race from the text below into a strict JSON array. Return ONLY the raw JSON array with no markdown or explanation.\n\nEach race object must have these EXACT field names:\n- id: string (race_001, race_002...)\n- raceName: string\n- venue: string\n- date: YYYY-MM-DD\n- entryDeadline: YYYY-MM-DD or null\n- discipline: EXACTLY one of: Flat, Hurdle, Chase, Bumper, Cross Country (never use NH or Jump)\n- surface: Turf or AWT\n- distanceFurlongs: number (2m=16, 2m4f=20, 2m5f=21, 3m=24, 5f=5, 6f=6, 7f=7, 1m=8, 1m2f=10, 1m4f=12, 1m6f=14, 2m=16)\n- forecastGoing: string\n- prizeMoney: number\n- grade: Grade 1/2/3 or Group 1/2/3 or Listed or null\n- sex: EXACTLY one of: Open, Mares, Fillies, Colts (never M/F/G, never Mares and Fillies - pick one)\n- minAge: number in years (e.g. 4 for 4yo+, 3 for 3yo)\n- maxAge: number or null (e.g. 6 for 3-6yo, null for open)\n- minRating: number or null (lower official rating limit - 0 counts as null)\n- maxRating: number or null (CRITICAL: upper official rating limit e.g. 90 for 0-90 rated, 105 for 90-105 rated)\n- isMaiden: boolean (true ONLY if conditions say maiden - horse must not have won)\n- isNovice: boolean (true ONLY if conditions say novice)\n- isEBF: boolean\n- qualifyingRuns: number or null (minimum number of runs required if specified)\n- raceType: Handicap, Conditions, Maiden, Novice, Listed, Graded, or Other\n\nCRITICAL RULES:\n1. maxRating is the MOST IMPORTANT field - get it exactly right for every handicap\n2. A rated 0-90 handicap: minRating=null maxRating=90\n3. A rated 90-110 handicap: minRating=90 maxRating=110\n4. A rated 100+ race: minRating=100 maxRating=null\n5. Bumpers use flat ratings. Hurdles use hurdle ratings. Chases use chase ratings.\n6. If age says 4yo+: minAge=4 maxAge=null. If 3-6yo: minAge=3 maxAge=6\n7. Irish point-to-point winners may qualify for bumpers/novices - note in raceName\n\nText:\n\n" + pasteText }]
@@ -187,7 +187,7 @@ function RacePlanner({ horses, setHorses }) {
     } catch (err) {
       console.error(err);
       setFetchStatus("error");
-      showToast("Failed to parse — check Anthropic credits at console.anthropic.com", C.red);
+      showToast("Failed to parse - check Anthropic credits at console.anthropic.com", C.red);
     }
   };
 
@@ -212,17 +212,23 @@ function RacePlanner({ horses, setHorses }) {
       setAnalyses(function(a) { return Object.assign({}, a, { [key]: result }); });
     } catch (err) {
       console.error(err);
-      showToast("Analysis failed — check API credits", C.red);
+      showToast("Analysis failed - check API credits", C.red);
     }
     setLoading(function(l) { return Object.assign({}, l, { [key]: false }); });
   };
 
   function handleEntry(horse, race) {
     var raceDate = race.date ? new Date(race.date + "T12:00:00").toLocaleDateString("en-IE", { weekday: "long", day: "numeric", month: "long" }) : "";
-    var msgText = horse.name + " has been entered in " + race.raceName + " at " + race.venue + (raceDate ? " on " + raceDate : "") + ". Prize: EUR" + (race.prizeMoney || "TBC") + ". Going: " + (race.forecastGoing || "TBC") + ". We will be in touch closer to declaration day.";
-    var phone = (horse.ownerPhone || "").split("").filter(function(d) { return d >= "0" && d <= "9"; }).join("");
-    if (phone) { window.open("https://wa.me/" + phone + "?text=" + encodeURIComponent(msgText), "_blank"); }
-    showToast("Entry confirmed" + (phone ? " — WhatsApp opened" : " — no phone number saved"));
+    var dist = race.distanceFurlongs ? (race.distanceFurlongs + "f") : "";
+    var going = race.forecastGoing || "";
+    var prize = race.prizeMoney ? ("EUR " + race.prizeMoney.toLocaleString()) : "";
+    var msg = "Hi, " + horse.name + " has been entered in the " + (race.raceName || "") + " at " + (race.venue || "") + (raceDate ? " on " + raceDate : "") + (dist ? ", " + dist : "") + (going ? " " + going : "") + (prize ? ". Prize " + prize : "") + ". We will keep you updated.";
+    var phone = (horse.ownerPhone || "").split("").filter(function(c){return (c>="0"&&c<="9")||c==="+";}).join("");
+    if (!phone) { showToast("No owner phone saved for " + horse.name); return; }
+    fetch("/api/send-whatsapp", { method: "POST", headers: { "Content-Type": "application/json" }, body: JSON.stringify({ to: phone, message: msg }) })
+      .then(function(r) { return r.json(); })
+      .then(function(d) { showToast(d.success ? "WhatsApp sent to owner" : "Check WhatsApp - Twilio not active"); })
+      .catch(function() { showToast("Could not send - check Twilio settings"); });
   }
 
   function getMedDates(raceDate, withdrawalDays, courseDays) {
@@ -253,7 +259,7 @@ function RacePlanner({ horses, setHorses }) {
         <div>
           <div style={{ fontSize: 22, fontWeight: 800, color: C.text }}>Race Planner</div>
           <div style={{ fontSize: 13, color: C.textMid, marginTop: 3 }}>
-            {races.length > 0 ? races.length + " races loaded — showing eligible horses under each race" : "Paste HRI race conditions to get started"}
+            {races.length > 0 ? races.length + " races loaded - showing eligible horses under each race" : "Paste HRI race conditions to get started"}
           </div>
         </div>
         <div style={{ display: "flex", gap: 8, flexWrap: "wrap" }}>
@@ -291,7 +297,7 @@ function RacePlanner({ horses, setHorses }) {
       {shortlistItems.length > 0 && (
         <div style={{ background: C.card, border: "2px solid " + C.gold, borderRadius: 14, padding: "16px 18px", marginBottom: 16 }}>
           <div style={{ display: "flex", justifyContent: "space-between", alignItems: "center", marginBottom: 12 }}>
-            <div style={{ fontSize: 16, fontWeight: 800, color: C.navy }}>{"Shortlist — " + shortlistItems.length + " confirmed"}</div>
+            <div style={{ fontSize: 16, fontWeight: 800, color: C.navy }}>{"Shortlist - " + shortlistItems.length + " confirmed"}</div>
             <Btn variant="ghost" onClick={function() { setShortlisted({}); }} style={{ fontSize: 12 }}>Clear</Btn>
           </div>
           {shortlistItems.map(function(item, idx) {
@@ -303,12 +309,12 @@ function RacePlanner({ horses, setHorses }) {
                 <Silk silk={item.horse.silk} size={28} />
                 <div style={{ flex: 1 }}>
                   <div style={{ fontSize: 14, fontWeight: 800, color: C.navy }}>{item.horse.name}</div>
-                  <div style={{ fontSize: 13, color: C.text }}>{item.race.raceName + " — " + item.race.venue}</div>
+                  <div style={{ fontSize: 13, color: C.text }}>{item.race.raceName + " - " + item.race.venue}</div>
                   <div style={{ fontSize: 12, color: C.textMid }}>{item.race.date ? new Date(item.race.date + "T12:00:00").toLocaleDateString("en-IE", { weekday: "short", day: "numeric", month: "short" }) : ""}</div>
                   {(peptDates || antepsinDates) && (
                     <div style={{ display: "flex", gap: 6, marginTop: 6, flexWrap: "wrap" }}>
-                      {peptDates && <span style={{ fontSize: 11, padding: "2px 8px", borderRadius: 6, background: peptWarning ? C.red + "15" : C.blue + "15", color: peptWarning ? C.red : C.blue, fontWeight: 700 }}>{"Peptizole: " + peptDates.start + " – " + peptDates.stop + (peptWarning ? " ⚠️ START NOW" : "")}</span>}
-                      {antepsinDates && <span style={{ fontSize: 11, padding: "2px 8px", borderRadius: 6, background: C.purple + "15", color: C.purple, fontWeight: 700 }}>{"Antepsin: " + antepsinDates.start + " – " + antepsinDates.stop}</span>}
+                      {peptDates && <span style={{ fontSize: 11, padding: "2px 8px", borderRadius: 6, background: peptWarning ? C.red + "15" : C.blue + "15", color: peptWarning ? C.red : C.blue, fontWeight: 700 }}>{"Peptizole: " + peptDates.start + " - " + peptDates.stop + (peptWarning ? " ! START NOW" : "")}</span>}
+                      {antepsinDates && <span style={{ fontSize: 11, padding: "2px 8px", borderRadius: 6, background: C.purple + "15", color: C.purple, fontWeight: 700 }}>{"Antepsin: " + antepsinDates.start + " - " + antepsinDates.stop}</span>}
                     </div>
                   )}
                 </div>
@@ -328,10 +334,8 @@ function RacePlanner({ horses, setHorses }) {
           placeholder="Search races by name or venue..."
           style={{ width: "100%", padding: "10px 14px", background: C.card, border: "1px solid " + C.border, borderRadius: 10, fontSize: 13, color: C.text, marginBottom: 12 }} />
       )}
-
       {filteredRaces.map(function(race) {
-        var eligibleHorses = getEligible(race);
-        var isExpanded = expanded[race.id];
+        var eligibleHorses = activeHorses.filter(function(h) { return isEligible(h, race, settings); });
         var hasShortlist = eligibleHorses.filter(function(h) { return shortlisted[k(h.id, race.id)]; }).length;
         var pm = race.prizeMoney;
 
@@ -354,8 +358,8 @@ function RacePlanner({ horses, setHorses }) {
                 )}
                 <div style={{ fontSize: 16, fontWeight: 700, color: C.text, marginBottom: 4 }}>{race.raceName}</div>
                 <div style={{ display: "flex", gap: 10, flexWrap: "wrap", fontSize: 12, color: C.textMid, marginBottom: 4 }}>
-                  <span>{"📍 " + race.venue}</span>
-                  {race.date && <span>{"📅 " + new Date(race.date + "T12:00:00").toLocaleDateString("en-IE", { weekday: "short", day: "numeric", month: "short" })}</span>}
+                  <span>{" " + race.venue}</span>
+                  {race.date && <span>{" " + new Date(race.date + "T12:00:00").toLocaleDateString("en-IE", { weekday: "short", day: "numeric", month: "short" })}</span>}
                   {race.forecastGoing && <span>{race.forecastGoing}</span>}
                   {race.entryDeadline && <span style={{ color: C.amber, fontWeight: 600 }}>{"Entry closes " + new Date(race.entryDeadline + "T12:00:00").toLocaleDateString("en-IE", { day: "numeric", month: "short" })}</span>}
                 </div>
@@ -381,7 +385,7 @@ function RacePlanner({ horses, setHorses }) {
                     <span style={{ fontSize: 12, color: C.textMid }}>none eligible</span>
                   )}
                   {eligibleHorses.length > 0 && (
-                    <span style={{ fontSize: 14, color: C.textMid }}>{isExpanded ? "▲" : "▼"}</span>
+                    <span style={{ fontSize: 14, color: C.textMid }}>{isExpanded ? "^" : "v"}</span>
                   )}
                 </div>
               </div>
@@ -412,7 +416,7 @@ function RacePlanner({ horses, setHorses }) {
                             {horse.flatRating && <span>{"Flat " + horse.flatRating}</span>}
                             {horse.hurdleRating && <span>{"Hrd " + horse.hurdleRating}</span>}
                             {horse.chaseRating && <span>{"Chs " + horse.chaseRating}</span>}
-                            <span>{"Owner: " + (horse.owner || "—")}</span>
+                            <span>{"Owner: " + (horse.owner || "-")}</span>
                           </div>
                         </div>
                         <div style={{ display: "flex", gap: 6, flexWrap: "wrap", justifyContent: "flex-end" }}>
@@ -423,7 +427,7 @@ function RacePlanner({ horses, setHorses }) {
                           )}
                           {analysis && !isLoading && (
                             <Btn variant="ghost" onClick={function() { var k2 = key; setExpandedAnalysis(function(p) { return Object.assign({}, p, { [k2]: !p[k2] }); }); }} style={{ fontSize: 12, padding: "7px 14px" }}>
-                              {expandedAnalysis[key] ? "▲ Hide" : "▼ Analysis (" + analysis.overall + ")"}
+                              {expandedAnalysis[key] ? "^ Hide" : "v Analysis (" + analysis.overall + ")"}
                             </Btn>
                           )}
                           {isLoading && (
@@ -435,7 +439,7 @@ function RacePlanner({ horses, setHorses }) {
                             </div>
                           )}
                           <Btn variant={isSl ? "gold" : "ghost"} onClick={function() { var sk = key; setShortlisted(function(s) { return Object.assign({}, s, { [sk]: s[sk] ? null : { horse: horse, race: race } }); }); }} style={{ fontSize: 12, padding: "7px 14px" }}>
-                            {isSl ? "★ Shortlisted" : "☆ Shortlist"}
+                            {isSl ? "* Shortlisted" : "* Shortlist"}
                           </Btn>
                           {isSl && (
                             <Btn variant="green" onClick={function() { handleEntry(horse, race); }} style={{ fontSize: 12, padding: "7px 14px" }}>
@@ -474,9 +478,9 @@ function RacePlanner({ horses, setHorses }) {
                           </div>
                           {(analysis.warnings && analysis.warnings.length > 0) && (
                             <div style={{ background: C.red + "10", border: "1px solid " + C.red + "30", borderRadius: 9, padding: "10px 14px", marginBottom: 8 }}>
-                              <div style={{ fontSize: 10, fontWeight: 700, color: C.red, textTransform: "uppercase", letterSpacing: 0.5, marginBottom: 6 }}>⚠️ Eligibility Flags</div>
+                              <div style={{ fontSize: 10, fontWeight: 700, color: C.red, textTransform: "uppercase", letterSpacing: 0.5, marginBottom: 6 }}>! Eligibility Flags</div>
                               {analysis.warnings.map(function(w, wi) {
-                                return <div key={wi} style={{ fontSize: 13, color: C.red, marginBottom: 3 }}>{"• " + w}</div>;
+                                return <div key={wi} style={{ fontSize: 13, color: C.red, marginBottom: 3 }}>{"- " + w}</div>;
                               })}
                             </div>
                           )}
@@ -509,7 +513,7 @@ function RacePlanner({ horses, setHorses }) {
 
       {races.length === 0 && (
         <div style={{ padding: 48, textAlign: "center", border: "1.5px dashed " + C.border, borderRadius: 14, color: C.textMid }}>
-          <div style={{ fontSize: 32, marginBottom: 12 }}>📋</div>
+          <div style={{ fontSize: 32, marginBottom: 12 }}></div>
           <div style={{ fontSize: 15, fontWeight: 700, color: C.text, marginBottom: 6 }}>No race conditions loaded</div>
           <div style={{ fontSize: 13, marginBottom: 20 }}>Paste the HRI race conditions PDF text above. Every race will show which of your horses are eligible.</div>
           <Btn onClick={function() { setShowPaste(true); }}>Paste Race Conditions</Btn>
