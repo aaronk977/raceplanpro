@@ -14,6 +14,7 @@ import LandingPage from "./LandingPage";
 import TravelCost from "./TravelCost";
 import Trotters from "./Trotters";
 import RaceDayChecklist from "./RaceDayChecklist";
+import MedicinesRegister from "./MedicinesRegister";
 import WeightsTracker from "./WeightsTracker";
 import YardAssistant from "./YardAssistant";
 import ContentScheduler from "./ContentScheduler";
@@ -30,17 +31,17 @@ try { if (SUPABASE_URL && SUPABASE_ANON_KEY) supabase = createClient(SUPABASE_UR
 const globalCSS = ".desktop-only { display: flex !important; } * { box-sizing: border-box; margin: 0; padding: 0; } body { font-family: Inter, Helvetica Neue, sans-serif; } button:hover { opacity: 0.88; } input:focus, select:focus { outline: none; } ::-webkit-scrollbar { width: 4px; } ::-webkit-scrollbar-thumb { background: #b8c8da; border-radius: 2px; } @media print { body * { visibility: hidden; } #print-area, #print-area * { visibility: visible; } #print-area { position: absolute; left: 0; top: 0; } } @media (max-width: 767px) { .desktop-only { display: none !important; } html, body { overflow-x: hidden; overflow-y: scroll !important; -webkit-overflow-scrolling: touch; height: auto !important; } } @media (min-width: 768px) { .app-wrapper { height: 100vh; overflow: hidden; } .main-content { overflow-y: auto; height: calc(100vh - 56px); } }";
 
 var ROLE_TABS = {
-  "Trainer":           ["yard","planner","provisional","meds","whiteboard","movements","owners","staff","weights","trotters","checklist","assistant","content","summary","reminders","procurement","travel","settings"],
-  "Secretary":         ["yard","planner","provisional","meds","whiteboard","movements","owners","staff","weights","trotters","checklist","assistant","content","summary","reminders","procurement","travel","settings"],
-  "Head Lad":          ["yard","planner","provisional","meds","whiteboard","movements","owners","staff","weights","trotters","checklist","assistant","content","summary","reminders","procurement","travel","settings"],
-  "Head Girl":         ["yard","planner","provisional","meds","whiteboard","movements","owners","staff","weights","trotters","checklist","assistant","content","summary","reminders","procurement","travel","settings"],
-  "Assistant Trainer": ["yard","planner","provisional","meds","whiteboard","movements","owners","staff","weights","trotters","checklist","assistant","content","summary","reminders","procurement","travel","settings"],
+  "Trainer":           ["yard","planner","provisional","meds","register","whiteboard","movements","owners","staff","weights","trotters","checklist","assistant","content","summary","reminders","procurement","travel","settings"],
+  "Secretary":         ["yard","planner","provisional","meds","register","whiteboard","movements","owners","staff","weights","trotters","checklist","assistant","content","summary","reminders","procurement","travel","settings"],
+  "Head Lad":          ["yard","planner","provisional","meds","register","whiteboard","movements","owners","staff","weights","trotters","checklist","assistant","content","summary","reminders","procurement","travel","settings"],
+  "Head Girl":         ["yard","planner","provisional","meds","register","whiteboard","movements","owners","staff","weights","trotters","checklist","assistant","content","summary","reminders","procurement","travel","settings"],
+  "Assistant Trainer": ["yard","planner","provisional","meds","register","whiteboard","movements","owners","staff","weights","trotters","checklist","assistant","content","summary","reminders","procurement","travel","settings"],
   "Staff":             ["meds","staff","weights","movements","reminders","procurement"],
-  "Vet":               ["yard","meds","movements","weights","trotters","summary"],
+  "Vet":               ["yard","meds","register","movements","weights","trotters","summary"],
   "Owner":             ["owners","whiteboard"]
 };
 
-var ALL_TABS = ["yard","planner","provisional","meds","whiteboard","movements","owners","staff","weights","trotters","checklist","assistant","content","summary","reminders","procurement","travel","settings"];
+var ALL_TABS = ["yard","planner","provisional","meds","register","whiteboard","movements","owners","staff","weights","trotters","checklist","assistant","content","summary","reminders","procurement","travel","settings"];
 
 function App() {
   const [user, setUser] = useState(null);
@@ -50,6 +51,8 @@ function App() {
   const [password, setPassword] = useState("");
   const [authLoading, setAuthLoading] = useState(false);
   const [authError, setAuthError] = useState("");
+  const [agreedTerms, setAgreedTerms] = useState(false);
+  const [agreedData, setAgreedData] = useState(false);
   var isMobileState = useState(typeof window !== "undefined" && window.innerWidth < 640);
   var isMobile = isMobileState[0];
   const [appLoading, setAppLoading] = useState(true);
@@ -363,6 +366,10 @@ function App() {
   };
 
   var handleSignup = async function() {
+    if (!agreedTerms || !agreedData) {
+      setAuthError("Please agree to the Terms and Data Processing terms to continue.");
+      return;
+    }
     setAuthLoading(true); setAuthError("");
     // Check if this email has been invited as staff before creating account
     var memberCheck = await supabase.from("yard_members").select("role, yard_owner_id").eq("member_email", email.toLowerCase().trim()).maybeSingle();
@@ -400,6 +407,7 @@ function App() {
     { id: "planner", label: "Race Planner", icon: "📋" },
     { id: "provisional", label: "Provisional", icon: "📝" },
     { id: "meds", label: "Medications", icon: "💊", badge: medAlerts },
+    { id: "register", label: "Med Register", icon: "R" },
     { id: "whiteboard", label: "Whiteboard", icon: "🖨️" },
     { id: "movements", label: "Movements", icon: "🚛" },
     { id: "owners", label: "Owners", icon: "👤" },
@@ -468,6 +476,18 @@ function App() {
           {resetSent && (
             <div style={{ background: "#f0fdf4", border: "1px solid #86efac", borderRadius: 8, padding: "10px 12px", fontSize: 13, color: "#166534", marginBottom: 10, textAlign: "center" }}>
               Password reset email sent. Check your inbox.
+            </div>
+          )}
+          {authMode === "signup" && (
+            <div style={{ marginBottom: 14, display: "flex", flexDirection: "column", gap: 10 }}>
+              <label style={{ display: "flex", gap: 8, alignItems: "flex-start", cursor: "pointer", fontSize: 12, color: C.textMid, lineHeight: 1.4 }}>
+                <input type="checkbox" checked={agreedTerms} onChange={function(e) { setAgreedTerms(e.target.checked); }} style={{ marginTop: 2, flexShrink: 0 }} />
+                <span>I agree to the <a href="/terms" target="_blank" style={{ color: C.navy, fontWeight: 600 }}>Terms of Service</a> and <a href="/privacy" target="_blank" style={{ color: C.navy, fontWeight: 600 }}>Privacy Policy</a>.</span>
+              </label>
+              <label style={{ display: "flex", gap: 8, alignItems: "flex-start", cursor: "pointer", fontSize: 12, color: C.textMid, lineHeight: 1.4 }}>
+                <input type="checkbox" checked={agreedData} onChange={function(e) { setAgreedData(e.target.checked); }} style={{ marginTop: 2, flexShrink: 0 }} />
+                <span>I confirm I am authorised to store my yard, staff and owner details (including names and contact numbers) in RacePlan Pro, and that I am responsible for having any necessary consent from those individuals.</span>
+              </label>
             </div>
           )}
           {authError && <div style={{ fontSize: 13, color: C.red, marginBottom: 12, fontWeight: 600 }}>{authError}</div>}
@@ -594,6 +614,7 @@ function App() {
           {safeTab === "staff" && <StaffNotify user={user} supabase={supabase} settings={settings} />}
           {safeTab === "trotters" && <Trotters horses={horses} user={user} supabase={supabase} />}
           {safeTab === "checklist" && <RaceDayChecklist horses={horses} wbEntries={wbEntries} user={user} supabase={supabase} />}
+          {safeTab === "register" && <MedicinesRegister horses={horses} user={user} supabase={supabase} settings={settings} />}
           {safeTab === "travel" && <TravelCost settings={settings} />}
           {safeTab === "settings" && <YardSettings settings={settings} setSettings={saveSettings} supabase={supabase} user={user} />}
           {safeTab === "weights" && <WeightsTracker horses={horses} weights={weightsRaw} setWeights={setWeights} settings={settings} />}
