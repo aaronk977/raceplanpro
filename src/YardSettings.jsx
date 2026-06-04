@@ -109,7 +109,7 @@ function OwnerContactsPanel({ edit, update }) {
         if (phone && phone.indexOf("353") === 0 && phone.charAt(0) !== "+") phone = "+" + phone;
         imported.push({ id: "own_" + Date.now() + "_" + i, name: name.trim(), phone: phone.trim(), email: email.trim(), notes: "" });
       }
-      if (!imported.length) { setCsvResult("No owners found — check your CSV has name, phone, email columns"); return; }
+      if (!imported.length) { setCsvResult("No owners found - check your CSV has name, phone, email columns"); return; }
       update("ownerContacts", (owners || []).concat(imported));
       setCsvResult(imported.length + " owners imported successfully");
       setTimeout(function() { setCsvResult(""); }, 5000);
@@ -205,7 +205,7 @@ function OwnerContactsPanel({ edit, update }) {
         <div style={{ padding: 32, textAlign: "center", border: "1.5px dashed " + C.border, borderRadius: 12, color: C.textMid }}>
           <div style={{ fontSize: 28, marginBottom: 8 }}>👤</div>
           <div style={{ fontSize: 14, fontWeight: 700, color: C.text, marginBottom: 6 }}>No owners saved yet</div>
-          <div style={{ fontSize: 13, marginBottom: 16 }}>Add owner contact details here — WhatsApp and email buttons across the app use these numbers</div>
+          <div style={{ fontSize: 13, marginBottom: 16 }}>Add owner contact details here - WhatsApp and email buttons across the app use these numbers</div>
           <Btn onClick={function() { setShowAdd(true); }}>Add First Owner</Btn>
         </div>
       )}
@@ -310,7 +310,7 @@ var PLAN_FEATURES = {
     color: C ? C.blue : "#1e6fb5",
     features: [
       "Up to 50 horses",
-      "My Yard — CSV import",
+      "My Yard - CSV import",
       "Raceday Whiteboard",
       "Medication Tracker",
       "Horse Movements log",
@@ -347,7 +347,7 @@ var PLAN_FEATURES = {
       "AI Yard Assistant (voice + text)",
       "Daily summary reports",
       "Custom Twilio WhatsApp integration",
-      "Passport scan — auto-fill horse details",
+      "Passport scan - auto-fill horse details",
       "Multi-yard management",
       "Custom branding",
       "Dedicated account manager",
@@ -358,6 +358,26 @@ var PLAN_FEATURES = {
 };
 
 function YardSettings({ settings, setSettings, supabase, user }) {
+  var [delConfirm, setDelConfirm] = useState("");
+  var [delBusy, setDelBusy] = useState(false);
+  var [delDone, setDelDone] = useState(false);
+  function deleteAllYardData() {
+    if (delConfirm !== "DELETE") return;
+    setDelBusy(true);
+    var tables = ["horses","med_logs","horse_weights","whiteboard_entries","reminders","trotters","raceday_checklists","shortlists","yard_logs","yard_members","yard_settings"];
+    var done = 0;
+    tables.forEach(function(t) {
+      var col = (t === "yard_settings") ? "user_id" : (t === "yard_members" ? "yard_owner_id" : "user_id");
+      supabase.from(t).delete().eq(col, user.id).then(function() {
+        done++;
+        if (done === tables.length) { setDelBusy(false); setDelDone(true); }
+      }).catch(function() {
+        done++;
+        if (done === tables.length) { setDelBusy(false); setDelDone(true); }
+      });
+    });
+  }
+
   var now = new Date();
   var editState = useState(Object.assign({
     yardName: "", trainerName: "", location: "", trainerLicence: "",
@@ -577,12 +597,12 @@ function YardSettings({ settings, setSettings, supabase, user }) {
           }
         } else {
           update("location", area.name ? "Co. " + area.name : "Ireland");
-          setEircodeStatus("Area identified: " + (area.name || routingKey) + " — add full address below");
+          setEircodeStatus("Area identified: " + (area.name || routingKey) + " - add full address below");
         }
       })
       .catch(function() {
         update("location", area.name ? "Co. " + area.name : "Ireland");
-        setEircodeStatus("Area: " + (area.name || routingKey) + " — add full address below");
+        setEircodeStatus("Area: " + (area.name || routingKey) + " - add full address below");
       })
       .finally(function() {
         setEircodeLoading(false);
@@ -603,10 +623,10 @@ function YardSettings({ settings, setSettings, supabase, user }) {
           update("location", addr);
           setEircodeStatus("Address found ✓");
         } else {
-          setEircodeStatus("Postcode not found — enter address manually");
+          setEircodeStatus("Postcode not found - enter address manually");
         }
       })
-      .catch(function() { setEircodeStatus("Lookup failed — enter address manually"); })
+      .catch(function() { setEircodeStatus("Lookup failed - enter address manually"); })
       .finally(function() {
         setEircodeLoading(false);
         setTimeout(function() { setEircodeStatus(""); }, 4000);
@@ -789,7 +809,7 @@ function YardSettings({ settings, setSettings, supabase, user }) {
   }
 
   function applysilksToHorses() {
-    // This will be called when trainer confirms — matches horses by owner name
+    // This will be called when trainer confirms - matches horses by owner name
     var silkMap = edit.ownerSilks || {};
     if (Object.keys(silkMap).length === 0) return;
     update("silksApplied", true);
@@ -802,8 +822,8 @@ function YardSettings({ settings, setSettings, supabase, user }) {
     setTimeout(function() { setSaved(false); }, 3000);
   }
 
-  var TABS = ["yard", "owners", "users", "contacts", "medications", "treatments", "silks", "notifications", "subscription"];
-  var TAB_LABELS = { yard: "Yard Details", owners: "Owner Contacts", users: "App Users", contacts: "Staff Contacts", medications: "Medications", treatments: "Treatments", silks: "Owner Silks", notifications: "Notifications", subscription: "Subscription" };
+  var TABS = ["yard", "owners", "users", "contacts", "medications", "treatments", "silks", "notifications", "subscription", "privacy"];
+  var TAB_LABELS = { yard: "Yard Details", owners: "Owner Contacts", users: "App Users", contacts: "Staff Contacts", medications: "Medications", treatments: "Treatments", silks: "Owner Silks", notifications: "Notifications", subscription: "Subscription", privacy: "Data & Privacy" };
   var ROLES = ["Trainer", "Head Lad", "Assistant Trainer", "Head Girl", "HR", "Secretary", "Owner Manager", "Vet"];
   var NOTIFY_TYPES = [
     { key: "late_returns", label: "Late returns" },
@@ -893,7 +913,7 @@ function YardSettings({ settings, setSettings, supabase, user }) {
             {eircodeStatus && (
               <div style={{ fontSize: 11, marginTop: 4, color: eircodeStatus.indexOf("✓") >= 0 ? C.green : C.amber }}>{eircodeStatus}</div>
             )}
-            <div style={{ fontSize: 11, color: C.textMid, marginTop: 4 }}>Type your address or eircode — suggestions will appear</div>
+            <div style={{ fontSize: 11, color: C.textMid, marginTop: 4 }}>Type your address or eircode - suggestions will appear</div>
           </div>
 
           <div style={{ display: "grid", gridTemplateColumns: "1fr 1fr", gap: 12 }}>
@@ -949,7 +969,7 @@ function YardSettings({ settings, setSettings, supabase, user }) {
           <div style={{ background: C.card, border: "1px solid " + C.border, borderRadius: 14, padding: "18px 20px", marginBottom: 14 }}>
             <div style={{ fontSize: 15, fontWeight: 800, color: C.navy, marginBottom: 4 }}>App Users</div>
             <div style={{ fontSize: 12, color: C.textMid, lineHeight: 1.7 }}>
-              Anyone who needs to log in to RacePlan Pro for your yard creates their own account at the login screen using their email and a password. Share the link below with your staff. Each person logs in with their own credentials — their data is tied to your yard automatically once they sign up with an email you have invited.
+              Anyone who needs to log in to RacePlan Pro for your yard creates their own account at the login screen using their email and a password. Share the link below with your staff. Each person logs in with their own credentials - their data is tied to your yard automatically once they sign up with an email you have invited.
             </div>
           </div>
 
@@ -1038,7 +1058,7 @@ function YardSettings({ settings, setSettings, supabase, user }) {
                     </div>
                     <div style={{ flex: 1 }}>
                       <div style={{ fontSize: 14, fontWeight: 700, color: C.text }}>{u.name}</div>
-                      <div style={{ fontSize: 12, color: C.textMid }}>{u.email + " · " + (u.role || "Staff")}</div>
+                      <div style={{ fontSize: 12, color: C.textMid }}>{u.email + "  - " + (u.role || "Staff")}</div>
                     </div>
                     <button onClick={function() {
                       var users2 = (edit.yardUsers || []).filter(function(x) { return x.id !== u.id; });
@@ -1146,7 +1166,7 @@ function YardSettings({ settings, setSettings, supabase, user }) {
             <div style={{ display: "flex", justifyContent: "space-between", alignItems: "center", marginBottom: 4 }}>
               <div>
                 <div style={{ fontSize: 15, fontWeight: 800, color: C.navy }}>Medication Costs</div>
-                <div style={{ fontSize: 12, color: C.textMid, marginTop: 3 }}>Set your actual costs — used in monthly billing reports</div>
+                <div style={{ fontSize: 12, color: C.textMid, marginTop: 3 }}>Set your actual costs - used in monthly billing reports</div>
               </div>
               <Btn onClick={function() { setShowAddMed(true); }} style={{ fontSize: 12, padding: "8px 16px" }}>+ Add</Btn>
             </div>
@@ -1305,7 +1325,7 @@ function YardSettings({ settings, setSettings, supabase, user }) {
                 </div>
                 <div style={{ display: "flex", alignItems: "center", gap: 8, marginTop: 8 }}>
                   <div style={{ width: 12, height: 12, borderRadius: "50%", background: t.color || C.red }} />
-                  <span style={{ fontSize: 11, color: C.textMid }}>{t.withdrawalDays + " day withdrawal — earliest race date is " + t.withdrawalDays + " days after treatment"}</span>
+                  <span style={{ fontSize: 11, color: C.textMid }}>{t.withdrawalDays + " day withdrawal - earliest race date is " + t.withdrawalDays + " days after treatment"}</span>
                 </div>
               </div>
             );
@@ -1369,7 +1389,7 @@ function YardSettings({ settings, setSettings, supabase, user }) {
           {silkPreviews.length > 0 && (
             <div>
               <div style={{ display: "flex", justifyContent: "space-between", alignItems: "center", marginBottom: 12 }}>
-                <div style={{ fontSize: 14, fontWeight: 700, color: C.navy }}>{silkPreviews.length + " silks parsed — preview below"}</div>
+                <div style={{ fontSize: 14, fontWeight: 700, color: C.navy }}>{silkPreviews.length + " silks parsed - preview below"}</div>
                 <Btn onClick={applysilksToHorses} style={{ fontSize: 12 }}>Apply to Yard & Save</Btn>
               </div>
               <div style={{ display: "grid", gridTemplateColumns: "repeat(3,1fr)", gap: 10 }}>
@@ -1406,7 +1426,7 @@ function YardSettings({ settings, setSettings, supabase, user }) {
       {activeTab === "notifications" && (
         <div style={{ display: "flex", flexDirection: "column", gap: 12 }}>
           <div style={{ background: C.card, border: "1px solid " + C.border, borderRadius: 14, padding: "20px" }}>
-            <div style={{ fontSize: 15, fontWeight: 800, color: C.navy, marginBottom: 14 }}>Medication Alert — Daily 10am</div>
+            <div style={{ fontSize: 15, fontWeight: 800, color: C.navy, marginBottom: 14 }}>Medication Alert - Daily 10am</div>
             <div style={{ fontSize: 13, color: C.textMid, marginBottom: 14, lineHeight: 1.6 }}>
               Every morning at 10am (2 hours before the 12pm entry deadline), contacts with "Medication alerts" enabled will receive a WhatsApp listing every horse whose Peptizole course ends today. This gives you time to act on entries before the deadline.
             </div>
@@ -1450,6 +1470,54 @@ function YardSettings({ settings, setSettings, supabase, user }) {
                 );
               })}
             </div>
+          </div>
+        </div>
+      )}
+
+      {activeTab === "privacy" && (
+        <div>
+          <div style={{ background: C.card, border: "1px solid " + C.border, borderRadius: 14, padding: "20px", marginBottom: 16 }}>
+            <div style={{ fontSize: 15, fontWeight: 800, color: C.navy, marginBottom: 8 }}>Your Data</div>
+            <div style={{ fontSize: 13, color: C.textMid, lineHeight: 1.6, marginBottom: 12 }}>
+              RacePlan Pro stores your yard details, horses, medication records, owner contacts and related data so the app works for you. We never sell your data or use it for advertising. You can export or delete your data at any time.
+            </div>
+            <div style={{ fontSize: 13, color: C.textMid, lineHeight: 1.6 }}>
+              For full details see our <a href="/privacy" target="_blank" style={{ color: C.navy, fontWeight: 600 }}>Privacy Policy</a>.
+            </div>
+          </div>
+
+          <div style={{ background: C.card, border: "1px solid " + C.border, borderRadius: 14, padding: "20px", marginBottom: 16 }}>
+            <div style={{ fontSize: 15, fontWeight: 800, color: C.navy, marginBottom: 8 }}>Medicines Register PIN</div>
+            <div style={{ fontSize: 13, color: C.textMid, lineHeight: 1.6, marginBottom: 12 }}>
+              Set a 4-digit PIN to protect the Medicines Register. Only people with the PIN can open it. Leave blank for no PIN. Access is already limited to Trainer, Secretary and Head Lad roles.
+            </div>
+            <input type="text" inputMode="numeric" maxLength={4} value={edit.registerPin || ""}
+              onChange={function(e) { var v = e.target.value.replace(/[^0-9]/g, ""); update("registerPin", v); }}
+              placeholder="4-digit PIN"
+              style={{ width: 140, padding: "9px 12px", border: "1px solid " + C.border, borderRadius: 8, fontSize: 16, letterSpacing: 4, textAlign: "center", color: C.text }} />
+          </div>
+
+          <div style={{ background: C.card, border: "1.5px solid " + C.red + "40", borderRadius: 14, padding: "20px" }}>
+            <div style={{ fontSize: 15, fontWeight: 800, color: C.red, marginBottom: 8 }}>Delete All Yard Data</div>
+            <div style={{ fontSize: 13, color: C.textMid, lineHeight: 1.6, marginBottom: 14 }}>
+              This permanently deletes all of your horses, medication logs, weights, whiteboard entries, reminders, trotters, checklists, owner contacts and yard settings. This cannot be undone. Use this if you are leaving RacePlan Pro and want your data erased.
+            </div>
+            {delDone ? (
+              <div style={{ fontSize: 14, fontWeight: 700, color: C.green }}>Your yard data has been deleted. You can now log out.</div>
+            ) : (
+              <div>
+                <div style={{ fontSize: 12, fontWeight: 700, color: C.textMid, marginBottom: 6, textTransform: "uppercase" }}>Type DELETE to confirm</div>
+                <input type="text" value={delConfirm} onChange={function(e) { setDelConfirm(e.target.value); }}
+                  placeholder="DELETE"
+                  style={{ width: "100%", maxWidth: 220, padding: "9px 12px", border: "1px solid " + C.border, borderRadius: 8, fontSize: 14, color: C.text, marginBottom: 12 }} />
+                <div>
+                  <button onClick={deleteAllYardData} disabled={delConfirm !== "DELETE" || delBusy}
+                    style={{ background: delConfirm === "DELETE" ? C.red : C.border, color: "#fff", border: "none", borderRadius: 8, padding: "10px 18px", fontSize: 14, fontWeight: 700, cursor: delConfirm === "DELETE" ? "pointer" : "not-allowed" }}>
+                    {delBusy ? "Deleting..." : "Permanently Delete All Data"}
+                  </button>
+                </div>
+              </div>
+            )}
           </div>
         </div>
       )}
