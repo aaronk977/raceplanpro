@@ -81,10 +81,10 @@ function LandingPage({ onLogin }) {
           </div>
           <div style={{ display: "grid", gridTemplateColumns: "repeat(auto-fit, minmax(min(260px, 100%), 1fr))", gap: 20 }}>
             {[
-              { icon: "💊", pain: "A horse finishes a medication course the morning of entries. Nobody notices. You miss the deadline.", fix: "RacePlan Pro fires a WhatsApp alert before every entry deadline — so you always know which horses are clear to enter." },
-              { icon: "📋", pain: "Race conditions land in your inbox. You spend 30 minutes cross-checking each horse for eligibility by hand.", fix: "Paste the conditions. Our AI reads them, checks your entire yard and gives you a ranked eligible list in seconds." },
+              { icon: "💊", pain: "A horse gets medication the morning of entries or declarations and you go past the withdrawal period, potentially costing thousands.", fix: "RacePlan Pro fires a WhatsApp alert before every entry deadline — so you always know which horses are clear to enter." },
+              { icon: "📋", pain: "Race conditions land in your inbox. You spend hours cross-checking each horse for eligibility by hand.", fix: "Paste the conditions. Our AI reads them, checks your entire yard and gives you a ranked eligible list in seconds." },
               { icon: "💉", pain: "A horse receives a treatment and goes on the shortlist weeks later. Someone forgets the withdrawal period.", fix: "Every treatment is logged with its withdrawal period. The Race Planner blocks that horse automatically until it is clear." },
-              { icon: "⚖️", pain: "A horse has lost significant weight since last week. You find out on race morning when it is too late.", fix: "Weight changes beyond your set threshold trigger an instant alert. You act before it becomes a problem." },
+              { icon: "⚖️", pain: "Keeping on top of each horse\u2019s weight week to week is hard by hand, yet it is vital for performance and health.", fix: "Weight changes beyond your set threshold trigger an instant alert. You act before it becomes a problem." },
               { icon: "📱", pain: "Owners are ringing for updates. Your secretary is stuck on calls instead of doing entries.", fix: "One tap sends a WhatsApp race update or declaration confirmation to every owner. Scheduled, professional, done." },
               { icon: "🗂️", pain: "Month end. You are trying to remember which horses had medication so the office can do the billing.", fix: "Every dose is logged per horse per day. The full medication report is there when the office needs it." },
             ].map(function(item, i) {
