@@ -119,6 +119,9 @@ function YardView({ horses, setHorses }) {
             id: "h_" + Date.now() + "_" + i,
             name: name, dob: yof ? yof + "-01-01" : "", sex: sex,
             colour: row.colour || row.color || "",
+            microchip: row.microchip || row.chip || row.microchip_number || row.chip_number || "",
+            passportNo: row.passport || row.passport_no || row.passport_number || "",
+            passportPhoto: "",
             owner: row.owner || row.owner_name || row.ownername || "",
             trainer: row.trainer || "",
             ownerPhone: row.owner_phone || row.ownerphone || row.phone || row.mobile || row.tel || row.telephone || row.owner_mobile || "",
@@ -260,6 +263,8 @@ function YardView({ horses, setHorses }) {
   var EDIT_FIELDS = [
     { key: "status", label: "Status", type: "select", options: ["Active", "CoolingOff", "Inactive"] },
     { key: "sex", label: "Sex", type: "select", options: ["Gelding", "Mare", "Filly", "Colt", "Horse"] },
+    { key: "microchip", label: "Microchip No.", placeholder: "e.g. 372141..." },
+    { key: "passportNo", label: "Passport No.", placeholder: "Passport number" },
     { key: "discipline", label: "Discipline", type: "multi", options: ["Hurdle", "Chase", "Flat"] },
     { key: "headgear", label: "Headgear", placeholder: "e.g. Cheekpieces" },
     { key: "nhRating", label: "NH Rating", type: "number", placeholder: "e.g. 98" },
@@ -275,6 +280,8 @@ function YardView({ horses, setHorses }) {
     { key: "name", label: "Horse Name", placeholder: "e.g. Bob Olinger" },
     { key: "dob", label: "Date of Birth", type: "date" },
     { key: "sex", label: "Sex", type: "select", options: ["Gelding", "Mare", "Filly", "Colt", "Horse"] },
+    { key: "microchip", label: "Microchip No.", placeholder: "e.g. 372141..." },
+    { key: "passportNo", label: "Passport No.", placeholder: "Passport number" },
     { key: "colour", label: "Colour", placeholder: "e.g. Bay" },
     { key: "nhRating", label: "NH Rating", type: "number", placeholder: "e.g. 98" },
     { key: "flatRating", label: "Flat Rating", type: "number", placeholder: "e.g. 74" },
@@ -351,7 +358,7 @@ function YardView({ horses, setHorses }) {
                   {h.headgear && <Tag color={C.purple}>{h.headgear}</Tag>}
                 </div>
                 <div style={{ display: "flex", gap: 10, flexWrap: "wrap", fontSize: 12, color: C.textMid }}>
-                  <span>{getAge(h.dob) + "yo " + h.sex + " · " + (h.colour || "")}</span>
+                  <span>{getAge(h.dob) + "yo " + h.sex + "  - " + (h.colour || "")}</span>
                   {h.flatRating && <span>{"Flat: " + h.flatRating}</span>}
                   {h.hurdleRating && <span>{"Hrd: " + h.hurdleRating}</span>}
                   {h.chaseRating && <span>{"Chs: " + h.chaseRating}</span>}
