@@ -4,12 +4,6 @@ import { DETECTION_TIMES, ROUTES } from "./detectionTimes";
 
 // Rule 148 compliant Medicines Register
 function MedicinesRegister({ horses, user, supabase, settings }) {
-  var pinOkState = useState(false);
-  var pinOk = pinOkState[0]; var setPinOk = pinOkState[1];
-  var pinInputState = useState("");
-  var pinInput = pinInputState[0]; var setPinInput = pinInputState[1];
-  var pinErrorState = useState(false);
-  var pinError = pinErrorState[0]; var setPinError = pinErrorState[1];
   var entriesState = useState([]);
   var entries = entriesState[0]; var setEntries = entriesState[1];
   var showAddState = useState(false);
@@ -20,10 +14,6 @@ function MedicinesRegister({ horses, user, supabase, settings }) {
   var showDetection = showDetectionState[0]; var setShowDetection = showDetectionState[1];
   var detSearchState = useState("");
   var detSearch = detSearchState[0]; var setDetSearch = detSearchState[1];
-  var viewModeState = useState("log");
-  var viewMode = viewModeState[0]; var setViewMode = viewModeState[1];
-  var sheetHorseState = useState("");
-  var sheetHorse = sheetHorseState[0]; var setSheetHorse = sheetHorseState[1];
   var fromState = useState("");
   var fromDate = fromState[0]; var setFromDate = fromState[1];
   var toStateV = useState("");
@@ -117,57 +107,7 @@ function MedicinesRegister({ horses, user, supabase, settings }) {
     setTimeout(function() { win.print(); }, 500);
   }
 
-  function printHorseSheet(horseId) {
-    var horse = horses.find(function(h) { return h.id === horseId; });
-    if (!horse) return;
-    var horseEntries = entries.filter(function(e) { return e.horse_id === horseId; })
-      .filter(function(e) { if (fromDate && e.date < fromDate) return false; if (toDate && e.date > toDate) return false; return true; })
-      .sort(function(a, b) { return (a.date || "").localeCompare(b.date || ""); });
-    var style = "@page{size:A4 landscape;margin:1cm} body{font-family:Arial;font-size:10pt;color:#000} h1{font-size:18pt;margin-bottom:4pt} .sub{font-size:11pt;margin-bottom:2pt} table{width:100%;border-collapse:collapse;margin-top:12pt} th,td{border:1px solid #333;padding:5pt 7pt;text-align:left;font-size:9pt} th{background:#eee} .footer{margin-top:20pt;font-size:9pt}";
-    var rows = horseEntries.map(function(e) {
-      return "<tr><td>" + (e.date || "") + "</td><td>" + (e.drug_brand || "") + "<br><i>" + (e.drug_active || "") + "</i></td><td>" + (e.route || "") + "</td><td>" + (e.quantity || "") + "</td><td>" + (e.reason || "") + "</td><td>" + (e.administered_by || "") + "</td><td>" + (e.vet || "") + "</td><td>" + (e.withdrawal_time || "") + "</td><td>" + (e.trainer_auth || "") + "</td></tr>";
-    }).join("");
-    var win = window.open("", "_blank");
-    win.document.write("<html><head><title>Medicine Sheet - " + horse.name + "</title><style>" + style + "</style></head><body>" +
-      "<h1>Horse Medicine Sheet</h1>" +
-      "<div class='sub'><strong>Horse:</strong> " + horse.name + "</div>" +
-      "<div class='sub'><strong>Microchip No:</strong> " + (horse.microchip || "________________") + "</div>" +
-      "<div class='sub'><strong>Trainer:</strong> " + (trainerName || "________") + " &nbsp; <strong>Yard:</strong> " + ((settings && settings.yardName) || "________") + "</div>" +
-      "<div class='sub'><strong>Period:</strong> " + (fromDate || "start") + " to " + (toDate || "today") + "</div>" +
-      "<table><tr><th>Date</th><th>Remedy (brand / active)</th><th>Route</th><th>Qty</th><th>Reason</th><th>Administered by</th><th>Prescribing Vet</th><th>Withdrawal</th><th>Trainer Auth</th></tr>" + rows + "</table>" +
-      "<div class='footer'>Maintained under Rule 148 of the Rules of Racing. This sheet is a complete record for the above horse for the stated period.<br><br>Trainer signature: ________________________  Date: __________</div>" +
-      "</body></html>");
-    win.document.close(); win.focus();
-    setTimeout(function() { win.print(); }, 500);
-  }
-
   var activeHorses = horses.filter(function(h) { return h.status !== "Retired" && h.status !== "Sold"; });
-
-  var registerPin = (settings && settings.registerPin) || "";
-
-  function checkPin() {
-    if (!registerPin) { setPinOk(true); return; }
-    if (pinInput === registerPin) { setPinOk(true); setPinError(false); }
-    else { setPinError(true); setPinInput(""); }
-  }
-
-  // PIN GATE
-  if (registerPin && !pinOk) {
-    return (
-      <div style={{ maxWidth: 360, margin: "60px auto", textAlign: "center" }}>
-        <div style={{ fontSize: 40, marginBottom: 8 }}>{"\uD83D\uDD12"}</div>
-        <div style={{ fontSize: 20, fontWeight: 800, color: C.text, marginBottom: 4 }}>Medicines Register</div>
-        <div style={{ fontSize: 13, color: C.textMid, marginBottom: 20 }}>Enter your 4-digit PIN to access medical records</div>
-        <input type="password" inputMode="numeric" maxLength={4} value={pinInput}
-          onChange={function(e) { setPinInput(e.target.value.replace(/[^0-9]/g, "")); setPinError(false); }}
-          onKeyDown={function(e) { if (e.key === "Enter") checkPin(); }}
-          placeholder="****"
-          style={{ width: 140, padding: "12px", fontSize: 24, textAlign: "center", letterSpacing: 8, border: "2px solid " + (pinError ? C.red : C.border), borderRadius: 10, color: C.text, marginBottom: 12 }} />
-        {pinError && <div style={{ fontSize: 12, color: C.red, marginBottom: 12 }}>Incorrect PIN</div>}
-        <div><Btn onClick={checkPin} disabled={pinInput.length !== 4}>Unlock</Btn></div>
-      </div>
-    );
-  }
 
   return (
     <div style={{ maxWidth: 900, margin: "0 auto" }}>
@@ -183,18 +123,6 @@ function MedicinesRegister({ horses, user, supabase, settings }) {
         </div>
       </div>
 
-      {/* View toggle */}
-      <div style={{ display: "flex", gap: 0, marginBottom: 14, border: "1px solid " + C.border, borderRadius: 10, overflow: "hidden", width: "fit-content" }}>
-        <button onClick={function() { setViewMode("log"); }}
-          style={{ padding: "8px 18px", border: "none", background: viewMode === "log" ? C.navy : C.card, color: viewMode === "log" ? "#fff" : C.textMid, fontSize: 13, fontWeight: 700, cursor: "pointer" }}>
-          Yard Log
-        </button>
-        <button onClick={function() { setViewMode("horse"); }}
-          style={{ padding: "8px 18px", border: "none", background: viewMode === "horse" ? C.navy : C.card, color: viewMode === "horse" ? "#fff" : C.textMid, fontSize: 13, fontWeight: 700, cursor: "pointer" }}>
-          By Horse (IHRB Sheets)
-        </button>
-      </div>
-
       {/* Date filter */}
       <div style={{ display: "flex", gap: 8, marginBottom: 14, alignItems: "center", flexWrap: "wrap" }}>
         <span style={{ fontSize: 12, color: C.textMid }}>From</span>
@@ -206,7 +134,7 @@ function MedicinesRegister({ horses, user, supabase, settings }) {
         {(fromDate || toDate) && <button onClick={function() { setFromDate(""); setToDate(""); }} style={{ background: "none", border: "none", color: C.navy, fontSize: 12, cursor: "pointer" }}>Clear</button>}
       </div>
 
-      {viewMode === "log" && (filtered.length === 0 ? (
+      {filtered.length === 0 ? (
         <div style={{ background: C.card, border: "1.5px dashed " + C.border, borderRadius: 12, padding: "40px 20px", textAlign: "center", color: C.textMid, fontSize: 14 }}>
           No medicine records yet. Tap + Record to log an administration.
         </div>
@@ -233,30 +161,6 @@ function MedicinesRegister({ horses, user, supabase, settings }) {
             </div>
           );
         })
-      ))}
-
-      {/* BY HORSE VIEW */}
-      {viewMode === "horse" && (
-        <div>
-          {activeHorses.sort(function(a, b) { return a.name.localeCompare(b.name); }).map(function(horse) {
-            var horseEntries = entries.filter(function(e) { return e.horse_id === horse.id; });
-            var inPeriod = horseEntries.filter(function(e) { if (fromDate && e.date < fromDate) return false; if (toDate && e.date > toDate) return false; return true; });
-            return (
-              <div key={horse.id} style={{ background: C.card, border: "1px solid " + C.border, borderRadius: 12, padding: "14px 16px", marginBottom: 8, display: "flex", alignItems: "center", gap: 12 }}>
-                <div style={{ flex: 1 }}>
-                  <div style={{ fontSize: 15, fontWeight: 800, color: C.text }}>{horse.name}</div>
-                  <div style={{ fontSize: 12, color: C.textMid, marginTop: 2 }}>
-                    {horse.microchip ? "Chip: " + horse.microchip : <span style={{ color: C.amber }}>No microchip on file</span>}
-                    {" - " + inPeriod.length + " record" + (inPeriod.length !== 1 ? "s" : "") + (fromDate || toDate ? " in period" : " total")}
-                  </div>
-                </div>
-                <Btn variant="ghost" onClick={function() { printHorseSheet(horse.id); }} disabled={horseEntries.length === 0} style={{ fontSize: 12 }}>
-                  Print Sheet / PDF
-                </Btn>
-              </div>
-            );
-          })}
-        </div>
       )}
 
       {/* ADD MODAL */}
