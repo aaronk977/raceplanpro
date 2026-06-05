@@ -1486,6 +1486,17 @@ function YardSettings({ settings, setSettings, supabase, user }) {
             </div>
           </div>
 
+          <div style={{ background: C.card, border: "1px solid " + C.border, borderRadius: 14, padding: "20px", marginBottom: 16 }}>
+            <div style={{ fontSize: 15, fontWeight: 800, color: C.navy, marginBottom: 8 }}>Medicines Register PIN</div>
+            <div style={{ fontSize: 13, color: C.textMid, lineHeight: 1.6, marginBottom: 12 }}>
+              Set a 4-digit PIN to protect the Medicines Register. Only people with the PIN can open it. Leave blank for no PIN. Access is already limited to Trainer, Secretary and Head Lad roles.
+            </div>
+            <input type="text" inputMode="numeric" maxLength={4} value={edit.registerPin || ""}
+              onChange={function(e) { var v = e.target.value.replace(/[^0-9]/g, ""); update("registerPin", v); }}
+              placeholder="4-digit PIN"
+              style={{ width: 140, padding: "9px 12px", border: "1px solid " + C.border, borderRadius: 8, fontSize: 16, letterSpacing: 4, textAlign: "center", color: C.text }} />
+          </div>
+
           <div style={{ background: C.card, border: "1.5px solid " + C.red + "40", borderRadius: 14, padding: "20px" }}>
             <div style={{ fontSize: 15, fontWeight: 800, color: C.red, marginBottom: 8 }}>Delete All Yard Data</div>
             <div style={{ fontSize: 13, color: C.textMid, lineHeight: 1.6, marginBottom: 14 }}>
