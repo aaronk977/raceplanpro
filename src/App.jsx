@@ -17,6 +17,7 @@ import RaceDayChecklist from "./RaceDayChecklist";
 import MedicinesRegister from "./MedicinesRegister";
 import Prescriptions from "./Prescriptions";
 import Galloping from "./Galloping";
+import Reports from "./Reports";
 import WeightsTracker from "./WeightsTracker";
 import YardAssistant from "./YardAssistant";
 import ContentScheduler from "./ContentScheduler";
@@ -33,17 +34,17 @@ try { if (SUPABASE_URL && SUPABASE_ANON_KEY) supabase = createClient(SUPABASE_UR
 const globalCSS = ".desktop-only { display: flex !important; } * { box-sizing: border-box; margin: 0; padding: 0; } body { font-family: Inter, Helvetica Neue, sans-serif; } button:hover { opacity: 0.88; } input:focus, select:focus { outline: none; } ::-webkit-scrollbar { width: 4px; } ::-webkit-scrollbar-thumb { background: #b8c8da; border-radius: 2px; } @media print { body * { visibility: hidden; } #print-area, #print-area * { visibility: visible; } #print-area { position: absolute; left: 0; top: 0; } } @media (max-width: 767px) { .desktop-only { display: none !important; } html, body { overflow-x: hidden; overflow-y: scroll !important; -webkit-overflow-scrolling: touch; height: auto !important; } } @media (min-width: 768px) { .app-wrapper { height: 100vh; overflow: hidden; } .main-content { overflow-y: auto; height: calc(100vh - 56px); } }";
 
 var ROLE_TABS = {
-  "Trainer":           ["yard","planner","provisional","meds","register","prescriptions","whiteboard","movements","owners","staff","weights","trotters","galloping","checklist","assistant","content","summary","reminders","procurement","travel","settings"],
-  "Secretary":         ["yard","planner","provisional","meds","register","prescriptions","whiteboard","movements","owners","staff","weights","trotters","galloping","checklist","assistant","content","summary","reminders","procurement","travel","settings"],
-  "Head Lad":          ["yard","planner","provisional","meds","register","prescriptions","whiteboard","movements","owners","staff","weights","trotters","galloping","checklist","assistant","content","summary","reminders","procurement","travel","settings"],
-  "Head Girl":         ["yard","planner","provisional","meds","register","prescriptions","whiteboard","movements","owners","staff","weights","trotters","galloping","checklist","assistant","content","summary","reminders","procurement","travel","settings"],
-  "Assistant Trainer": ["yard","planner","provisional","meds","register","prescriptions","whiteboard","movements","owners","staff","weights","trotters","galloping","checklist","assistant","content","summary","reminders","procurement","travel","settings"],
+  "Trainer":           ["yard","planner","provisional","meds","register","prescriptions","whiteboard","movements","owners","staff","weights","trotters","galloping","checklist","assistant","content","summary","reminders","procurement","travel","reports","settings"],
+  "Secretary":         ["yard","planner","provisional","meds","register","prescriptions","whiteboard","movements","owners","staff","weights","trotters","galloping","checklist","assistant","content","summary","reminders","procurement","travel","reports","settings"],
+  "Head Lad":          ["yard","planner","provisional","meds","register","prescriptions","whiteboard","movements","owners","staff","weights","trotters","galloping","checklist","assistant","content","summary","reminders","procurement","travel","reports","settings"],
+  "Head Girl":         ["yard","planner","provisional","meds","register","prescriptions","whiteboard","movements","owners","staff","weights","trotters","galloping","checklist","assistant","content","summary","reminders","procurement","travel","reports","settings"],
+  "Assistant Trainer": ["yard","planner","provisional","meds","register","prescriptions","whiteboard","movements","owners","staff","weights","trotters","galloping","checklist","assistant","content","summary","reminders","procurement","travel","reports","settings"],
   "Staff":             ["meds","staff","weights","movements","reminders","procurement"],
   "Vet":               ["yard","meds","register","prescriptions","movements","weights","trotters","galloping","summary"],
   "Owner":             ["owners","whiteboard"]
 };
 
-var ALL_TABS = ["yard","planner","provisional","meds","register","prescriptions","whiteboard","movements","owners","staff","weights","trotters","galloping","checklist","assistant","content","summary","reminders","procurement","travel","settings"];
+var ALL_TABS = ["yard","planner","provisional","meds","register","prescriptions","whiteboard","movements","owners","staff","weights","trotters","galloping","checklist","assistant","content","summary","reminders","procurement","travel","reports","settings"];
 
 function App() {
   const [user, setUser] = useState(null);
@@ -425,6 +426,7 @@ function App() {
     { id: "galloping", label: "Galloping", icon: "G" },
     { id: "travel", label: "Travel Cost", icon: "🚛" },
     { id: "checklist", label: "Race Day", icon: "v" },
+    { id: "reports", label: "Reports", icon: "Rp" },
     { id: "settings", label: "Settings", icon: "⚙️" },
   ].filter(function(n) { return allowedTabs.indexOf(n.id) >= 0; });
 
@@ -622,6 +624,7 @@ function App() {
           {safeTab === "register" && <MedicinesRegister horses={horses} user={user} supabase={supabase} settings={settings} />}
           {safeTab === "prescriptions" && <Prescriptions horses={horses} user={user} supabase={supabase} settings={settings} />}
           {safeTab === "travel" && <TravelCost settings={settings} />}
+          {safeTab === "reports" && <Reports horses={horses} user={user} supabase={supabase} settings={settings} />}
           {safeTab === "settings" && <YardSettings settings={settings} setSettings={saveSettings} supabase={supabase} user={user} />}
           {safeTab === "weights" && <WeightsTracker horses={horses} weights={weightsRaw} setWeights={setWeights} settings={settings} />}
           {safeTab === "assistant" && <YardAssistant horses={horses} setHorses={setHorses} weights={weightsRaw} medLogs={medLogs} setMedLogs={setMedLogs} reminders={reminders} setReminders={setReminders} settings={settings} user={user} supabase={supabase} onNavigate={setTab} />}
