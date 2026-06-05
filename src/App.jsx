@@ -577,7 +577,7 @@ function App() {
       )}
 
       <div style={{ display: "flex" }}>
-        <div style={{ width: sidebarOpen ? 200 : 52, background: C.sidebar, flexShrink: 0, display: "flex", flexDirection: "column", height: "100vh", overflowY: "auto", transition: "width 0.2s", overflow: "hidden", minHeight: "calc(100vh - 56px)", position: "sticky", top: 56 }} className="desktop-only">
+        <div style={{ width: sidebarOpen ? 200 : 52, background: C.sidebar, flexShrink: 0, display: "flex", flexDirection: "column", transition: "width 0.2s", position: "sticky", top: 56, height: "calc(100vh - 56px)", overflowY: "auto", overflowX: "hidden" }} className="desktop-only">
           {NAV.map(function(nav) {
             var active = tab === nav.id;
             return (
