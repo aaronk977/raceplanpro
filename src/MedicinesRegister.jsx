@@ -36,6 +36,10 @@ function MedicinesRegister({ horses, user, supabase, settings }) {
   };
   var formState = useState(blank);
   var form = formState[0]; var setForm = formState[1];
+  var selHorsesState = useState({});
+  var selHorses = selHorsesState[0]; var setSelHorses = selHorsesState[1];
+  var horseSearchState = useState("");
+  var horseSearch = horseSearchState[0]; var setHorseSearch = horseSearchState[1];
 
   var trainerName = (settings && settings.trainerName) || "";
   var people = [];
@@ -62,30 +66,36 @@ function MedicinesRegister({ horses, user, supabase, settings }) {
   }
 
   function save() {
-    if (!form.horseId || !form.drugActive) return;
+    var ids = Object.keys(selHorses);
+    if (ids.length === 0 || !form.drugActive) return;
     if (!form.trainerAuth) { alert("Trainer must authorise the administration (Rule 148)."); return; }
     setSaving(true);
-    var horse = horses.find(function(h) { return h.id === form.horseId; });
-    var rec = {
-      user_id: user.id,
-      horse_id: form.horseId,
-      horse_name: horse ? horse.name : "",
-      date: form.date,
-      drug_brand: form.drugBrand,
-      drug_active: form.drugActive,
-      route: form.route,
-      quantity: form.quantity,
-      reason: form.reason,
-      administered_by: form.administeredBy,
-      vet: form.vet || defaultVet,
-      withdrawal_time: form.withdrawalTime,
-      trainer_auth: trainerName || "Authorised",
-      created_at: new Date().toISOString()
-    };
-    supabase.from("medicines_register").insert(rec).select().then(function(res) {
-      if (res.data) setEntries(function(p) { return res.data.concat(p); });
-      setSaving(false); setShowAdd(false); setForm(blank);
+    var records = ids.map(function(hid) {
+      var horse = horses.find(function(h) { return h.id === hid; });
+      return {
+        user_id: user.id,
+        horse_id: hid,
+        horse_name: horse ? horse.name : "",
+        date: form.date,
+        drug_brand: form.drugBrand,
+        drug_active: form.drugActive,
+        route: form.route,
+        quantity: form.quantity,
+        reason: form.reason,
+        administered_by: form.administeredBy,
+        vet: form.vet || defaultVet,
+        withdrawal_time: form.withdrawalTime,
+        trainer_auth: trainerName || "Authorised",
+        created_at: new Date().toISOString()
+      };
     });
+    supabase.from("medicines_register").insert(records).select().then(function(res) {
+      if (res.data) setEntries(function(p) { return res.data.concat(p); });
+      setSaving(false); setShowAdd(false); setForm(blank); setSelHorses({}); setHorseSearch("");
+    });
+  }
+  function toggleHorse(id) {
+    setSelHorses(function(p) { var n = Object.assign({}, p); if (n[id]) delete n[id]; else n[id] = true; return n; });
   }
 
   function del(id) {
@@ -193,7 +203,7 @@ function MedicinesRegister({ horses, user, supabase, settings }) {
         <div style={{ display: "flex", gap: 8, flexWrap: "wrap" }}>
           <Btn variant="ghost" onClick={function() { setShowDetection(true); }}>Detection Times</Btn>
           <Btn variant="ghost" onClick={printRegister}>Print / PDF</Btn>
-          <Btn onClick={function() { setForm(Object.assign({}, blank, { vet: defaultVet })); setShowAdd(true); }}>+ Record</Btn>
+          <Btn onClick={function() { setForm(Object.assign({}, blank, { vet: defaultVet })); setSelHorses({}); setHorseSearch(""); setShowAdd(true); }}>+ Record</Btn>
         </div>
       </div>
 
@@ -300,13 +310,25 @@ function MedicinesRegister({ horses, user, supabase, settings }) {
 
             <div style={{ display: "grid", gridTemplateColumns: "1fr 1fr", gap: 10 }}>
               <div style={{ gridColumn: "1 / -1" }}>
-                <Lbl>Horse</Lbl>
-                <select value={form.horseId} onChange={function(e) { upd("horseId", e.target.value); }} style={inp()}>
-                  <option value="">Select horse...</option>
-                  {activeHorses.sort(function(a, b) { return a.name.localeCompare(b.name); }).map(function(h) {
-                    return <option key={h.id} value={h.id}>{h.name}</option>;
+                <div style={{ display: "flex", justifyContent: "space-between", alignItems: "center" }}>
+                  <Lbl>Horses (select one or more)</Lbl>
+                  <span style={{ fontSize: 11, fontWeight: 700, color: Object.keys(selHorses).length > 0 ? C.green : C.textMid }}>{Object.keys(selHorses).length} selected</span>
+                </div>
+                <input type="text" value={horseSearch} onChange={function(e) { setHorseSearch(e.target.value); }} placeholder="Search horses..." style={Object.assign({}, inp(), { marginBottom: 6 })} />
+                <div style={{ display: "grid", gridTemplateColumns: "repeat(auto-fill, minmax(130px, 1fr))", gap: 5, maxHeight: 160, overflowY: "auto", border: "1px solid " + C.border, borderRadius: 8, padding: 6 }}>
+                  {activeHorses.filter(function(h) { var q = horseSearch.trim().toLowerCase(); return !q || h.name.toLowerCase().indexOf(q) >= 0; }).sort(function(a, b) { return a.name.localeCompare(b.name); }).map(function(h) {
+                    var sel = !!selHorses[h.id];
+                    return (
+                      <div key={h.id} onClick={function() { toggleHorse(h.id); }}
+                        style={{ display: "flex", alignItems: "center", gap: 6, padding: "6px 8px", borderRadius: 6, cursor: "pointer", border: "1.5px solid " + (sel ? C.gold : C.border), background: sel ? C.gold + "12" : "transparent" }}>
+                        <div style={{ width: 15, height: 15, borderRadius: 3, border: "2px solid " + (sel ? C.gold : C.border), background: sel ? C.gold : "transparent", flexShrink: 0, display: "flex", alignItems: "center", justifyContent: "center" }}>
+                          {sel && <span style={{ color: C.navy, fontSize: 10, fontWeight: 900, lineHeight: 1 }}>v</span>}
+                        </div>
+                        <span style={{ fontSize: 12, fontWeight: sel ? 700 : 400, color: C.text, overflow: "hidden", textOverflow: "ellipsis", whiteSpace: "nowrap" }}>{h.name}</span>
+                      </div>
+                    );
                   })}
-                </select>
+                </div>
               </div>
               <div>
                 <Lbl>Date administered</Lbl>
@@ -392,7 +414,7 @@ function MedicinesRegister({ horses, user, supabase, settings }) {
             </label>
 
             <div style={{ display: "flex", gap: 8, marginTop: 16 }}>
-              <Btn onClick={save} disabled={saving || !form.horseId || !form.drugActive}>{saving ? "Saving..." : "Save Record"}</Btn>
+              <Btn onClick={save} disabled={saving || Object.keys(selHorses).length === 0 || !form.drugActive}>{saving ? "Saving..." : "Save" + (Object.keys(selHorses).length > 1 ? " (" + Object.keys(selHorses).length + " horses)" : " Record")}</Btn>
               <Btn variant="ghost" onClick={function() { setShowAdd(false); }}>Cancel</Btn>
             </div>
           </div>
