@@ -878,6 +878,15 @@ function YardSettings({ settings, setSettings, supabase, user }) {
 
       {activeTab === "yard" && (
         <div style={{ background: C.card, border: "1px solid " + C.border, borderRadius: 14, padding: "20px" }}>
+          <div style={{ background: C.card, border: "1px solid " + C.border, borderRadius: 14, padding: "20px", marginBottom: 16 }}>
+            <div style={{ fontSize: 15, fontWeight: 800, color: C.navy, marginBottom: 8 }}>Gallop Locations</div>
+            <div style={{ fontSize: 13, color: C.textMid, marginBottom: 10 }}>One location per line. These appear in the Galloping tab.</div>
+            <textarea value={(edit.gallopLocations || []).join("\n")}
+              onChange={function(e) { update("gallopLocations", e.target.value.split("\n").map(function(s) { return s.trim(); }).filter(Boolean)); }}
+              placeholder={"Home Gallop\nAll-Weather\nGrass Gallop\nHill Gallop"}
+              style={{ width: "100%", padding: "10px 12px", background: C.cardOff, border: "1px solid " + C.border, borderRadius: 8, fontSize: 13, color: C.text, minHeight: 100, resize: "vertical" }} />
+          </div>
+
           <div style={{ fontSize: 15, fontWeight: 800, color: C.navy, marginBottom: 16 }}>Yard Details</div>
           <div style={{ marginBottom: 12 }}>
             <div style={{ fontSize: 10, fontWeight: 700, color: C.textMid, marginBottom: 4, textTransform: "uppercase" }}>Yard Address</div>
