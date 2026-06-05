@@ -156,6 +156,7 @@ function MedicinesRegister({ horses, user, supabase, settings }) {
 
   var activeHorses = horses.filter(function(h) { return h.status !== "Retired" && h.status !== "Sold"; });
 
+  var yardMeds = (settings && settings.medications) || [];
   var registerPin = (settings && settings.registerPin) || "";
 
   function checkPin() {
@@ -320,16 +321,26 @@ function MedicinesRegister({ horses, user, supabase, settings }) {
               <div style={{ gridColumn: "1 / -1" }}>
                 <Lbl>Medication (select to auto-fill)</Lbl>
                 <select value={form.drugBrand} onChange={function(e) {
-                  var d = DETECTION_TIMES.find(function(x) { return x.brand === e.target.value; });
+                  var v = e.target.value;
+                  var d = DETECTION_TIMES.find(function(x) { return x.brand === v; });
+                  var ym = yardMeds.find(function(x) { return x.name === v; });
                   if (d) {
                     upd("drugBrand", d.brand); upd("drugActive", d.substance);
                     upd("route", d.route); upd("withdrawalTime", d.note ? d.note : (d.hours + " hours detection"));
-                  } else { upd("drugBrand", e.target.value); }
+                  } else if (ym) {
+                    upd("drugBrand", ym.name); upd("drugActive", ym.activeIngredient || ym.name);
+                    if (ym.withdrawalDays) upd("withdrawalTime", ym.withdrawalDays + " days");
+                  } else { upd("drugBrand", v); }
                 }} style={inp()}>
                   <option value="">Select medication...</option>
-                  {DETECTION_TIMES.map(function(d, i) {
-                    return <option key={i} value={d.brand}>{d.substance + " - " + d.brand}</option>;
-                  })}
+                  {yardMeds.length > 0 && <optgroup label="Your yard medications">
+                    {yardMeds.map(function(m, i) { return <option key={"ym" + i} value={m.name}>{m.name}</option>; })}
+                  </optgroup>}
+                  <optgroup label="Official EHSLC list">
+                    {DETECTION_TIMES.map(function(d, i) {
+                      return <option key={i} value={d.brand}>{d.substance + " - " + d.brand}</option>;
+                    })}
+                  </optgroup>
                   <option value="__other">Other / not listed</option>
                 </select>
                 {form.drugBrand === "__other" && (
@@ -340,7 +351,19 @@ function MedicinesRegister({ horses, user, supabase, settings }) {
               </div>
               <div>
                 <Lbl>Quantity</Lbl>
-                <input type="text" value={form.quantity} onChange={function(e) { upd("quantity", e.target.value); }} placeholder="e.g. 10ml" style={inp()} />
+                <div style={{ display: "flex", gap: 6 }}>
+                  <input type="number" value={form.quantityAmount || ""} onChange={function(e) { upd("quantityAmount", e.target.value); upd("quantity", e.target.value + " " + (form.quantityUnit || "ml")); }} placeholder="0" style={Object.assign({}, inp(), { flex: 1 })} />
+                  <select value={form.quantityUnit || "ml"} onChange={function(e) { upd("quantityUnit", e.target.value); upd("quantity", (form.quantityAmount || "") + " " + e.target.value); }} style={Object.assign({}, inp(), { width: 90, flex: "none" })}>
+                    <option value="ml">ml</option>
+                    <option value="mg">mg</option>
+                    <option value="g">g</option>
+                    <option value="ug">ug</option>
+                    <option value="tablet">tablet(s)</option>
+                    <option value="sachet">sachet(s)</option>
+                    <option value="tube">tube(s)</option>
+                    <option value="dose">dose(s)</option>
+                  </select>
+                </div>
               </div>
               <div>
                 <Lbl>Withdrawal / detection time</Lbl>
