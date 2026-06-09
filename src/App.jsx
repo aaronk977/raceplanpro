@@ -26,6 +26,7 @@ import ContentScheduler from "./ContentScheduler";
 import DailySummary from "./DailySummary";
 import Procurement from "./Procurement";
 import Reminders from "./Reminders";
+import RacingExpenses from "./RacingExpenses";
 
 const SUPABASE_URL = import.meta.env.VITE_SUPABASE_URL;
 const SUPABASE_ANON_KEY = import.meta.env.VITE_SUPABASE_ANON_KEY;
@@ -36,17 +37,17 @@ try { if (SUPABASE_URL && SUPABASE_ANON_KEY) supabase = createClient(SUPABASE_UR
 const globalCSS = ".desktop-only { display: flex !important; } * { box-sizing: border-box; margin: 0; padding: 0; } body { font-family: Inter, Helvetica Neue, sans-serif; } button:hover { opacity: 0.88; } input:focus, select:focus { outline: none; } ::-webkit-scrollbar { width: 4px; } ::-webkit-scrollbar-thumb { background: #b8c8da; border-radius: 2px; } @media print { body * { visibility: hidden; } #print-area, #print-area * { visibility: visible; } #print-area { position: absolute; left: 0; top: 0; } } @media (max-width: 767px) { .desktop-only { display: none !important; } html, body { overflow-x: hidden; overflow-y: scroll !important; -webkit-overflow-scrolling: touch; height: auto !important; } [style*=\"1fr 1fr\"] { grid-template-columns: 1fr !important; } [style*=\"repeat(3\"], [style*=\"repeat(4\"], [style*=\"repeat(5\"] { grid-template-columns: 1fr 1fr !important; } [style*=\"minmax\"] { grid-template-columns: repeat(auto-fill, minmax(110px, 1fr)) !important; } [style*=\"min-width: 600\"], [style*=\"minWidth\"] { min-width: 0 !important; } table { font-size: 12px !important; } .main-content, .app-wrapper { padding-left: 12px !important; padding-right: 12px !important; } input, select, textarea { font-size: 16px !important; } } @media (min-width: 768px) { .app-wrapper { height: 100vh; overflow: hidden; } .main-content { overflow-y: auto; height: calc(100vh - 56px); } }";
 
 var ROLE_TABS = {
-  "Trainer":           ["yard","planner","provisional","meds","register","prescriptions","whiteboard","movements","owners","staff","weights","trotters","galloping","checklist","assistant","content","summary","reminders","procurement","travel","invoices","reports","settings"],
-  "Secretary":         ["yard","planner","provisional","meds","register","prescriptions","whiteboard","movements","owners","staff","weights","trotters","galloping","checklist","assistant","content","summary","reminders","procurement","travel","invoices","reports","settings"],
-  "Head Lad":          ["yard","planner","provisional","meds","register","prescriptions","whiteboard","movements","owners","staff","weights","trotters","galloping","checklist","assistant","content","summary","reminders","procurement","travel","invoices","reports","settings"],
-  "Head Girl":         ["yard","planner","provisional","meds","register","prescriptions","whiteboard","movements","owners","staff","weights","trotters","galloping","checklist","assistant","content","summary","reminders","procurement","travel","invoices","reports","settings"],
-  "Assistant Trainer": ["yard","planner","provisional","meds","register","prescriptions","whiteboard","movements","owners","staff","weights","trotters","galloping","checklist","assistant","content","summary","reminders","procurement","travel","invoices","reports","settings"],
+  "Trainer":           ["yard","planner","provisional","meds","register","prescriptions","whiteboard","movements","owners","staff","expenses","weights","trotters","galloping","checklist","assistant","content","summary","reminders","procurement","travel","invoices","reports","settings"],
+  "Secretary":         ["yard","planner","provisional","meds","register","prescriptions","whiteboard","movements","owners","staff","expenses","weights","trotters","galloping","checklist","assistant","content","summary","reminders","procurement","travel","invoices","reports","settings"],
+  "Head Lad":          ["yard","planner","provisional","meds","register","prescriptions","whiteboard","movements","owners","staff","expenses","weights","trotters","galloping","checklist","assistant","content","summary","reminders","procurement","travel","invoices","reports","settings"],
+  "Head Girl":         ["yard","planner","provisional","meds","register","prescriptions","whiteboard","movements","owners","staff","expenses","weights","trotters","galloping","checklist","assistant","content","summary","reminders","procurement","travel","invoices","reports","settings"],
+  "Assistant Trainer": ["yard","planner","provisional","meds","register","prescriptions","whiteboard","movements","owners","staff","expenses","weights","trotters","galloping","checklist","assistant","content","summary","reminders","procurement","travel","invoices","reports","settings"],
   "Staff":             ["meds","staff","weights","movements","reminders","procurement"],
   "Vet":               ["yard","meds","register","prescriptions","movements","weights","trotters","galloping","summary"],
   "Owner":             ["owners","whiteboard"]
 };
 
-var ALL_TABS = ["yard","planner","provisional","meds","register","prescriptions","whiteboard","movements","owners","staff","weights","trotters","galloping","checklist","assistant","content","summary","reminders","procurement","travel","invoices","reports","settings"];
+var ALL_TABS = ["yard","planner","provisional","meds","register","prescriptions","whiteboard","movements","owners","staff","expenses","weights","trotters","galloping","checklist","assistant","content","summary","reminders","procurement","travel","invoices","reports","settings"];
 
 function App() {
   const [user, setUser] = useState(null);
@@ -425,6 +426,7 @@ function App() {
     { id: "movements", label: "Movements", icon: "🚛" },
     { id: "owners", label: "Owners", icon: "👤" },
     { id: "staff", label: "Staff Hours", icon: "🌙" },
+    { id: "expenses", label: "Racing Expenses", icon: "€" },
     { id: "weights", label: "Weights", icon: "⚖️" },
     { id: "assistant", label: "AI Assistant", icon: "🤖" },
     { id: "content", label: "Content", icon: "🎥" },
@@ -628,6 +630,7 @@ function App() {
           {safeTab === "movements" && <MovementLog horses={horses} settings={settings} />}
           {safeTab === "owners" && <OwnerPortal horses={horses} settings={settings} />}
           {safeTab === "staff" && <StaffNotify user={user} supabase={supabase} settings={settings} />}
+          {safeTab === "expenses" && <RacingExpenses horses={horses} user={user} supabase={supabase} settings={settings} setSettings={saveSettings} onNavigate={setTab} />}
           {safeTab === "trotters" && <Trotters horses={horses} user={user} supabase={supabase} />}
           {safeTab === "galloping" && <Galloping horses={horses} user={user} supabase={supabase} settings={settings} />}
           {safeTab === "checklist" && <RaceDayChecklist horses={horses} wbEntries={wbEntries} user={user} supabase={supabase} />}
