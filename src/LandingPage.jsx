@@ -177,9 +177,7 @@ function DemoWidget() {
               <div>
                 <div style={{ fontSize: 13, color: "rgba(255,255,255,0.6)", marginBottom: 12 }}>Paste race conditions and the AI checks your whole yard instantly.</div>
                 <textarea value={cond} onChange={function(e) { setCond(e.target.value); }}
-                  placeholder={"Paste conditions e.g.:
-
-2m Hurdle Handicap, 4yo+, OR 85-110, Soft/Heavy, Mares allowed, No horse that has run on the Flat in last 14 days"}
+                  placeholder="Paste conditions e.g. 2m Hurdle Handicap, 4yo+, OR 85-110, Soft/Heavy, Mares allowed..."
                   style={{ width: "100%", padding: "12px", background: "rgba(255,255,255,0.05)", border: "1px solid rgba(255,255,255,0.1)", borderRadius: 8, fontSize: 13, color: WHITE, resize: "none", height: 120, fontFamily: "inherit" }} />
                 <button onClick={function() { setShowElig(true); }}
                   style={{ marginTop: 10, background: GOLD, border: "none", color: NAVY, padding: "10px 24px", borderRadius: 7, cursor: "pointer", fontSize: 14, fontWeight: 800 }}>
