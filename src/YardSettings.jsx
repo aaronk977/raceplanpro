@@ -1552,22 +1552,31 @@ function YardSettings({ settings, setSettings, supabase, user }) {
 
           <div style={{ display: "grid", gridTemplateColumns: "1fr 1fr 1fr", gap: 12, marginBottom: 16 }}>
             {[
-              { name: "Starter", price: "149", desc: "Up to 40 horses. All core features.", link: "https://buy.stripe.com/starter" },
-              { name: "Gold", price: "249", desc: "Up to 80 horses. Priority support.", link: "https://buy.stripe.com/gold" },
-              { name: "Platinum", price: "399", desc: "Unlimited horses. Full suite.", link: "https://buy.stripe.com/platinum" },
+              { name: "Starter", tagline: "Up to 40 horses", link: "https://buy.stripe.com/starter", features: ["My Yard and horse profiles", "Medication tracker", "Whiteboard and runners", "Owner WhatsApp comms", "Race Day checklist", "AI Race Planner", "Weights tracker"] },
+              { name: "Gold", tagline: "Up to 80 horses", link: "https://buy.stripe.com/gold", features: ["Everything in Starter", "Medicines Register (Rule 148)", "Vet Prescriptions store", "Galloping and Trotters logs", "IHRB horse sheets", "Reports and PDF exports", "Priority support"] },
+              { name: "Platinum", tagline: "Unlimited horses", link: "https://buy.stripe.com/platinum", features: ["Everything in Gold", "Supplier Invoice Portal", "Unlimited staff logins", "AI Yard Assistant", "Travel cost calculator", "Full data export", "Dedicated onboarding"] },
             ].map(function(tier) {
               var isCurrent = (edit.tier || "Starter") === tier.name;
               return (
-                <div key={tier.name} style={{ background: isCurrent ? C.navy : C.card, border: "2px solid " + (isCurrent ? C.gold : C.border), borderRadius: 14, padding: "18px 14px", textAlign: "center" }}>
-                  <div style={{ fontSize: 16, fontWeight: 900, color: isCurrent ? C.gold : C.navy, marginBottom: 4 }}>{tier.name}</div>
-                  <div style={{ fontSize: 22, fontWeight: 900, color: isCurrent ? "#fff" : C.text, marginBottom: 2 }}>{"EUR" + tier.price}<span style={{ fontSize: 12, fontWeight: 400 }}>/mo</span></div>
-                  <div style={{ fontSize: 11, color: isCurrent ? "rgba(255,255,255,0.6)" : C.textMid, marginBottom: 14, lineHeight: 1.4 }}>{tier.desc}</div>
+                <div key={tier.name} style={{ background: isCurrent ? C.navy : C.card, border: "2px solid " + (isCurrent ? C.gold : C.border), borderRadius: 14, padding: "18px 16px", display: "flex", flexDirection: "column" }}>
+                  <div style={{ fontSize: 17, fontWeight: 900, color: isCurrent ? C.gold : C.navy, marginBottom: 2, textAlign: "center" }}>{tier.name}</div>
+                  <div style={{ fontSize: 12, color: isCurrent ? "rgba(255,255,255,0.6)" : C.textMid, marginBottom: 14, textAlign: "center", fontWeight: 600 }}>{tier.tagline}</div>
+                  <div style={{ flex: 1, marginBottom: 14 }}>
+                    {tier.features.map(function(f, fi) {
+                      return (
+                        <div key={fi} style={{ display: "flex", alignItems: "flex-start", gap: 7, marginBottom: 7, fontSize: 12, color: isCurrent ? "rgba(255,255,255,0.85)" : C.text, lineHeight: 1.4 }}>
+                          <span style={{ color: isCurrent ? C.gold : C.green, fontWeight: 900, flexShrink: 0 }}>{"\u2713"}</span>
+                          {f}
+                        </div>
+                      );
+                    })}
+                  </div>
                   {isCurrent ? (
-                    <div style={{ fontSize: 12, fontWeight: 700, color: C.gold }}>Current Plan</div>
+                    <div style={{ fontSize: 12, fontWeight: 700, color: C.gold, textAlign: "center", padding: "8px" }}>Current Plan</div>
                   ) : (
                     <a href={tier.link} target="_blank" rel="noreferrer"
-                      style={{ display: "block", background: C.gold, color: C.navy, padding: "8px", borderRadius: 8, fontSize: 13, fontWeight: 900, textDecoration: "none" }}>
-                      Upgrade
+                      style={{ display: "block", background: C.gold, color: C.navy, padding: "10px", borderRadius: 8, fontSize: 13, fontWeight: 900, textDecoration: "none", textAlign: "center" }}>
+                      {"Upgrade to " + tier.name}
                     </a>
                   )}
                 </div>
@@ -1575,8 +1584,8 @@ function YardSettings({ settings, setSettings, supabase, user }) {
             })}
           </div>
 
-          <div style={{ background: C.card, border: "1px solid " + C.border, borderRadius: 12, padding: "14px 16px", fontSize: 13, color: C.textMid }}>
-            To cancel or change your plan email <strong>support@raceplanpro.com</strong> with 30 days notice.
+          <div style={{ background: C.card, border: "1px solid " + C.border, borderRadius: 12, padding: "14px 16px", fontSize: 13, color: C.textMid, textAlign: "center" }}>
+            Pricing is shown at checkout. To cancel or change your plan email <strong>support@raceplanpro.com</strong> with 30 days notice.
           </div>
         </div>
       )}
