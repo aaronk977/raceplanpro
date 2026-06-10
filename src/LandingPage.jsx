@@ -1,15 +1,15 @@
 import React, { useState } from "react";
 
-var NAVY = "#0d2818";
-var NAVY2 = "#1e3a2f";
-var GOLD = "#c9a84c";
-var GOLD2 = "#e8c96a";
-var PAPER = "#f7f3ed";
+var NAVY = "#0a1628";
+var NAVY2 = "#112240";
+var GOLD = "#c9952a";
+var GOLD2 = "#f5c842";
+var PAPER = "#f0f4f8";
 var WHITE = "#ffffff";
 var GREEN = "#1a7a4a";
 var RED = "#c0392b";
-var MUTED = "#7a9688";
-var TEXT = "#1a2e24";
+var MUTED = "#5a6b82";
+var TEXT = "#1a2540";
 
 var FONTS = "@import url('https://fonts.googleapis.com/css2?family=Outfit:wght@300;400;500;600;700;800;900&display=swap');";
 
@@ -256,7 +256,7 @@ function LandingPage({ onLogin }) {
 
       {/* NAV */}
       <div style={{ position: "sticky", top: 0, background: "rgba(13,40,24,0.97)", backdropFilter: "blur(12px)", WebkitBackdropFilter: "blur(12px)", zIndex: 100, padding: "0 clamp(16px,4vw,48px)", height: 60, display: "flex", alignItems: "center", justifyContent: "space-between", borderBottom: "1px solid rgba(201,168,76,0.12)" }}>
-        <Logo />
+        <Logo dark={true} />
         <div style={{ display: "flex", gap: 10, alignItems: "center" }}>
           <button onClick={onLogin} style={{ background: "transparent", border: "1px solid rgba(255,255,255,0.2)", color: "rgba(255,255,255,0.8)", padding: "8px 16px", borderRadius: 6, cursor: "pointer", fontSize: 13, fontWeight: 500 }}>Log In</button>
           <button onClick={onLogin} style={{ background: "transparent", border: "1px solid rgba(201,168,76,0.5)", color: GOLD, padding: "8px 16px", borderRadius: 6, cursor: "pointer", fontSize: 13, fontWeight: 700 }} className="cta-btn">Sign Up Free</button>
@@ -474,7 +474,7 @@ function LandingPage({ onLogin }) {
       {/* FOOTER */}
       <div style={{ background: NAVY, padding: "32px clamp(16px,4vw,48px)", borderTop: "1px solid rgba(201,168,76,0.12)" }}>
         <div style={{ maxWidth: 1040, margin: "0 auto", display: "flex", justifyContent: "space-between", alignItems: "center", flexWrap: "wrap", gap: 16 }}>
-          <Logo />
+          <Logo dark={true} />
           <div style={{ fontSize: 11, color: "rgba(255,255,255,0.25)", textAlign: "center" }}>
             {"\u00a9 2026 RacePlan Pro\u2122. All rights reserved. Ireland and UK."}
           </div>
@@ -510,10 +510,10 @@ function LandingPage({ onLogin }) {
             <div style={{ fontSize: 13, color: "#444", lineHeight: 1.9 }}>
               <p style={{ marginBottom: 12 }}><strong>Last updated: June 2026</strong></p>
 
-              <p style={{ marginBottom: 6, fontWeight: 700, color: "#0d2818" }}>1. Licence</p>
+              <p style={{ marginBottom: 6, fontWeight: 700, color: "#0a1628" }}>1. Licence</p>
               <p style={{ marginBottom: 12 }}>RacePlan Pro is licensed for use by professional racing trainers and their authorised staff for yard management purposes only. You may not resell, sublicense or share access with third parties outside your yard.</p>
 
-              <p style={{ marginBottom: 6, fontWeight: 700, color: "#0d2818" }}>2. Fair Usage</p>
+              <p style={{ marginBottom: 6, fontWeight: 700, color: "#0a1628" }}>2. Fair Usage</p>
               <p style={{ marginBottom: 8 }}>Each subscription plan includes fair usage of all features. The following usage is included within your plan and is not charged separately under normal use:</p>
               <ul style={{ paddingLeft: 18, marginBottom: 12 }}>
                 <li style={{ marginBottom: 4 }}>Up to 200 AI-assisted requests per month (Race Planner, AI Assistant, eligibility checks)</li>
@@ -523,7 +523,7 @@ function LandingPage({ onLogin }) {
               </ul>
               <p style={{ marginBottom: 12 }}>If your usage consistently and materially exceeds these limits, RacePlan Pro reserves the right to contact you to discuss a revised plan or additional charges. We will always notify you before billing anything beyond your subscription fee.</p>
 
-              <p style={{ marginBottom: 6, fontWeight: 700, color: "#0d2818" }}>3. What may cost extra</p>
+              <p style={{ marginBottom: 6, fontWeight: 700, color: "#0a1628" }}>3. What may cost extra</p>
               <p style={{ marginBottom: 8 }}>The following may incur additional charges if usage significantly exceeds the fair usage limits above:</p>
               <ul style={{ paddingLeft: 18, marginBottom: 12 }}>
                 <li style={{ marginBottom: 4 }}>AI-assisted feature usage above 200 requests per month</li>
@@ -532,13 +532,13 @@ function LandingPage({ onLogin }) {
                 <li style={{ marginBottom: 4 }}>Excessive automated or non-human usage</li>
               </ul>
 
-              <p style={{ marginBottom: 6, fontWeight: 700, color: "#0d2818" }}>4. Accuracy</p>
+              <p style={{ marginBottom: 6, fontWeight: 700, color: "#0a1628" }}>4. Accuracy</p>
               <p style={{ marginBottom: 12 }}>RacePlan Pro does not guarantee the accuracy of eligibility calculations, withdrawal period calculations or any AI-generated analysis. Trainers remain solely responsible for verifying all entries and declarations with HRI, the BHA or the relevant racing authority.</p>
 
-              <p style={{ marginBottom: 6, fontWeight: 700, color: "#0d2818" }}>5. Intellectual Property</p>
+              <p style={{ marginBottom: 6, fontWeight: 700, color: "#0a1628" }}>5. Intellectual Property</p>
               <p style={{ marginBottom: 12 }}>{"\u00a9 2026 RacePlan Pro\u2122. All rights reserved. The RacePlan Pro name, logo, software and content are the exclusive property of RacePlan Pro. Unauthorised copying or reproduction is strictly prohibited."}</p>
 
-              <p style={{ marginBottom: 6, fontWeight: 700, color: "#0d2818" }}>6. Governing Law</p>
+              <p style={{ marginBottom: 6, fontWeight: 700, color: "#0a1628" }}>6. Governing Law</p>
               <p>These terms are governed by the laws of Ireland. Any disputes shall be subject to the exclusive jurisdiction of the Irish courts.</p>
             </div>
             <button onClick={function() { setShowTerms(false); }} style={{ marginTop: 20, width: "100%", background: NAVY, border: "none", color: WHITE, padding: "12px", borderRadius: 8, cursor: "pointer", fontWeight: 700 }}>Close</button>
