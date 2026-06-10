@@ -232,6 +232,7 @@ function LandingPage({ onLogin }) {
   var demoSentState = useState(false); var demoSent = demoSentState[0]; var setDemoSent = demoSentState[1];
   var showPrivacyState = useState(false); var showPrivacy = showPrivacyState[0]; var setShowPrivacy = showPrivacyState[1];
   var showTermsState = useState(false); var showTerms = showTermsState[0]; var setShowTerms = showTermsState[1];
+  var showContactState = useState(false); var showContact = showContactState[0]; var setShowContact = showContactState[1];
   var calcCourseState = useState("Leopardstown");
   var calcCourse = calcCourseState[0]; var setCalcCourse = calcCourseState[1];
 
@@ -258,6 +259,8 @@ function LandingPage({ onLogin }) {
       <div style={{ position: "sticky", top: 0, background: "rgba(10,22,40,0.97)", backdropFilter: "blur(12px)", WebkitBackdropFilter: "blur(12px)", zIndex: 100, padding: "0 clamp(16px,4vw,48px)", height: 60, display: "flex", alignItems: "center", justifyContent: "space-between", borderBottom: "1px solid rgba(201,149,42,0.12)" }}>
         <Logo dark={true} />
         <div style={{ display: "flex", gap: 10, alignItems: "center" }}>
+          <a href="#about" style={{ color: "rgba(255,255,255,0.7)", fontSize: 13, fontWeight: 500, textDecoration: "none", marginRight: 4 }} className="hide-mobile">About</a>
+          <span onClick={function() { setShowContact(true); }} style={{ color: "rgba(255,255,255,0.7)", fontSize: 13, fontWeight: 500, cursor: "pointer", marginRight: 4 }} className="hide-mobile">Contact</span>
           <button onClick={onLogin} style={{ background: "transparent", border: "1px solid rgba(255,255,255,0.2)", color: "rgba(255,255,255,0.8)", padding: "8px 16px", borderRadius: 6, cursor: "pointer", fontSize: 13, fontWeight: 500 }}>Log In</button>
           <button onClick={onLogin} style={{ background: "transparent", border: "1px solid rgba(201,149,42,0.5)", color: GOLD, padding: "8px 16px", borderRadius: 6, cursor: "pointer", fontSize: 13, fontWeight: 700 }} className="cta-btn">Sign Up Free</button>
           <button onClick={function() { setDemoOpen(true); }} style={{ background: GOLD, border: "none", color: NAVY, padding: "8px 18px", borderRadius: 6, cursor: "pointer", fontSize: 13, fontWeight: 800 }} className="cta-btn">Book Demo</button>
@@ -471,6 +474,18 @@ function LandingPage({ onLogin }) {
         </div>
       </div>
 
+      {/* ABOUT SECTION */}
+      <div id="about" style={{ background: PAPER, padding: "clamp(48px,8vw,80px) clamp(16px,4vw,48px)", borderTop: "1px solid rgba(10,22,40,0.06)" }}>
+        <div style={{ maxWidth: 760, margin: "0 auto", textAlign: "center" }}>
+          <div style={{ fontSize: 11, fontWeight: 700, color: GOLD, letterSpacing: 2, textTransform: "uppercase", marginBottom: 12 }}>About RacePlan Pro</div>
+          <h2 style={{ fontSize: "clamp(26px,4vw,42px)", fontWeight: 800, color: NAVY, lineHeight: 1.2, marginBottom: 24 }}>Built by racing people, for racing people.</h2>
+          <p style={{ fontSize: 16, color: TEXT, lineHeight: 1.8, marginBottom: 18, opacity: 0.85 }}>RacePlan Pro was created out of a simple frustration: the hours lost every week to admin that has nothing to do with training horses. Transcribing medication records by hand, cross-checking eligibility, chasing owners and suppliers, and managing it all across notebooks, spreadsheets and WhatsApp.</p>
+          <p style={{ fontSize: 16, color: TEXT, lineHeight: 1.8, marginBottom: 18, opacity: 0.85 }}>We know the yard because we come from it. Every feature is built around how a working trainer and their staff actually operate, on the gallops and in the office, on a phone and on the move, with compliance and owner communication at the centre.</p>
+          <p style={{ fontSize: 16, color: TEXT, lineHeight: 1.8, marginBottom: 32, opacity: 0.85 }}>Our goal is simple: give you back your time, keep you fully compliant, and put everything you need in one place.</p>
+          <button onClick={function() { setShowContact(true); }} style={{ background: NAVY, border: "none", color: "#fff", padding: "13px 32px", borderRadius: 8, cursor: "pointer", fontSize: 15, fontWeight: 700 }} className="cta-btn">Get in Touch</button>
+        </div>
+      </div>
+
       {/* FOOTER */}
       <div style={{ background: NAVY, padding: "32px clamp(16px,4vw,48px)", borderTop: "1px solid rgba(201,149,42,0.12)" }}>
         <div style={{ maxWidth: 1040, margin: "0 auto", display: "flex", justifyContent: "space-between", alignItems: "center", flexWrap: "wrap", gap: 16 }}>
@@ -481,7 +496,7 @@ function LandingPage({ onLogin }) {
           <div style={{ display: "flex", gap: 20 }}>
             <span onClick={function() { setShowPrivacy(true); }} style={{ fontSize: 11, color: "rgba(255,255,255,0.3)", cursor: "pointer", textDecoration: "underline" }}>Privacy</span>
             <span onClick={function() { setShowTerms(true); }} style={{ fontSize: 11, color: "rgba(255,255,255,0.3)", cursor: "pointer", textDecoration: "underline" }}>Terms</span>
-            <a href="mailto:hello@raceplanpro.com" style={{ fontSize: 11, color: "rgba(255,255,255,0.3)", textDecoration: "underline" }}>Contact</a>
+            <span onClick={function() { setShowContact(true); }} style={{ fontSize: 11, color: "rgba(255,255,255,0.3)", cursor: "pointer", textDecoration: "underline" }}>Contact</span>
           </div>
         </div>
       </div>
@@ -542,6 +557,40 @@ function LandingPage({ onLogin }) {
               <p>These terms are governed by the laws of Ireland. Any disputes shall be subject to the exclusive jurisdiction of the Irish courts.</p>
             </div>
             <button onClick={function() { setShowTerms(false); }} style={{ marginTop: 20, width: "100%", background: NAVY, border: "none", color: WHITE, padding: "12px", borderRadius: 8, cursor: "pointer", fontWeight: 700 }}>Close</button>
+          </div>
+        </div>
+      )}
+
+      {/* CONTACT MODAL */}
+      {showContact && (
+        <div onClick={function() { setShowContact(false); }} style={{ position: "fixed", inset: 0, background: "rgba(0,0,0,0.7)", zIndex: 999, display: "flex", alignItems: "center", justifyContent: "center", padding: 20 }}>
+          <div onClick={function(e) { e.stopPropagation(); }} style={{ background: "#fff", borderRadius: 14, padding: "36px 32px", maxWidth: 460, width: "100%" }}>
+            <div style={{ fontSize: 24, fontWeight: 900, color: NAVY, marginBottom: 8 }}>Get in Touch</div>
+            <p style={{ fontSize: 14, color: MUTED, marginBottom: 24, lineHeight: 1.7 }}>Questions about RacePlan Pro, a demo, or anything else? We would love to hear from you.</p>
+            <div style={{ display: "flex", flexDirection: "column", gap: 14 }}>
+              <a href="mailto:hello@raceplanpro.com" style={{ display: "flex", alignItems: "center", gap: 12, padding: "14px 16px", background: PAPER, borderRadius: 10, textDecoration: "none", border: "1px solid rgba(10,22,40,0.08)" }}>
+                <span style={{ fontSize: 20 }}>{"\u2709"}</span>
+                <div>
+                  <div style={{ fontSize: 11, color: MUTED, textTransform: "uppercase", fontWeight: 700, letterSpacing: 0.5 }}>Email</div>
+                  <div style={{ fontSize: 15, color: NAVY, fontWeight: 600 }}>hello@raceplanpro.com</div>
+                </div>
+              </a>
+              <a href="tel:+353000000000" style={{ display: "flex", alignItems: "center", gap: 12, padding: "14px 16px", background: PAPER, borderRadius: 10, textDecoration: "none", border: "1px solid rgba(10,22,40,0.08)" }}>
+                <span style={{ fontSize: 20 }}>{"\u260e"}</span>
+                <div>
+                  <div style={{ fontSize: 11, color: MUTED, textTransform: "uppercase", fontWeight: 700, letterSpacing: 0.5 }}>Phone</div>
+                  <div style={{ fontSize: 15, color: NAVY, fontWeight: 600 }}>Available on request</div>
+                </div>
+              </a>
+              <button onClick={function() { setShowContact(false); setDemoOpen(true); }} style={{ display: "flex", alignItems: "center", gap: 12, padding: "14px 16px", background: GOLD, borderRadius: 10, border: "none", cursor: "pointer", textAlign: "left" }}>
+                <span style={{ fontSize: 20 }}>{"\u25b6"}</span>
+                <div>
+                  <div style={{ fontSize: 11, color: NAVY, textTransform: "uppercase", fontWeight: 700, letterSpacing: 0.5, opacity: 0.7 }}>Or</div>
+                  <div style={{ fontSize: 15, color: NAVY, fontWeight: 800 }}>Book a Demo</div>
+                </div>
+              </button>
+            </div>
+            <button onClick={function() { setShowContact(false); }} style={{ marginTop: 18, width: "100%", background: "transparent", border: "1px solid rgba(10,22,40,0.15)", color: MUTED, padding: "11px", borderRadius: 8, cursor: "pointer", fontWeight: 600 }}>Close</button>
           </div>
         </div>
       )}
