@@ -11,13 +11,13 @@ var RED = "#c0392b";
 var MUTED = "#7a9688";
 var TEXT = "#1a2e24";
 
-var FONTS = "@import url('https://fonts.googleapis.com/css2?family=Playfair+Display:ital,wght@0,700;0,900;1,700;1,900&family=Inter:wght@300;400;500;600;700;800;900&display=swap');";
+var FONTS = "@import url('https://fonts.googleapis.com/css2?family=Outfit:wght@300;400;500;600;700;800;900&display=swap');";
 
 var CSS = FONTS + `
   *, *::before, *::after { box-sizing: border-box; margin: 0; padding: 0; }
-  body { font-family: 'Inter', sans-serif; background: ${PAPER}; color: ${TEXT}; }
-  .serif { font-family: 'Playfair Display', Georgia, serif; }
-  .hero-stat { font-family: 'Playfair Display', Georgia, serif; font-style: italic; font-size: clamp(64px,12vw,130px); font-weight: 900; line-height: 1; color: ${GOLD}; }
+  body { font-family: 'Outfit', sans-serif; background: ${PAPER}; color: ${TEXT}; }
+  .serif { font-family: 'Outfit', sans-serif; }
+  .hero-stat { font-family: 'Outfit', sans-serif; font-style: italic; font-size: clamp(64px,12vw,130px); font-weight: 900; line-height: 1; color: ${GOLD}; }
   .pain-card:hover { transform: translateY(-3px); box-shadow: 0 16px 48px rgba(0,0,0,0.12); }
   .pain-card { transition: transform 0.2s ease, box-shadow 0.2s ease; }
   .feature-card:hover { border-color: ${GOLD}80; }
@@ -38,9 +38,9 @@ function Logo({ size, dark }) {
       <path d="M22 4 C10 4 4 12 4 20 C4 32 14 38 22 38 C24 38 26 37.5 28 36.5 L28 32 C26.5 33 24.5 34 22 34 C16 34 8 29 8 20 C8 14 13 8 22 8 C31 8 36 14 36 20 C36 29 28 34 22 34 L22 38 C30 38 40 32 40 20 C40 12 34 4 22 4 Z" fill={GOLD}/>
       <circle cx="14" cy="38" r="3" fill={GOLD}/>
       <circle cx="30" cy="38" r="3" fill={GOLD}/>
-      <text x="50" y="30" fontFamily="Playfair Display, Georgia, serif" fontWeight="900" fontStyle="italic" fontSize="22" fill={tc} letterSpacing="-0.5">RacePlan</text>
-      <text x="167" y="30" fontFamily="Inter, sans-serif" fontWeight="800" fontSize="18" fill={GOLD} letterSpacing="-0.3">Pro</text>
-      <text x="207" y="20" fontFamily="Inter, sans-serif" fontWeight="400" fontSize="9" fill={GOLD + "99"}>TM</text>
+      <text x="50" y="30" fontFamily="Outfit, sans-serif" fontWeight="900" fontStyle="italic" fontSize="22" fill={tc} letterSpacing="-0.5">RacePlan</text>
+      <text x="167" y="30" fontFamily="Outfit, sans-serif" fontWeight="800" fontSize="18" fill={GOLD} letterSpacing="-0.3">Pro</text>
+      <text x="207" y="20" fontFamily="Outfit, sans-serif" fontWeight="400" fontSize="9" fill={GOLD + "99"}>TM</text>
     </svg>
   );
 }
@@ -75,7 +75,7 @@ function LandingPage({ onLogin }) {
   var twoHorses = (returnKm * ratePerKm * 2).toFixed(2);
 
   return (
-    <div style={{ fontFamily: "'Inter', sans-serif", background: PAPER, color: TEXT, overflowX: "hidden" }}>
+    <div style={{ fontFamily: "'Outfit', sans-serif", background: PAPER, color: TEXT, overflowX: "hidden" }}>
       <style dangerouslySetInnerHTML={{ __html: CSS }} />
 
       {/* NAV */}
@@ -103,7 +103,7 @@ function LandingPage({ onLogin }) {
           </div>
           <h1 className="serif" style={{ fontSize: "clamp(40px,7vw,80px)", fontWeight: 900, color: WHITE, lineHeight: 1.08, marginBottom: 24, letterSpacing: "-1px" }}>
             Save hours every day.<br />
-            <span style={{ color: GOLD, fontStyle: "italic" }}>Stay fully compliant.</span>
+            <span style={{ color: GOLD, fontStyle: "normal" }}>Stay fully compliant.</span>
           </h1>
           <p style={{ fontSize: "clamp(15px,2vw,18px)", color: "rgba(255,255,255,0.65)", maxWidth: 560, lineHeight: 1.75, marginBottom: 40 }}>
             RacePlan Pro puts your medication records, race entries, owner comms, weights and compliance documents in one place — saving trainers hours of admin every day.
@@ -181,7 +181,7 @@ function LandingPage({ onLogin }) {
             ].map(function(s, i) {
               return (
                 <div key={i} style={{ padding: "32px 24px", borderRight: "1px solid rgba(201,168,76,0.1)", borderBottom: "1px solid rgba(201,168,76,0.1)" }}>
-                  <div className="serif" style={{ fontSize: "clamp(36px,5vw,54px)", fontWeight: 900, fontStyle: "italic", color: GOLD, lineHeight: 1, marginBottom: 8 }}>{s.number}</div>
+                  <div className="serif" style={{ fontSize: "clamp(36px,5vw,54px)", fontWeight: 900, fontStyle: "normal", color: GOLD, lineHeight: 1, marginBottom: 8 }}>{s.number}</div>
                   <div style={{ fontSize: 13, fontWeight: 700, color: WHITE, marginBottom: 6, letterSpacing: 0.2 }}>{s.unit}</div>
                   <div style={{ fontSize: 12, color: MUTED, lineHeight: 1.6 }}>{s.sub}</div>
                 </div>
