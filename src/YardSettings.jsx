@@ -1500,10 +1500,21 @@ function YardSettings({ settings, setSettings, supabase, user }) {
             <div style={{ fontSize: 13, color: C.textMid, lineHeight: 1.6, marginBottom: 12 }}>
               Set a 4-digit PIN to protect the Medicines Register. Only people with the PIN can open it. Leave blank for no PIN. Access is already limited to Trainer, Secretary and Head Lad roles.
             </div>
-            <input type="text" inputMode="numeric" maxLength={4} value={edit.registerPin || ""}
-              onChange={function(e) { var v = e.target.value.replace(/[^0-9]/g, ""); update("registerPin", v); }}
-              placeholder="4-digit PIN"
-              style={{ width: 140, padding: "9px 12px", border: "1px solid " + C.border, borderRadius: 8, fontSize: 16, letterSpacing: 4, textAlign: "center", color: C.text }} />
+            <div style={{ display: "flex", alignItems: "center", gap: 10, flexWrap: "wrap" }}>
+              <input type="text" inputMode="numeric" maxLength={4} value={edit.registerPin || ""}
+                onChange={function(e) { var v = e.target.value.replace(/[^0-9]/g, ""); update("registerPin", v); }}
+                placeholder="0000"
+                style={{ width: 120, padding: "9px 12px", border: "1px solid " + C.border, borderRadius: 8, fontSize: 20, letterSpacing: 6, textAlign: "center", color: C.text }} />
+              <button onClick={save} style={{ background: C.navy, color: "#fff", border: "none", borderRadius: 8, padding: "10px 18px", fontSize: 14, fontWeight: 700, cursor: "pointer" }}>
+                Save PIN
+              </button>
+              {(edit.registerPin || "").length === 4 && (
+                <span style={{ fontSize: 12, color: C.green, fontWeight: 600 }}>PIN active - Med Register and Prescriptions are locked</span>
+              )}
+              {(edit.registerPin || "").length > 0 && (edit.registerPin || "").length < 4 && (
+                <span style={{ fontSize: 12, color: C.amber }}>Enter all 4 digits</span>
+              )}
+            </div>
           </div>
 
           <div style={{ background: C.card, border: "1.5px solid " + C.red + "40", borderRadius: 14, padding: "20px" }}>
@@ -1533,49 +1544,39 @@ function YardSettings({ settings, setSettings, supabase, user }) {
 
       {activeTab === "subscription" && (
         <div>
-          <div style={{ background: C.card, border: "1px solid " + C.border, borderRadius: 14, padding: "20px", marginBottom: 16 }}>
-            <div style={{ fontSize: 15, fontWeight: 800, color: C.navy, marginBottom: 4 }}>Your Plan</div>
-            <div style={{ fontSize: 13, color: C.textMid, marginBottom: 16 }}>Current plan: <strong>{edit.tier || "Professional"}</strong>. Changes take effect immediately.</div>
-            <div style={{ display: "grid", gridTemplateColumns: "1fr 1fr 1fr", gap: 14 }}>
-              {Object.keys(PLAN_FEATURES).map(function(planName) {
-                var plan = PLAN_FEATURES[planName];
-                var isActive = (edit.tier || "Professional") === planName;
-                return (
-                  <div key={planName} style={{ borderRadius: 14, border: "2px solid " + (isActive ? plan.color : C.border),
-                    background: isActive ? plan.color + "08" : C.cardOff, overflow: "hidden" }}>
-                    <div style={{ padding: "14px 16px", borderBottom: "1px solid " + (isActive ? plan.color + "30" : C.border), background: isActive ? plan.color + "12" : "transparent" }}>
-                      <div style={{ fontSize: 16, fontWeight: 900, color: isActive ? plan.color : C.text }}>{planName}</div>
-                      <div style={{ fontSize: 24, fontWeight: 900, color: C.navy, marginTop: 4 }}>
-                        {"EUR" + plan.price}
-                        <span style={{ fontSize: 12, color: C.textMid, fontWeight: 400 }}>/mo</span>
-                      </div>
-                      {isActive && <div style={{ fontSize: 11, fontWeight: 700, color: plan.color, marginTop: 4 }}>Current Plan</div>}
-                    </div>
-                    <div style={{ padding: "14px 16px" }}>
-                      {plan.features.map(function(f) {
-                        return <div key={f} style={{ fontSize: 11, color: C.text, marginBottom: 5, display: "flex", gap: 6 }}><span style={{ color: C.green }}>✓</span>{f}</div>;
-                      })}
-                      {plan.limits.map(function(f) {
-                        return <div key={f} style={{ fontSize: 11, color: C.textDim, marginBottom: 5, display: "flex", gap: 6 }}><span>✗</span>{f}</div>;
-                      })}
-                      <div style={{ marginTop: 14 }}>
-                        {isActive ? (
-                          <div style={{ padding: "10px", background: plan.color + "15", borderRadius: 8, textAlign: "center", fontSize: 12, fontWeight: 700, color: plan.color }}>Active</div>
-                        ) : (
-                          <a href={STRIPE_LINKS[planName]} target="_blank" rel="noreferrer"
-                            style={{ display: "block", padding: "10px", background: plan.color, color: "#fff", borderRadius: 8, textAlign: "center", fontSize: 12, fontWeight: 700, textDecoration: "none" }}>
-                            {(edit.tier === "Gold" && planName !== "Gold") || (edit.tier === "Professional" && planName === "Basic") ? "Downgrade" : "Upgrade"} to {planName}
-                          </a>
-                        )}
-                      </div>
-                    </div>
-                  </div>
-                );
-              })}
-            </div>
+          <div style={{ background: C.card, border: "1px solid " + C.border, borderRadius: 14, padding: "20px", marginBottom: 16, textAlign: "center" }}>
+            <div style={{ fontSize: 13, color: C.textMid, marginBottom: 4, textTransform: "uppercase", fontWeight: 700 }}>Current Plan</div>
+            <div style={{ fontSize: 28, fontWeight: 900, color: C.navy, marginBottom: 2 }}>{edit.tier || "Starter"}</div>
+            <div style={{ fontSize: 13, color: C.textMid }}>Free beta access</div>
           </div>
-          <div style={{ background: C.cardOff, border: "1px solid " + C.border, borderRadius: 10, padding: "14px 16px", fontSize: 12, color: C.textMid, lineHeight: 1.6 }}>
-            Payments handled securely by Stripe. Cancel anytime. For billing queries contact support@raceplanpro.com
+
+          <div style={{ display: "grid", gridTemplateColumns: "1fr 1fr 1fr", gap: 12, marginBottom: 16 }}>
+            {[
+              { name: "Starter", price: "149", desc: "Up to 40 horses. All core features.", link: "https://buy.stripe.com/starter" },
+              { name: "Gold", price: "249", desc: "Up to 80 horses. Priority support.", link: "https://buy.stripe.com/gold" },
+              { name: "Platinum", price: "399", desc: "Unlimited horses. Full suite.", link: "https://buy.stripe.com/platinum" },
+            ].map(function(tier) {
+              var isCurrent = (edit.tier || "Starter") === tier.name;
+              return (
+                <div key={tier.name} style={{ background: isCurrent ? C.navy : C.card, border: "2px solid " + (isCurrent ? C.gold : C.border), borderRadius: 14, padding: "18px 14px", textAlign: "center" }}>
+                  <div style={{ fontSize: 16, fontWeight: 900, color: isCurrent ? C.gold : C.navy, marginBottom: 4 }}>{tier.name}</div>
+                  <div style={{ fontSize: 22, fontWeight: 900, color: isCurrent ? "#fff" : C.text, marginBottom: 2 }}>{"EUR" + tier.price}<span style={{ fontSize: 12, fontWeight: 400 }}>/mo</span></div>
+                  <div style={{ fontSize: 11, color: isCurrent ? "rgba(255,255,255,0.6)" : C.textMid, marginBottom: 14, lineHeight: 1.4 }}>{tier.desc}</div>
+                  {isCurrent ? (
+                    <div style={{ fontSize: 12, fontWeight: 700, color: C.gold }}>Current Plan</div>
+                  ) : (
+                    <a href={tier.link} target="_blank" rel="noreferrer"
+                      style={{ display: "block", background: C.gold, color: C.navy, padding: "8px", borderRadius: 8, fontSize: 13, fontWeight: 900, textDecoration: "none" }}>
+                      Upgrade
+                    </a>
+                  )}
+                </div>
+              );
+            })}
+          </div>
+
+          <div style={{ background: C.card, border: "1px solid " + C.border, borderRadius: 12, padding: "14px 16px", fontSize: 13, color: C.textMid }}>
+            To cancel or change your plan email <strong>support@raceplanpro.com</strong> with 30 days notice.
           </div>
         </div>
       )}
