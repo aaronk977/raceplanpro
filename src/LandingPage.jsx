@@ -88,7 +88,7 @@ function DemoWidget() {
   ];
 
   return (
-    <div style={{ borderRadius: 14, overflow: "hidden", border: "1px solid rgba(201,168,76,0.15)", background: "#0f1f14" }}>
+    <div style={{ borderRadius: 14, overflow: "hidden", border: "1px solid rgba(201,149,42,0.15)", background: "#0d1b2e" }}>
       <div style={{ background: "rgba(255,255,255,0.03)", padding: "10px 16px", display: "flex", alignItems: "center", gap: 8, borderBottom: "1px solid rgba(255,255,255,0.06)" }}>
         <div style={{ width: 10, height: 10, borderRadius: "50%", background: "#c0392b" }} />
         <div style={{ width: 10, height: 10, borderRadius: "50%", background: "#f39c12" }} />
@@ -159,7 +159,7 @@ function DemoWidget() {
                 <div key={i} style={{ padding: "12px 14px", background: "rgba(255,255,255,0.03)", borderRadius: 8, marginBottom: 8, border: "1px solid rgba(255,255,255,0.06)" }}>
                   <div style={{ display: "flex", justifyContent: "space-between", alignItems: "flex-start", marginBottom: 6 }}>
                     <span style={{ fontSize: 14, fontWeight: 700, color: WHITE }}>{m.horse}</span>
-                    <span style={{ fontSize: 11, color: GOLD, fontWeight: 700, background: "rgba(201,168,76,0.12)", padding: "2px 8px", borderRadius: 10 }}>{"Clear: " + m.clear}</span>
+                    <span style={{ fontSize: 11, color: GOLD, fontWeight: 700, background: "rgba(201,149,42,0.12)", padding: "2px 8px", borderRadius: 10 }}>{"Clear: " + m.clear}</span>
                   </div>
                   <div style={{ fontSize: 13, color: "rgba(255,255,255,0.7)", marginBottom: 4 }}>{m.drug}</div>
                   <div style={{ display: "flex", gap: 12, fontSize: 11, color: "rgba(255,255,255,0.35)" }}>
@@ -201,7 +201,7 @@ function DemoWidget() {
                   { name: "Connemara Lady", or: 89, ok: null, note: "Filly — mare allowance applies, may affect race choice" },
                 ].map(function(h, i) {
                   return (
-                    <div key={i} style={{ display: "flex", gap: 10, alignItems: "flex-start", padding: "9px 12px", background: "rgba(255,255,255,0.03)", borderRadius: 7, marginBottom: 5, border: "1px solid " + (h.ok === true ? "rgba(26,122,74,0.3)" : h.ok === false ? "rgba(192,57,43,0.3)" : "rgba(201,168,76,0.2)") }}>
+                    <div key={i} style={{ display: "flex", gap: 10, alignItems: "flex-start", padding: "9px 12px", background: "rgba(255,255,255,0.03)", borderRadius: 7, marginBottom: 5, border: "1px solid " + (h.ok === true ? "rgba(26,122,74,0.3)" : h.ok === false ? "rgba(192,57,43,0.3)" : "rgba(201,149,42,0.2)") }}>
                       <div style={{ width: 8, height: 8, borderRadius: "50%", marginTop: 5, flexShrink: 0, background: h.ok === true ? GREEN : h.ok === false ? RED : GOLD }} />
                       <div>
                         <div style={{ fontSize: 13, fontWeight: 700, color: WHITE }}>{h.name + " (OR " + h.or + ")"}</div>
@@ -255,18 +255,18 @@ function LandingPage({ onLogin }) {
       <style dangerouslySetInnerHTML={{ __html: CSS }} />
 
       {/* NAV */}
-      <div style={{ position: "sticky", top: 0, background: "rgba(13,40,24,0.97)", backdropFilter: "blur(12px)", WebkitBackdropFilter: "blur(12px)", zIndex: 100, padding: "0 clamp(16px,4vw,48px)", height: 60, display: "flex", alignItems: "center", justifyContent: "space-between", borderBottom: "1px solid rgba(201,168,76,0.12)" }}>
+      <div style={{ position: "sticky", top: 0, background: "rgba(10,22,40,0.97)", backdropFilter: "blur(12px)", WebkitBackdropFilter: "blur(12px)", zIndex: 100, padding: "0 clamp(16px,4vw,48px)", height: 60, display: "flex", alignItems: "center", justifyContent: "space-between", borderBottom: "1px solid rgba(201,149,42,0.12)" }}>
         <Logo dark={true} />
         <div style={{ display: "flex", gap: 10, alignItems: "center" }}>
           <button onClick={onLogin} style={{ background: "transparent", border: "1px solid rgba(255,255,255,0.2)", color: "rgba(255,255,255,0.8)", padding: "8px 16px", borderRadius: 6, cursor: "pointer", fontSize: 13, fontWeight: 500 }}>Log In</button>
-          <button onClick={onLogin} style={{ background: "transparent", border: "1px solid rgba(201,168,76,0.5)", color: GOLD, padding: "8px 16px", borderRadius: 6, cursor: "pointer", fontSize: 13, fontWeight: 700 }} className="cta-btn">Sign Up Free</button>
+          <button onClick={onLogin} style={{ background: "transparent", border: "1px solid rgba(201,149,42,0.5)", color: GOLD, padding: "8px 16px", borderRadius: 6, cursor: "pointer", fontSize: 13, fontWeight: 700 }} className="cta-btn">Sign Up Free</button>
           <button onClick={function() { setDemoOpen(true); }} style={{ background: GOLD, border: "none", color: NAVY, padding: "8px 18px", borderRadius: 6, cursor: "pointer", fontSize: 13, fontWeight: 800 }} className="cta-btn">Book Demo</button>
         </div>
       </div>
 
       {/* HERO */}
       <div style={{ background: "linear-gradient(160deg, " + NAVY + " 0%, " + NAVY2 + " 100%)", minHeight: "92vh", display: "flex", flexDirection: "column", justifyContent: "center", padding: "clamp(48px,10vw,80px) clamp(16px,6vw,80px)", position: "relative", overflow: "hidden" }}>
-        <div style={{ position: "absolute", inset: 0, backgroundImage: "radial-gradient(ellipse 60% 50% at 80% 50%, rgba(201,168,76,0.06) 0%, transparent 70%), radial-gradient(ellipse 40% 60% at 10% 80%, rgba(26,122,74,0.08) 0%, transparent 60%)", pointerEvents: "none" }} />
+        <div style={{ position: "absolute", inset: 0, backgroundImage: "radial-gradient(ellipse 60% 50% at 80% 50%, rgba(201,149,42,0.06) 0%, transparent 70%), radial-gradient(ellipse 40% 60% at 10% 80%, rgba(26,122,74,0.08) 0%, transparent 60%)", pointerEvents: "none" }} />
         <div style={{ position: "absolute", right: "clamp(-20px,5vw,60px)", top: "50%", transform: "translateY(-50%)", opacity: 0.04, pointerEvents: "none" }} className="hide-mobile">
           <svg width="600" height="600" viewBox="0 0 600 600" fill="none">
             <circle cx="300" cy="300" r="280" stroke={WHITE} strokeWidth="2"/>
@@ -275,7 +275,7 @@ function LandingPage({ onLogin }) {
           </svg>
         </div>
         <div style={{ maxWidth: 820, position: "relative" }}>
-          <div style={{ display: "inline-flex", alignItems: "center", gap: 8, background: "rgba(201,168,76,0.12)", border: "1px solid rgba(201,168,76,0.25)", borderRadius: 4, padding: "5px 14px", fontSize: 11, color: GOLD, fontWeight: 700, letterSpacing: 1.5, textTransform: "uppercase", marginBottom: 32 }}>
+          <div style={{ display: "inline-flex", alignItems: "center", gap: 8, background: "rgba(201,149,42,0.12)", border: "1px solid rgba(201,149,42,0.25)", borderRadius: 4, padding: "5px 14px", fontSize: 11, color: GOLD, fontWeight: 700, letterSpacing: 1.5, textTransform: "uppercase", marginBottom: 32 }}>
             Beta — Free for Founding Trainers
           </div>
           <h1 className="serif" style={{ fontSize: "clamp(40px,7vw,80px)", fontWeight: 900, color: WHITE, lineHeight: 1.08, marginBottom: 24, letterSpacing: "-1px" }}>
@@ -300,7 +300,7 @@ function LandingPage({ onLogin }) {
             { stat: "100%", label: "Rule 148 compliant register" },
           ].map(function(s, i) {
             return (
-              <div key={i} style={{ paddingRight: 40, paddingTop: 16, borderTop: "1px solid rgba(201,168,76,0.2)", marginTop: 4, marginRight: 0 }}>
+              <div key={i} style={{ paddingRight: 40, paddingTop: 16, borderTop: "1px solid rgba(201,149,42,0.2)", marginTop: 4, marginRight: 0 }}>
                 <div className="hero-stat">{s.stat}</div>
                 <div style={{ fontSize: 12, color: "rgba(255,255,255,0.5)", marginTop: 4, maxWidth: 140, lineHeight: 1.4, letterSpacing: 0.3, textTransform: "uppercase" }}>{s.label}</div>
               </div>
@@ -329,7 +329,7 @@ function LandingPage({ onLogin }) {
               { num: "06", pain: "Month end. Chasing suppliers for invoices, going through them by hand.", fix: "Each supplier gets a permanent upload link. Invoices land in the app, marked paid in one tap." },
             ].map(function(item, i) {
               return (
-                <div key={i} className="pain-card" style={{ background: PAPER, padding: "28px 24px", border: "1px solid rgba(13,40,24,0.06)" }}>
+                <div key={i} className="pain-card" style={{ background: PAPER, padding: "28px 24px", border: "1px solid rgba(10,22,40,0.06)" }}>
                   <div style={{ fontSize: 11, fontWeight: 800, color: GOLD, letterSpacing: 1.5, marginBottom: 14, textTransform: "uppercase" }}>{"Problem " + item.num}</div>
                   <div style={{ fontSize: 14, color: TEXT, fontWeight: 600, lineHeight: 1.6, marginBottom: 16 }}>{item.pain}</div>
                   <div style={{ borderTop: "1px solid " + GOLD + "30", paddingTop: 14, fontSize: 13, color: GREEN, fontWeight: 500, lineHeight: 1.6 }}>{item.fix}</div>
@@ -347,7 +347,7 @@ function LandingPage({ onLogin }) {
             <div style={{ fontSize: 11, fontWeight: 700, color: GOLD, letterSpacing: 2, textTransform: "uppercase", marginBottom: 12 }}>What you get back</div>
             <h2 className="serif" style={{ fontSize: "clamp(28px,4vw,46px)", fontWeight: 900, color: WHITE, lineHeight: 1.15 }}>The numbers that matter.</h2>
           </div>
-          <div style={{ display: "grid", gridTemplateColumns: "repeat(auto-fill, minmax(220px, 1fr))", gap: 1, border: "1px solid rgba(201,168,76,0.15)" }}>
+          <div style={{ display: "grid", gridTemplateColumns: "repeat(auto-fill, minmax(220px, 1fr))", gap: 1, border: "1px solid rgba(201,149,42,0.15)" }}>
             {[
               { number: "2hrs", unit: "Saved daily", sub: "On medicines transcription alone. 60 hours a month back." },
               { number: "0", unit: "Missed deadlines", sub: "Withdrawal tracking means no horse enters while ineligible." },
@@ -357,7 +357,7 @@ function LandingPage({ onLogin }) {
               { number: "1 place", unit: "For everything", sub: "Meds, weights, entries, comms, invoices. One login." },
             ].map(function(s, i) {
               return (
-                <div key={i} style={{ padding: "32px 24px", borderRight: "1px solid rgba(201,168,76,0.1)", borderBottom: "1px solid rgba(201,168,76,0.1)" }}>
+                <div key={i} style={{ padding: "32px 24px", borderRight: "1px solid rgba(201,149,42,0.1)", borderBottom: "1px solid rgba(201,149,42,0.1)" }}>
                   <div className="serif" style={{ fontSize: "clamp(36px,5vw,54px)", fontWeight: 900, fontStyle: "normal", color: GOLD, lineHeight: 1, marginBottom: 8 }}>{s.number}</div>
                   <div style={{ fontSize: 13, fontWeight: 700, color: WHITE, marginBottom: 6, letterSpacing: 0.2 }}>{s.unit}</div>
                   <div style={{ fontSize: 12, color: MUTED, lineHeight: 1.6 }}>{s.sub}</div>
@@ -388,7 +388,7 @@ function LandingPage({ onLogin }) {
               { icon: "S", label: "Reports", desc: "Pull date-range PDF reports for medications, gallops, weights, soundness, invoices." },
             ].map(function(f, i) {
               return (
-                <div key={i} className="feature-card" style={{ background: WHITE, borderRadius: 10, padding: "22px", border: "1px solid rgba(13,40,24,0.08)" }}>
+                <div key={i} className="feature-card" style={{ background: WHITE, borderRadius: 10, padding: "22px", border: "1px solid rgba(10,22,40,0.08)" }}>
                   <div style={{ width: 36, height: 36, borderRadius: 6, background: NAVY, display: "flex", alignItems: "center", justifyContent: "center", fontSize: 13, fontWeight: 900, color: GOLD, marginBottom: 14, letterSpacing: 0.5 }}>{f.icon}</div>
                   <div style={{ fontSize: 14, fontWeight: 700, color: NAVY, marginBottom: 6 }}>{f.label}</div>
                   <div style={{ fontSize: 13, color: MUTED, lineHeight: 1.6 }}>{f.desc}</div>
@@ -417,7 +417,7 @@ function LandingPage({ onLogin }) {
       </div>
 
       {/* RACE PLANNER DETAIL */}
-      <div style={{ background: WHITE, padding: "clamp(48px,8vw,80px) clamp(16px,4vw,48px)", borderTop: "1px solid rgba(13,40,24,0.06)" }}>
+      <div style={{ background: WHITE, padding: "clamp(48px,8vw,80px) clamp(16px,4vw,48px)", borderTop: "1px solid rgba(10,22,40,0.06)" }}>
         <div style={{ maxWidth: 1040, margin: "0 auto", display: "grid", gridTemplateColumns: "repeat(auto-fit, minmax(280px,1fr))", gap: 48, alignItems: "center" }}>
           <div>
             <div style={{ fontSize: 11, fontWeight: 700, color: GOLD, letterSpacing: 2, textTransform: "uppercase", marginBottom: 12 }}>Race Planning</div>
@@ -433,7 +433,7 @@ function LandingPage({ onLogin }) {
               );
             })}
           </div>
-          <div style={{ background: PAPER, borderRadius: 12, padding: "24px", border: "1px solid rgba(13,40,24,0.08)" }}>
+          <div style={{ background: PAPER, borderRadius: 12, padding: "24px", border: "1px solid rgba(10,22,40,0.08)" }}>
             <div style={{ fontSize: 11, fontWeight: 700, color: MUTED, marginBottom: 16, textTransform: "uppercase", letterSpacing: 1 }}>Eligible Horses — Today</div>
             {[
               { name: "Horse A", or: 98, ok: true, note: "Course and distance winner" },
@@ -443,7 +443,7 @@ function LandingPage({ onLogin }) {
               { name: "Horse E", or: 86, ok: false, note: "Treatment — clear in 12 days" },
             ].map(function(h, i) {
               return (
-                <div key={i} style={{ display: "flex", alignItems: "center", gap: 10, padding: "10px 0", borderBottom: i < 4 ? "1px solid rgba(13,40,24,0.05)" : "none" }}>
+                <div key={i} style={{ display: "flex", alignItems: "center", gap: 10, padding: "10px 0", borderBottom: i < 4 ? "1px solid rgba(10,22,40,0.05)" : "none" }}>
                   <div style={{ width: 7, height: 7, borderRadius: "50%", background: h.ok ? GREEN : RED, flexShrink: 0 }} />
                   <div style={{ flex: 1 }}>
                     <div style={{ fontSize: 13, fontWeight: 600, color: NAVY }}>{h.name}</div>
@@ -472,7 +472,7 @@ function LandingPage({ onLogin }) {
       </div>
 
       {/* FOOTER */}
-      <div style={{ background: NAVY, padding: "32px clamp(16px,4vw,48px)", borderTop: "1px solid rgba(201,168,76,0.12)" }}>
+      <div style={{ background: NAVY, padding: "32px clamp(16px,4vw,48px)", borderTop: "1px solid rgba(201,149,42,0.12)" }}>
         <div style={{ maxWidth: 1040, margin: "0 auto", display: "flex", justifyContent: "space-between", alignItems: "center", flexWrap: "wrap", gap: 16 }}>
           <Logo dark={true} />
           <div style={{ fontSize: 11, color: "rgba(255,255,255,0.25)", textAlign: "center" }}>
@@ -561,7 +561,7 @@ function LandingPage({ onLogin }) {
                 <div key={i} style={{ marginBottom: 14 }}>
                   <div style={{ fontSize: 11, fontWeight: 700, color: MUTED, textTransform: "uppercase", letterSpacing: 0.8, marginBottom: 6 }}>{f.label}</div>
                   <input type={f.type} value={f.val} onChange={function(e) { f.set(e.target.value); }} placeholder={f.ph}
-                    style={{ width: "100%", padding: "11px 14px", border: "1.5px solid rgba(13,40,24,0.12)", borderRadius: 8, fontSize: 14, color: NAVY, fontFamily: "inherit", outline: "none" }} />
+                    style={{ width: "100%", padding: "11px 14px", border: "1.5px solid rgba(10,22,40,0.12)", borderRadius: 8, fontSize: 14, color: NAVY, fontFamily: "inherit", outline: "none" }} />
                 </div>
               );
             })}
