@@ -43,7 +43,7 @@ function LandingPage({ onLogin }) {
       <div style={{ position: "sticky", top: 0, background: "rgba(10,22,40,0.97)", backdropFilter: "blur(10px)", zIndex: 100, padding: "0 16px", height: 56, display: "flex", alignItems: "center", justifyContent: "space-between" }}>
         <div style={{ display: "flex", alignItems: "center", gap: 10 }}>
           <span style={{ fontSize: 22 }}>🏇</span>
-          <span style={{ fontWeight: 900, fontSize: 18, color: WHITE, letterSpacing: -0.5 }}>RacePlan <span style={{ color: GOLD }}>Pro</span></span>
+          <span style={{ fontWeight: 900, fontSize: 18, color: WHITE, letterSpacing: -0.5 }}>RacePlan <span style={{ color: GOLD }}>Pro</span><sup style={{ fontSize: 9, color: "rgba(255,255,255,0.5)", verticalAlign: "super" }}>TM</sup></span>
         </div>
         <div style={{ display: "flex", gap: 12, alignItems: "center" }}>
           <button onClick={onLogin} style={{ background: "transparent", border: "1px solid rgba(255,255,255,0.3)", color: WHITE, padding: "8px 18px", borderRadius: 8, cursor: "pointer", fontSize: 13, fontWeight: 600 }}>Log In</button>
@@ -360,7 +360,7 @@ function LandingPage({ onLogin }) {
           <span style={{ fontSize: 18 }}>🏇</span>
           <span style={{ fontWeight: 900, fontSize: 15, color: WHITE }}>RacePlan <span style={{ color: GOLD }}>Pro</span></span>
         </div>
-        <p style={{ fontSize: 12, color: "rgba(255,255,255,0.25)", margin: "0 0 8px" }}>{"\u00a9 2026 RacePlan Pro. All rights reserved. Built for trainers, by people who understand racing. Ireland and UK."}</p>
+        <p style={{ fontSize: 12, color: "rgba(255,255,255,0.25)", margin: "0 0 8px" }}>{"\u00a9 2026 RacePlan Pro\u2122. All rights reserved. RacePlan Pro is a trademark. Built for trainers, by people who understand racing. Ireland and UK."}</p>
         <div style={{ display: "flex", gap: 16, justifyContent: "center", flexWrap: "wrap" }}>
           <span onClick={function() { setShowPrivacy(true); }} style={{ fontSize: 11, color: "rgba(255,255,255,0.3)", cursor: "pointer", textDecoration: "underline" }}>Privacy Policy</span>
           <span onClick={function() { setShowTerms(true); }} style={{ fontSize: 11, color: "rgba(255,255,255,0.3)", cursor: "pointer", textDecoration: "underline" }}>Terms of Use</span>
