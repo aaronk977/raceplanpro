@@ -59,11 +59,11 @@ function LandingPage({ onLogin }) {
             Now in Beta - Free for Founding Trainers
           </div>
           <h1 style={{ fontSize: "clamp(32px, 6vw, 58px)", fontWeight: 900, color: WHITE, lineHeight: 1.1, marginBottom: 20, letterSpacing: -1 }}>
-            {"Your yard. Under control."}<br />
-            <span style={{ color: GOLD }}>{"Every entry. Every med. Every owner update."}</span>
+            {"Save hours every day."}<br />
+            <span style={{ color: GOLD }}>{"Run a tighter yard. Stay fully compliant."}</span>
           </h1>
           <p style={{ fontSize: 18, color: "rgba(255,255,255,0.7)", maxWidth: 580, margin: "0 auto 36px", lineHeight: 1.7 }}>
-            The first AI-powered yard management app built specifically for professional racing trainers in Ireland and the UK. Entries, medications, owner communications and raceday management at your fingertips.
+            RacePlan Pro puts your medication records, race entries, owner comms, weights, and compliance documents in one place - saving trainers hours of admin every single day and keeping the IHRB off your back.
           </p>
           <div style={{ display: "flex", gap: 12, justifyContent: "center", flexWrap: "wrap", padding: "0 8px" }}>
             <button onClick={function() { setDemoOpen(true); }} style={{ background: GOLD, border: "none", color: NAVY, padding: "16px 32px", borderRadius: 10, cursor: "pointer", fontSize: 16, fontWeight: 900, letterSpacing: -0.3 }}>Book a Demo</button>
@@ -81,12 +81,12 @@ function LandingPage({ onLogin }) {
           </div>
           <div style={{ display: "grid", gridTemplateColumns: "repeat(auto-fit, minmax(min(260px, 100%), 1fr))", gap: 20 }}>
             {[
-              { icon: "💊", pain: "A horse gets medication the morning of entries or declarations and you go past the withdrawal period, potentially costing thousands.", fix: "RacePlan Pro fires a WhatsApp alert before every entry deadline — so you always know which horses are clear to enter." },
-              { icon: "📋", pain: "Race conditions land in your inbox. You spend hours cross-checking each horse for eligibility by hand.", fix: "Paste the conditions. Our AI reads them, checks your entire yard and gives you a ranked eligible list in seconds." },
-              { icon: "💉", pain: "A horse receives a treatment and goes on the shortlist weeks later. Someone forgets the withdrawal period.", fix: "Every treatment is logged with its withdrawal period. The Race Planner blocks that horse automatically until it is clear." },
-              { icon: "⚖️", pain: "Keeping on top of each horse\u2019s weight week to week is hard by hand, yet it is vital for performance and health.", fix: "Weight changes beyond your set threshold trigger an instant alert. You act before it becomes a problem." },
-              { icon: "📱", pain: "Owners are ringing for updates. Your secretary is stuck on calls instead of doing entries.", fix: "One tap sends a WhatsApp race update or declaration confirmation to every owner. Scheduled, professional, done." },
-              { icon: "🗂️", pain: "Month end. You are trying to remember which horses had medication so the office can do the billing.", fix: "Every dose is logged per horse per day. The full medication report is there when the office needs it." },
+              { icon: "clock", pain: "Your secretary spends 1-2 hours every day transcribing vet prescriptions into a ring binder and cross-referencing race entries by hand.", fix: "The digital Medicines Register replaces the ring binder entirely. Log medications once and they are filed against each horse. The IHRB sheet prints in one tap." },
+              { icon: "med", pain: "A horse gets medication the morning of entries or declarations. You miss the withdrawal period - potentially costing you a run, a fine, or worse.", fix: "RacePlan Pro tracks every withdrawal date automatically and flags horses that are not clear. Never enter an ineligible horse again." },
+              { icon: "list", pain: "Race conditions land in your inbox. You spend hours cross-checking each horse for eligibility, ratings, and entries by hand.", fix: "Paste the conditions once. The AI checks your entire yard and gives you a shortlist in seconds - with one tap to notify the owner." },
+              { icon: "phone", pain: "Owners ring the office constantly for updates. Your secretary is stuck on calls instead of doing the work that actually matters.", fix: "One-tap WhatsApp updates to every owner directly from the app. Entries, declarations, results, vet visits - owners stay informed without a single phone call." },
+              { icon: "scales", pain: "You do not notice a horse has dropped weight until race morning because tracking is done by memory or not done at all.", fix: "Log weights weekly. The app flags drops automatically so you act before it affects performance or welfare." },
+              { icon: "folder", pain: "Month end means chasing suppliers for invoices and going through them by hand to work out what has and has not been paid.", fix: "Each supplier gets a permanent upload link. Invoices land in the app, filed by date and supplier, marked paid or unpaid in one tap." },
             ].map(function(item, i) {
               return (
                 <div key={i} style={{ background: WHITE, borderRadius: 14, padding: "24px", border: "1px solid #e8ecf0" }}>
@@ -109,7 +109,7 @@ function LandingPage({ onLogin }) {
           </div>
           <h2 style={{ fontSize: "clamp(24px, 4vw, 38px)", fontWeight: 900, color: WHITE, marginBottom: 12 }}>See it in action</h2>
           <p style={{ color: "rgba(255,255,255,0.55)", fontSize: 15, marginBottom: 36, maxWidth: 520, margin: "0 auto 36px" }}>
-            Click play to watch a full walkthrough of RacePlan Pro — from login through every feature.
+            Click play to watch a full walkthrough of RacePlan Pro - from login through every feature.
           </p>
           <div style={{ position: "relative", borderRadius: 16, overflow: "hidden", border: "2px solid rgba(201,168,76,0.3)", boxShadow: "0 24px 60px rgba(0,0,0,0.4)", maxWidth: 820, margin: "0 auto" }}>
             {demoOpen2 ? (
@@ -132,7 +132,7 @@ function LandingPage({ onLogin }) {
                   ▶
                 </div>
                 <div style={{ fontSize: 18, fontWeight: 800, color: WHITE, marginBottom: 8 }}>Watch the full demo</div>
-                <div style={{ fontSize: 14, color: "rgba(255,255,255,0.65)" }}>2 minutes · All features · Interactive</div>
+                <div style={{ fontSize: 14, color: "rgba(255,255,255,0.65)" }}>2 minutes  - All features  - Interactive</div>
                 <div style={{ display: "grid", gridTemplateColumns: "repeat(5, 1fr)", gap: 8, marginTop: 32, maxWidth: 400 }}>
                   {["Login", "Race Planner", "Medications", "Whiteboard", "AI Assistant"].map(function(f) {
                     return <div key={f} style={{ background: "rgba(255,255,255,0.06)", borderRadius: 6, padding: "6px 4px", fontSize: 10, color: "rgba(255,255,255,0.5)", textAlign: "center" }}>{f}</div>;
@@ -148,15 +148,15 @@ function LandingPage({ onLogin }) {
       <div style={{ background: NAVY, padding: "clamp(40px, 8vw, 70px) clamp(16px, 4vw, 24px)" }}>
         <div style={{ maxWidth: 860, margin: "0 auto", textAlign: "center" }}>
           <h2 style={{ fontSize: "clamp(24px, 4vw, 38px)", fontWeight: 900, color: WHITE, marginBottom: 12 }}>The numbers that matter</h2>
-          <p style={{ color: "rgba(255,255,255,0.55)", fontSize: 15, marginBottom: 50 }}>Racing is a business. Here is what the admin problem actually costs.</p>
+          <p style={{ color: "rgba(255,255,255,0.55)", fontSize: 15, marginBottom: 50 }}>What RacePlan Pro actually gives you back.</p>
           <div style={{ display: "grid", gridTemplateColumns: "repeat(auto-fit, minmax(150px, 1fr))", gap: 20 }}>
             {[
-              { number: "1", unit: "missed entry", sub: "can cost tens of thousands in potential prize money", color: RED },
-              { number: "5-10", unit: "hours", sub: "lost every week to manual admin for trainer and secretary combined", color: GOLD },
-              { number: "12pm", unit: "HRI deadline", sub: "The app alerts you before it. Every entry day. Without fail.", color: GREEN },
-              { number: "10am", unit: "BHA deadline", sub: "UK entries covered too. Different deadlines, one system.", color: GREEN },
-              { number: "0", unit: "phone calls", sub: "needed from owners on race day when you send updates through the app", color: GOLD },
-              { number: "100%", unit: "withdrawal tracking", sub: "No horse enters while ineligible. The system enforces it automatically.", color: GREEN },
+              { number: "2hrs", unit: "saved daily", sub: "On medicines transcription alone. 60 hours a month back in your day.", color: GOLD },
+              { number: "0", unit: "missed deadlines", sub: "Withdrawal tracking means no horse enters while ineligible. Ever.", color: "#4ade80" },
+              { number: "1 tap", unit: "owner update", sub: "WhatsApp any owner from the app. No calls, no chasing, no delays.", color: GOLD },
+              { number: "100%", unit: "compliance", sub: "Rule 148 register, IHRB horse sheets, PIN-locked records. All in one place.", color: "#4ade80" },
+              { number: "5-10hrs", unit: "saved weekly", sub: "Trainers and secretaries get hours back every week.", color: GOLD },
+              { number: "1 place", unit: "for everything", sub: "Meds, weights, entries, comms, invoices. One app, one login.", color: "#4ade80" }
             ].map(function(stat, i) {
               return (
                 <div key={i} style={{ background: "rgba(255,255,255,0.05)", border: "1px solid rgba(255,255,255,0.08)", borderRadius: 14, padding: "24px 16px" }}>
@@ -178,7 +178,7 @@ function LandingPage({ onLogin }) {
               <div style={{ fontSize: 12, fontWeight: 700, color: GOLD, letterSpacing: 1, textTransform: "uppercase", marginBottom: 12 }}>Race Planning</div>
               <h2 style={{ fontSize: "clamp(22px, 3vw, 34px)", fontWeight: 900, color: NAVY, marginBottom: 16, lineHeight: 1.2 }}>Stop cross-referencing by hand</h2>
               <p style={{ fontSize: 15, color: "#555", lineHeight: 1.8, marginBottom: 20 }}>
-                Paste any race conditions — age, rating, sex, discipline, distance. The AI reads them instantly and tells you which horses in your yard are eligible, which are not, and why.
+                Paste any race conditions - age, rating, sex, discipline, distance. The AI reads them instantly and tells you which horses in your yard are eligible, which are not, and why.
               </p>
               <p style={{ fontSize: 15, color: "#555", lineHeight: 1.8, marginBottom: 24 }}>
                 Medication and treatment withdrawal periods are checked automatically. A horse that cannot run will not appear as eligible. No manual checking. No risk of error.
@@ -190,13 +190,13 @@ function LandingPage({ onLogin }) {
               })}
             </div>
             <div style={{ background: LIGHT, borderRadius: 16, padding: "24px", border: "1px solid #e8ecf0" }}>
-              <div style={{ fontSize: 12, fontWeight: 700, color: "#888", marginBottom: 16, textTransform: "uppercase", letterSpacing: 0.5 }}>Race Planner — Eligible Horses</div>
+              <div style={{ fontSize: 12, fontWeight: 700, color: "#888", marginBottom: 16, textTransform: "uppercase", letterSpacing: 0.5 }}>Race Planner - Eligible Horses</div>
               {[
                 { name: "Horse A", rating: 98, status: "eligible", note: "Course and distance winner" },
                 { name: "Horse B", rating: 95, status: "eligible", note: "Improving, won last 2" },
                 { name: "Horse C", rating: 91, status: "eligible", note: "Handles soft ground" },
-                { name: "Horse D", rating: 89, status: "blocked", note: "Medication withdrawal — 4 days remaining" },
-                { name: "Horse E", rating: 86, status: "blocked", note: "Treatment withdrawal — clear in 12 days" },
+                { name: "Horse D", rating: 89, status: "blocked", note: "Medication withdrawal - 4 days remaining" },
+                { name: "Horse E", rating: 86, status: "blocked", note: "Treatment withdrawal - clear in 12 days" },
               ].map(function(h, i) {
                 var eligible = h.status === "eligible";
                 return (
@@ -210,7 +210,7 @@ function LandingPage({ onLogin }) {
                   </div>
                 );
               })}
-              <div style={{ fontSize: 11, color: "#aaa", marginTop: 10, textAlign: "center" }}>3 eligible · 2 blocked · updated live</div>
+              <div style={{ fontSize: 11, color: "#aaa", marginTop: 10, textAlign: "center" }}>3 eligible  - 2 blocked  - updated live</div>
             </div>
           </div>
         </div>
@@ -262,7 +262,7 @@ function LandingPage({ onLogin }) {
               <div style={{ fontSize: 12, fontWeight: 700, color: GOLD, letterSpacing: 1, textTransform: "uppercase", marginBottom: 12 }}>Travel Calculator</div>
               <h2 style={{ fontSize: "clamp(22px, 3vw, 34px)", fontWeight: 900, color: NAVY, marginBottom: 16, lineHeight: 1.2 }}>Know your travel cost before you enter</h2>
               <p style={{ fontSize: 15, color: "#555", lineHeight: 1.8, marginBottom: 20 }}>
-                Set your yard location and your rate per kilometre once. Then tap any racecourse in Ireland or the UK to get an instant cost calculation — one way or return, one horse or several.
+                Set your yard location and your rate per kilometre once. Then tap any racecourse in Ireland or the UK to get an instant cost calculation - one way or return, one horse or several.
               </p>
               <p style={{ fontSize: 15, color: "#555", lineHeight: 1.8 }}>
                 No more guessing. No more spreadsheets. The number is there before you pick up the phone.
@@ -289,7 +289,7 @@ function LandingPage({ onLogin }) {
               { icon: "👥", title: "Owner Communications", desc: "One-tap WhatsApp to every owner. Entries, declarations, race updates, training videos. Simple and professional." },
               { icon: "🤖", title: "AI Yard Assistant", desc: "Set reminders, start medications, log notes by voice or text. Your yard, always up to date." },
               { icon: "🚛", title: "Travel Calculator", desc: "Select any racecourse in Ireland or UK. Get the cost at your rate per km. Instantly." },
-              { icon: "🔐", title: "Staff Access", desc: "Head lad, secretary, vet, staff — each sees only what they need. Separate logins, separate views." },
+              { icon: "🔐", title: "Staff Access", desc: "Head lad, secretary, vet, staff - each sees only what they need. Separate logins, separate views." },
             ].map(function(f, i) {
               return (
                 <div key={i} style={{ background: LIGHT, borderRadius: 12, padding: "20px", border: "1px solid #e8ecf0" }}>
@@ -345,7 +345,7 @@ function LandingPage({ onLogin }) {
         <div style={{ maxWidth: 580, margin: "0 auto" }}>
           <h2 style={{ fontSize: "clamp(26px, 4vw, 42px)", fontWeight: 900, color: WHITE, marginBottom: 16 }}>Ready to see it in your yard?</h2>
           <p style={{ fontSize: 16, color: "rgba(255,255,255,0.6)", marginBottom: 32, lineHeight: 1.7 }}>
-            Book a 20-minute demo. We will walk through the app live using your yard setup. No commitment, no pitch — just the product.
+            Book a 20-minute demo. We will walk through the app live using your yard setup. No commitment, no pitch - just the product.
           </p>
           <div style={{ display: "flex", gap: 12, justifyContent: "center", flexWrap: "wrap", padding: "0 8px" }}>
             <button onClick={function() { setDemoOpen(true); }} style={{ background: GOLD, border: "none", color: NAVY, padding: "16px 36px", borderRadius: 10, cursor: "pointer", fontSize: 16, fontWeight: 900 }}>Book a Demo</button>
