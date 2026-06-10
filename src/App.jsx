@@ -57,6 +57,7 @@ function App() {
   const [authLoading, setAuthLoading] = useState(false);
   const [authError, setAuthError] = useState("");
   const [agreedTerms, setAgreedTerms] = useState(false);
+  const [showLegal, setShowLegal] = useState(null);
   const [agreedData, setAgreedData] = useState(false);
   var isMobileState = useState(typeof window !== "undefined" && window.innerWidth < 640);
   var isMobile = isMobileState[0];
@@ -498,7 +499,7 @@ function App() {
             <div style={{ marginBottom: 14, display: "flex", flexDirection: "column", gap: 10 }}>
               <label style={{ display: "flex", gap: 8, alignItems: "flex-start", cursor: "pointer", fontSize: 12, color: C.textMid, lineHeight: 1.4 }}>
                 <input type="checkbox" checked={agreedTerms} onChange={function(e) { setAgreedTerms(e.target.checked); }} style={{ marginTop: 2, flexShrink: 0 }} />
-                <span>I agree to the <a href="/terms" target="_blank" style={{ color: C.navy, fontWeight: 600 }}>Terms of Service</a> and <a href="/privacy" target="_blank" style={{ color: C.navy, fontWeight: 600 }}>Privacy Policy</a>.</span>
+                <span>I agree to the <span onClick={function(e) { e.preventDefault(); setShowLegal("terms"); }} style={{ color: C.navy, fontWeight: 600, textDecoration: "underline", cursor: "pointer" }}>Terms of Service</span> and <span onClick={function(e) { e.preventDefault(); setShowLegal("privacy"); }} style={{ color: C.navy, fontWeight: 600, textDecoration: "underline", cursor: "pointer" }}>Privacy Policy</span>.</span>
               </label>
               <label style={{ display: "flex", gap: 8, alignItems: "flex-start", cursor: "pointer", fontSize: 12, color: C.textMid, lineHeight: 1.4 }}>
                 <input type="checkbox" checked={agreedData} onChange={function(e) { setAgreedData(e.target.checked); }} style={{ marginTop: 2, flexShrink: 0 }} />
@@ -511,6 +512,34 @@ function App() {
             style={{ width: "100%", padding: "12px", background: C.navy, color: "#fff", border: "none", borderRadius: 10, fontSize: 15, fontWeight: 800, cursor: "pointer" }}>
             {authMode === "login" ? "Log In" : "Create Account"}
           </button>
+          {showLegal && (
+            <div onClick={function() { setShowLegal(null); }} style={{ position: "fixed", inset: 0, background: "rgba(0,0,0,0.7)", zIndex: 9999, display: "flex", alignItems: "center", justifyContent: "center", padding: 20 }}>
+              <div onClick={function(e) { e.stopPropagation(); }} style={{ background: "#fff", borderRadius: 12, padding: "28px 26px", maxWidth: 520, width: "100%", maxHeight: "80vh", overflowY: "auto" }}>
+                <div style={{ fontSize: 20, fontWeight: 900, color: C.navy, marginBottom: 14 }}>{showLegal === "terms" ? "Terms of Service" : "Privacy Policy"}</div>
+                <div style={{ fontSize: 13, color: "#444", lineHeight: 1.8 }}>
+                  {showLegal === "terms" ? (
+                    <div>
+                      <p style={{ marginBottom: 10 }}><strong>Last updated: June 2026</strong></p>
+                      <p style={{ marginBottom: 10 }}>RacePlan Pro is licensed for use by professional racing trainers and their authorised staff for yard management purposes only. You may not resell, sublicense or share access outside your yard.</p>
+                      <p style={{ marginBottom: 10 }}><strong>Fair usage.</strong> Each plan includes fair usage: up to 200 AI-assisted requests per month, up to 500 WhatsApp messages per month, up to 2GB of file storage, and unlimited staff logins. If usage materially exceeds these limits we will contact you before any additional charge.</p>
+                      <p style={{ marginBottom: 10 }}><strong>Accuracy.</strong> RacePlan Pro does not guarantee the accuracy of eligibility, withdrawal period or AI-generated calculations. Trainers remain solely responsible for verifying all entries and declarations with HRI, the BHA or the relevant racing authority.</p>
+                      <p style={{ marginBottom: 10 }}>{"\u00a9 2026 RacePlan Pro\u2122. All rights reserved. The name, logo, software and content are the exclusive property of RacePlan Pro."}</p>
+                      <p>These terms are governed by the laws of Ireland.</p>
+                    </div>
+                  ) : (
+                    <div>
+                      <p style={{ marginBottom: 10 }}><strong>Last updated: June 2026</strong></p>
+                      <p style={{ marginBottom: 10 }}>RacePlan Pro is committed to protecting your personal data. We collect your name, email and the yard data you enter into the platform. We do not sell your data to any third party.</p>
+                      <p style={{ marginBottom: 10 }}>Your data is stored securely on infrastructure hosted in the EU. Under GDPR you have the right to access, rectify and erase your data. You may request deletion at any time from within the app (Settings, Data and Privacy) or by emailing hello@raceplanpro.com.</p>
+                      <p style={{ marginBottom: 10 }}>As a trainer you act as the data controller for your owners and staff details; RacePlan Pro acts as the data processor. You are responsible for having the necessary consent from those individuals.</p>
+                      <p>For any privacy query contact hello@raceplanpro.com.</p>
+                    </div>
+                  )}
+                </div>
+                <button onClick={function() { setShowLegal(null); }} style={{ marginTop: 18, width: "100%", background: C.navy, border: "none", color: "#fff", padding: "12px", borderRadius: 8, cursor: "pointer", fontWeight: 700 }}>Close</button>
+              </div>
+            </div>
+          )}
           {authMode === "signup" && <div style={{ fontSize: 12, color: C.textMid, textAlign: "center", marginTop: 12, lineHeight: 1.6 }}>14-day free trial · No credit card required</div>}
         </div>
       </div>
