@@ -14,11 +14,18 @@ function ContentScheduler({ horses, settings }) {
   var viewItemState = useState(null);
   var viewItem = viewItemState[0]; var setViewItem = viewItemState[1];
 
-  var emptyItem = { type: "video", horseId: "", title: "", caption: "", dueDate: "", channel: "whatsapp", notes: "", status: "scheduled", mediaFiles: [], recurring: "none" };
+  var emptyItem = { type: "video", horseIds: [], title: "", caption: "", dueDate: "", channel: "whatsapp", notes: "", status: "scheduled", mediaFiles: [], recurring: "none" };
   var newItemState = useState(emptyItem);
   var newItem = newItemState[0]; var setNewItem = newItemState[1];
   var mediaPreviewsState = useState([]);
   var mediaPreviews = mediaPreviewsState[0]; var setMediaPreviews = mediaPreviewsState[1];
+  var toastState = useState(null);
+  var toast = toastState[0]; var setToast = toastState[1];
+
+  function showToast(msg, color) {
+    setToast({ msg: msg, color: color || C.green });
+    setTimeout(function() { setToast(null); }, 3000);
+  }
 
   var TYPES = [
     { id: "video", label: "Training Video", icon: "🎥" },
@@ -81,20 +88,46 @@ function ContentScheduler({ horses, settings }) {
 
   function addItem() {
     if (!newItem.title || !newItem.dueDate) return;
-    var horse = (horses || []).find(function(h) { return h.id === newItem.horseId; });
-    var item = Object.assign({}, newItem, {
-      id: "cs_" + Date.now(),
-      horseName: horse ? horse.name : "",
-      ownerName: horse ? horse.owner : "",
-      ownerPhone: horse ? horse.ownerPhone : "",
-      ownerEmail: horse ? horse.ownerEmail : "",
-      mediaFiles: mediaPreviews.slice(),
-      createdAt: new Date().toISOString()
-    });
-    setItems(function(prev) { return prev.concat([item]); });
+    var selectedIds = newItem.horseIds || [];
+    var newItems = [];
+    var baseTime = Date.now();
+    if (selectedIds.length === 0) {
+      // General item, no specific horse
+      newItems.push(Object.assign({}, newItem, {
+        id: "cs_" + baseTime,
+        horseName: "", ownerName: "", ownerPhone: "", ownerEmail: "",
+        mediaFiles: mediaPreviews.slice(),
+        createdAt: new Date().toISOString()
+      }));
+    } else {
+      selectedIds.forEach(function(hid, idx) {
+        var horse = (horses || []).find(function(h) { return h.id === hid; });
+        newItems.push(Object.assign({}, newItem, {
+          id: "cs_" + baseTime + "_" + idx,
+          horseId: hid,
+          horseName: horse ? horse.name : "",
+          ownerName: horse ? horse.owner : "",
+          ownerPhone: horse ? horse.ownerPhone : "",
+          ownerEmail: horse ? horse.ownerEmail : "",
+          mediaFiles: mediaPreviews.slice(),
+          createdAt: new Date().toISOString()
+        }));
+      });
+    }
+    setItems(function(prev) { return prev.concat(newItems); });
     setNewItem(emptyItem);
     setMediaPreviews([]);
     setShowAdd(false);
+    showToast(newItems.length + " scheduled" + (selectedIds.length > 1 ? " (one per horse)" : ""), C.green);
+  }
+
+  function toggleHorse(hid) {
+    setNewItem(function(p) {
+      var ids = (p.horseIds || []).slice();
+      var i = ids.indexOf(hid);
+      if (i >= 0) ids.splice(i, 1); else ids.push(hid);
+      return Object.assign({}, p, { horseIds: ids });
+    });
   }
 
   function updateStatus(id, status) {
@@ -164,6 +197,11 @@ function ContentScheduler({ horses, settings }) {
 
   return (
     <div>
+      {toast && (
+        <div style={{ position: "fixed", bottom: 24, left: "50%", transform: "translateX(-50%)", background: toast.color, color: "#fff", padding: "12px 24px", borderRadius: 10, fontSize: 14, fontWeight: 700, zIndex: 9999, boxShadow: "0 4px 20px rgba(0,0,0,0.25)" }}>
+          {toast.msg}
+        </div>
+      )}
       <div style={{ display: "flex", justifyContent: "space-between", alignItems: "flex-start", marginBottom: 16 }}>
         <div>
           <div style={{ fontSize: 22, fontWeight: 800, color: C.text }}>Content Scheduler</div>
@@ -214,12 +252,26 @@ function ContentScheduler({ horses, settings }) {
                 style={{ width: "100%", padding: "10px 14px", background: C.cardOff, border: "1px solid " + C.border, borderRadius: 9, fontSize: 13, color: C.text, resize: "vertical", lineHeight: 1.6 }} />
             </div>
             <div>
-              <div style={{ fontSize: 10, fontWeight: 700, color: C.textMid, marginBottom: 3, textTransform: "uppercase" }}>Horse</div>
-              <select value={newItem.horseId} onChange={function(e) { updateNew("horseId", e.target.value); }}
-                style={{ width: "100%", padding: "9px 12px", background: C.cardOff, border: "1px solid " + C.border, borderRadius: 8, fontSize: 13, color: C.text }}>
-                <option value="">General / All owners</option>
-                {(horses || []).map(function(h) { return <option key={h.id} value={h.id}>{h.name + " (" + (h.owner || "no owner") + ")"}</option>; })}
-              </select>
+              <div style={{ fontSize: 10, fontWeight: 700, color: C.textMid, marginBottom: 3, textTransform: "uppercase" }}>Horses (select one or more)</div>
+              <div style={{ border: "1px solid " + C.border, borderRadius: 8, padding: 8, maxHeight: 180, overflowY: "auto", background: "#fff" }}>
+                {(horses || []).length === 0 ? (
+                  <div style={{ fontSize: 12, color: C.textMid, padding: 8 }}>No horses yet. Add them in My Yard.</div>
+                ) : (
+                  (horses || []).map(function(h) {
+                    var checked = (newItem.horseIds || []).indexOf(h.id) >= 0;
+                    return (
+                      <label key={h.id} style={{ display: "flex", alignItems: "center", gap: 8, padding: "6px 8px", borderRadius: 6, cursor: "pointer", background: checked ? C.goldBg : "transparent", marginBottom: 2 }}>
+                        <input type="checkbox" checked={checked} onChange={function() { toggleHorse(h.id); }} style={{ width: 16, height: 16, flexShrink: 0, accentColor: C.gold }} />
+                        <span style={{ fontSize: 13, fontWeight: 600, color: C.text }}>{h.name}</span>
+                        <span style={{ fontSize: 11, color: C.textMid, marginLeft: "auto" }}>{h.owner || "no owner"}</span>
+                      </label>
+                    );
+                  })
+                )}
+              </div>
+              {(newItem.horseIds || []).length > 0 && (
+                <div style={{ fontSize: 11, color: C.green, fontWeight: 600, marginTop: 5 }}>{(newItem.horseIds || []).length + " horse(s) selected - one update will be created per horse, each pulling in that owner"}</div>
+              )}
             </div>
             <div>
               <div style={{ fontSize: 10, fontWeight: 700, color: C.textMid, marginBottom: 3, textTransform: "uppercase" }}>Due Date</div>
