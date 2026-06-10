@@ -3,10 +3,10 @@ import { Btn, C } from "./shared";
 
 /*
   RacingExpenses — wired into RacePlan Pro.
-  Props match the app's pattern: { user, supabase, settings, setSettings, onNavigate }.
-  Rates live inside settings.racingRates (saved via setSettings -> yard_settings).
-  Sheets save to the racing_expenses table (keyed by user_id + week_start).
-  Parsing goes through /api/claude (server-side key).
+  Props: { user, supabase, settings, setSettings, onNavigate }.
+  Rates live in settings.racingRates. Sheets save to racing_expenses (user_id + week_start).
+  Working sheet auto-persists to localStorage per week so it survives tab switches / reloads.
+  Parsing goes through /api/claude.
 */
 
 var RATE_DEFAULTS = {
@@ -14,7 +14,6 @@ var RATE_DEFAULTS = {
   taxFree10: 46.17, taxFree5: 19.25
 };
 
-// Irish public holidays 2026 — verify/extend yearly.
 var BANK_HOLIDAYS = ["2026-01-01","2026-02-02","2026-03-17","2026-04-06","2026-05-04","2026-06-01","2026-08-03","2026-10-26","2026-12-25","2026-12-26"];
 var DAY_NAMES = ["Sun","Mon","Tue","Wed","Thu","Fri","Sat"];
 
@@ -22,6 +21,7 @@ function parseISO(iso){ return new Date(iso + "T00:00:00"); }
 function fmtDate(iso){ if(!iso) return "—"; var d=parseISO(iso); return DAY_NAMES[d.getDay()]+" "+String(d.getDate()).padStart(2,"0")+"/"+String(d.getMonth()+1).padStart(2,"0"); }
 function euro(n){ return "€"+(Number(n)||0).toFixed(2); }
 function currentMonday(){ var d=new Date(); var off=(d.getDay()+6)%7; d.setDate(d.getDate()-off); return d.toISOString().slice(0,10); }
+function hoursLabel(t){ return t==="10"?"10+":t==="5"?"5–10":"<5"; }
 
 function autoRate(row, rates){
   if(row.overnight) return { rate: rates.overnight, label: "Overnight" };
@@ -44,7 +44,6 @@ function weekContext(mondayISO){
   return { year:start.getFullYear(), month:start.getMonth()+1, dates:dates };
 }
 
-// Built-in fallback parser (used only if /api/claude is unreachable).
 function localParse(text, year, month){
   var cleaned=text.replace(/racing this week/ig," ").replace(/\s+/g," ").trim();
   var segs=cleaned.split(/\.+/).map(function(s){return s.trim();}).filter(Boolean);
@@ -99,23 +98,48 @@ function RacingExpenses(props){
   var settingsOpenState = useState(false); var settingsOpen=settingsOpenState[0]; var setSettingsOpen=settingsOpenState[1];
   var notesState = useState(""); var notes=notesState[0]; var setNotes=notesState[1];
   var draftState = useState(rates); var rateDraft=draftState[0]; var setRateDraft=draftState[1];
+  var hydratedState = useState(false); var hydrated=hydratedState[0]; var setHydrated=hydratedState[1];
 
-  // Load saved sheet for the selected week
+  function draftKey(){ return "rpp_expenses_" + (user ? user.id : "anon") + "_" + monday; }
+
+  function bumpRID(list){ list.forEach(function(r){ if(typeof r.id==="number" && r.id>=RID) RID=r.id+1; }); }
+
+  // Load: prefer the local working draft, else the saved week from the DB.
   useEffect(function(){
-    if(!user || !supabase) return;
+    if(!user) return;
+    setHydrated(false);
+    try {
+      var d = localStorage.getItem(draftKey());
+      if(d){
+        var p = JSON.parse(d);
+        var dr = p.rows || [];
+        bumpRID(dr);
+        setRows(dr); setNotes(p.notes || "");
+        setHydrated(true);
+        return;
+      }
+    } catch(e){}
+    if(!supabase){ setRows([]); setNotes(""); setHydrated(true); return; }
     supabase.from("racing_expenses").select("*").eq("user_id", user.id).eq("week_start", monday)
       .then(function(res){
-        if(res.error){ console.error("Load racing_expenses:", res.error.message); return; }
-        if(res.data){
-          setRows(res.data.map(function(r){
+        if(res.data && res.data.length){
+          var mapped = res.data.map(function(r){
             return { id: RID++, date: r.work_date, employee: r.employee, venue: r.venue||"",
               evening: !!r.evening, overnight: !!r.overnight, tier: r.hours_tier||"10",
               manualRate: !!r.manual_rate, rateOverride: r.manual_rate ? String(r.rate) : "" };
-          }));
-          if(res.data[0] && res.data[0].notes) setNotes(res.data[0].notes);
-        }
+          });
+          setRows(mapped);
+          setNotes(res.data[0] && res.data[0].notes ? res.data[0].notes : "");
+        } else { setRows([]); setNotes(""); }
+        setHydrated(true);
       });
   }, [user, monday]);
+
+  // Auto-save the working draft to this device (per week)
+  useEffect(function(){
+    if(!hydrated || !user) return;
+    try { localStorage.setItem(draftKey(), JSON.stringify({ rows: rows, notes: notes })); } catch(e){}
+  }, [rows, notes, hydrated, user, monday]);
 
   var computed = useMemo(function(){
     return rows.map(function(r){
@@ -166,6 +190,12 @@ function RacingExpenses(props){
   function addRow(){ setRows(function(prev){ return prev.concat([{ id: RID++, date: monday, employee:"", venue:"", evening:false, overnight:false, tier:"10", manualRate:false, rateOverride:"" }]); }); }
   function removeRow(id){ setRows(function(prev){ return prev.filter(function(r){ return r.id!==id; }); }); }
 
+  function clearSheet(){
+    if(!window.confirm("Clear the whole sheet? Any week you've already saved stays in Reports until you Save again.")) return;
+    setRows([]); setNotes("");
+    try { localStorage.removeItem(draftKey()); } catch(e){}
+  }
+
   function saveRates(){
     if(setSettings) setSettings(Object.assign({}, settings, { racingRates: rateDraft }));
     setInfo("Rates saved."); setSettingsOpen(false);
@@ -193,7 +223,7 @@ function RacingExpenses(props){
 
   function copyCSV(){
     var head=["Date","Employee","Racemeeting","Rate type","Rate","Hours","Tax Free","Tax"];
-    var lines=computed.map(function(r){ return [fmtDate(r.date), r.employee, r.venue, r.autoLabel, r.rate.toFixed(2), r.tier==="10"?"10+":r.tier==="5"?"5-10":"<5", r.tf.toFixed(2), r.taxable.toFixed(2)]; });
+    var lines=computed.map(function(r){ return [fmtDate(r.date), r.employee, r.venue, r.autoLabel, r.rate.toFixed(2), hoursLabel(r.tier), r.tf.toFixed(2), r.taxable.toFixed(2)]; });
     lines.push(["","","","OVERALL TOTAL", totals.rate.toFixed(2), "", totals.tf.toFixed(2), totals.taxable.toFixed(2)]);
     var csv=[head].concat(lines).map(function(row){ return row.map(function(c){ return '"'+String(c).replace(/"/g,'""')+'"'; }).join(","); }).join("\n");
     if(navigator.clipboard) navigator.clipboard.writeText(csv).then(function(){ setInfo("Copied as CSV."); }, function(){ setError("Clipboard blocked."); });
@@ -215,6 +245,8 @@ function RacingExpenses(props){
 
   return (
     <div>
+      <style>{"@media screen { #print-area.re-report { position: absolute !important; left: -9999px !important; top: 0 !important; width: 760px; } } #print-area.re-report table { border-collapse: collapse; width: 100%; } #print-area.re-report th, #print-area.re-report td { border: 1px solid #444; padding: 5px 7px; font-size: 12px; text-align: left; } #print-area.re-report td.num, #print-area.re-report th.num { text-align: right; }"}</style>
+
       <div style={{ display:"flex", justifyContent:"space-between", alignItems:"flex-start", marginBottom:12, flexWrap:"wrap", gap:10 }}>
         <div>
           <div style={{ fontSize:22, fontWeight:800, color:C.text }}>Racing Expenses</div>
@@ -262,7 +294,7 @@ function RacingExpenses(props){
         </div>
       </div>
 
-      <div style={{ background:C.card, border:"1px solid "+C.border, borderRadius:12, padding:16, overflowX:"auto" }} id="print-area">
+      <div style={{ background:C.card, border:"1px solid "+C.border, borderRadius:12, padding:16, overflowX:"auto" }}>
         <div style={{ display:"flex", justifyContent:"space-between", alignItems:"baseline", marginBottom:10, flexWrap:"wrap", gap:8 }}>
           <div style={{ fontWeight:800, fontSize:17, color:C.text }}>Summary of Weekly Racing Expenses</div>
           <div style={{ fontSize:12.5, color:C.textMid }}>Week of {fmtDate(monday)}</div>
@@ -341,8 +373,47 @@ function RacingExpenses(props){
           <Btn onClick={saveWeek} disabled={saving}>{saving ? "Saving…" : "Save week"}</Btn>
           <Btn variant="ghost" onClick={function(){ window.print(); }}>Print</Btn>
           <Btn variant="ghost" onClick={copyCSV}>Copy as CSV</Btn>
+          <Btn variant="ghost" onClick={clearSheet}>Clear sheet</Btn>
         </div>
       )}
+
+      {/* Clean print-only report (revealed by the app's global @media print rule) */}
+      <div id="print-area" className="re-report">
+        <div style={{ fontSize:18, fontWeight:800, marginBottom:2 }}>Summary of Weekly Racing Expenses</div>
+        <div style={{ fontSize:12, marginBottom:10 }}>Payroll week (Mon): {monday}</div>
+        <div style={{ fontSize:11, marginBottom:12, lineHeight:1.5 }}>
+          Rates — Day/Sat {euro(rates.dayMeeting)} · Evening {euro(rates.eveningMeeting)} · Sun/Bank hol/Sat eve {euro(rates.sunBankHolSatEve)} · Overnight {euro(rates.overnight)} · Dundalk eve {euro(rates.dundalkEvening)}<br/>
+          Tax-free allowance — 10+ hrs {euro(rates.taxFree10)} · 5–10 hrs {euro(rates.taxFree5)}
+        </div>
+        <table>
+          <thead><tr>
+            <th>Date</th><th>Employee</th><th>Racemeeting</th><th className="num">Rate</th><th>Hours</th><th className="num">Tax Free</th><th className="num">Tax</th>
+          </tr></thead>
+          <tbody>
+            {computed.map(function(r){
+              return (
+                <tr key={"p"+r.id}>
+                  <td>{fmtDate(r.date)}</td>
+                  <td>{r.employee}</td>
+                  <td>{r.venue}</td>
+                  <td className="num">{euro(r.rate)}</td>
+                  <td>{hoursLabel(r.tier)}</td>
+                  <td className="num">{euro(r.tf)}</td>
+                  <td className="num">{euro(r.taxable)}</td>
+                </tr>
+              );
+            })}
+            <tr>
+              <td colSpan={3} style={{ fontWeight:800 }}>OVERALL TOTAL</td>
+              <td className="num" style={{ fontWeight:800 }}>{euro(totals.rate)}</td>
+              <td></td>
+              <td className="num" style={{ fontWeight:800 }}>{euro(totals.tf)}</td>
+              <td className="num" style={{ fontWeight:800 }}>{euro(totals.taxable)}</td>
+            </tr>
+          </tbody>
+        </table>
+        {notes ? <div style={{ marginTop:12, fontSize:12 }}><b>Racing notes:</b> {notes}</div> : null}
+      </div>
     </div>
   );
 }
