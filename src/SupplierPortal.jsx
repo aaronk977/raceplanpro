@@ -151,7 +151,7 @@ function SupplierPortal({ token }) {
           </button>
         </div>
 
-        <div style={{ textAlign: "center", fontSize: 11, color: "#999" }}>Powered by RacePlan Pro</div>
+        <div style={{ textAlign: "center", fontSize: 11, color: "#999" }}>\u00a9 2026 RacePlan Pro\u2122 &middot; All rights reserved</div>
       </div>
     </div>
   );
