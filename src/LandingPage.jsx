@@ -45,6 +45,179 @@ function Logo({ size, dark }) {
   );
 }
 
+
+var DEMO_HORSES = [
+  { name: "Ashford Castle", or: 105, sex: "G", age: 6, form: "1-1-2-1", status: "Active", med: null },
+  { name: "River Dancer", or: 98, sex: "M", age: 5, form: "2-1-3-1", status: "Active", med: "Phenylbutazone - 5 days remaining" },
+  { name: "Galway Bay", or: 94, sex: "G", age: 7, form: "3-2-1-2", status: "Active", med: null },
+  { name: "Connemara Lady", or: 89, sex: "F", age: 4, form: "1-2-1-3", status: "Active", med: null },
+  { name: "Tipperary Dawn", or: 86, sex: "G", age: 5, form: "2-3-2-1", status: "Active", med: "Flunixin - 2 days remaining" },
+  { name: "Clare Champion", or: 82, sex: "G", age: 6, form: "4-1-2-3", status: "Active", med: null },
+];
+
+var DEMO_MEDS = [
+  { horse: "River Dancer", drug: "Phenylbutazone (Equipalazone)", date: "02 Jun 2026", route: "Oral", qty: "10g", withdrawal: "168 hours", clear: "09 Jun 2026", auth: "J. Murphy" },
+  { horse: "Tipperary Dawn", drug: "Flunixin (Finadyne)", date: "06 Jun 2026", route: "IV", qty: "10ml", withdrawal: "144 hours", clear: "12 Jun 2026", auth: "J. Murphy" },
+  { horse: "Galway Bay", drug: "Meloxicam (Metacam)", date: "01 Jun 2026", route: "Oral", qty: "15ml", withdrawal: "72 hours", clear: "04 Jun 2026", auth: "J. Murphy" },
+];
+
+var DEMO_WHITEBOARD = [
+  { date: "Fri 13 Jun", horse: "Ashford Castle", race: "2m Hdle Hcap 0-115", venue: "Leopardstown", time: "3:45pm", jockey: "R. Walsh", or: 105 },
+  { date: "Fri 13 Jun", horse: "Connemara Lady", race: "1m4f Flat Hcap 0-95", venue: "Leopardstown", time: "5:00pm", jockey: "C. Hayes", or: 89 },
+  { date: "Sat 14 Jun", horse: "Galway Bay", race: "2m4f Chase Hcap 0-100", venue: "Naas", time: "2:30pm", jockey: "P. Townend", or: 94 },
+];
+
+function DemoWidget() {
+  var tabState = useState("yard");
+  var tab = tabState[0]; var setTab = tabState[1];
+  var condState = useState("");
+  var cond = condState[0]; var setCond = condState[1];
+  var eligState = useState(false);
+  var showElig = eligState[0]; var setShowElig = eligState[1];
+
+  var TABS = [
+    { id: "yard", label: "My Yard" },
+    { id: "whiteboard", label: "Whiteboard" },
+    { id: "meds", label: "Med Register" },
+    { id: "planner", label: "Race Planner" },
+  ];
+
+  return (
+    <div style={{ borderRadius: 14, overflow: "hidden", border: "1px solid rgba(201,168,76,0.15)", background: "#0f1f14" }}>
+      <div style={{ background: "rgba(255,255,255,0.03)", padding: "10px 16px", display: "flex", alignItems: "center", gap: 8, borderBottom: "1px solid rgba(255,255,255,0.06)" }}>
+        <div style={{ width: 10, height: 10, borderRadius: "50%", background: "#c0392b" }} />
+        <div style={{ width: 10, height: 10, borderRadius: "50%", background: "#f39c12" }} />
+        <div style={{ width: 10, height: 10, borderRadius: "50%", background: "#27ae60" }} />
+        <div style={{ fontSize: 11, color: "rgba(255,255,255,0.2)", marginLeft: 8, fontFamily: "monospace" }}>Murphy Racing — RacePlan Pro</div>
+      </div>
+
+      <div style={{ display: "flex", borderBottom: "1px solid rgba(255,255,255,0.07)", overflowX: "auto" }}>
+        {TABS.map(function(t) {
+          return (
+            <button key={t.id} onClick={function() { setTab(t.id); setShowElig(false); }}
+              style={{ padding: "10px 20px", background: "none", border: "none", borderBottom: tab === t.id ? "2px solid " + GOLD : "2px solid transparent", color: tab === t.id ? GOLD : "rgba(255,255,255,0.4)", fontSize: 13, fontWeight: tab === t.id ? 700 : 400, cursor: "pointer", whiteSpace: "nowrap" }}>
+              {t.label}
+            </button>
+          );
+        })}
+      </div>
+
+      <div style={{ padding: 20, minHeight: 280 }}>
+
+        {tab === "yard" && (
+          <div>
+            <div style={{ fontSize: 12, color: "rgba(255,255,255,0.4)", marginBottom: 12, textTransform: "uppercase", letterSpacing: 1 }}>Active Horses — Murphy Racing</div>
+            {DEMO_HORSES.map(function(h, i) {
+              return (
+                <div key={i} style={{ display: "flex", alignItems: "center", gap: 12, padding: "10px 12px", background: "rgba(255,255,255,0.03)", borderRadius: 8, marginBottom: 6, border: "1px solid rgba(255,255,255,0.05)" }}>
+                  <div style={{ flex: 1 }}>
+                    <div style={{ fontSize: 14, fontWeight: 600, color: WHITE }}>{h.name}</div>
+                    {h.med && <div style={{ fontSize: 11, color: RED, marginTop: 2 }}>{h.med}</div>}
+                  </div>
+                  <div style={{ fontSize: 12, color: "rgba(255,255,255,0.4)", fontFamily: "monospace" }}>{h.form}</div>
+                  <div style={{ fontSize: 13, fontWeight: 700, color: GOLD, minWidth: 44, textAlign: "right" }}>{"OR " + h.or}</div>
+                  <div style={{ width: 8, height: 8, borderRadius: "50%", background: h.med ? RED : GREEN, flexShrink: 0 }} />
+                </div>
+              );
+            })}
+            <div style={{ display: "flex", gap: 16, marginTop: 14, fontSize: 12 }}>
+              <span style={{ color: GREEN }}>{"4 clear to run"}</span>
+              <span style={{ color: RED }}>{"2 under medication"}</span>
+            </div>
+          </div>
+        )}
+
+        {tab === "whiteboard" && (
+          <div>
+            <div style={{ fontSize: 12, color: "rgba(255,255,255,0.4)", marginBottom: 14, textTransform: "uppercase", letterSpacing: 1 }}>Upcoming Runners</div>
+            {DEMO_WHITEBOARD.map(function(r, i) {
+              return (
+                <div key={i} style={{ padding: "12px 14px", background: "rgba(255,255,255,0.03)", borderRadius: 8, marginBottom: 8, border: "1px solid rgba(255,255,255,0.06)" }}>
+                  <div style={{ display: "flex", justifyContent: "space-between", marginBottom: 4 }}>
+                    <span style={{ fontSize: 11, color: GOLD, fontWeight: 700 }}>{r.date + " — " + r.venue}</span>
+                    <span style={{ fontSize: 11, color: "rgba(255,255,255,0.4)" }}>{r.time}</span>
+                  </div>
+                  <div style={{ fontSize: 15, fontWeight: 700, color: WHITE, marginBottom: 2 }}>{r.horse}</div>
+                  <div style={{ fontSize: 12, color: "rgba(255,255,255,0.5)" }}>{r.race + " — " + r.jockey}</div>
+                </div>
+              );
+            })}
+            <div style={{ fontSize: 12, color: "rgba(255,255,255,0.3)", marginTop: 10 }}>Import from HRI CSV — all runners populate automatically</div>
+          </div>
+        )}
+
+        {tab === "meds" && (
+          <div>
+            <div style={{ fontSize: 12, color: "rgba(255,255,255,0.4)", marginBottom: 14, textTransform: "uppercase", letterSpacing: 1 }}>Medicines Register — Rule 148</div>
+            {DEMO_MEDS.map(function(m, i) {
+              return (
+                <div key={i} style={{ padding: "12px 14px", background: "rgba(255,255,255,0.03)", borderRadius: 8, marginBottom: 8, border: "1px solid rgba(255,255,255,0.06)" }}>
+                  <div style={{ display: "flex", justifyContent: "space-between", alignItems: "flex-start", marginBottom: 6 }}>
+                    <span style={{ fontSize: 14, fontWeight: 700, color: WHITE }}>{m.horse}</span>
+                    <span style={{ fontSize: 11, color: GOLD, fontWeight: 700, background: "rgba(201,168,76,0.12)", padding: "2px 8px", borderRadius: 10 }}>{"Clear: " + m.clear}</span>
+                  </div>
+                  <div style={{ fontSize: 13, color: "rgba(255,255,255,0.7)", marginBottom: 4 }}>{m.drug}</div>
+                  <div style={{ display: "flex", gap: 12, fontSize: 11, color: "rgba(255,255,255,0.35)" }}>
+                    <span>{m.date}</span>
+                    <span>{m.route}</span>
+                    <span>{m.qty}</span>
+                    <span>{"Auth: " + m.auth}</span>
+                  </div>
+                </div>
+              );
+            })}
+            <div style={{ fontSize: 12, color: "rgba(255,255,255,0.3)", marginTop: 10 }}>Full IHRB horse sheets print in one tap — replaces the ring binder</div>
+          </div>
+        )}
+
+        {tab === "planner" && (
+          <div>
+            <div style={{ fontSize: 12, color: "rgba(255,255,255,0.4)", marginBottom: 12, textTransform: "uppercase", letterSpacing: 1 }}>Race Planner — AI Eligibility Check</div>
+            {!showElig ? (
+              <div>
+                <div style={{ fontSize: 13, color: "rgba(255,255,255,0.6)", marginBottom: 12 }}>Paste race conditions and the AI checks your whole yard instantly.</div>
+                <textarea value={cond} onChange={function(e) { setCond(e.target.value); }}
+                  placeholder={"Paste conditions e.g.:
+
+2m Hurdle Handicap, 4yo+, OR 85-110, Soft/Heavy, Mares allowed, No horse that has run on the Flat in last 14 days"}
+                  style={{ width: "100%", padding: "12px", background: "rgba(255,255,255,0.05)", border: "1px solid rgba(255,255,255,0.1)", borderRadius: 8, fontSize: 13, color: WHITE, resize: "none", height: 120, fontFamily: "inherit" }} />
+                <button onClick={function() { setShowElig(true); }}
+                  style={{ marginTop: 10, background: GOLD, border: "none", color: NAVY, padding: "10px 24px", borderRadius: 7, cursor: "pointer", fontSize: 14, fontWeight: 800 }}>
+                  Check Eligibility
+                </button>
+              </div>
+            ) : (
+              <div>
+                <div style={{ fontSize: 13, color: GREEN, fontWeight: 700, marginBottom: 14 }}>3 eligible — 2 blocked — 1 not applicable</div>
+                {[
+                  { name: "Ashford Castle", or: 105, ok: true, note: "Eligible — OR within range, last run 21 days ago, 6yo gelding" },
+                  { name: "Galway Bay", or: 94, ok: true, note: "Eligible — OR within range, soft ground form excellent" },
+                  { name: "Clare Champion", or: 82, ok: true, note: "Eligible — best chance here, proven at the trip" },
+                  { name: "River Dancer", or: 98, ok: false, note: "Blocked — Phenylbutazone, 5 days withdrawal remaining" },
+                  { name: "Tipperary Dawn", or: 86, ok: false, note: "Blocked — Flunixin, 2 days withdrawal remaining" },
+                  { name: "Connemara Lady", or: 89, ok: null, note: "Filly — mare allowance applies, may affect race choice" },
+                ].map(function(h, i) {
+                  return (
+                    <div key={i} style={{ display: "flex", gap: 10, alignItems: "flex-start", padding: "9px 12px", background: "rgba(255,255,255,0.03)", borderRadius: 7, marginBottom: 5, border: "1px solid " + (h.ok === true ? "rgba(26,122,74,0.3)" : h.ok === false ? "rgba(192,57,43,0.3)" : "rgba(201,168,76,0.2)") }}>
+                      <div style={{ width: 8, height: 8, borderRadius: "50%", marginTop: 5, flexShrink: 0, background: h.ok === true ? GREEN : h.ok === false ? RED : GOLD }} />
+                      <div>
+                        <div style={{ fontSize: 13, fontWeight: 700, color: WHITE }}>{h.name + " (OR " + h.or + ")"}</div>
+                        <div style={{ fontSize: 11, color: h.ok === false ? RED : "rgba(255,255,255,0.5)", marginTop: 2 }}>{h.note}</div>
+                      </div>
+                    </div>
+                  );
+                })}
+                <button onClick={function() { setShowElig(false); setCond(""); }} style={{ marginTop: 12, background: "transparent", border: "1px solid rgba(255,255,255,0.15)", color: "rgba(255,255,255,0.5)", padding: "7px 16px", borderRadius: 6, cursor: "pointer", fontSize: 12 }}>Try again</button>
+              </div>
+            )}
+          </div>
+        )}
+
+      </div>
+    </div>
+  );
+}
+
 function LandingPage({ onLogin }) {
   var demoOpenState = useState(false);
   var demoOpen = demoOpenState[0]; var setDemoOpen = demoOpenState[1];
@@ -223,28 +396,18 @@ function LandingPage({ onLogin }) {
         </div>
       </div>
 
-      {/* DEMO SECTION */}
+      {/* INTERACTIVE DEMO SECTION */}
       <div style={{ background: NAVY, padding: "clamp(48px,8vw,80px) clamp(16px,4vw,48px)" }}>
         <div style={{ maxWidth: 1040, margin: "0 auto" }}>
           <div style={{ marginBottom: 32, textAlign: "center" }}>
-            <div style={{ fontSize: 11, fontWeight: 700, color: GOLD, letterSpacing: 2, textTransform: "uppercase", marginBottom: 12 }}>Live Demo</div>
-            <h2 className="serif" style={{ fontSize: "clamp(24px,3vw,38px)", fontWeight: 800, color: WHITE, lineHeight: 1.2, marginBottom: 12 }}>Try it right now.</h2>
-            <p style={{ fontSize: 15, color: "rgba(255,255,255,0.5)", maxWidth: 480, margin: "0 auto" }}>This is the real app. Click through every feature — no sign up required to see how it works.</p>
+            <div style={{ fontSize: 11, fontWeight: 700, color: GOLD, letterSpacing: 2, textTransform: "uppercase", marginBottom: 12 }}>Interactive Demo</div>
+            <h2 style={{ fontSize: "clamp(24px,3vw,38px)", fontWeight: 800, color: WHITE, lineHeight: 1.2, marginBottom: 12 }}>See it in action.</h2>
+            <p style={{ fontSize: 15, color: "rgba(255,255,255,0.5)", maxWidth: 480, margin: "0 auto" }}>Click through the tabs below to explore. This is real data from a sample yard.</p>
           </div>
-          <div style={{ borderRadius: 14, overflow: "hidden", border: "1px solid rgba(201,168,76,0.2)", boxShadow: "0 32px 80px rgba(0,0,0,0.4)" }}>
-            <div style={{ background: "rgba(255,255,255,0.04)", padding: "10px 16px", display: "flex", alignItems: "center", gap: 8, borderBottom: "1px solid rgba(255,255,255,0.06)" }}>
-              <div style={{ width: 10, height: 10, borderRadius: "50%", background: "#c0392b" }} />
-              <div style={{ width: 10, height: 10, borderRadius: "50%", background: "#f39c12" }} />
-              <div style={{ width: 10, height: 10, borderRadius: "50%", background: "#27ae60" }} />
-              <div style={{ fontSize: 11, color: "rgba(255,255,255,0.25)", marginLeft: 8, fontFamily: "monospace" }}>raceplanpro.com/demo</div>
-            </div>
-            <iframe
-              src="https://raceplanpro.com"
-              style={{ width: "100%", height: 580, border: "none", display: "block" }}
-              title="RacePlan Pro Live Demo"
-            />
-          </div>
-          <div style={{ textAlign: "center", marginTop: 24 }}>
+
+          <DemoWidget />
+
+          <div style={{ textAlign: "center", marginTop: 28 }}>
             <button onClick={onLogin} style={{ background: GOLD, border: "none", color: NAVY, padding: "13px 32px", borderRadius: 8, cursor: "pointer", fontSize: 15, fontWeight: 800 }} className="cta-btn">Start Free — No Card Required</button>
           </div>
         </div>
@@ -350,20 +513,20 @@ function LandingPage({ onLogin }) {
               <p style={{ marginBottom: 6, fontWeight: 700, color: "#0d2818" }}>2. Fair Usage</p>
               <p style={{ marginBottom: 8 }}>Each subscription plan includes fair usage of all features. The following usage is included within your plan and is not charged separately under normal use:</p>
               <ul style={{ paddingLeft: 18, marginBottom: 12 }}>
-                <li style={{ marginBottom: 4 }}>Up to 200 AI requests per month (Race Planner, AI Assistant, eligibility checks)</li>
+                <li style={{ marginBottom: 4 }}>Up to 200 AI-assisted requests per month (Race Planner, AI Assistant, eligibility checks)</li>
                 <li style={{ marginBottom: 4 }}>Up to 500 WhatsApp messages per month via the Owner Portal</li>
                 <li style={{ marginBottom: 4 }}>Up to 2GB of file storage (prescription photos, supplier invoices)</li>
-                <li style={{ marginBottom: 4 }}>Up to 5 staff logins per subscription</li>
+                <li style={{ marginBottom: 4 }}>Unlimited staff logins - all yard staff can access the app</li>
               </ul>
               <p style={{ marginBottom: 12 }}>If your usage consistently and materially exceeds these limits, RacePlan Pro reserves the right to contact you to discuss a revised plan or additional charges. We will always notify you before billing anything beyond your subscription fee.</p>
 
               <p style={{ marginBottom: 6, fontWeight: 700, color: "#0d2818" }}>3. What may cost extra</p>
               <p style={{ marginBottom: 8 }}>The following may incur additional charges if usage significantly exceeds the fair usage limits above:</p>
               <ul style={{ paddingLeft: 18, marginBottom: 12 }}>
-                <li style={{ marginBottom: 4 }}>AI usage above 200 requests/month (powered by Anthropic Claude)</li>
-                <li style={{ marginBottom: 4 }}>WhatsApp messages above 500/month (powered by Twilio)</li>
+                <li style={{ marginBottom: 4 }}>AI-assisted feature usage above 200 requests per month</li>
+                <li style={{ marginBottom: 4 }}>WhatsApp messages above 500 per month</li>
                 <li style={{ marginBottom: 4 }}>File storage above 2GB</li>
-                <li style={{ marginBottom: 4 }}>Additional staff logins beyond 5</li>
+                <li style={{ marginBottom: 4 }}>Excessive automated or non-human usage</li>
               </ul>
 
               <p style={{ marginBottom: 6, fontWeight: 700, color: "#0d2818" }}>4. Accuracy</p>
