@@ -23,10 +23,10 @@ import SupplierPortal from "./SupplierPortal";
 import WeightsTracker from "./WeightsTracker";
 import YardAssistant from "./YardAssistant";
 import ContentScheduler from "./ContentScheduler";
+import EntriesComms from "./EntriesComms";
 import DailySummary from "./DailySummary";
 import Procurement from "./Procurement";
 import Reminders from "./Reminders";
-import RacingExpenses from "./RacingExpenses";
 
 const SUPABASE_URL = import.meta.env.VITE_SUPABASE_URL;
 const SUPABASE_ANON_KEY = import.meta.env.VITE_SUPABASE_ANON_KEY;
@@ -37,17 +37,17 @@ try { if (SUPABASE_URL && SUPABASE_ANON_KEY) supabase = createClient(SUPABASE_UR
 const globalCSS = ".desktop-only { display: flex !important; } * { box-sizing: border-box; margin: 0; padding: 0; } body { font-family: Inter, Helvetica Neue, sans-serif; } button:hover { opacity: 0.88; } input:focus, select:focus { outline: none; } ::-webkit-scrollbar { width: 4px; } ::-webkit-scrollbar-thumb { background: #b8c8da; border-radius: 2px; } @media print { body * { visibility: hidden; } #print-area, #print-area * { visibility: visible; } #print-area { position: absolute; left: 0; top: 0; } } @media (max-width: 767px) { .desktop-only { display: none !important; } html, body { overflow-x: hidden; overflow-y: scroll !important; -webkit-overflow-scrolling: touch; height: auto !important; } [style*=\"1fr 1fr\"] { grid-template-columns: 1fr !important; } [style*=\"repeat(3\"], [style*=\"repeat(4\"], [style*=\"repeat(5\"] { grid-template-columns: 1fr 1fr !important; } [style*=\"minmax\"] { grid-template-columns: repeat(auto-fill, minmax(110px, 1fr)) !important; } [style*=\"min-width: 600\"], [style*=\"minWidth\"] { min-width: 0 !important; } table { font-size: 12px !important; } .main-content, .app-wrapper { padding-left: 12px !important; padding-right: 12px !important; } input, select, textarea { font-size: 16px !important; } } @media (min-width: 768px) { .app-wrapper { height: 100vh; overflow: hidden; } .main-content { overflow-y: auto; height: calc(100vh - 56px); } }";
 
 var ROLE_TABS = {
-  "Trainer":           ["yard","planner","provisional","meds","register","prescriptions","whiteboard","movements","owners","staff","expenses","weights","trotters","galloping","checklist","assistant","content","summary","reminders","procurement","travel","invoices","reports","settings"],
-  "Secretary":         ["yard","planner","provisional","meds","register","prescriptions","whiteboard","movements","owners","staff","expenses","weights","trotters","galloping","checklist","assistant","content","summary","reminders","procurement","travel","invoices","reports","settings"],
-  "Head Lad":          ["yard","planner","provisional","meds","register","prescriptions","whiteboard","movements","owners","staff","expenses","weights","trotters","galloping","checklist","assistant","content","summary","reminders","procurement","travel","invoices","reports","settings"],
-  "Head Girl":         ["yard","planner","provisional","meds","register","prescriptions","whiteboard","movements","owners","staff","expenses","weights","trotters","galloping","checklist","assistant","content","summary","reminders","procurement","travel","invoices","reports","settings"],
-  "Assistant Trainer": ["yard","planner","provisional","meds","register","prescriptions","whiteboard","movements","owners","staff","expenses","weights","trotters","galloping","checklist","assistant","content","summary","reminders","procurement","travel","invoices","reports","settings"],
+  "Trainer":           ["yard","planner","provisional","meds","register","prescriptions","whiteboard","entrycomms","movements","owners","staff","weights","trotters","galloping","checklist","assistant","content","summary","reminders","procurement","travel","invoices","reports","settings"],
+  "Secretary":         ["yard","planner","provisional","meds","register","prescriptions","whiteboard","entrycomms","movements","owners","staff","weights","trotters","galloping","checklist","assistant","content","summary","reminders","procurement","travel","invoices","reports","settings"],
+  "Head Lad":          ["yard","planner","provisional","meds","register","prescriptions","whiteboard","entrycomms","movements","owners","staff","weights","trotters","galloping","checklist","assistant","content","summary","reminders","procurement","travel","invoices","reports","settings"],
+  "Head Girl":         ["yard","planner","provisional","meds","register","prescriptions","whiteboard","entrycomms","movements","owners","staff","weights","trotters","galloping","checklist","assistant","content","summary","reminders","procurement","travel","invoices","reports","settings"],
+  "Assistant Trainer": ["yard","planner","provisional","meds","register","prescriptions","whiteboard","entrycomms","movements","owners","staff","weights","trotters","galloping","checklist","assistant","content","summary","reminders","procurement","travel","invoices","reports","settings"],
   "Staff":             ["meds","staff","weights","movements","reminders","procurement"],
   "Vet":               ["yard","meds","register","prescriptions","movements","weights","trotters","galloping","summary"],
   "Owner":             ["owners","whiteboard"]
 };
 
-var ALL_TABS = ["yard","planner","provisional","meds","register","prescriptions","whiteboard","movements","owners","staff","expenses","weights","trotters","galloping","checklist","assistant","content","summary","reminders","procurement","travel","invoices","reports","settings"];
+var ALL_TABS = ["yard","planner","provisional","meds","register","prescriptions","whiteboard","entrycomms","movements","owners","staff","weights","trotters","galloping","checklist","assistant","content","summary","reminders","procurement","travel","invoices","reports","settings"];
 
 function App() {
   const [user, setUser] = useState(null);
@@ -58,6 +58,7 @@ function App() {
   const [authLoading, setAuthLoading] = useState(false);
   const [authError, setAuthError] = useState("");
   const [agreedTerms, setAgreedTerms] = useState(false);
+  const [showLegal, setShowLegal] = useState(null);
   const [agreedData, setAgreedData] = useState(false);
   var isMobileState = useState(typeof window !== "undefined" && window.innerWidth < 640);
   var isMobile = isMobileState[0];
@@ -426,10 +427,10 @@ function App() {
     { id: "movements", label: "Movements", icon: "🚛" },
     { id: "owners", label: "Owners", icon: "👤" },
     { id: "staff", label: "Staff Hours", icon: "🌙" },
-    { id: "expenses", label: "Racing Expenses", icon: "€" },
     { id: "weights", label: "Weights", icon: "⚖️" },
     { id: "assistant", label: "AI Assistant", icon: "🤖" },
     { id: "content", label: "Content", icon: "🎥" },
+    { id: "entrycomms", label: "Entries & Decs", icon: "ENT" },
     { id: "summary", label: "Daily Summary", icon: "📊" },
     { id: "reminders", label: "Reminders", icon: "🔔" },
     { id: "procurement", label: "Procurement", icon: "🛒" },
@@ -500,7 +501,7 @@ function App() {
             <div style={{ marginBottom: 14, display: "flex", flexDirection: "column", gap: 10 }}>
               <label style={{ display: "flex", gap: 8, alignItems: "flex-start", cursor: "pointer", fontSize: 12, color: C.textMid, lineHeight: 1.4 }}>
                 <input type="checkbox" checked={agreedTerms} onChange={function(e) { setAgreedTerms(e.target.checked); }} style={{ marginTop: 2, flexShrink: 0 }} />
-                <span>I agree to the <a href="/terms" target="_blank" style={{ color: C.navy, fontWeight: 600 }}>Terms of Service</a> and <a href="/privacy" target="_blank" style={{ color: C.navy, fontWeight: 600 }}>Privacy Policy</a>.</span>
+                <span>I agree to the <span onClick={function(e) { e.preventDefault(); setShowLegal("terms"); }} style={{ color: C.navy, fontWeight: 600, textDecoration: "underline", cursor: "pointer" }}>Terms of Service</span> and <span onClick={function(e) { e.preventDefault(); setShowLegal("privacy"); }} style={{ color: C.navy, fontWeight: 600, textDecoration: "underline", cursor: "pointer" }}>Privacy Policy</span>.</span>
               </label>
               <label style={{ display: "flex", gap: 8, alignItems: "flex-start", cursor: "pointer", fontSize: 12, color: C.textMid, lineHeight: 1.4 }}>
                 <input type="checkbox" checked={agreedData} onChange={function(e) { setAgreedData(e.target.checked); }} style={{ marginTop: 2, flexShrink: 0 }} />
@@ -513,6 +514,34 @@ function App() {
             style={{ width: "100%", padding: "12px", background: C.navy, color: "#fff", border: "none", borderRadius: 10, fontSize: 15, fontWeight: 800, cursor: "pointer" }}>
             {authMode === "login" ? "Log In" : "Create Account"}
           </button>
+          {showLegal && (
+            <div onClick={function() { setShowLegal(null); }} style={{ position: "fixed", inset: 0, background: "rgba(0,0,0,0.7)", zIndex: 9999, display: "flex", alignItems: "center", justifyContent: "center", padding: 20 }}>
+              <div onClick={function(e) { e.stopPropagation(); }} style={{ background: "#fff", borderRadius: 12, padding: "28px 26px", maxWidth: 520, width: "100%", maxHeight: "80vh", overflowY: "auto" }}>
+                <div style={{ fontSize: 20, fontWeight: 900, color: C.navy, marginBottom: 14 }}>{showLegal === "terms" ? "Terms of Service" : "Privacy Policy"}</div>
+                <div style={{ fontSize: 13, color: "#444", lineHeight: 1.8 }}>
+                  {showLegal === "terms" ? (
+                    <div>
+                      <p style={{ marginBottom: 10 }}><strong>Last updated: June 2026</strong></p>
+                      <p style={{ marginBottom: 10 }}>RacePlan Pro is licensed for use by professional racing trainers and their authorised staff for yard management purposes only. You may not resell, sublicense or share access outside your yard.</p>
+                      <p style={{ marginBottom: 10 }}><strong>Fair usage.</strong> Each plan includes fair usage: up to 200 AI-assisted requests per month, up to 500 WhatsApp messages per month, up to 2GB of file storage, and unlimited staff logins. If usage materially exceeds these limits we will contact you before any additional charge.</p>
+                      <p style={{ marginBottom: 10 }}><strong>Accuracy.</strong> RacePlan Pro does not guarantee the accuracy of eligibility, withdrawal period or AI-generated calculations. Trainers remain solely responsible for verifying all entries and declarations with HRI, the BHA or the relevant racing authority.</p>
+                      <p style={{ marginBottom: 10 }}>{"\u00a9 2026 RacePlan Pro\u2122. All rights reserved. The name, logo, software and content are the exclusive property of RacePlan Pro."}</p>
+                      <p>These terms are governed by the laws of Ireland.</p>
+                    </div>
+                  ) : (
+                    <div>
+                      <p style={{ marginBottom: 10 }}><strong>Last updated: June 2026</strong></p>
+                      <p style={{ marginBottom: 10 }}>RacePlan Pro is committed to protecting your personal data. We collect your name, email and the yard data you enter into the platform. We do not sell your data to any third party.</p>
+                      <p style={{ marginBottom: 10 }}>Your data is stored securely on infrastructure hosted in the EU. Under GDPR you have the right to access, rectify and erase your data. You may request deletion at any time from within the app (Settings, Data and Privacy) or by emailing hello@raceplanpro.com.</p>
+                      <p style={{ marginBottom: 10 }}>As a trainer you act as the data controller for your owners and staff details; RacePlan Pro acts as the data processor. You are responsible for having the necessary consent from those individuals.</p>
+                      <p>For any privacy query contact hello@raceplanpro.com.</p>
+                    </div>
+                  )}
+                </div>
+                <button onClick={function() { setShowLegal(null); }} style={{ marginTop: 18, width: "100%", background: C.navy, border: "none", color: "#fff", padding: "12px", borderRadius: 8, cursor: "pointer", fontWeight: 700 }}>Close</button>
+              </div>
+            </div>
+          )}
           {authMode === "signup" && <div style={{ fontSize: 12, color: C.textMid, textAlign: "center", marginTop: 12, lineHeight: 1.6 }}>14-day free trial · No credit card required</div>}
         </div>
       </div>
@@ -538,7 +567,16 @@ function App() {
           style={{ background: "rgba(255,255,255,0.08)", border: "none", color: "#fff", width: 32, height: 32, borderRadius: 8, cursor: "pointer", fontSize: 13 }}>
           {"☰"}
         </button>
-        <div style={{ fontSize: 15, fontWeight: 900, color: "#fff" }}>🏇 RacePlan Pro</div>
+        <svg width="170" height="38" viewBox="0 0 250 58" fill="none" style={{ flexShrink: 0 }}>
+          <path d="M28 3 L48 9 L48 31 C48 42 38 50 28 53 C18 50 8 42 8 31 L8 9 Z" fill="#c9a84c" fillOpacity="0.1" stroke="#c9a84c" strokeWidth="1.5"/>
+          <g transform="translate(13, 11) scale(0.056)">
+            <path d="M0 464V316.9C0 208.5 68.3 111.8 170.5 75.6L340.2 15.5C361.6 7.9 384 23.8 384 46.4c0 11-5.5 21.2-14.6 27.3L336 96c48.1 0 91.2 29.8 108.1 74.9l48.6 129.5c11.8 31.4 4.1 66.8-19.6 90.5c-16 16-37.8 25.1-60.5 25.1h-3.4c-26.1 0-50.9-11.6-67.6-31.7l-32.3-38.7c-11.7 4.1-24.2 6.4-37.3 6.4l-.1 0 0 0c-6.3 0-12.5-.5-18.6-1.5c-3.6-.6-7.2-1.4-10.7-2.3l0 0c-28.9-7.8-53.1-26.8-67.8-52.2c-4.4-7.6-14.2-10.3-21.9-5.8s-10.3 14.2-5.8 21.9c24 41.5 68.3 70 119.3 71.9l47.2 70.8c4 6.1 6.2 13.2 6.2 20.4c0 20.3-16.5 36.8-36.8 36.8H48c-26.5 0-48-21.5-48-48zM328 224c13.3 0 24-10.7 24-24s-10.7-24-24-24s-24 10.7-24 24s10.7 24 24 24z" fill="#c9a84c"/>
+          </g>
+          <rect x="52" y="20" width="2.5" height="28" rx="1.2" fill="#c9a84c" opacity="0.7"/>
+          <rect x="52" y="20" width="8" height="2" rx="1" fill="#c9a84c" opacity="0.5"/>
+          <text x="66" y="28" fontFamily="Outfit, sans-serif" fontWeight="900" fontSize="20" fill="#fff" letterSpacing="-0.5">RacePlan</text>
+          <text x="66" y="46" fontFamily="Outfit, sans-serif" fontWeight="600" fontSize="13" fill="#c9a84c" letterSpacing="2.5">PRO</text>
+        </svg>
         <div style={{ marginLeft: 8, padding: "4px 12px", background: "rgba(255,255,255,0.08)", borderRadius: 20, fontSize: 12, color: "rgba(255,255,255,0.7)", fontWeight: 600 }}>
           {(NAV.find(function(n) { return n.id === tab; }) || {}).label || ""}
         </div>
@@ -630,7 +668,6 @@ function App() {
           {safeTab === "movements" && <MovementLog horses={horses} settings={settings} />}
           {safeTab === "owners" && <OwnerPortal horses={horses} settings={settings} />}
           {safeTab === "staff" && <StaffNotify user={user} supabase={supabase} settings={settings} />}
-          {safeTab === "expenses" && <RacingExpenses horses={horses} user={user} supabase={supabase} settings={settings} setSettings={saveSettings} onNavigate={setTab} />}
           {safeTab === "trotters" && <Trotters horses={horses} user={user} supabase={supabase} />}
           {safeTab === "galloping" && <Galloping horses={horses} user={user} supabase={supabase} settings={settings} />}
           {safeTab === "checklist" && <RaceDayChecklist horses={horses} wbEntries={wbEntries} user={user} supabase={supabase} />}
@@ -643,6 +680,7 @@ function App() {
           {safeTab === "weights" && <WeightsTracker horses={horses} weights={weightsRaw} setWeights={setWeights} settings={settings} />}
           {safeTab === "assistant" && <YardAssistant horses={horses} setHorses={setHorses} weights={weightsRaw} medLogs={medLogs} setMedLogs={setMedLogs} reminders={reminders} setReminders={setReminders} settings={settings} user={user} supabase={supabase} onNavigate={setTab} />}
           {safeTab === "content" && <ContentScheduler horses={horses} settings={settings} />}
+          {safeTab === "entrycomms" && <EntriesComms horses={horses} user={user} supabase={supabase} settings={settings} />}
           {safeTab === "summary" && <DailySummary horses={horses} medLogs={medLogs} weights={weightsRaw} wbEntries={wbEntries} settings={settings} />}
           {safeTab === "procurement" && <Procurement user={user} supabase={supabase} orders={ordersRaw} setOrders={setOrders} settings={settings} />}
           {safeTab === "reminders" && <Reminders reminders={reminders} setReminders={setReminders} settings={settings} user={user} supabase={supabase} />}
