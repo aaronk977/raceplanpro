@@ -82,8 +82,9 @@ function LandingPage({ onLogin }) {
       <div style={{ position: "sticky", top: 0, background: "rgba(13,40,24,0.97)", backdropFilter: "blur(12px)", WebkitBackdropFilter: "blur(12px)", zIndex: 100, padding: "0 clamp(16px,4vw,48px)", height: 60, display: "flex", alignItems: "center", justifyContent: "space-between", borderBottom: "1px solid rgba(201,168,76,0.12)" }}>
         <Logo />
         <div style={{ display: "flex", gap: 10, alignItems: "center" }}>
-          <button onClick={onLogin} style={{ background: "transparent", border: "1px solid rgba(255,255,255,0.2)", color: "rgba(255,255,255,0.8)", padding: "8px 20px", borderRadius: 6, cursor: "pointer", fontSize: 13, fontWeight: 500, letterSpacing: 0.2 }}>Log In</button>
-          <button onClick={function() { setDemoOpen(true); }} style={{ background: GOLD, border: "none", color: NAVY, padding: "8px 20px", borderRadius: 6, cursor: "pointer", fontSize: 13, fontWeight: 800, letterSpacing: 0.2 }} className="cta-btn">Book Demo</button>
+          <button onClick={onLogin} style={{ background: "transparent", border: "1px solid rgba(255,255,255,0.2)", color: "rgba(255,255,255,0.8)", padding: "8px 16px", borderRadius: 6, cursor: "pointer", fontSize: 13, fontWeight: 500 }}>Log In</button>
+          <button onClick={onLogin} style={{ background: "transparent", border: "1px solid rgba(201,168,76,0.5)", color: GOLD, padding: "8px 16px", borderRadius: 6, cursor: "pointer", fontSize: 13, fontWeight: 700 }} className="cta-btn">Sign Up Free</button>
+          <button onClick={function() { setDemoOpen(true); }} style={{ background: GOLD, border: "none", color: NAVY, padding: "8px 18px", borderRadius: 6, cursor: "pointer", fontSize: 13, fontWeight: 800 }} className="cta-btn">Book Demo</button>
         </div>
       </div>
 
@@ -222,6 +223,33 @@ function LandingPage({ onLogin }) {
         </div>
       </div>
 
+      {/* DEMO SECTION */}
+      <div style={{ background: NAVY, padding: "clamp(48px,8vw,80px) clamp(16px,4vw,48px)" }}>
+        <div style={{ maxWidth: 1040, margin: "0 auto" }}>
+          <div style={{ marginBottom: 32, textAlign: "center" }}>
+            <div style={{ fontSize: 11, fontWeight: 700, color: GOLD, letterSpacing: 2, textTransform: "uppercase", marginBottom: 12 }}>Live Demo</div>
+            <h2 className="serif" style={{ fontSize: "clamp(24px,3vw,38px)", fontWeight: 800, color: WHITE, lineHeight: 1.2, marginBottom: 12 }}>Try it right now.</h2>
+            <p style={{ fontSize: 15, color: "rgba(255,255,255,0.5)", maxWidth: 480, margin: "0 auto" }}>This is the real app. Click through every feature — no sign up required to see how it works.</p>
+          </div>
+          <div style={{ borderRadius: 14, overflow: "hidden", border: "1px solid rgba(201,168,76,0.2)", boxShadow: "0 32px 80px rgba(0,0,0,0.4)" }}>
+            <div style={{ background: "rgba(255,255,255,0.04)", padding: "10px 16px", display: "flex", alignItems: "center", gap: 8, borderBottom: "1px solid rgba(255,255,255,0.06)" }}>
+              <div style={{ width: 10, height: 10, borderRadius: "50%", background: "#c0392b" }} />
+              <div style={{ width: 10, height: 10, borderRadius: "50%", background: "#f39c12" }} />
+              <div style={{ width: 10, height: 10, borderRadius: "50%", background: "#27ae60" }} />
+              <div style={{ fontSize: 11, color: "rgba(255,255,255,0.25)", marginLeft: 8, fontFamily: "monospace" }}>raceplanpro.com/demo</div>
+            </div>
+            <iframe
+              src="https://raceplanpro.com"
+              style={{ width: "100%", height: 580, border: "none", display: "block" }}
+              title="RacePlan Pro Live Demo"
+            />
+          </div>
+          <div style={{ textAlign: "center", marginTop: 24 }}>
+            <button onClick={onLogin} style={{ background: GOLD, border: "none", color: NAVY, padding: "13px 32px", borderRadius: 8, cursor: "pointer", fontSize: 15, fontWeight: 800 }} className="cta-btn">Start Free — No Card Required</button>
+          </div>
+        </div>
+      </div>
+
       {/* RACE PLANNER DETAIL */}
       <div style={{ background: WHITE, padding: "clamp(48px,8vw,80px) clamp(16px,4vw,48px)", borderTop: "1px solid rgba(13,40,24,0.06)" }}>
         <div style={{ maxWidth: 1040, margin: "0 auto", display: "grid", gridTemplateColumns: "repeat(auto-fit, minmax(280px,1fr))", gap: 48, alignItems: "center" }}>
@@ -314,11 +342,38 @@ function LandingPage({ onLogin }) {
           <div onClick={function(e) { e.stopPropagation(); }} style={{ background: WHITE, borderRadius: 12, padding: "36px 32px", maxWidth: 560, width: "100%", maxHeight: "80vh", overflowY: "auto" }}>
             <div className="serif" style={{ fontSize: 22, fontWeight: 900, color: NAVY, marginBottom: 16 }}>Terms of Use</div>
             <div style={{ fontSize: 13, color: "#444", lineHeight: 1.9 }}>
-              <p style={{ marginBottom: 12 }}><strong>Last updated: May 2026</strong></p>
-              <p style={{ marginBottom: 12 }}>By using RacePlan Pro you agree to these terms. RacePlan Pro is licensed for use by professional racing trainers and authorised staff for yard management only. You may not resell or share access.</p>
+              <p style={{ marginBottom: 12 }}><strong>Last updated: June 2026</strong></p>
+
+              <p style={{ marginBottom: 6, fontWeight: 700, color: "#0d2818" }}>1. Licence</p>
+              <p style={{ marginBottom: 12 }}>RacePlan Pro is licensed for use by professional racing trainers and their authorised staff for yard management purposes only. You may not resell, sublicense or share access with third parties outside your yard.</p>
+
+              <p style={{ marginBottom: 6, fontWeight: 700, color: "#0d2818" }}>2. Fair Usage</p>
+              <p style={{ marginBottom: 8 }}>Each subscription plan includes fair usage of all features. The following usage is included within your plan and is not charged separately under normal use:</p>
+              <ul style={{ paddingLeft: 18, marginBottom: 12 }}>
+                <li style={{ marginBottom: 4 }}>Up to 200 AI requests per month (Race Planner, AI Assistant, eligibility checks)</li>
+                <li style={{ marginBottom: 4 }}>Up to 500 WhatsApp messages per month via the Owner Portal</li>
+                <li style={{ marginBottom: 4 }}>Up to 2GB of file storage (prescription photos, supplier invoices)</li>
+                <li style={{ marginBottom: 4 }}>Up to 5 staff logins per subscription</li>
+              </ul>
+              <p style={{ marginBottom: 12 }}>If your usage consistently and materially exceeds these limits, RacePlan Pro reserves the right to contact you to discuss a revised plan or additional charges. We will always notify you before billing anything beyond your subscription fee.</p>
+
+              <p style={{ marginBottom: 6, fontWeight: 700, color: "#0d2818" }}>3. What may cost extra</p>
+              <p style={{ marginBottom: 8 }}>The following may incur additional charges if usage significantly exceeds the fair usage limits above:</p>
+              <ul style={{ paddingLeft: 18, marginBottom: 12 }}>
+                <li style={{ marginBottom: 4 }}>AI usage above 200 requests/month (powered by Anthropic Claude)</li>
+                <li style={{ marginBottom: 4 }}>WhatsApp messages above 500/month (powered by Twilio)</li>
+                <li style={{ marginBottom: 4 }}>File storage above 2GB</li>
+                <li style={{ marginBottom: 4 }}>Additional staff logins beyond 5</li>
+              </ul>
+
+              <p style={{ marginBottom: 6, fontWeight: 700, color: "#0d2818" }}>4. Accuracy</p>
+              <p style={{ marginBottom: 12 }}>RacePlan Pro does not guarantee the accuracy of eligibility calculations, withdrawal period calculations or any AI-generated analysis. Trainers remain solely responsible for verifying all entries and declarations with HRI, the BHA or the relevant racing authority.</p>
+
+              <p style={{ marginBottom: 6, fontWeight: 700, color: "#0d2818" }}>5. Intellectual Property</p>
               <p style={{ marginBottom: 12 }}>{"\u00a9 2026 RacePlan Pro\u2122. All rights reserved. The RacePlan Pro name, logo, software and content are the exclusive property of RacePlan Pro. Unauthorised copying or reproduction is strictly prohibited."}</p>
-              <p style={{ marginBottom: 12 }}>RacePlan Pro does not guarantee the accuracy of eligibility calculations. Trainers remain responsible for verifying all entries with the relevant racing authority.</p>
-              <p>These terms are governed by the laws of Ireland.</p>
+
+              <p style={{ marginBottom: 6, fontWeight: 700, color: "#0d2818" }}>6. Governing Law</p>
+              <p>These terms are governed by the laws of Ireland. Any disputes shall be subject to the exclusive jurisdiction of the Irish courts.</p>
             </div>
             <button onClick={function() { setShowTerms(false); }} style={{ marginTop: 20, width: "100%", background: NAVY, border: "none", color: WHITE, padding: "12px", borderRadius: 8, cursor: "pointer", fontWeight: 700 }}>Close</button>
           </div>
