@@ -115,7 +115,7 @@ function EntriesComms({ horses, user, supabase, settings }) {
               venue: venue, raceDate: raceDate, raceName: raceName,
               stage: stage, changeType: changeType,
               prevStage: prevStage,
-              send: !!(horse && horse.ownerPhone)
+              send: !!horse
             });
           }
         }
@@ -149,8 +149,14 @@ function EntriesComms({ horses, user, supabase, settings }) {
   }
 
   async function sendAll() {
-    var toSend = pending.filter(function(p) { return p.send && p.ownerPhone; });
-    if (toSend.length === 0) { showToast("Nothing selected to send", C.amber); return; }
+    var ticked = pending.filter(function(p) { return p.send; });
+    var toSend = ticked.filter(function(p) { return p.ownerPhone; });
+    var skipped = ticked.length - toSend.length;
+    if (toSend.length === 0) {
+      if (skipped > 0) showToast(skipped + " ticked but have no owner phone - add phones in My Yard", C.amber);
+      else showToast("Nothing selected to send", C.amber);
+      return;
+    }
 
     var newStates = Object.assign({}, stateRecords);
     var logRows = [];
@@ -216,12 +222,12 @@ function EntriesComms({ horses, user, supabase, settings }) {
 
       {view === "upload" && (
         <div>
-          <label style={{ display: "block", border: "2px dashed " + C.border, borderRadius: 14, padding: "40px 20px", textAlign: "center", cursor: "pointer", background: C.cardOff }}>
+          <div style={{ border: "2px dashed " + C.border, borderRadius: 14, padding: "32px 20px", textAlign: "center", background: C.cardOff }}>
             <div style={{ fontSize: 16, fontWeight: 700, color: C.navy, marginBottom: 6 }}>Upload Pending Engagements file</div>
             <div style={{ fontSize: 13, color: C.textMid, marginBottom: 4 }}>CSV or tab-separated. Needs Horse and Stage/Status columns.</div>
-            <div style={{ fontSize: 12, color: C.textMid }}>The app compares against the last upload and only flags horses whose stage has changed.</div>
-            <input type="file" accept=".csv,.txt,.tsv" onChange={handleCSV} style={{ display: "none" }} />
-          </label>
+            <div style={{ fontSize: 12, color: C.textMid, marginBottom: 16 }}>The app compares against the last upload and only flags horses whose stage has changed.</div>
+            <input id="entriesFileInput" type="file" accept=".csv,.txt,.tsv,text/csv,text/plain" onChange={handleCSV} style={{ display: "block", margin: "0 auto", fontSize: 13 }} />
+          </div>
           <div style={{ background: C.blueBg, border: "1px solid " + C.blue + "30", borderRadius: 10, padding: "14px 16px", marginTop: 16, fontSize: 13, color: C.text, lineHeight: 1.6 }}>
             <strong>How it works:</strong> You can upload daily or weekly - it makes no difference. The app remembers which horses you have already messaged owners about for each race, so the same owner never gets a duplicate message about the same entry. Only genuine new entries and declarations are flagged.
           </div>
@@ -235,9 +241,9 @@ function EntriesComms({ horses, user, supabase, settings }) {
           </div>
           {pending.map(function(item, idx) {
             return (
-              <div key={idx} style={{ background: C.card, border: "1px solid " + (item.matched ? C.border : C.amber + "60"), borderRadius: 12, padding: "14px 16px", marginBottom: 8 }}>
+              <label key={idx} style={{ display: "block", background: item.send ? C.goldBg : C.card, border: "1px solid " + (item.matched ? (item.send ? C.gold + "60" : C.border) : C.amber + "60"), borderRadius: 12, padding: "14px 16px", marginBottom: 8, cursor: "pointer" }}>
                 <div style={{ display: "flex", alignItems: "flex-start", gap: 12 }}>
-                  <input type="checkbox" checked={item.send} disabled={!item.ownerPhone} onChange={function() { toggleSend(idx); }} style={{ marginTop: 4, width: 18, height: 18, flexShrink: 0, accentColor: C.gold }} />
+                  <input type="checkbox" checked={item.send} onChange={function() { toggleSend(idx); }} style={{ marginTop: 4, width: 18, height: 18, flexShrink: 0, accentColor: C.gold, cursor: "pointer" }} />
                   <div style={{ flex: 1 }}>
                     <div style={{ display: "flex", alignItems: "center", gap: 8, flexWrap: "wrap" }}>
                       <span style={{ fontSize: 15, fontWeight: 800, color: C.text }}>{item.horseName}</span>
@@ -251,7 +257,7 @@ function EntriesComms({ horses, user, supabase, settings }) {
                     </div>
                   </div>
                 </div>
-              </div>
+              </label>
             );
           })}
           <div style={{ display: "flex", gap: 10, marginTop: 16 }}>
