@@ -681,7 +681,7 @@ function App() {
           {safeTab === "assistant" && <YardAssistant horses={horses} setHorses={setHorses} weights={weightsRaw} medLogs={medLogs} setMedLogs={setMedLogs} reminders={reminders} setReminders={setReminders} settings={settings} user={user} supabase={supabase} onNavigate={setTab} />}
           {safeTab === "content" && <ContentScheduler horses={horses} settings={settings} />}
           {safeTab === "entrycomms" && <EntriesComms horses={horses} user={user} supabase={supabase} settings={settings} />}
-          {safeTab === "summary" && <DailySummary horses={horses} medLogs={medLogs} weights={weightsRaw} wbEntries={wbEntries} settings={settings} />}
+          {safeTab === "summary" && <DailySummary horses={horses} medLogs={medLogs} weights={weightsRaw} wbEntries={wbEntries} settings={settings} user={user} supabase={supabase} />}
           {safeTab === "procurement" && <Procurement user={user} supabase={supabase} orders={ordersRaw} setOrders={setOrders} settings={settings} />}
           {safeTab === "reminders" && <Reminders reminders={reminders} setReminders={setReminders} settings={settings} user={user} supabase={supabase} />}
         </div>
