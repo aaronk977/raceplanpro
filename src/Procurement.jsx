@@ -42,6 +42,9 @@ var DEFAULT_SUPPLIERS = [
 ];
 
 function Procurement({ user, orders, setOrders, settings }) {
+  var collapsedState = useState({});
+  var collapsed = collapsedState[0]; var setCollapsed = collapsedState[1];
+  function toggleCollapse(id) { setCollapsed(function(p) { var n = Object.assign({}, p); n[id] = !n[id]; return n; }); }
   var suppliersState = useState(DEFAULT_SUPPLIERS);
   var suppliers = suppliersState[0]; var setSuppliers = suppliersState[1];
   var viewState = useState("catalogue");
@@ -232,6 +235,10 @@ function Procurement({ user, orders, setOrders, settings }) {
           <input value={search} onChange={function(e) { setSearch(e.target.value); }}
             placeholder="Search all products..."
             style={{ width: "100%", padding: "10px 14px", background: C.card, border: "1px solid " + C.border, borderRadius: 10, fontSize: 13, color: C.text, marginBottom: 14 }} />
+          <div style={{ display: "flex", gap: 8, marginBottom: 12, justifyContent: "flex-end" }}>
+            <button onClick={function() { var all = {}; activeSuppliers.forEach(function(s) { all[s.id] = true; }); setCollapsed(all); }} style={{ fontSize: 12, padding: "5px 12px", background: C.cardOff, border: "1px solid " + C.border, borderRadius: 6, cursor: "pointer", color: C.textMid, fontWeight: 600 }}>Collapse all</button>
+            <button onClick={function() { setCollapsed({}); }} style={{ fontSize: 12, padding: "5px 12px", background: C.cardOff, border: "1px solid " + C.border, borderRadius: 6, cursor: "pointer", color: C.textMid, fontWeight: 600 }}>Expand all</button>
+          </div>
           {activeSuppliers.map(function(supplier) {
             var items = supplier.catalogue.filter(function(item) {
               if (!search) return true;
@@ -240,20 +247,21 @@ function Procurement({ user, orders, setOrders, settings }) {
             if (items.length === 0 && search) return null;
             return (
               <div key={supplier.id} style={{ marginBottom: 20 }}>
-                <div style={{ display: "flex", alignItems: "center", gap: 10, marginBottom: 12, padding: "12px 16px", background: C.navy, borderRadius: 12 }}>
+                <div onClick={function() { toggleCollapse(supplier.id); }} style={{ cursor: "pointer", display: "flex", alignItems: "center", gap: 10, marginBottom: 12, padding: "12px 16px", background: C.navy, borderRadius: 12 }}>
                   <span style={{ fontSize: 24 }}>{supplier.logo}</span>
                   <div style={{ flex: 1 }}>
                     <div style={{ fontSize: 15, fontWeight: 800, color: "#fff" }}>{supplier.name}</div>
                     <div style={{ fontSize: 12, color: "rgba(255,255,255,0.5)" }}>{supplier.category + " · " + supplier.catalogue.length + " products"}</div>
                   </div>
+                  <span style={{ fontSize: 18, color: "rgba(255,255,255,0.6)", marginRight: 4, transform: collapsed[supplier.id] ? "rotate(-90deg)" : "rotate(0deg)", transition: "transform 0.15s", display: "inline-block" }}>{"\u25be"}</span>
                   {supplier.catalogue.length === 0 && (
-                    <label style={{ padding: "6px 14px", background: "rgba(255,255,255,0.12)", border: "1px solid rgba(255,255,255,0.2)", borderRadius: 8, color: "#fff", fontSize: 11, fontWeight: 700, cursor: "pointer" }}>
+                    <label onClick={function(e){ e.stopPropagation(); }} style={{ padding: "6px 14px", background: "rgba(255,255,255,0.12)", border: "1px solid rgba(255,255,255,0.2)", borderRadius: 8, color: "#fff", fontSize: 11, fontWeight: 700, cursor: "pointer" }}>
                       Upload CSV
                       <input type="file" accept=".csv,.tsv,.txt" onChange={function(e) { handleCatalogueCSV(e, supplier.id); }} style={{ display: "none" }} />
                     </label>
                   )}
                 </div>
-                {supplier.catalogue.length === 0 ? (
+                {!collapsed[supplier.id] && (supplier.catalogue.length === 0 ? (
                   <div style={{ padding: "20px", textAlign: "center", background: C.cardOff, borderRadius: 10, color: C.textMid, fontSize: 13 }}>
                     <div style={{ marginBottom: 10 }}>No products yet. Upload a CSV from {supplier.name}.</div>
                     <div style={{ fontSize: 11, color: C.textDim }}>CSV needs columns: name, price, sku, unit (any order)</div>
@@ -278,7 +286,7 @@ function Procurement({ user, orders, setOrders, settings }) {
                       );
                     })}
                   </div>
-                )}
+                ))}
               </div>
             );
           })}
