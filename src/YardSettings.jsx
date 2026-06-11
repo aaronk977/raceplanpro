@@ -931,7 +931,6 @@ function YardSettings({ settings, setSettings, supabase, user }) {
               { key: "trainerName", label: "Trainer Name", placeholder: "e.g. Gordon Elliott" },
               { key: "location", label: "Location (auto-filled from eircode)", placeholder: "e.g. Robertstown, Co. Meath" },
               { key: "trainerLicence", label: "Trainer Licence No.", placeholder: "e.g. 12345" },
-              { key: "anthropicKey", label: "Anthropic API Key (for AI features)", placeholder: "sk-ant-...", type: "password", full: true },
             ].map(function(field) {
               return (
                 <div key={field.key} style={{ gridColumn: field.full ? "1 / -1" : "auto" }}>
