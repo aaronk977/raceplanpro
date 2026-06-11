@@ -301,7 +301,7 @@ function OwnerContactsPanel({ edit, update }) {
 var STRIPE_LINKS = {
   Basic: "https://buy.stripe.com/basic_raceplanpro",
   Professional: "https://buy.stripe.com/pro_raceplanpro",
-  Gold: "https://buy.stripe.com/gold_raceplanpro"
+  Gold: "https://buy.stripe.com/cNidRbdiN0Ry7NG73G0oM02_raceplanpro"
 };
 
 var PLAN_FEATURES = {
@@ -1546,15 +1546,15 @@ function YardSettings({ settings, setSettings, supabase, user }) {
         <div>
           <div style={{ background: C.card, border: "1px solid " + C.border, borderRadius: 14, padding: "20px", marginBottom: 16, textAlign: "center" }}>
             <div style={{ fontSize: 13, color: C.textMid, marginBottom: 4, textTransform: "uppercase", fontWeight: 700 }}>Current Plan</div>
-            <div style={{ fontSize: 28, fontWeight: 900, color: C.navy, marginBottom: 2 }}>{edit.tier || "Starter"}</div>
+            <div style={{ fontSize: 28, fontWeight: 900, color: C.navy, marginBottom: 2 }}>{edit.tier || "Basic"}</div>
             <div style={{ fontSize: 13, color: C.textMid }}>Free beta access</div>
           </div>
 
           <div style={{ display: "grid", gridTemplateColumns: "1fr 1fr 1fr", gap: 12, marginBottom: 16 }}>
             {[
-              { name: "Starter", tagline: "Up to 40 horses", link: "https://buy.stripe.com/starter", features: ["My Yard and horse profiles", "Medication tracker", "Whiteboard and runners", "Owner WhatsApp comms", "Race Day checklist", "AI Race Planner", "Weights tracker"] },
-              { name: "Gold", tagline: "Up to 80 horses", link: "https://buy.stripe.com/gold", features: ["Everything in Starter", "Medicines Register (Rule 148)", "Vet Prescriptions store", "Galloping and Trotters logs", "IHRB horse sheets", "Reports and PDF exports", "Priority support"] },
-              { name: "Platinum", tagline: "Unlimited horses", link: "https://buy.stripe.com/platinum", features: ["Everything in Gold", "Supplier Invoice Portal", "Unlimited staff logins", "AI Yard Assistant", "Travel cost calculator", "Full data export", "Dedicated onboarding"] },
+              { name: "Basic", tagline: "Up to 40 horses", link: "https://buy.stripe.com/8x2dRbceJ0RyaZSgEg0oM01", features: ["My Yard and horse profiles", "Medication tracker", "Whiteboard and runners", "Owner WhatsApp comms", "Race Day checklist", "AI Race Planner", "Weights tracker"] },
+              { name: "Professional", tagline: "Up to 80 horses", link: "https://buy.stripe.com/cNidRbdiN0Ry7NG73G0oM02", features: ["Everything in Basic", "Medicines Register (Rule 148)", "Vet Prescriptions store", "Galloping and Trotters logs", "IHRB horse sheets", "Reports and PDF exports", "Priority support"] },
+              { name: "Platinum", tagline: "Unlimited horses", link: "https://buy.stripe.com/bJe8wRemRbwc1pi2Nq0oM03", features: ["Everything in Professional", "Supplier Invoice Portal", "Unlimited staff logins", "AI Yard Assistant", "Travel cost calculator", "Full data export", "Dedicated onboarding"] },
             ].map(function(tier) {
               var isCurrent = (edit.tier || "Starter") === tier.name;
               return (
