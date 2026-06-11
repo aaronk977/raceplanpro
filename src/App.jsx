@@ -60,6 +60,7 @@ function App() {
   const [agreedTerms, setAgreedTerms] = useState(false);
   const [showLegal, setShowLegal] = useState(null);
   const [selectedTier, setSelectedTier] = useState("Basic");
+  const [betaCode, setBetaCode] = useState("");
   const [agreedData, setAgreedData] = useState(false);
   var isMobileState = useState(typeof window !== "undefined" && window.innerWidth < 640);
   var isMobile = isMobileState[0];
