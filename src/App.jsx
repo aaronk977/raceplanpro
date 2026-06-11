@@ -59,6 +59,7 @@ function App() {
   const [authError, setAuthError] = useState("");
   const [agreedTerms, setAgreedTerms] = useState(false);
   const [showLegal, setShowLegal] = useState(null);
+  const [selectedTier, setSelectedTier] = useState("Basic");
   const [agreedData, setAgreedData] = useState(false);
   var isMobileState = useState(typeof window !== "undefined" && window.innerWidth < 640);
   var isMobile = isMobileState[0];
@@ -390,7 +391,16 @@ function App() {
         await supabase.from("yard_members").update({ member_user_id: res.data.user.id, joined_at: new Date().toISOString() }).eq("member_email", email.toLowerCase().trim());
         setAuthError("Account created as " + memberCheck.data.role + ". Please log in.");
       } else {
-        setAuthError("Yard account created. Please log in.");
+        // Save chosen tier, then send to Stripe to start trial + capture card
+        try { await supabase.from("yard_settings").upsert({ user_id: res.data.user.id, tier: selectedTier }, { onConflict: "user_id" }); } catch (e) {}
+        var STRIPE_LINKS = {
+          "Basic": "https://buy.stripe.com/8x2dRbceJ0RyaZSgEg0oM01",
+          "Professional": "https://buy.stripe.com/cNidRbdiN0Ry7NG73G0oM02",
+          "Platinum": "https://buy.stripe.com/bJe8wRemRbwc1pi2Nq0oM03"
+        };
+        var link = STRIPE_LINKS[selectedTier] || STRIPE_LINKS["Basic"];
+        setAuthError("Account created! Redirecting to start your free trial...");
+        setTimeout(function() { window.location.href = link; }, 1500);
       }
     }
     setAuthLoading(false);
@@ -495,6 +505,34 @@ function App() {
           {resetSent && (
             <div style={{ background: "#f0fdf4", border: "1px solid #86efac", borderRadius: 8, padding: "10px 12px", fontSize: 13, color: "#166534", marginBottom: 10, textAlign: "center" }}>
               Password reset email sent. Check your inbox.
+            </div>
+          )}
+          {authMode === "signup" && (
+            <div style={{ marginBottom: 16 }}>
+              <div style={{ fontSize: 12, fontWeight: 700, color: C.textMid, marginBottom: 8, textTransform: "uppercase" }}>Choose your plan</div>
+              {[
+                { name: "Basic", price: "149", horses: "Up to 40 horses" },
+                { name: "Professional", price: "249", horses: "Up to 80 horses" },
+                { name: "Platinum", price: "399", horses: "Unlimited horses" },
+              ].map(function(t) {
+                var sel = selectedTier === t.name;
+                return (
+                  <div key={t.name} onClick={function() { setSelectedTier(t.name); }}
+                    style={{ display: "flex", alignItems: "center", gap: 10, padding: "12px 14px", marginBottom: 8, borderRadius: 10, cursor: "pointer", border: "2px solid " + (sel ? C.gold : C.border), background: sel ? C.goldBg : "transparent" }}>
+                    <div style={{ width: 18, height: 18, borderRadius: "50%", border: "2px solid " + (sel ? C.gold : C.border), background: sel ? C.gold : "transparent", flexShrink: 0, display: "flex", alignItems: "center", justifyContent: "center" }}>
+                      {sel && <div style={{ width: 7, height: 7, borderRadius: "50%", background: "#fff" }} />}
+                    </div>
+                    <div style={{ flex: 1 }}>
+                      <div style={{ fontSize: 14, fontWeight: 800, color: C.navy }}>{t.name}</div>
+                      <div style={{ fontSize: 11, color: C.textMid }}>{t.horses}</div>
+                    </div>
+                    <div style={{ fontSize: 15, fontWeight: 900, color: C.navy }}>{"EUR" + t.price}<span style={{ fontSize: 11, fontWeight: 400 }}>/mo</span></div>
+                  </div>
+                );
+              })}
+              <div style={{ fontSize: 11, color: C.textMid, lineHeight: 1.5, marginTop: 6, padding: "10px 12px", background: C.cardOff, borderRadius: 8 }}>
+                Your 14-day free trial starts today. After the trial your card will be charged EUR{selectedTier === "Platinum" ? "399" : selectedTier === "Professional" ? "249" : "149"}/month for the {selectedTier} plan. Cancellation requires 30 days notice.
+              </div>
             </div>
           )}
           {authMode === "signup" && (
