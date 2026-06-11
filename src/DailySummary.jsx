@@ -110,7 +110,7 @@ function DailySummary({ horses, medLogs, weights, wbEntries, settings }) {
   activeHorses.forEach(function(h) {
     var horseMeds = [];
     Object.keys(medLogs || {}).forEach(function(key) {
-      if (key.indexOf(h.id + "_" + todayKey + "_") === 0 && medLogs[key]) {
+      if (key.indexOf(h.id + "_" + selectedDate + "_") === 0 && medLogs[key]) {
         var medType = key.split("_").slice(-1)[0];
         horseMeds.push(medType);
       }
