@@ -817,7 +817,13 @@ function YardSettings({ settings, setSettings, supabase, user }) {
   }
 
   function save() {
-    setSettings(edit);
+    var finalEdit = Object.assign({}, edit);
+    if (finalEdit.gallopLocationsRaw !== undefined) {
+      finalEdit.gallopLocations = finalEdit.gallopLocationsRaw.split("\n").map(function(s) { return s.trim(); }).filter(Boolean);
+      delete finalEdit.gallopLocationsRaw;
+    }
+    setEdit(finalEdit);
+    setSettings(finalEdit);
     setSaved(true);
     setTimeout(function() { setSaved(false); }, 3000);
   }
@@ -881,8 +887,9 @@ function YardSettings({ settings, setSettings, supabase, user }) {
           <div style={{ background: C.card, border: "1px solid " + C.border, borderRadius: 14, padding: "20px", marginBottom: 16 }}>
             <div style={{ fontSize: 15, fontWeight: 800, color: C.navy, marginBottom: 8 }}>Gallop Locations</div>
             <div style={{ fontSize: 13, color: C.textMid, marginBottom: 10 }}>One location per line. These appear in the Galloping tab.</div>
-            <textarea value={(edit.gallopLocations || []).join("\n")}
-              onChange={function(e) { update("gallopLocations", e.target.value.split("\n").map(function(s) { return s.trim(); }).filter(Boolean)); }}
+            <textarea value={edit.gallopLocationsRaw !== undefined ? edit.gallopLocationsRaw : (edit.gallopLocations || []).join("\n")}
+              onChange={function(e) { update("gallopLocationsRaw", e.target.value); }}
+              onBlur={function(e) { update("gallopLocations", e.target.value.split("\n").map(function(s) { return s.trim(); }).filter(Boolean)); }}
               placeholder={"Home Gallop\nAll-Weather\nGrass Gallop\nHill Gallop"}
               style={{ width: "100%", padding: "10px 12px", background: C.cardOff, border: "1px solid " + C.border, borderRadius: 8, fontSize: 13, color: C.text, minHeight: 100, resize: "vertical" }} />
           </div>
