@@ -1,4 +1,4 @@
-import React, { useState } from "react";
+import React, { useState, useEffect } from "react";
 import { Btn, Silk, C, daysUntil, ANTHROPIC_KEY } from "./shared";
 
 var API_HEADERS = {
@@ -8,7 +8,7 @@ var API_HEADERS = {
   "anthropic-dangerous-direct-browser-access": "true"
 };
 
-function DailySummary({ horses, medLogs, weights, wbEntries, settings }) {
+function DailySummary({ horses, medLogs, weights, wbEntries, settings, user, supabase }) {
   var now = new Date();
   var todayStr = now.toISOString().slice(0, 10);
   var logsState = useState({});
@@ -21,6 +21,16 @@ function DailySummary({ horses, medLogs, weights, wbEntries, settings }) {
   var selectedDate = selectedDateState[0]; var setSelectedDate = selectedDateState[1];
   var newLogState = useState({ category: "general", text: "", horseId: "" });
   var newLog = newLogState[0]; var setNewLog = newLogState[1];
+  var lameState = useState([]);
+  var lameTrotters = lameState[0]; var setLameTrotters = lameState[1];
+
+  useEffect(function() {
+    if (!user || !supabase) return;
+    supabase.from("trotters").select("*").eq("user_id", user.id)
+      .in("outcome", ["Lame", "Slight Lameness", "Needs Vet"])
+      .order("created_at", { ascending: false }).limit(20)
+      .then(function(res) { if (res.data) setLameTrotters(res.data); });
+  }, [user, selectedDate]);
 
   var LOG_CATS = [
     { id: "general", label: "General", icon: "📋", color: C.blue },
@@ -159,6 +169,27 @@ function DailySummary({ horses, medLogs, weights, wbEntries, settings }) {
 
   return (
     <div>
+      {lameTrotters.length > 0 && (
+        <div style={{ background: C.red + "12", border: "1.5px solid " + C.red, borderRadius: 12, padding: "14px 16px", marginBottom: 16 }}>
+          <div style={{ fontSize: 13, fontWeight: 800, color: C.red, marginBottom: 8, display: "flex", alignItems: "center", gap: 6 }}>
+            <span>{"\u26a0"}</span> Lameness reported
+          </div>
+          {lameTrotters.map(function(t, i) {
+            var horseName = "";
+            (horses || []).forEach(function(h) { if (h.id === t.horse_id || h.id === t.horseId) horseName = h.name; });
+            if (!horseName) horseName = t.horse_name || t.horseName || "Horse";
+            return (
+              <div key={i} style={{ display: "flex", alignItems: "center", gap: 8, padding: "6px 0", borderTop: i > 0 ? "1px solid " + C.red + "20" : "none" }}>
+                <span style={{ width: 7, height: 7, borderRadius: "50%", background: C.red, flexShrink: 0 }} />
+                <span style={{ fontSize: 14, fontWeight: 700, color: C.text }}>{horseName}</span>
+                <span style={{ fontSize: 12, fontWeight: 700, color: C.red, background: C.red + "15", padding: "2px 8px", borderRadius: 10 }}>{t.outcome}</span>
+                {t.notes && <span style={{ fontSize: 12, color: C.textMid }}>{t.notes}</span>}
+                {(t.date || t.created_at) && <span style={{ fontSize: 11, color: C.textMid, marginLeft: "auto" }}>{new Date(t.date || t.created_at).toLocaleDateString("en-IE", { day: "numeric", month: "short" })}</span>}
+              </div>
+            );
+          })}
+        </div>
+      )}
       <div style={{ display: "flex", justifyContent: "space-between", alignItems: "flex-start", marginBottom: 16, flexWrap: "wrap", gap: 10 }}>
         <div>
           <div style={{ fontSize: 22, fontWeight: 800, color: C.text }}>Daily Summary</div>
