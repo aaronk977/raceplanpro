@@ -503,10 +503,11 @@ function App() {
         </div>
         <div style={{ padding: "24px 28px" }}>
           <div style={{ display: "flex", gap: 0, marginBottom: 20, background: C.cardOff, borderRadius: 10, padding: 4 }}>
-            {["login","signup"].map(function(m) {
+            {[["login","Log In"],["signup","Sign Up"],["beta","Beta"]].map(function(pair) {
+              var m = pair[0];
               return (
                 <button key={m} onClick={function() { setAuthMode(m); setAuthError(""); }}
-                  style={{ flex: 1, padding: "8px 0", borderRadius: 8, border: "none", fontWeight: 700, fontSize: 13, cursor: "pointer",
+                  style={{ flex: 1, padding: "8px 0", borderRadius: 8, border: "none", fontWeight: 700, fontSize: 12, cursor: "pointer",
                     background: authMode === m ? C.navy : "transparent", color: authMode === m ? "#fff" : C.textMid }}>
                   {pair[1]}
                 </button>
