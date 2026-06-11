@@ -406,6 +406,36 @@ function App() {
     setAuthLoading(false);
   };
 
+  var BETA_CODES = ["RACEPLAN2026", "FOUNDINGTRAINER"];
+
+  var handleBetaSignup = async function() {
+    if (!agreedTerms || !agreedData) {
+      setAuthError("Please agree to the Terms and Data Processing terms to continue.");
+      return;
+    }
+    if (BETA_CODES.indexOf((betaCode || "").trim().toUpperCase()) < 0) {
+      setAuthError("Invalid beta access code. Please check the code you were given.");
+      return;
+    }
+    setAuthLoading(true); setAuthError("");
+    var memberCheck = await supabase.from("yard_members").select("role, yard_owner_id").eq("member_email", email.toLowerCase()).maybeSingle();
+    var isInvitedStaff = memberCheck.data && memberCheck.data.yard_owner_id;
+    var res = await supabase.auth.signUp({ email, password });
+    if (res.error) {
+      setAuthError(res.error.message);
+    } else if (res.data && res.data.user) {
+      if (isInvitedStaff) {
+        await supabase.from("yard_members").update({ member_user_id: res.data.user.id, joined_at: new Date().toISOString() }).eq("member_email", email.toLowerCase());
+        setAuthError("Account created as " + memberCheck.data.role + ". Please log in.");
+      } else {
+        try { await supabase.from("yard_settings").upsert({ user_id: res.data.user.id, tier: "Beta", beta_access: true }, { onConflict: "user_id" }); } catch (e) {}
+        setAuthError("Beta account created! Please log in to get started.");
+        setAuthMode("login");
+      }
+    }
+    setAuthLoading(false);
+  };
+
   var handleLogout = async function() {
     await supabase.auth.signOut();
     setHorsesRaw([]); setMedLogsRaw({}); setTrackedIdsRaw([]); setWbEntriesRaw([]);
@@ -477,7 +507,7 @@ function App() {
                 <button key={m} onClick={function() { setAuthMode(m); setAuthError(""); }}
                   style={{ flex: 1, padding: "8px 0", borderRadius: 8, border: "none", fontWeight: 700, fontSize: 13, cursor: "pointer",
                     background: authMode === m ? C.navy : "transparent", color: authMode === m ? "#fff" : C.textMid }}>
-                  {m === "login" ? "Log In" : "Sign Up"}
+                  {pair[1]}
                 </button>
               );
             })}
@@ -535,7 +565,19 @@ function App() {
               </div>
             </div>
           )}
-          {authMode === "signup" && (
+          {authMode === "beta" && (
+            <div style={{ marginBottom: 16 }}>
+              <div style={{ background: C.goldBg, border: "1px solid " + C.gold + "40", borderRadius: 10, padding: "12px 14px", marginBottom: 12 }}>
+                <div style={{ fontSize: 13, fontWeight: 800, color: C.navy, marginBottom: 4 }}>Founding Trainer Beta</div>
+                <div style={{ fontSize: 12, color: C.textMid, lineHeight: 1.5 }}>Enter your beta access code for free full access during the beta period. No card required.</div>
+              </div>
+              <div style={{ fontSize: 11, fontWeight: 700, color: C.textMid, marginBottom: 5, textTransform: "uppercase" }}>Beta Access Code</div>
+              <input type="text" value={betaCode} onChange={function(e) { setBetaCode(e.target.value); }}
+                placeholder="Enter code"
+                style={{ width: "100%", padding: "11px 14px", border: "1.5px solid " + C.border, borderRadius: 8, fontSize: 15, color: C.text, marginBottom: 4, letterSpacing: 1 }} />
+            </div>
+          )}
+          {(authMode === "signup" || authMode === "beta") && (
             <div style={{ marginBottom: 14, display: "flex", flexDirection: "column", gap: 10 }}>
               <label style={{ display: "flex", gap: 8, alignItems: "flex-start", cursor: "pointer", fontSize: 12, color: C.textMid, lineHeight: 1.4 }}>
                 <input type="checkbox" checked={agreedTerms} onChange={function(e) { setAgreedTerms(e.target.checked); }} style={{ marginTop: 2, flexShrink: 0 }} />
@@ -548,9 +590,9 @@ function App() {
             </div>
           )}
           {authError && <div style={{ fontSize: 13, color: C.red, marginBottom: 12, fontWeight: 600 }}>{authError}</div>}
-          <button onClick={function() { authMode === "login" ? handleLogin() : handleSignup(); }}
+          <button onClick={function() { if (authMode === "login") handleLogin(); else if (authMode === "beta") handleBetaSignup(); else handleSignup(); }}
             style={{ width: "100%", padding: "12px", background: C.navy, color: "#fff", border: "none", borderRadius: 10, fontSize: 15, fontWeight: 800, cursor: "pointer" }}>
-            {authMode === "login" ? "Log In" : "Create Account"}
+            {authMode === "login" ? "Log In" : authMode === "beta" ? "Create Beta Account" : "Create Account"}
           </button>
           {showLegal && (
             <div onClick={function() { setShowLegal(null); }} style={{ position: "fixed", inset: 0, background: "rgba(0,0,0,0.7)", zIndex: 9999, display: "flex", alignItems: "center", justifyContent: "center", padding: 20 }}>
