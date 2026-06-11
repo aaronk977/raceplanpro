@@ -42,7 +42,7 @@ var ROLE_TABS = {
   "Head Lad":          ["yard","planner","provisional","meds","register","prescriptions","whiteboard","entrycomms","movements","owners","staff","weights","trotters","galloping","checklist","assistant","content","summary","reminders","procurement","travel","invoices","reports","settings"],
   "Head Girl":         ["yard","planner","provisional","meds","register","prescriptions","whiteboard","entrycomms","movements","owners","staff","weights","trotters","galloping","checklist","assistant","content","summary","reminders","procurement","travel","invoices","reports","settings"],
   "Assistant Trainer": ["yard","planner","provisional","meds","register","prescriptions","whiteboard","entrycomms","movements","owners","staff","weights","trotters","galloping","checklist","assistant","content","summary","reminders","procurement","travel","invoices","reports","settings"],
-  "Staff":             ["meds","staff","weights","movements","reminders","procurement"],
+  "Staff":             ["meds","movements","staff","weights","reminders","summary","trotters","checklist"],
   "Vet":               ["yard","meds","register","prescriptions","movements","weights","trotters","galloping","summary"],
   "Owner":             ["owners","whiteboard"]
 };
