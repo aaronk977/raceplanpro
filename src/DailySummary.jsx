@@ -23,6 +23,8 @@ function DailySummary({ horses, medLogs, weights, wbEntries, settings, user, sup
   var newLog = newLogState[0]; var setNewLog = newLogState[1];
   var lameState = useState([]);
   var lameTrotters = lameState[0]; var setLameTrotters = lameState[1];
+  var moveState = useState([]);
+  var dayMovements = moveState[0]; var setDayMovements = moveState[1];
 
   useEffect(function() {
     if (!user || !supabase) return;
@@ -30,6 +32,8 @@ function DailySummary({ horses, medLogs, weights, wbEntries, settings, user, sup
       .in("outcome", ["Lame", "Slight Lameness", "Needs Vet"])
       .order("created_at", { ascending: false }).limit(20)
       .then(function(res) { if (res.data) setLameTrotters(res.data); });
+    supabase.from("movements").select("*").eq("user_id", user.id).eq("date", selectedDate)
+      .then(function(res) { if (res.data) setDayMovements(res.data); });
   }, [user, selectedDate]);
 
   var LOG_CATS = [
@@ -190,6 +194,28 @@ function DailySummary({ horses, medLogs, weights, wbEntries, settings, user, sup
           })}
         </div>
       )}
+      {dayMovements.length > 0 && (
+        <div style={{ background: C.blue + "10", border: "1.5px solid " + C.blue, borderRadius: 12, padding: "14px 16px", marginBottom: 16 }}>
+          <div style={{ fontSize: 13, fontWeight: 800, color: C.blue, marginBottom: 8, display: "flex", alignItems: "center", gap: 6 }}>
+            <span>{"\u26a1"}</span> Movements today
+          </div>
+          {dayMovements.map(function(m, i) {
+            var hn = "";
+            (horses || []).forEach(function(h) { if (h.id === m.horse_id) hn = h.name; });
+            if (!hn) hn = m.horse_name || "Horse";
+            var verb = m.type === "needs collection" ? "collect from" : (m.type === "needs to go" ? "to" : m.type);
+            return (
+              <div key={i} style={{ display: "flex", alignItems: "center", gap: 8, padding: "6px 0", borderTop: i > 0 ? "1px solid " + C.blue + "20" : "none", opacity: m.done ? 0.5 : 1 }}>
+                <span style={{ width: 7, height: 7, borderRadius: "50%", background: C.blue, flexShrink: 0 }} />
+                <span style={{ fontSize: 14, fontWeight: 700, color: C.text, textDecoration: m.done ? "line-through" : "none" }}>{hn}</span>
+                <span style={{ fontSize: 13, color: C.textMid }}>{verb} {m.location || ""}</span>
+                {m.notes && <span style={{ fontSize: 12, color: C.textMid }}>- {m.notes}</span>}
+                {m.done && <span style={{ fontSize: 11, color: C.green, fontWeight: 700, marginLeft: "auto" }}>done</span>}
+              </div>
+            );
+          })}
+        </div>
+      )}
       <div style={{ display: "flex", justifyContent: "space-between", alignItems: "flex-start", marginBottom: 16, flexWrap: "wrap", gap: 10 }}>
         <div>
           <div style={{ fontSize: 22, fontWeight: 800, color: C.text }}>Daily Summary</div>
@@ -247,6 +273,28 @@ function DailySummary({ horses, medLogs, weights, wbEntries, settings, user, sup
                   </div>
                 </div>
                 <span style={{ fontSize: 14, fontWeight: 800, color: C.navy }}>{e.raceTime}</span>
+              </div>
+            );
+          })}
+        </div>
+      )}
+      {dayMovements.length > 0 && (
+        <div style={{ background: C.blue + "10", border: "1.5px solid " + C.blue, borderRadius: 12, padding: "14px 16px", marginBottom: 16 }}>
+          <div style={{ fontSize: 13, fontWeight: 800, color: C.blue, marginBottom: 8, display: "flex", alignItems: "center", gap: 6 }}>
+            <span>{"\u26a1"}</span> Movements today
+          </div>
+          {dayMovements.map(function(m, i) {
+            var hn = "";
+            (horses || []).forEach(function(h) { if (h.id === m.horse_id) hn = h.name; });
+            if (!hn) hn = m.horse_name || "Horse";
+            var verb = m.type === "needs collection" ? "collect from" : (m.type === "needs to go" ? "to" : m.type);
+            return (
+              <div key={i} style={{ display: "flex", alignItems: "center", gap: 8, padding: "6px 0", borderTop: i > 0 ? "1px solid " + C.blue + "20" : "none", opacity: m.done ? 0.5 : 1 }}>
+                <span style={{ width: 7, height: 7, borderRadius: "50%", background: C.blue, flexShrink: 0 }} />
+                <span style={{ fontSize: 14, fontWeight: 700, color: C.text, textDecoration: m.done ? "line-through" : "none" }}>{hn}</span>
+                <span style={{ fontSize: 13, color: C.textMid }}>{verb} {m.location || ""}</span>
+                {m.notes && <span style={{ fontSize: 12, color: C.textMid }}>- {m.notes}</span>}
+                {m.done && <span style={{ fontSize: 11, color: C.green, fontWeight: 700, marginLeft: "auto" }}>done</span>}
               </div>
             );
           })}
@@ -362,6 +410,28 @@ function DailySummary({ horses, medLogs, weights, wbEntries, settings, user, sup
                 </div>
                 <button onClick={function() { removeLog(selectedDate, log.id); }}
                   style={{ background: "none", border: "none", color: C.textDim, cursor: "pointer", fontSize: 16 }}>×</button>
+              </div>
+            );
+          })}
+        </div>
+      )}
+      {dayMovements.length > 0 && (
+        <div style={{ background: C.blue + "10", border: "1.5px solid " + C.blue, borderRadius: 12, padding: "14px 16px", marginBottom: 16 }}>
+          <div style={{ fontSize: 13, fontWeight: 800, color: C.blue, marginBottom: 8, display: "flex", alignItems: "center", gap: 6 }}>
+            <span>{"\u26a1"}</span> Movements today
+          </div>
+          {dayMovements.map(function(m, i) {
+            var hn = "";
+            (horses || []).forEach(function(h) { if (h.id === m.horse_id) hn = h.name; });
+            if (!hn) hn = m.horse_name || "Horse";
+            var verb = m.type === "needs collection" ? "collect from" : (m.type === "needs to go" ? "to" : m.type);
+            return (
+              <div key={i} style={{ display: "flex", alignItems: "center", gap: 8, padding: "6px 0", borderTop: i > 0 ? "1px solid " + C.blue + "20" : "none", opacity: m.done ? 0.5 : 1 }}>
+                <span style={{ width: 7, height: 7, borderRadius: "50%", background: C.blue, flexShrink: 0 }} />
+                <span style={{ fontSize: 14, fontWeight: 700, color: C.text, textDecoration: m.done ? "line-through" : "none" }}>{hn}</span>
+                <span style={{ fontSize: 13, color: C.textMid }}>{verb} {m.location || ""}</span>
+                {m.notes && <span style={{ fontSize: 12, color: C.textMid }}>- {m.notes}</span>}
+                {m.done && <span style={{ fontSize: 11, color: C.green, fontWeight: 700, marginLeft: "auto" }}>done</span>}
               </div>
             );
           })}
