@@ -1,12 +1,7 @@
 import React, { useState, useEffect, useRef } from "react";
 import { Btn, C, ANTHROPIC_KEY } from "./shared";
 
-var API_HEADERS = {
-  "Content-Type": "application/json",
-  "x-api-key": ANTHROPIC_KEY,
-  "anthropic-version": "2023-06-01",
-  "anthropic-dangerous-direct-browser-access": "true"
-};
+// API_HEADERS removed - using server-side proxy
 
 function YardAssistant({ horses, setHorses, weights, medLogs, setMedLogs, reminders, setReminders, settings, user, supabase, onNavigate }) {
   var todayStr = new Date().toISOString().slice(0, 10);
@@ -46,7 +41,7 @@ function YardAssistant({ horses, setHorses, weights, medLogs, setMedLogs, remind
         if (res.data && res.data.length > 0) {
           setMessages(res.data.map(function(r) { return { role: r.role, content: r.content, id: r.id, actions: r.actions }; }));
         } else {
-          setMessages([{ role: "assistant", content: "Morning! I'm your yard assistant for " + yardName + ". I know your " + activeHorses.length + " active horses. Tell me what to do — start medication, log vet visits, note anything.", id: "welcome" }]);
+          setMessages([{ role: "assistant", content: "Morning! I'm your yard assistant for " + yardName + ". I know your " + activeHorses.length + " active horses. Tell me what to do - start medication, log vet visits, note anything.", id: "welcome" }]);
         }
       });
   }, [user]);
@@ -91,7 +86,7 @@ function YardAssistant({ horses, setHorses, weights, medLogs, setMedLogs, remind
       var key = horse.id + "_" + todayStr + "_" + medId;
       setMedLogs(function(prev) { return Object.assign({}, prev, { [key]: 1 }); });
       if (onNavigate) {} // stay on assistant tab
-      return horse.name + " — " + action.medication + " started today ✓";
+      return horse.name + " - " + action.medication + " started today ✓";
     }
 
     if (action.type === "stop_medication" && horse) {
@@ -99,7 +94,7 @@ function YardAssistant({ horses, setHorses, weights, medLogs, setMedLogs, remind
       if (!medId2) return "Could not find medication: " + action.medication;
       var key2 = horse.id + "_" + todayStr + "_" + medId2;
       setMedLogs(function(prev) { var n = Object.assign({}, prev); n[key2] = 0; return n; });
-      return horse.name + " — " + action.medication + " stopped today ✓";
+      return horse.name + " - " + action.medication + " stopped today ✓";
     }
 
     if (action.type === "log_daily" ) {
@@ -112,7 +107,7 @@ function YardAssistant({ horses, setHorses, weights, medLogs, setMedLogs, remind
           horse_id: horse ? horse.id : null
         }).then(function() {});
       }
-      return (horse ? horse.name + " — " : "") + "Logged to Daily Summary ✓";
+      return (horse ? horse.name + " - " : "") + "Logged to Daily Summary ✓";
     }
 
     if (action.type === "update_horse" && horse && action.field) {
@@ -124,7 +119,7 @@ function YardAssistant({ horses, setHorses, weights, medLogs, setMedLogs, remind
           return Object.assign({}, h, update);
         });
       });
-      return horse.name + " — " + action.field + " updated to " + action.value + " ✓";
+      return horse.name + " - " + action.field + " updated to " + action.value + " ✓";
     }
 
     if (action.type === "set_reminder") {
@@ -193,7 +188,7 @@ function YardAssistant({ horses, setHorses, weights, medLogs, setMedLogs, remind
       "Keep reminder text exactly as the user said it - do not add words like send push notification re.",
       "After setting a reminder just say: Done - reminder set for [day] at [time].",
       "Categories: health, gallop, racing, farrier, general.",
-      "Match horse names loosely — if someone says Butch just match Butch Cassidy etc.",
+      "Match horse names loosely - if someone says Butch just match Butch Cassidy etc.",
       "If no action needed, just respond normally without ACTIONS.",
       "MEDICATION TIMING: To run in a race, horse must FINISH medication at least [withdrawalDays] days before. Course takes [courseDays] days. So START = race date minus (courseDays + withdrawalDays - 1). FINISH = race date minus withdrawalDays. E.g. Peptizole 12d course 4d withdrawal: for a race on 6 Jun, FINISH by 2 Jun, START by 22 May (inclusive counting - day 1 of course counts as the start day). Never say start 3-4 days before - that is completely wrong.",
       "Be brief and practical."
@@ -214,10 +209,10 @@ function YardAssistant({ horses, setHorses, weights, medLogs, setMedLogs, remind
         .concat([userMsg]).slice(-12)
         .map(function(m) { return { role: m.role, content: m.content }; });
 
-      var res = await fetch("https://api.anthropic.com/v1/messages", {
-        method: "POST", headers: API_HEADERS,
+      var res = await fetch("/api/claude", {
+        method: "POST", headers: { "Content-Type": "application/json" },
         body: JSON.stringify({
-          model: "claude-sonnet-4-20250514", max_tokens: 600,
+          model: "claude-sonnet-4-6-20260218", max_tokens: 600,
           system: buildSystemPrompt(),
           messages: history
         })
@@ -288,7 +283,7 @@ function YardAssistant({ horses, setHorses, weights, medLogs, setMedLogs, remind
 
   var QUICK_PROMPTS = [
     "Start Adaliz on Peptizole today",
-    "Vet to see Butch Cassidy — check heart",
+    "Vet to see Butch Cassidy - check heart",
     "Log: all horses worked well this morning",
     "Stop Peptizole on Desert Crown",
     "Book farrier for next Thursday",
@@ -302,7 +297,7 @@ function YardAssistant({ horses, setHorses, weights, medLogs, setMedLogs, remind
         <div>
           <div style={{ fontSize: 22, fontWeight: 800, color: C.text }}>Yard Assistant</div>
           <div style={{ fontSize: 13, color: C.textMid, marginTop: 2 }}>
-            {"Speak or type — I can start/stop medication, log vet visits, update horses and more"}
+            {"Speak or type - I can start/stop medication, log vet visits, update horses and more"}
           </div>
         </div>
         <Btn variant="ghost" onClick={clearToday} style={{ fontSize: 11, padding: "6px 12px" }}>Clear Today</Btn>
