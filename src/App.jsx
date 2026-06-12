@@ -675,7 +675,8 @@ function App() {
         <div onClick={function() { setMobileNavOpen(false); }}
           style={{ position: "fixed", inset: 0, background: "rgba(0,0,0,0.65)", zIndex: 300, display: "flex", flexDirection: "column", justifyContent: "flex-end" }}>
           <div onClick={function(e) { e.stopPropagation(); }}
-            style={{ background: C.navy, borderRadius: "20px 20px 0 0", maxHeight: "85vh", overflowY: "auto", paddingBottom: 24 }}>
+            style={{ position: "relative", background: C.navy, borderRadius: "20px 20px 0 0", maxHeight: "85vh", overflowY: "auto", paddingBottom: 24 }}>
+            <button onClick={function() { setMobileNavOpen(false); }} style={{ position: "absolute", top: 10, right: 14, background: "rgba(255,255,255,0.12)", border: "none", color: "#fff", width: 34, height: 34, borderRadius: 17, fontSize: 18, fontWeight: 700, cursor: "pointer", zIndex: 5, lineHeight: 1 }}>{"\u00d7"}</button>
             <div style={{ width: 40, height: 4, background: "rgba(255,255,255,0.2)", borderRadius: 2, margin: "12px auto 16px" }} />
             <div style={{ display: "grid", gridTemplateColumns: "1fr 1fr 1fr", gap: 4, padding: "0 10px" }}>
               {NAV.map(function(nav) {
@@ -747,8 +748,8 @@ function App() {
           {safeTab === "provisional" && <ProvisionalEntries horses={horses} setHorses={setHorses} settings={settings} />}
           {safeTab === "meds" && <MedicationTracker horses={horses} medLogs={medLogs} setMedLogs={setMedLogs} trackedIds={trackedIds} setTrackedIds={setTrackedIdsRaw} settings={settings} />}
           {safeTab === "whiteboard" && <RacedayPrint horses={horses} entries={wbEntries} setEntries={setWbEntries} settings={settings} />}
-          {safeTab === "movements" && <MovementLog horses={horses} settings={settings} />}
-          {safeTab === "owners" && <OwnerPortal horses={horses} settings={settings} />}
+          {safeTab === "movements" && <MovementLog horses={horses} settings={settings} user={user} supabase={supabase} />}
+          {safeTab === "owners" && <OwnerPortal horses={horses} settings={settings} setHorses={setHorses} />}
           {safeTab === "staff" && <StaffNotify user={user} supabase={supabase} settings={settings} />}
           {safeTab === "trotters" && <Trotters horses={horses} user={user} supabase={supabase} />}
           {safeTab === "galloping" && <Galloping horses={horses} user={user} supabase={supabase} settings={settings} />}
