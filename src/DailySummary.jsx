@@ -104,7 +104,7 @@ function DailySummary({ horses, medLogs, weights, wbEntries, settings, user, sup
         method: "POST",
         headers: API_HEADERS,
         body: JSON.stringify({
-          model: "claude-sonnet-4-20250514",
+          model: "claude-sonnet-4-6-20260218",
           max_tokens: 500,
           messages: [{
             role: "user",
