@@ -358,6 +358,8 @@ var PLAN_FEATURES = {
 };
 
 function YardSettings({ settings, setSettings, supabase, user }) {
+  var linkCopiedState = useState(false);
+  var linkCopied = linkCopiedState[0]; var setLinkCopied = linkCopiedState[1];
   var [delConfirm, setDelConfirm] = useState("");
   var [delBusy, setDelBusy] = useState(false);
   var [delDone, setDelDone] = useState(false);
@@ -995,10 +997,20 @@ function YardSettings({ settings, setSettings, supabase, user }) {
             </div>
             <div style={{ display: "flex", gap: 8 }}>
               <Btn onClick={function() {
-                if (navigator.clipboard) {
-                  navigator.clipboard.writeText("" + window.location.origin + "");
+                var link = window.location.origin;
+                var done = function() { setLinkCopied(true); setTimeout(function() { setLinkCopied(false); }, 2000); };
+                if (navigator.clipboard && navigator.clipboard.writeText) {
+                  navigator.clipboard.writeText(link).then(done).catch(function() {
+                    var ta = document.createElement("textarea"); ta.value = link; ta.style.position = "fixed"; ta.style.opacity = "0"; document.body.appendChild(ta); ta.select();
+                    try { document.execCommand("copy"); done(); } catch (e) {}
+                    document.body.removeChild(ta);
+                  });
+                } else {
+                  var ta2 = document.createElement("textarea"); ta2.value = link; ta2.style.position = "fixed"; ta2.style.opacity = "0"; document.body.appendChild(ta2); ta2.select();
+                  try { document.execCommand("copy"); done(); } catch (e) {}
+                  document.body.removeChild(ta2);
                 }
-              }} style={{ fontSize: 12 }}>Copy Link</Btn>
+              }} style={{ fontSize: 12 }}>{linkCopied ? "Copied!" : "Copy Link"}</Btn>
               <Btn variant="ghost" onClick={function() {
                 window.open("https://wa.me/?text=" + encodeURIComponent("You have been invited to RacePlan Pro. Sign up here: " + window.location.origin), "_blank");
               }} style={{ fontSize: 12 }}>Share via WhatsApp</Btn>
@@ -1497,7 +1509,7 @@ function YardSettings({ settings, setSettings, supabase, user }) {
               RacePlan Pro stores your yard details, horses, medication records, owner contacts and related data so the app works for you. We never sell your data or use it for advertising. You can export or delete your data at any time.
             </div>
             <div style={{ fontSize: 13, color: C.textMid, lineHeight: 1.6 }}>
-              For full details see our <a href="/privacy" target="_blank" style={{ color: C.navy, fontWeight: 600 }}>Privacy Policy</a>.
+              Your data is stored securely and never sold. You can request deletion at any time by contacting hello@raceplanpro.com.
             </div>
           </div>
 
