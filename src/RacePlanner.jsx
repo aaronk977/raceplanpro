@@ -30,7 +30,7 @@ async function getAITake(horse, race) {
     + " Return ONLY JSON: { overall: 0-100, verdict: string, scores: { handicap_edge: 0-10, class_fit: 0-10, conditions_match: 0-10, timing: 0-10, cuteness: 0-10 }, bullets: [{icon: emoji, title: string, point: string}], warnings: [string] }";
   var res = await fetch("/api/claude", {
     method: "POST", headers: { "Content-Type": "application/json" },
-    body: JSON.stringify({ model: "claude-sonnet-4-6-20260218", max_tokens: 800, messages: [{ role: "user", content: prompt }] })
+    body: JSON.stringify({ model: "claude-sonnet-4-6", max_tokens: 800, messages: [{ role: "user", content: prompt }] })
   });
   var data = await res.json();
   var txt = (data.content || []).filter(function(b) { return b.type === "text"; }).map(function(b) { return b.text; }).join("");
@@ -40,6 +40,7 @@ async function getAITake(horse, race) {
 }
 
 function RacePlanner({ horses, setHorses }) {
+  var parseErrorState = useState(""); var parseError = parseErrorState[0]; var setParseError = parseErrorState[1];
   var racesState = useState([]);
   var races = racesState[0]; var setRaces = racesState[1];
   var statusState = useState("idle");
@@ -163,11 +164,13 @@ function RacePlanner({ horses, setHorses }) {
       var res = await fetch("/api/claude", {
         method: "POST", headers: { "Content-Type": "application/json" },
         body: JSON.stringify({
-          model: "claude-sonnet-4-6-20260218", max_tokens: 8000,
+          model: "claude-sonnet-4-6", max_tokens: 8000,
           messages: [{ role: "user", content: "You are an expert HRI and BHA race conditions parser. Parse every race from the text below into a strict JSON array. Return ONLY the raw JSON array with no markdown or explanation.\n\nEach race object must have these EXACT field names:\n- id: string (race_001, race_002...)\n- raceName: string\n- venue: string\n- date: YYYY-MM-DD\n- entryDeadline: YYYY-MM-DD or null\n- discipline: EXACTLY one of: Flat, Hurdle, Chase, Bumper, Cross Country (never use NH or Jump)\n- surface: Turf or AWT\n- distanceFurlongs: number (2m=16, 2m4f=20, 2m5f=21, 3m=24, 5f=5, 6f=6, 7f=7, 1m=8, 1m2f=10, 1m4f=12, 1m6f=14, 2m=16)\n- forecastGoing: string\n- prizeMoney: number\n- grade: Grade 1/2/3 or Group 1/2/3 or Listed or null\n- sex: EXACTLY one of: Open, Mares, Fillies, Colts (never M/F/G, never Mares and Fillies - pick one)\n- minAge: number in years (e.g. 4 for 4yo+, 3 for 3yo)\n- maxAge: number or null (e.g. 6 for 3-6yo, null for open)\n- minRating: number or null (lower official rating limit - 0 counts as null)\n- maxRating: number or null (CRITICAL: upper official rating limit e.g. 90 for 0-90 rated, 105 for 90-105 rated)\n- isMaiden: boolean (true ONLY if conditions say maiden - horse must not have won)\n- isNovice: boolean (true ONLY if conditions say novice)\n- isEBF: boolean\n- qualifyingRuns: number or null (minimum number of runs required if specified)\n- raceType: Handicap, Conditions, Maiden, Novice, Listed, Graded, or Other\n\nCRITICAL RULES:\n1. maxRating is the MOST IMPORTANT field - get it exactly right for every handicap\n2. A rated 0-90 handicap: minRating=null maxRating=90\n3. A rated 90-110 handicap: minRating=90 maxRating=110\n4. A rated 100+ race: minRating=100 maxRating=null\n5. Bumpers use flat ratings. Hurdles use hurdle ratings. Chases use chase ratings.\n6. If age says 4yo+: minAge=4 maxAge=null. If 3-6yo: minAge=3 maxAge=6\n7. Irish point-to-point winners may qualify for bumpers/novices - note in raceName\n\nText:\n\n" + pasteText }]
         })
       });
       var data = await res.json();
+      if (data.error) { throw new Error(data.error.message || (data.error.type || "API error")); }
+      if (!res.ok) { throw new Error("API returned " + res.status); }
       var txt = (data.content || []).filter(function(b) { return b.type === "text"; }).map(function(b) { return b.text; }).join("");
       var s = txt.indexOf("["); var e = txt.lastIndexOf("]");
       if (s < 0 || e <= s) throw new Error("No races found in response");
@@ -187,7 +190,8 @@ function RacePlanner({ horses, setHorses }) {
     } catch (err) {
       console.error(err);
       setFetchStatus("error");
-      showToast("Failed to parse - check Anthropic credits at console.anthropic.com", C.red);
+      setParseError(err.message || "Unknown error");
+      showToast("Parse failed: " + (err.message || "unknown error"), C.red);
     }
   };
 
@@ -290,7 +294,7 @@ function RacePlanner({ horses, setHorses }) {
             </label>
             <Btn variant="ghost" onClick={function() { setShowPaste(false); setPasteText(""); }}>Cancel</Btn>
           </div>
-          {fetchStatus === "error" && <div style={{ fontSize: 12, color: C.red, fontWeight: 600, marginTop: 8 }}>Failed. Check your Anthropic API credits at console.anthropic.com</div>}
+          {fetchStatus === "error" && <div style={{ fontSize: 12, color: C.red, fontWeight: 600, marginTop: 8 }}>{"Failed: " + (parseError || "unknown error")}</div>}
         </div>
       )}
 
