@@ -212,7 +212,7 @@ function YardAssistant({ horses, setHorses, weights, medLogs, setMedLogs, remind
       var res = await fetch("/api/claude", {
         method: "POST", headers: { "Content-Type": "application/json" },
         body: JSON.stringify({
-          model: "claude-sonnet-4-6-20260218", max_tokens: 600,
+          model: "claude-sonnet-4-6", max_tokens: 600,
           system: buildSystemPrompt(),
           messages: history
         })
