@@ -19,7 +19,7 @@ function ProvisionalEntries({ horses, setHorses, settings }) {
     if (!pasteText.trim()) return;
     setFetchStatus("fetching");
     var body = JSON.stringify({
-      model: "claude-sonnet-4-6-20260218", max_tokens: 1000,
+      model: "claude-sonnet-4-6", max_tokens: 1000,
       messages: [{ role: "user", content: "Parse every race from this HRI provisional summary text into a JSON array. Return ONLY a raw JSON array. Each item needs: id, raceName, venue, date (YYYY-MM-DD), discipline, distanceFurlongs, minAge, maxAge, minRating, maxRating, sex, grade, prizeMoney. Text:\n\n" + pasteText }]
     });
     fetch("/api/claude", {
