@@ -6,8 +6,8 @@ var PRINT_STYLE = [
   "body { font-family: Arial, Helvetica, sans-serif; margin: 0; padding: 16px; background: white; color: black; -webkit-print-color-adjust: exact; print-color-adjust: exact; }",
   ".day-block { margin-bottom: 32pt; page-break-inside: avoid; }",
   ".day-header { border-bottom: 4pt solid #000; padding-bottom: 10pt; margin-bottom: 14pt; }",
-  ".day-name { font-size: 52pt; font-weight: 900; line-height: 1; text-transform: uppercase; color: #000; }"
-  ".day-venue { font-size: 40pt; font-weight: 900; color: #c9952a; line-height: 1.05; text-transform: uppercase; margin-top: 2pt; -webkit-print-color-adjust: exact; print-color-adjust: exact; }",,
+  ".day-name { font-size: 52pt; font-weight: 900; line-height: 1; text-transform: uppercase; color: #000; }",
+  ".day-venue { font-size: 40pt; font-weight: 900; color: #c9952a; line-height: 1.05; text-transform: uppercase; margin-top: 2pt; -webkit-print-color-adjust: exact; print-color-adjust: exact; }",
   ".day-date { font-size: 26pt; font-weight: 700; color: #000; margin-top: 4pt; }",
   ".meeting-num { font-size: 16pt; color: #555; margin-top: 4pt; }",
   ".horse-row { display: flex; align-items: center; gap: 14pt; border-bottom: 1.5pt solid #ccc; padding: 10pt 0; }",
