@@ -11,9 +11,47 @@ var MESSAGE_TEMPLATES = [
   { id: "custom", label: "Custom Message", text: "" },
 ];
 
-function OwnerPortal({ horses }) {
+function OwnerPortal({ horses, setHorses }) {
   var selOwnerState = useState(null);
   var selOwner = selOwnerState[0]; var setSelOwner = selOwnerState[1];
+  var editOwnerState = useState(null);
+  var editOwner = editOwnerState[0]; var setEditOwner = editOwnerState[1];
+  var eNameState = useState(""); var eName = eNameState[0]; var setEName = eNameState[1];
+  var ePhoneState = useState(""); var ePhone = ePhoneState[0]; var setEPhone = ePhoneState[1];
+  var eEmailState = useState(""); var eEmail = eEmailState[0]; var setEEmail = eEmailState[1];
+
+  function openEdit(o, ev) {
+    if (ev) ev.stopPropagation();
+    setEditOwner(o); setEName(o.name); setEPhone(o.phone || ""); setEEmail(o.email || "");
+  }
+
+  function saveOwnerEdit() {
+    if (!setHorses || !editOwner) { setEditOwner(null); return; }
+    var oldName = editOwner.name;
+    setHorses(function(prev) {
+      return prev.map(function(h) {
+        if (h.owner === oldName) {
+          return Object.assign({}, h, { owner: eName.trim(), ownerPhone: ePhone.trim(), ownerEmail: eEmail.trim() });
+        }
+        return h;
+      });
+    });
+    setEditOwner(null);
+  }
+
+  function removeOwner(o, ev) {
+    if (ev) ev.stopPropagation();
+    if (!setHorses) return;
+    if (!window.confirm("Remove " + o.name + " as owner from " + o.horses.length + " horse(s)? The horses stay, but their owner field is cleared.")) return;
+    setHorses(function(prev) {
+      return prev.map(function(h) {
+        if (h.owner === o.name) {
+          return Object.assign({}, h, { owner: "", ownerPhone: "", ownerEmail: "" });
+        }
+        return h;
+      });
+    });
+  }
   var showComposerState = useState(false);
   var showComposer = showComposerState[0]; var setShowComposer = showComposerState[1];
   var templateState = useState(MESSAGE_TEMPLATES[0]);
@@ -195,11 +233,31 @@ function OwnerPortal({ horses }) {
             <div style={{ display: "flex", gap: 6, alignItems: "center" }}>
               {o.phone && <span style={{ fontSize: 10, color: C.green, fontWeight: 700, background: C.green + "12", padding: "2px 6px", borderRadius: 10 }}>WA</span>}
               {!o.phone && <span style={{ fontSize: 10, color: C.red, fontWeight: 700, background: C.red + "12", padding: "2px 6px", borderRadius: 10 }}>No phone</span>}
+              <button onClick={function(ev) { openEdit(o, ev); }} style={{ fontSize: 11, fontWeight: 700, padding: "4px 10px", borderRadius: 6, border: "1px solid " + C.border, background: C.cardOff, color: C.navy, cursor: "pointer" }}>Edit</button>
+              <button onClick={function(ev) { removeOwner(o, ev); }} style={{ fontSize: 11, fontWeight: 700, padding: "4px 10px", borderRadius: 6, border: "1px solid " + C.border, background: C.cardOff, color: C.red, cursor: "pointer" }}>Remove</button>
               <span style={{ color: C.textMid, fontSize: 16 }}>{">"}</span>
             </div>
           </div>
         );
       })}
+      {editOwner && (
+        <div onClick={function() { setEditOwner(null); }} style={{ position: "fixed", inset: 0, background: "rgba(0,0,0,0.6)", zIndex: 9999, display: "flex", alignItems: "center", justifyContent: "center", padding: 20 }}>
+          <div onClick={function(e) { e.stopPropagation(); }} style={{ background: "#fff", borderRadius: 14, padding: "24px 22px", maxWidth: 420, width: "100%" }}>
+            <div style={{ fontSize: 18, fontWeight: 800, color: C.navy, marginBottom: 16 }}>Edit Owner</div>
+            <div style={{ fontSize: 11, fontWeight: 700, color: C.textMid, marginBottom: 4, textTransform: "uppercase" }}>Name</div>
+            <input type="text" value={eName} onChange={function(e) { setEName(e.target.value); }} style={{ width: "100%", padding: "10px 12px", border: "1px solid " + C.border, borderRadius: 8, fontSize: 14, marginBottom: 12, color: C.text }} />
+            <div style={{ fontSize: 11, fontWeight: 700, color: C.textMid, marginBottom: 4, textTransform: "uppercase" }}>Phone (WhatsApp)</div>
+            <input type="text" value={ePhone} onChange={function(e) { setEPhone(e.target.value); }} placeholder="e.g. 353871234567" style={{ width: "100%", padding: "10px 12px", border: "1px solid " + C.border, borderRadius: 8, fontSize: 14, marginBottom: 12, color: C.text }} />
+            <div style={{ fontSize: 11, fontWeight: 700, color: C.textMid, marginBottom: 4, textTransform: "uppercase" }}>Email</div>
+            <input type="text" value={eEmail} onChange={function(e) { setEEmail(e.target.value); }} style={{ width: "100%", padding: "10px 12px", border: "1px solid " + C.border, borderRadius: 8, fontSize: 14, marginBottom: 8, color: C.text }} />
+            <div style={{ fontSize: 11, color: C.textMid, marginBottom: 16, lineHeight: 1.5 }}>{"Applies to all " + editOwner.horses.length + " horse(s) owned by " + editOwner.name + "."}</div>
+            <div style={{ display: "flex", gap: 8 }}>
+              <Btn onClick={saveOwnerEdit}>Save</Btn>
+              <Btn variant="ghost" onClick={function() { setEditOwner(null); }}>Cancel</Btn>
+            </div>
+          </div>
+        </div>
+      )}
     </div>
   );
 
