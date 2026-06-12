@@ -25,6 +25,12 @@ function DailySummary({ horses, medLogs, weights, wbEntries, settings, user, sup
   var lameTrotters = lameState[0]; var setLameTrotters = lameState[1];
   var moveState = useState([]);
   var dayMovements = moveState[0]; var setDayMovements = moveState[1];
+  var flagsState = useState([]);
+  var healthFlags = flagsState[0]; var setHealthFlags = flagsState[1];
+  var showFlagState = useState(false);
+  var showFlag = showFlagState[0]; var setShowFlag = showFlagState[1];
+  var flagFormState = useState({ horseId: "", note: "", needsVet: false, needsTrot: false });
+  var flagForm = flagFormState[0]; var setFlagForm = flagFormState[1];
 
   useEffect(function() {
     if (!user || !supabase) return;
@@ -34,6 +40,9 @@ function DailySummary({ horses, medLogs, weights, wbEntries, settings, user, sup
       .then(function(res) { if (res.data) setLameTrotters(res.data); });
     supabase.from("movements").select("*").eq("user_id", user.id).eq("date", selectedDate)
       .then(function(res) { if (res.data) setDayMovements(res.data); });
+    supabase.from("health_flags").select("*").eq("user_id", user.id).eq("resolved", false)
+      .order("created_at", { ascending: false }).limit(30)
+      .then(function(res) { if (res.data) setHealthFlags(res.data); });
   }, [user, selectedDate]);
 
   var LOG_CATS = [
@@ -171,8 +180,98 @@ function DailySummary({ horses, medLogs, weights, wbEntries, settings, user, sup
     }
   });
 
+  function submitFlag() {
+    if (!flagForm.horseId) return;
+    var horse = (horses || []).find(function(h) { return h.id === flagForm.horseId; });
+    var rec = {
+      user_id: user ? user.id : null,
+      horse_id: flagForm.horseId,
+      horse_name: horse ? horse.name : "",
+      note: flagForm.note,
+      needs_vet: flagForm.needsVet,
+      needs_trot: flagForm.needsTrot,
+      resolved: false,
+      created_at: new Date().toISOString()
+    };
+    if (supabase && user) {
+      supabase.from("health_flags").insert(rec).select().then(function(res) {
+        if (res.data && res.data[0]) setHealthFlags(function(p) { return [res.data[0]].concat(p); });
+      });
+    } else {
+      rec.id = "hf_" + Date.now();
+      setHealthFlags(function(p) { return [rec].concat(p); });
+    }
+    setFlagForm({ horseId: "", note: "", needsVet: false, needsTrot: false });
+    setShowFlag(false);
+  }
+
+  function resolveFlag(flag) {
+    setHealthFlags(function(p) { return p.filter(function(f) { return f.id !== flag.id; }); });
+    if (supabase && flag.id) {
+      supabase.from("health_flags").update({ resolved: true }).eq("id", flag.id).then(function() {});
+    }
+  }
+
   return (
     <div>
+      <div style={{ display: "flex", justifyContent: "flex-end", marginBottom: 12 }}>
+        <button onClick={function() { setShowFlag(true); }} style={{ background: C.red, color: "#fff", border: "none", padding: "9px 16px", borderRadius: 8, fontSize: 13, fontWeight: 700, cursor: "pointer" }}>+ Flag a Concern</button>
+      </div>
+      {healthFlags.length > 0 && (
+        <div style={{ background: C.red + "12", border: "1.5px solid " + C.red, borderRadius: 12, padding: "14px 16px", marginBottom: 16 }}>
+          <div style={{ fontSize: 13, fontWeight: 800, color: C.red, marginBottom: 8, display: "flex", alignItems: "center", gap: 6 }}>
+            <span>{"\u26a0"}</span> Health concerns flagged
+          </div>
+          {healthFlags.map(function(f, i) {
+            var hn = f.horse_name || "Horse";
+            (horses || []).forEach(function(h) { if (h.id === f.horse_id) hn = h.name; });
+            return (
+              <div key={f.id || i} style={{ display: "flex", alignItems: "flex-start", gap: 8, padding: "8px 0", borderTop: i > 0 ? "1px solid " + C.red + "20" : "none" }}>
+                <span style={{ width: 7, height: 7, borderRadius: "50%", background: C.red, flexShrink: 0, marginTop: 5 }} />
+                <div style={{ flex: 1 }}>
+                  <div style={{ display: "flex", alignItems: "center", gap: 8, flexWrap: "wrap" }}>
+                    <span style={{ fontSize: 14, fontWeight: 700, color: C.text }}>{hn}</span>
+                    <span style={{ fontSize: 11, fontWeight: 700, color: "#fff", background: C.red, padding: "2px 8px", borderRadius: 10 }}>LAME</span>
+                    {f.needs_vet && <span style={{ fontSize: 11, fontWeight: 700, color: C.blue, background: C.blue + "15", padding: "2px 8px", borderRadius: 10 }}>VET CHECK</span>}
+                    {f.needs_trot && <span style={{ fontSize: 11, fontWeight: 700, color: C.amber, background: C.amber + "15", padding: "2px 8px", borderRadius: 10 }}>TROT UP</span>}
+                  </div>
+                  {f.note && <div style={{ fontSize: 12, color: C.textMid, marginTop: 2 }}>{f.note}</div>}
+                </div>
+                <button onClick={function() { resolveFlag(f); }} style={{ fontSize: 11, fontWeight: 700, padding: "4px 10px", borderRadius: 6, border: "1px solid " + C.border, background: C.cardOff, color: C.green, cursor: "pointer", flexShrink: 0 }}>Resolve</button>
+              </div>
+            );
+          })}
+        </div>
+      )}
+      {showFlag && (
+        <div onClick={function() { setShowFlag(false); }} style={{ position: "fixed", inset: 0, background: "rgba(0,0,0,0.6)", zIndex: 9999, display: "flex", alignItems: "center", justifyContent: "center", padding: 20 }}>
+          <div onClick={function(e) { e.stopPropagation(); }} style={{ background: "#fff", borderRadius: 14, padding: "24px 22px", maxWidth: 440, width: "100%" }}>
+            <div style={{ fontSize: 18, fontWeight: 800, color: C.navy, marginBottom: 16 }}>Flag a Health Concern</div>
+            <div style={{ fontSize: 11, fontWeight: 700, color: C.textMid, marginBottom: 4, textTransform: "uppercase" }}>Horse</div>
+            <select value={flagForm.horseId} onChange={function(e) { setFlagForm(Object.assign({}, flagForm, { horseId: e.target.value })); }}
+              style={{ width: "100%", padding: "10px 12px", border: "1px solid " + C.border, borderRadius: 8, fontSize: 14, marginBottom: 14, color: C.text }}>
+              <option value="">Select horse</option>
+              {(horses || []).map(function(h) { return <option key={h.id} value={h.id}>{h.name}</option>; })}
+            </select>
+            <div style={{ fontSize: 11, fontWeight: 700, color: C.textMid, marginBottom: 4, textTransform: "uppercase" }}>What did you notice?</div>
+            <textarea value={flagForm.note} onChange={function(e) { setFlagForm(Object.assign({}, flagForm, { note: e.target.value })); }}
+              placeholder="e.g. not right in the box, lame on off hind"
+              style={{ width: "100%", padding: "10px 12px", border: "1px solid " + C.border, borderRadius: 8, fontSize: 14, minHeight: 70, marginBottom: 14, color: C.text, fontFamily: "inherit" }} />
+            <label style={{ display: "flex", alignItems: "center", gap: 10, marginBottom: 10, cursor: "pointer" }}>
+              <input type="checkbox" checked={flagForm.needsVet} onChange={function(e) { setFlagForm(Object.assign({}, flagForm, { needsVet: e.target.checked })); }} style={{ width: 18, height: 18, accentColor: C.blue }} />
+              <span style={{ fontSize: 14, color: C.text }}>Needs vet to check</span>
+            </label>
+            <label style={{ display: "flex", alignItems: "center", gap: 10, marginBottom: 18, cursor: "pointer" }}>
+              <input type="checkbox" checked={flagForm.needsTrot} onChange={function(e) { setFlagForm(Object.assign({}, flagForm, { needsTrot: e.target.checked })); }} style={{ width: 18, height: 18, accentColor: C.amber }} />
+              <span style={{ fontSize: 14, color: C.text }}>Someone to trot up</span>
+            </label>
+            <div style={{ display: "flex", gap: 8 }}>
+              <Btn onClick={submitFlag}>Flag Concern</Btn>
+              <Btn variant="ghost" onClick={function() { setShowFlag(false); }}>Cancel</Btn>
+            </div>
+          </div>
+        </div>
+      )}
       {lameTrotters.length > 0 && (
         <div style={{ background: C.red + "12", border: "1.5px solid " + C.red, borderRadius: 12, padding: "14px 16px", marginBottom: 16 }}>
           <div style={{ fontSize: 13, fontWeight: 800, color: C.red, marginBottom: 8, display: "flex", alignItems: "center", gap: 6 }}>
