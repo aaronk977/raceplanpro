@@ -1,103 +1,57 @@
-import React, { useState } from "react"; // v2
-import { Btn, Silk, C } from "./shared";
+import React, { useState, useRef } from "react";
+import { Btn, C, ANTHROPIC_KEY } from "./shared";
 
 var PRINT_STYLE = [
-"@media print {",
-"  * { -webkit-print-color-adjust: exact !important; print-color-adjust: exact !important; }",
-"  body > *:not(#print-area) { display: none !important; }",
-"  #print-area { display: block !important; position: static !important; width: 100% !important; padding: 8px 16px !important; background: white !important; }",
-"  #print-area > div { page-break-inside: avoid !important; margin-bottom: 24pt !important; border: none !important; box-shadow: none !important; border-radius: 0 !important; }",
-"  #print-area .horse-row { border-bottom: 2pt solid #222 !important; padding: 12pt 0 !important; display: flex !important; align-items: center !important; }",
-"  #print-area .venue-ref { min-width: 90pt !important; text-align: center !important; }",
-"  #print-area .venue-ref div:first-child { font-size: 36pt !important; font-weight: 900 !important; color: #000 !important; line-height: 1 !important; }",
-"  #print-area .venue-ref div:last-child { font-size: 9pt !important; color: #555 !important; }",
-"  #print-area .race-time { font-size: 18pt !important; font-weight: 700 !important; color: #000 !important; min-width: 70pt !important; }",
-"  #print-area .horse-name { font-size: 26pt !important; font-weight: 900 !important; color: #000 !important; text-transform: uppercase !important; }",
-"  #print-area .badge-hg { font-size: 14pt !important; padding: 3pt 10pt !important; background: #6d3fc0 !important; color: white !important; border-radius: 4pt !important; font-weight: 700 !important; }",
-"  #print-area .badge-ballot { font-size: 14pt !important; padding: 3pt 10pt !important; background: #d97706 !important; color: white !important; border-radius: 4pt !important; font-weight: 700 !important; }",
-"  #print-area .jockey-line { font-size: 12pt !important; color: #444 !important; }",
-"  #print-area .meeting-header div:first-child { font-size: 48pt !important; font-weight: 900 !important; line-height: 1 !important; }",
-"  #print-area .meeting-header div:nth-child(2) { font-size: 24pt !important; font-weight: 700 !important; }",
-"  #print-area .meeting-header div:nth-child(3) { font-size: 16pt !important; color: #666 !important; }",
-"  button { display: none !important; }",
-"  @page { margin: 1cm; size: A4; }",
-"}",
+  "@page { size: A4; margin: 1cm; }",
+  "body { font-family: Arial, Helvetica, sans-serif; margin: 0; padding: 16px; background: white; color: black; -webkit-print-color-adjust: exact; print-color-adjust: exact; }",
+  ".day-block { margin-bottom: 32pt; page-break-inside: avoid; }",
+  ".day-header { border-bottom: 4pt solid #000; padding-bottom: 10pt; margin-bottom: 14pt; }",
+  ".day-name { font-size: 52pt; font-weight: 900; line-height: 1; text-transform: uppercase; color: #000; }"
+  ".day-venue { font-size: 40pt; font-weight: 900; color: #c9952a; line-height: 1.05; text-transform: uppercase; margin-top: 2pt; -webkit-print-color-adjust: exact; print-color-adjust: exact; }",,
+  ".day-date { font-size: 26pt; font-weight: 700; color: #000; margin-top: 4pt; }",
+  ".meeting-num { font-size: 16pt; color: #555; margin-top: 4pt; }",
+  ".horse-row { display: flex; align-items: center; gap: 14pt; border-bottom: 1.5pt solid #ccc; padding: 10pt 0; }",
+  ".race-ref { min-width: 70pt; text-align: center; font-size: 42pt; font-weight: 900; color: #000; line-height: 1; }",
+  ".race-venue { font-size: 9pt; color: #666; text-align: center; }",
+  ".race-time { min-width: 70pt; font-size: 20pt; font-weight: 700; color: #000; }",
+  ".horse-info { flex: 1; }",
+  ".horse-name { font-size: 30pt; font-weight: 900; text-transform: uppercase; color: #000; line-height: 1.1; }",
+  ".horse-meta { font-size: 12pt; color: #444; margin-top: 4pt; }",
+  ".badge-hg { display: inline-block; background: #6d3fc0 !important; color: white !important; -webkit-print-color-adjust: exact; print-color-adjust: exact; padding: 2pt 8pt; border-radius: 4pt; font-size: 12pt; font-weight: 700; margin-right: 4pt; }",
+  ".badge-ballot { display: inline-block; background: #d97706 !important; color: white !important; -webkit-print-color-adjust: exact; print-color-adjust: exact; padding: 2pt 8pt; border-radius: 4pt; font-size: 12pt; font-weight: 700; margin-right: 4pt; }"
 ].join(" ");
 
-function RacedayPrint({ horses, entries, setEntries }) {
+var HEADGEAR = {
+  "H": "Hood", "T": "Tongue Strap", "TS": "Tongue Strap", "TT": "Tongue Tie",
+  "B": "Blinkers", "BL": "Blinkers", "C": "Cheekpieces", "CP": "Cheekpieces",
+  "V": "Visor", "E": "Eyeshield", "N": "Noseband"
+};
+
+function parseDate(raw) {
+  if (!raw) return "";
+  var s = raw.trim();
+  if (!s) return "";
+  if (s.length >= 10 && s[4] === "-" && s[7] === "-") return s.slice(0, 10);
+  var native = new Date(s);
+  if (!isNaN(native.getTime())) {
+    var y = native.getFullYear();
+    var mo = String(native.getMonth() + 1).padStart(2, "0");
+    var d = String(native.getDate()).padStart(2, "0");
+    return y + "-" + mo + "-" + d;
+  }
+  return s;
+}
+
+function RacedayPrint({ horses }) {
+  var entriesState = useState([]);
+  var entries = entriesState[0]; var setEntries = entriesState[1];
   var showAddState = useState(false);
   var showAdd = showAddState[0]; var setShowAdd = showAddState[1];
   var csvStatusState = useState(null);
   var csvStatus = csvStatusState[0]; var setCsvStatus = csvStatusState[1];
-  var emptyNe = { horseId: "", meetingNo: "", meetingName: "", raceRef: "", venue: "", date: "", raceTime: "", raceName: "", ballotNo: "", headgear: "", jockey: "" };
-  var neState = useState(emptyNe);
+  var neState = useState({ horseId: "", meetingNo: "", raceRef: "", venue: "", date: "", raceTime: "", raceName: "", ballotNo: "", headgear: "", jockey: "" });
   var ne = neState[0]; var setNe = neState[1];
-
-  var HEADGEAR = { "H": "Hood", "T": "Tongue Strap", "TT": "Tongue Tie", "B": "Blinkers", "BL": "Blinkers", "C": "Cheekpieces", "CP": "Cheekpieces", "V": "Visor", "EM": "Ear Muffs" };
-
-  var MONTH_MAP = { jan:1,feb:2,mar:3,apr:4,may:5,jun:6,jul:7,aug:8,sep:9,oct:10,nov:11,dec:12,
-    january:1,february:2,march:3,april:4,june:6,july:7,august:8,september:9,october:10,november:11,december:12 };
-
-  function parseDate(raw) {
-    if (!raw) return "";
-    var s = raw.trim();
-    if (!s) return "";
-    // Already YYYY-MM-DD
-    if (s.length === 10 && s[4] === "-" && s[7] === "-") return s;
-    // Try native Date parse for formats like "14 May 2025" or "May 14, 2025"
-    var native = new Date(s);
-    if (!isNaN(native.getTime())) {
-      var y = native.getFullYear();
-      var mo = String(native.getMonth() + 1).padStart(2, "0");
-      var d = String(native.getDate()).padStart(2, "0");
-      return y + "-" + mo + "-" + d;
-    }
-    // Normalise separators
-    var norm = s.split("/").join("-").split(".").join("-").split(" ").join("-");
-    var parts = norm.split("-").filter(function(p) { return p.length > 0; });
-    if (parts.length < 3) return "";
-    var p0 = parts[0]; var p1 = parts[1]; var p2 = parts[2];
-    // Check for month name in any position
-    var m0 = MONTH_MAP[p0.toLowerCase()];
-    var m1 = MONTH_MAP[p1.toLowerCase()];
-    var m2 = MONTH_MAP[p2.toLowerCase()];
-    var year, month, day;
-    if (m1) {
-      // DD-MonthName-YY or DD-MonthName-YYYY
-      day = parseInt(p0); month = m1;
-      year = parseInt(p2);
-      if (year < 100) year += 2000;
-    } else if (m0) {
-      // MonthName-DD-YYYY
-      month = m0; day = parseInt(p1);
-      year = parseInt(p2);
-      if (year < 100) year += 2000;
-    } else {
-      // All numeric
-      var n0 = parseInt(p0); var n1 = parseInt(p1); var n2 = parseInt(p2);
-      if (p2.length === 4 || n2 > 31) {
-        // DD-MM-YYYY
-        day = n0; month = n1; year = n2;
-      } else if (p0.length === 4 || n0 > 31) {
-        // YYYY-MM-DD
-        year = n0; month = n1; day = n2;
-      } else {
-        // Assume DD-MM-YY
-        day = n0; month = n1; year = n2 + 2000;
-      }
-    }
-    if (!year || !month || !day) return "";
-    if (month < 1 || month > 12) return "";
-    if (day < 1 || day > 31) return "";
-    return year + "-" + String(month).padStart(2,"0") + "-" + String(day).padStart(2,"0");
-  }
-
-  function addEntry() {
-    if (!ne.horseId || !ne.venue) return;
-    setEntries(function(p) { return p.concat([Object.assign({}, ne, { id: "e_" + Date.now() })]); });
-    setNe(emptyNe);
-    setShowAdd(false);
-  }
+  var fileRef = useRef(null);
 
   function removeEntry(id) {
     setEntries(function(p) { return p.filter(function(e) { return e.id !== id; }); });
@@ -105,6 +59,14 @@ function RacedayPrint({ horses, entries, setEntries }) {
 
   function updateNe(key, val) {
     setNe(function(p) { return Object.assign({}, p, { [key]: val }); });
+  }
+
+  function addEntry() {
+    if (!ne.horseId && !ne.horseName) return;
+    var h = horses.find(function(x) { return x.id === ne.horseId; });
+    setEntries(function(p) { return p.concat([Object.assign({}, ne, { id: "e_" + Date.now(), horseName: h ? h.name : ne.horseName })]); });
+    setNe({ horseId: "", meetingNo: "", raceRef: "", venue: "", date: "", raceTime: "", raceName: "", ballotNo: "", headgear: "", jockey: "" });
+    setShowAdd(false);
   }
 
   function handleCSV(ev) {
@@ -118,70 +80,68 @@ function RacedayPrint({ horses, entries, setEntries }) {
         var rawLines = text.split("\n").filter(function(l) { return l.trim(); });
         var sep = rawLines[0].indexOf("\t") >= 0 ? "\t" : ",";
         var headers = rawLines[0].split(sep).map(function(h) {
-          return h.trim().toLowerCase().split(" ").join("_").split("\t").join("_").replace(/[^a-z0-9_]/g, "");
+          return h.trim().toLowerCase().replace(/\s+/g, "_").replace(/[^a-z0-9_]/g, "");
         });
         var imported = [];
         for (var i = 1; i < rawLines.length; i++) {
           var cols = rawLines[i].split(sep).map(function(c) {
             var t = c.trim();
-            if (t.length > 1 && t[0] === '"' && t[t.length - 1] === '"') return t.slice(1, -1);
+            if (t.length > 1 && t[0] === '"' && t[t.length-1] === '"') return t.slice(1,-1);
             return t;
           });
           if (!cols[0]) continue;
           var row = {};
           for (var j = 0; j < headers.length; j++) { row[headers[j]] = cols[j] || ""; }
-          var rawHorseName = row.horse || row.horse_name || row.name || cols[0];
-          // Strip headgear that may be appended to horse name in HRI CSV
-          var hgTerms = ["Tongue Strap", "Tongue Tie", "Hood", "Blinkers", "Cheekpieces", "Visor", "Eyeshield", "Nosebands", "TT", "TS"];
-          var horseName = rawHorseName;
-          var extractedHG = "";
-          for (var hgi = 0; hgi < hgTerms.length; hgi++) {
-            if (horseName.indexOf(hgTerms[hgi]) >= 0) {
-              extractedHG = hgTerms[hgi];
-              horseName = horseName.replace(hgTerms[hgi], "").trim();
-              break;
-            }
-          }
+
+          // CSV columns: Date, Meeting, Race, Race Name, Horse, Jockey, Extras, Status
+          var horseName = (row.horse || row.horse_name || row.name || "").trim();
           if (!horseName) continue;
-          var nl = horseName.toLowerCase().trim();
           var horse = null;
           for (var hi = 0; hi < horses.length; hi++) {
             var hl = horses[hi].name.toLowerCase().trim();
+            var nl = horseName.toLowerCase().trim();
             if (hl === nl || hl.indexOf(nl) >= 0 || nl.indexOf(hl) >= 0) { horse = horses[hi]; break; }
           }
-          var rawDate = row.date || row.race_date || "";
-          var parsedDate = "";
-          if (rawDate) {
-            parsedDate = parseDate(rawDate);
-          }
-          var extrasRaw = (row.extras || row.extra || row.headgear || extractedHG || "").trim().toUpperCase();
-          var headgear = HEADGEAR[extrasRaw] || (extrasRaw.length > 0 && extrasRaw.length <= 4 ? extrasRaw : "");
-          var statusRaw = row.status || "";
-          var ballotRaw = statusRaw || row.ballot || row.ballot_no || "";
-          var mtgStr = (row.meeting || "").toString().trim();
-          var mtgLast = mtgStr.length > 0 ? mtgStr[mtgStr.length - 1] : "";
+
+          // Meeting = "131B" -> meetingNo="131", raceRef="B"
+          var mtgRaw = (row.meeting || "").toString().trim();
+          var mtgLast = mtgRaw.length > 0 ? mtgRaw[mtgRaw.length - 1] : "";
           var raceRefVal = (mtgLast >= "A" && mtgLast <= "Z") ? mtgLast : "";
-          // Extract ballot number from "Ballot Entry Liable For Ballot (8)" -> "Ballot 8"
+          var mtgNumVal = raceRefVal ? mtgRaw.slice(0, -1) : mtgRaw;
+
+          // Race = venue (e.g. "Limerick")
+          var venue = (row.race || "").trim();
+
+          // Race Name = individual race name
+          var raceName = (row.race_name || row.racename || "").trim();
+
+          // Extras = headgear code
+          var extrasRaw = (row.extras || row.extra || row.headgear || "").trim().toUpperCase();
+          var headgear = HEADGEAR[extrasRaw] || (extrasRaw.length > 0 && extrasRaw.length <= 4 ? extrasRaw : "");
+
+          // Status = ballot
+          var statusRaw = (row.status || "").trim();
           var ballotNo = "";
-          if (ballotRaw.toLowerCase().indexOf("ballot") >= 0) {
-            var pOpen = ballotRaw.lastIndexOf("(");
-            var pClose = ballotRaw.lastIndexOf(")");
+          if (statusRaw.toLowerCase().indexOf("ballot") >= 0) {
+            var pOpen = statusRaw.lastIndexOf("(");
+            var pClose = statusRaw.lastIndexOf(")");
             if (pOpen >= 0 && pClose > pOpen) {
-              var num = ballotRaw.slice(pOpen + 1, pClose).trim();
+              var num = statusRaw.slice(pOpen + 1, pClose).trim();
               ballotNo = num ? "Ballot " + num : "Balloted";
             } else {
               ballotNo = "Balloted";
             }
           }
+
           imported.push({
             id: "e_" + Date.now() + "_" + i,
             horseId: horse ? horse.id : "",
             horseName: horseName,
-            venue: row.race || row.venue || row.racecourse || row.course || "",
-            date: parsedDate,
+            venue: venue,
+            date: parseDate(row.date || row.race_date || ""),
             raceTime: row.time || row.race_time || "",
-            raceName: row.race_name || row.racename || "",
-            meetingName: "",  // HRI Race column is individual race name not meeting name
+            raceName: raceName,
+            meetingNo: mtgNumVal,
             raceRef: raceRefVal,
             ballotNo: ballotNo,
             headgear: headgear,
@@ -191,7 +151,7 @@ function RacedayPrint({ horses, entries, setEntries }) {
         setEntries(function(prev) { return prev.concat(imported); });
         var matched = 0;
         for (var mi = 0; mi < imported.length; mi++) { if (imported[mi].horseId) matched++; }
-        setCsvStatus(imported.length + " entries imported - " + matched + " horses matched");
+        setCsvStatus(imported.length + " entries imported, " + matched + " horses matched");
         setTimeout(function() { setCsvStatus(null); }, 5000);
       } catch (err) {
         console.error(err);
@@ -202,6 +162,7 @@ function RacedayPrint({ horses, entries, setEntries }) {
     reader.readAsText(file);
   }
 
+  // Group by date
   var grouped = {};
   for (var gi = 0; gi < entries.length; gi++) {
     var ent = entries[gi];
@@ -211,180 +172,168 @@ function RacedayPrint({ horses, entries, setEntries }) {
   }
   var sortedDates = Object.keys(grouped).sort();
 
+  function doPrint() {
+    var grouped2 = {};
+    entries.forEach(function(e) {
+      var d = e.date || "no-date";
+      if (!grouped2[d]) grouped2[d] = [];
+      grouped2[d].push(e);
+    });
+    var sortedD = Object.keys(grouped2).sort();
+    var body2 = sortedD.map(function(date) {
+      var dObj2 = new Date(date + "T12:00:00");
+      var dName = isNaN(dObj2.getTime()) ? "" : dObj2.toLocaleDateString("en-IE", { weekday: "long" }).toUpperCase();
+      var dStr = isNaN(dObj2.getTime()) ? date : dObj2.toLocaleDateString("en-IE", { day: "numeric", month: "long", year: "numeric" });
+      var dayEnts = grouped2[date];
+      var venue0 = (dayEnts[0] && dayEnts[0].venue) ? dayEnts[0].venue.toUpperCase() : "";
+      var mtgE = dayEnts.find(function(e) { return e.meetingNo; });
+      var mtgN = mtgE ? mtgE.meetingNo : "";
+      var fullHeader = dName + (venue0 ? " " + venue0 : "");
+      var rows = dayEnts.map(function(entry) {
+        var h = horses.find(function(x) { return x.id === entry.horseId; });
+        var name = h ? h.name : (entry.horseName || "");
+        if (!name) return "";
+        var hg = entry.headgear || (h && h.headgear) || "";
+        var jock = entry.jockey || (h && h.jockey) || "";
+        var ballot = entry.ballotNo || "";
+        var ref = entry.raceRef || "";
+        return "<div class='horse-row'>" +
+          "<div><div class='race-ref'>" + ref + "</div><div class='race-venue'>" + (entry.venue || "") + "</div></div>" +
+          "<div class='race-time'>" + (entry.raceTime || "") + "</div>" +
+          "<div class='horse-info'><div class='horse-name'>" + name.toUpperCase() + "</div>" +
+          "<div class='horse-meta'>" + (hg ? "<span class='badge-hg'>" + hg + "</span>" : "") + (ballot ? "<span class='badge-ballot'>" + ballot + "</span>" : "") + (jock ? " " + jock : "") + "</div>" +
+          "</div></div>";
+      }).join("");
+      return "<div class='day-block'><div class='day-header'>" +
+        "<div class='day-name'>" + dName + "</div>" +
+        (venue0 ? "<div class='day-venue'>" + venue0 + "</div>" : "") +
+        "<div class='day-date'>" + dStr + "</div>" +
+        (mtgN ? "<div class='meeting-num'>Meeting " + mtgN + "</div>" : "") +
+        "</div>" + rows + "</div>";
+    }).join("");
+    var win = window.open("", "_blank");
+    win.document.write("<html><head><title>RacePlan Pro - Whiteboard</title><style>" + PRINT_STYLE + "</style></head><body>" + body2 + "</body></html>");
+    win.document.close();
+    win.focus();
+    setTimeout(function() { win.print(); }, 600);
+  }
+
+  var FIELDS = [
+    { key: "horseId", label: "Horse", type: "horse-select" },
+    { key: "date", label: "Date", type: "date" },
+    { key: "raceTime", label: "Time", type: "text", placeholder: "14:15" },
+    { key: "venue", label: "Venue", type: "text", placeholder: "Limerick" },
+    { key: "meetingNo", label: "Meeting No.", type: "text", placeholder: "131" },
+    { key: "raceRef", label: "Race Ref (A,B,C...)", type: "text", placeholder: "B" },
+    { key: "raceName", label: "Race Name", type: "text", placeholder: "EBF Mares Chase" },
+    { key: "jockey", label: "Jockey", type: "text", placeholder: "D. O'Keeffe" },
+    { key: "headgear", label: "Headgear", type: "text", placeholder: "Hood, Tongue Strap..." },
+    { key: "ballotNo", label: "Ballot No.", type: "text", placeholder: "Ballot 4" },
+  ];
+
   return (
-    <div>
-      <style dangerouslySetInnerHTML={{ __html: PRINT_STYLE }} />
-      <div style={{ display: "flex", justifyContent: "space-between", alignItems: "center", marginBottom: 16, flexWrap: "wrap", gap: 8 }}>
-        <div>
-          <div style={{ fontSize: 22, fontWeight: 800, color: C.text }}>Raceday Whiteboard</div>
-          <div style={{ fontSize: 13, color: C.textMid, marginTop: 3 }}>Import pending engagements CSV or add entries manually</div>
-        </div>
+    <div style={{ maxWidth: 900, margin: "0 auto" }}>
+      <div style={{ display: "flex", alignItems: "center", justifyContent: "space-between", marginBottom: 16, flexWrap: "wrap", gap: 8 }}>
+        <div style={{ fontSize: 22, fontWeight: 800, color: C.text }}>Raceday Whiteboard</div>
         <div style={{ display: "flex", gap: 8, flexWrap: "wrap" }}>
-          <label style={{ background: C.cardOff, border: "1.5px solid " + C.border, color: C.textMid, borderRadius: 9, padding: "9px 14px", fontSize: 13, fontWeight: 700, cursor: "pointer", display: "inline-flex", alignItems: "center", gap: 6 }}>
-            Import CSV
-            <input type="file" accept=".csv,.tsv,.txt" onChange={handleCSV} style={{ display: "none" }} />
-          </label>
+          <Btn variant="ghost" onClick={function() { fileRef.current && fileRef.current.click(); }}>Import CSV</Btn>
+          <input ref={fileRef} type="file" accept=".csv,.tsv,.txt" style={{ display: "none" }} onChange={handleCSV} />
           <Btn onClick={function() { setShowAdd(true); }}>+ Add Entry</Btn>
-          <Btn variant="ghost" onClick={function() { if (window.confirm("Clear all entries?")) setEntries(function() { return []; }); }} style={{ color: C.red, borderColor: C.red, fontSize: 12 }}>Clear All</Btn>
-          <Btn variant="gold" onClick={function() {
-            var style = [
-              "@page { size: A4; margin: 1cm; }",
-              "body { font-family: Arial, Helvetica, sans-serif; margin: 0; padding: 16px; background: white; color: black; }",
-              ".day-block { margin-bottom: 32pt; page-break-inside: avoid; }",
-              ".day-header { border-bottom: 4pt solid #000; padding-bottom: 10pt; margin-bottom: 14pt; }",
-              ".day-name { font-size: 52pt; font-weight: 900; line-height: 1; text-transform: uppercase; color: #000; }",
-              ".day-date { font-size: 26pt; font-weight: 700; color: #000; margin-top: 4pt; }", ".day-venue { font-size: 20pt; font-weight: 800; color: #000; margin-top: 2pt; }", ".day-meeting-name { font-size: 22pt; font-weight: 800; color: #111; margin-top: 4pt; }",
-              ".meeting-num { font-size: 16pt; color: #555; margin-top: 4pt; }",
-              ".horse-row { display: flex; align-items: center; gap: 14pt; border-bottom: 1.5pt solid #ccc; padding: 10pt 0; }",
-              ".race-ref { min-width: 70pt; text-align: center; font-size: 42pt; font-weight: 900; color: #000; line-height: 1; }",
-              ".race-venue { font-size: 9pt; color: #666; text-align: center; }",
-              ".race-time { min-width: 70pt; font-size: 20pt; font-weight: 700; color: #000; }",
-              ".horse-info { flex: 1; }",
-              ".horse-name { font-size: 30pt; font-weight: 900; text-transform: uppercase; color: #000; line-height: 1.1; }",
-              ".horse-meta { font-size: 12pt; color: #444; margin-top: 4pt; }", ".badge-hg { display: inline-block; background: #6d3fc0; color: white; padding: 2pt 8pt; border-radius: 4pt; font-size: 12pt; font-weight: 700; margin-right: 4pt; }", ".badge-ballot { display: inline-block; background: #d97706; color: white; padding: 2pt 8pt; border-radius: 4pt; font-size: 12pt; font-weight: 700; margin-right: 4pt; }"
-            ].join(" ");
-            var grouped2 = {};
-            entries.forEach(function(e) { var d = e.date || "no-date"; if (!grouped2[d]) grouped2[d] = []; grouped2[d].push(e); });
-            var sortedD = Object.keys(grouped2).sort();
-            var body2 = sortedD.map(function(date) {
-              var dateKey2 = date.split("_")[0]; var venueKey2 = date.split("_").slice(1).join(" "); var dObj2 = new Date(dateKey2 + "T12:00:00");
-                var dName = (isNaN(dObj2.getTime()) ? "" : dObj2.toLocaleDateString("en-IE", { weekday: "long" }).toUpperCase()) + (venueKey2 ? " " + venueKey2 : "");
-              var dStr = isNaN(dObj2.getTime()) ? date : dObj2.toLocaleDateString("en-IE", { day: "numeric", month: "long", year: "numeric" });
-              var dayEnts = grouped2[date];
-              var mtgE = dayEnts.find(function(e) { return e.meetingNo; });
-              var mtgN = mtgE ? mtgE.meetingNo.toString().split("").filter(function(c){return c>="0"&&c<="9";}).join("") : "";
-              var venue0 = (dayEnts[0] && dayEnts[0].venue) ? dayEnts[0].venue.toUpperCase() : "";
-              var rows = dayEnts.map(function(entry) {
-                var h = horses.find(function(x) { return x.id === entry.horseId; });
-                var name = h ? h.name : (entry.horseName || "");
-                if (!name) return "";
-                var mtgS = (entry.meetingNo || "").toString();
-                var mtgNs = mtgS.split("").filter(function(c){return c>="0"&&c<="9";}).join("");
-                var ref = entry.raceRef || (mtgS.length > 0 && isNaN(parseInt(mtgS[mtgS.length-1])) ? mtgS[mtgS.length-1] : "");
-                var hg = entry.headgear || (h && h.headgear) || "";
-                var jock = entry.jockey || (h && h.jockey) || "";
-                var ballot = (entry.ballotNo || entry.ballotPosition) ? "Ballot " + (entry.ballotNo || entry.ballotPosition) : "";
-                return "<div class='horse-row'>" +
-                  "<div><div class='race-ref'>" + ref + "</div><div class='race-venue'>" + (entry.venue || "") + "</div></div>" +
-                  "<div class='race-time'>" + (entry.raceTime || "") + "</div>" +
-                  "<div class='horse-info'><div class='horse-name'>" + name.toUpperCase() + "</div>" +
-                   "<div class='horse-meta'>" + (hg ? "<span class='badge-hg'>" + hg + "</span> " : "") + (ballot ? "<span class='badge-ballot'>" + ballot + "</span> " : "") + (jock ? jock : "") + "</div></div>" +
-                  "</div>";
-              }).join("");
-              return "<div class='day-block'><div class='day-header'>" +
-                "<div class='day-name'>" + dName + "</div>" + (venue0 ? "<div class='day-venue'>" + venue0 + "</div>" : "") +
-                "<div class='day-date'>" + dStr + "</div>" + (dayEnts[0] && dayEnts[0].meetingName ? "<div class='day-meeting-name'>" + dayEnts[0].meetingName + "</div>" : "") +
-                (mtgN ? "<div class='meeting-num'>Meeting " + mtgN + "</div>" : "") +
-                "</div>" + rows + "</div>";
-            }).join("");
-            var win = window.open("", "_blank");
-            win.document.write("<html><head><title>RacePlan Pro - Whiteboard</title><style>" + style + "</style></head><body>" + body2 + "</body></html>");
-            win.document.close();
-            win.focus();
-            setTimeout(function() { win.print(); }, 600);
-          }}>Print / PDF</Btn>
+          <Btn variant="ghost" onClick={function() { if (window.confirm("Clear all entries?")) setEntries([]); }}>Clear</Btn>
+          <Btn variant="gold" onClick={doPrint}>Print / PDF</Btn>
         </div>
       </div>
 
       {csvStatus && (
-        <div style={{ background: C.cardOff, border: "1px solid " + C.border, borderRadius: 8, padding: "10px 14px", marginBottom: 12, fontSize: 13, color: C.green, fontWeight: 600 }}>
+        <div style={{ background: C.green + "15", border: "1px solid " + C.green + "40", borderRadius: 8, padding: "10px 14px", marginBottom: 12, fontSize: 13, color: C.green, fontWeight: 600 }}>
           {csvStatus}
         </div>
       )}
 
-      <div id="print-area">
-        {sortedDates.map(function(date) {
-          var dayEntries = grouped[date];
-          var dObj = new Date(date + "T12:00:00");
-          var dayName = (isNaN(dObj.getTime()) ? "" : dObj.toLocaleDateString("en-IE", { weekday: "long" }).toUpperCase()) + ((dayEntries[0] && dayEntries[0].venue) ? " " + dayEntries[0].venue.toUpperCase() : "");
-          var dateStr = isNaN(dObj.getTime()) ? date : dObj.toLocaleDateString("en-IE", { day: "numeric", month: "long", year: "numeric" });
-          var mtgEntry = dayEntries.find(function(e) { return e.meetingNo; });
-          var mtgNum = mtgEntry ? mtgEntry.meetingNo.toString().split("").filter(function(c){return c>="0"&&c<="9";}).join("") : "";
-          var groupMeetingName = "";
-          return (
-            <div key={date} style={{ background: C.card, border: "1px solid " + C.border, borderRadius: 12, padding: "18px 20px", marginBottom: 16 }}>
-              <div className="meeting-header" style={{ marginBottom: 16, paddingBottom: 14, borderBottom: "3px solid " + C.navy }}>
-                <div style={{ fontSize: 72, fontWeight: 900, color: C.navy, lineHeight: 1, letterSpacing: -2, textTransform: "uppercase" }}>{dayName}</div>
-                <div style={{ fontSize: 36, fontWeight: 800, color: C.navy, lineHeight: 1.2, marginTop: 4 }}>{dateStr}</div>
-                {groupMeetingName && <div style={{ fontSize: 28, fontWeight: 800, color: C.navy, marginTop: 6, letterSpacing: -0.5 }}>{groupMeetingName}</div>}
-                {mtgNum ? <div style={{ fontSize: 22, fontWeight: 700, color: C.textMid, marginTop: 4 }}>{"Meeting " + mtgNum}</div> : null}
-              </div>
+      {sortedDates.length === 0 && (
+        <div style={{ background: C.card, border: "1.5px dashed " + C.border, borderRadius: 12, padding: "40px 20px", textAlign: "center", color: C.textMid, fontSize: 14 }}>
+          Import your pending engagements CSV from HRI or add entries manually
+        </div>
+      )}
+
+      {sortedDates.map(function(date) {
+        var dayEntries = grouped[date];
+        var dObj = new Date(date + "T12:00:00");
+        var dayOfWeek = isNaN(dObj.getTime()) ? "" : dObj.toLocaleDateString("en-IE", { weekday: "long" }).toUpperCase();
+        var venue = (dayEntries[0] && dayEntries[0].venue) ? dayEntries[0].venue.toUpperCase() : "";
+        var dayName = dayOfWeek + (venue ? " " + venue : "");
+        var dateStr = isNaN(dObj.getTime()) ? date : dObj.toLocaleDateString("en-IE", { day: "numeric", month: "long", year: "numeric" });
+        var mtgEntry = dayEntries.find(function(e) { return e.meetingNo; });
+        var mtgNum = mtgEntry ? mtgEntry.meetingNo : "";
+        return (
+          <div key={date} style={{ background: C.card, border: "1px solid " + C.border, borderRadius: 12, padding: "18px 20px", marginBottom: 16 }}>
+            <div className="meeting-header" style={{ marginBottom: 16, paddingBottom: 14, borderBottom: "3px solid " + C.navy }}>
+              <div style={{ fontSize: 72, fontWeight: 900, color: C.navy, lineHeight: 1, letterSpacing: -2, textTransform: "uppercase" }}>{dayOfWeek}</div>
+              {venue ? <div style={{ fontSize: 48, fontWeight: 900, color: C.gold, lineHeight: 1.05, letterSpacing: -1, textTransform: "uppercase", marginTop: 2 }}>{venue}</div> : null}
+              <div style={{ fontSize: 36, fontWeight: 800, color: C.navy, lineHeight: 1.2, marginTop: 4 }}>{dateStr}</div>
+              {mtgNum ? <div style={{ fontSize: 22, fontWeight: 700, color: C.textMid, marginTop: 4 }}>{"Meeting " + mtgNum}</div> : null}
+            </div>
+            <div>
               {dayEntries.map(function(entry) {
                 var horse = horses.find(function(h) { return h.id === entry.horseId; });
                 var displayName = horse ? horse.name : entry.horseName;
                 if (!displayName) return null;
                 var hg = entry.headgear || (horse && horse.headgear) || "";
-                var mtgStr = (entry.meetingNo || "").toString();
-                var mtgNums = mtgStr.split("").filter(function(c){return c>="0"&&c<="9";}).join("");
-                var raceRef = entry.raceRef || (mtgStr.length > 0 && isNaN(parseInt(mtgStr[mtgStr.length-1])) ? mtgStr[mtgStr.length-1] : "");
+                var raceRef = entry.raceRef || "";
                 return (
                   <div key={entry.id} className="horse-row" style={{ display: "flex", alignItems: "center", gap: 14, padding: "10px 0", borderBottom: "1px solid " + C.cardOff }}>
                     <div className="venue-ref" style={{ minWidth: 100, textAlign: "center" }}>
                       {raceRef ? <div style={{ fontSize: 48, fontWeight: 900, color: C.navy, lineHeight: 1 }}>{raceRef}</div> : null}
-                      {entry.venue && <div style={{ fontSize: 11, color: C.textMid, marginTop: 2 }}>{entry.venue}</div>}
+                      {entry.venue ? <div style={{ fontSize: 11, color: C.textMid, marginTop: 2 }}>{entry.venue}</div> : null}
                     </div>
                     <div className="race-time" style={{ minWidth: 80, fontSize: 14, fontWeight: 700, color: C.navy }}>{entry.raceTime}</div>
                     <div style={{ flex: 1 }}>
                       <div style={{ display: "flex", alignItems: "center", gap: 8, flexWrap: "wrap" }}>
                         <span className="horse-name" style={{ fontSize: 17, fontWeight: 800, color: C.text, textTransform: "uppercase" }}>{displayName}</span>
-                        {hg && <span className="badge-hg" style={{ fontSize: 12, color: "#fff", fontWeight: 700, background: C.purple, padding: "2px 8px", borderRadius: 6, WebkitPrintColorAdjust: "exact", printColorAdjust: "exact" }}>{hg}</span>}
-                        {entry.ballotNo && <span className="badge-ballot" style={{ fontSize: 12, color: "#fff", fontWeight: 700, background: C.amber, padding: "2px 8px", borderRadius: 6, WebkitPrintColorAdjust: "exact", printColorAdjust: "exact" }}>{"Ballot " + entry.ballotNo}</span>}
+                        {hg && <span className="badge-hg" style={{ fontSize: 12, color: "#fff", fontWeight: 700, background: C.purple, padding: "2px 8px", borderRadius: 20 }}>{hg}</span>}
+                        {entry.ballotNo && <span className="badge-ballot" style={{ fontSize: 12, color: "#fff", fontWeight: 700, background: C.amber, padding: "2px 8px", borderRadius: 20 }}>{entry.ballotNo}</span>}
                       </div>
-                      {entry.jockey && <div className="jockey-line" style={{ fontSize: 12, color: C.textMid, marginTop: 2 }}>{"Jockey: " + entry.jockey}</div>}
+                      {entry.jockey && <div className="jockey-line" style={{ fontSize: 12, color: C.textMid, marginTop: 2 }}>{"J: " + entry.jockey}</div>}
                       {entry.raceName && <div style={{ fontSize: 12, color: C.textMid, marginTop: 2 }}>{entry.raceName}</div>}
                     </div>
-                    <button onClick={function() { removeEntry(entry.id); }} style={{ background: "none", border: "none", color: C.red, cursor: "pointer", fontSize: 18, padding: "0 4px" }}>x</button>
+                    <button onClick={function() { removeEntry(entry.id); }} style={{ background: "none", border: "none", color: C.red, cursor: "pointer", fontSize: 18, padding: "2px 6px" }}>x</button>
                   </div>
                 );
               })}
             </div>
-          );
-        })}
-        {entries.length === 0 && (
-          <div style={{ padding: 40, textAlign: "center", border: "1.5px dashed " + C.border, borderRadius: 12, color: C.textMid }}>
-            Import your pending engagements CSV from HRI or add entries manually
           </div>
-        )}
-      </div>
+        );
+      })}
 
       {showAdd && (
-        <div style={{ position: "fixed", inset: 0, background: "rgba(10,22,40,0.6)", zIndex: 500, display: "flex", alignItems: "center", justifyContent: "center", padding: 20 }}>
-          <div style={{ background: C.card, borderRadius: 16, width: "100%", maxWidth: 440, boxShadow: C.shadowMd, overflow: "hidden", maxHeight: "90vh", overflowY: "auto" }}>
-            <div style={{ background: C.navy, padding: "16px 20px", display: "flex", justifyContent: "space-between", alignItems: "center", position: "sticky", top: 0 }}>
-              <div style={{ fontSize: 15, fontWeight: 700, color: "#fff" }}>Add Raceday Entry</div>
-              <button onClick={function() { setShowAdd(false); }} style={{ background: "rgba(255,255,255,0.1)", border: "none", color: "#fff", width: 28, height: 28, borderRadius: 6, cursor: "pointer" }}>x</button>
-            </div>
-            <div style={{ padding: 20, display: "flex", flexDirection: "column", gap: 10 }}>
-              {[
-                { key: "horseId", label: "Horse", type: "select" },
-                { key: "venue", label: "Racecourse", placeholder: "e.g. Limerick" },
-                { key: "meetingNo", label: "Meeting Number", placeholder: "e.g. 55" },
-                { key: "raceRef", label: "Race Reference", placeholder: "e.g. Race A" },
-                { key: "raceName", label: "Race Name", placeholder: "e.g. Mares Handicap Hurdle" },
-                { key: "raceTime", label: "Race Time", placeholder: "e.g. 2:28 PM" },
-                { key: "date", label: "Date", type: "date" },
-                { key: "ballotNo", label: "Ballot No.", placeholder: "Leave blank if not balloted" },
-                { key: "headgear", label: "Headgear", placeholder: "e.g. Hood, Tongue Strap" },
-                { key: "jockey", label: "Jockey", placeholder: "e.g. D.J. O Keeffe" },
-              ].map(function(field) {
+        <div onClick={function() { setShowAdd(false); }} style={{ position: "fixed", inset: 0, background: "rgba(0,0,0,0.5)", zIndex: 500, display: "flex", alignItems: "center", justifyContent: "center", padding: 20 }}>
+          <div onClick={function(e) { e.stopPropagation(); }} style={{ background: C.card, borderRadius: 16, padding: "24px", maxWidth: 480, width: "100%", maxHeight: "90vh", overflowY: "auto" }}>
+            <div style={{ fontSize: 17, fontWeight: 800, color: C.text, marginBottom: 16 }}>Add Raceday Entry</div>
+            <div style={{ display: "grid", gridTemplateColumns: "1fr 1fr", gap: 10, marginBottom: 14 }}>
+              {FIELDS.map(function(field) {
                 return (
-                  <div key={field.key}>
-                    <div style={{ fontSize: 10, fontWeight: 700, color: C.textMid, marginBottom: 4, textTransform: "uppercase", letterSpacing: 0.5 }}>{field.label}</div>
-                    {field.type === "select" ? (
-                      <select value={ne[field.key]} onChange={function(e) { updateNe(field.key, e.target.value); }}
-                        style={{ width: "100%", background: C.cardOff, border: "1px solid " + C.border, borderRadius: 8, padding: "8px 12px", color: C.text, fontSize: 13 }}>
-                        <option value="">Select horse</option>
-                        {horses.map(function(h) { return <option key={h.id} value={h.id}>{h.name}</option>; })}
+                  <div key={field.key} style={{ gridColumn: field.key === "horseId" || field.key === "raceName" ? "1 / -1" : "auto" }}>
+                    <div style={{ fontSize: 10, fontWeight: 700, color: C.textMid, marginBottom: 4, textTransform: "uppercase" }}>{field.label}</div>
+                    {field.type === "horse-select" ? (
+                      <select value={ne.horseId} onChange={function(e) { updateNe("horseId", e.target.value); }}
+                        style={{ width: "100%", padding: "8px 12px", background: C.cardOff, border: "1px solid " + C.border, borderRadius: 8, fontSize: 13, color: C.text }}>
+                        <option value="">Select horse...</option>
+                        {horses.filter(function(h) { return h.status !== "Retired" && h.status !== "Sold"; }).sort(function(a,b){return a.name.localeCompare(b.name);}).map(function(h) {
+                          return <option key={h.id} value={h.id}>{h.name}</option>;
+                        })}
                       </select>
                     ) : (
-                      <input type={field.type || "text"} placeholder={field.placeholder} value={ne[field.key] || ""}
-                        onChange={function(e) { updateNe(field.key, e.target.value); }}
-                        style={{ width: "100%", background: C.cardOff, border: "1px solid " + C.border, borderRadius: 8, padding: "8px 12px", color: C.text, fontSize: 13 }} />
+                      <input type={field.type} placeholder={field.placeholder} value={ne[field.key] || ""}
+                        onChange={function(e) { var v = e.target.value; var k = field.key; updateNe(k, v); }}
+                        style={{ width: "100%", padding: "8px 12px", background: C.cardOff, border: "1px solid " + C.border, borderRadius: 8, fontSize: 13, color: C.text }} />
                     )}
                   </div>
                 );
               })}
-              <Btn onClick={addEntry} style={{ width: "100%", justifyContent: "center", marginTop: 6 }}>Add to Whiteboard</Btn>
+            </div>
+            <div style={{ display: "flex", gap: 8 }}>
+              <Btn onClick={addEntry}>Save</Btn>
+              <Btn variant="ghost" onClick={function() { setShowAdd(false); }}>Cancel</Btn>
             </div>
           </div>
         </div>
