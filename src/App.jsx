@@ -743,7 +743,7 @@ function App() {
         </div>
 
         <div className="main-content" style={{ flex: 1, padding: "14px 16px", minWidth: 0, boxSizing: "border-box" }}>
-          {safeTab === "yard" && <YardView horses={horses} setHorses={setHorses} settings={settings} />}
+          {safeTab === "yard" && <YardView horses={horses} setHorses={setHorses} settings={settings} user={user} supabase={supabase} />}
           {safeTab === "planner" && <RacePlanner horses={horses} setHorses={setHorses} settings={settings} />}
           {safeTab === "provisional" && <ProvisionalEntries horses={horses} setHorses={setHorses} settings={settings} />}
           {safeTab === "meds" && <MedicationTracker horses={horses} medLogs={medLogs} setMedLogs={setMedLogs} trackedIds={trackedIds} setTrackedIds={setTrackedIdsRaw} settings={settings} />}
