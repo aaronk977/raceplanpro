@@ -241,6 +241,83 @@ const isEligible = function(horse, race, settings) {
   return true;
 };
 
-export { Silk, Tag, Btn, FormDots, StatusPill };
+
+// Shared file upload + gallery for a horse, scoped by context (gallop/trotter/raceday)
+function HorseFiles({ horseId, horseName, context, user }) {
+  var filesState = useState([]);
+  var files = filesState[0]; var setFiles = filesState[1];
+  var uploadingState = useState(false);
+  var uploading = uploadingState[0]; var setUploading = uploadingState[1];
+  var openState = useState(false);
+  var open = openState[0]; var setOpen = openState[1];
+
+  function loadFiles() {
+    if (!user || !horseId) return;
+    supabase.from("horse_files").select("*").eq("user_id", user.id).eq("horse_id", horseId).eq("context", context).order("created_at", { ascending: false })
+      .then(function(res) { if (res.data) setFiles(res.data); });
+  }
+
+  useEffect(function() { if (open) loadFiles(); }, [open, horseId]);
+
+  function handleUpload(e) {
+    var file = e.target.files[0];
+    if (!file || !user) return;
+    e.target.value = "";
+    setUploading(true);
+    var safe = file.name.replace(/[^a-zA-Z0-9._-]/g, "_");
+    var path = user.id + "/" + context + "/" + horseId + "_" + Date.now() + "_" + safe;
+    supabase.storage.from("horse-files").upload(path, file, { upsert: false }).then(function(res) {
+      if (res.error) { setUploading(false); alert("Upload failed: " + res.error.message); return; }
+      var rec = {
+        user_id: user.id, horse_id: horseId, horse_name: horseName || "",
+        context: context, file_path: path, file_name: file.name,
+        file_type: file.type || "", created_at: new Date().toISOString()
+      };
+      supabase.from("horse_files").insert(rec).select().then(function(r2) {
+        setUploading(false);
+        if (r2.data && r2.data[0]) setFiles(function(p) { return [r2.data[0]].concat(p); });
+      });
+    });
+  }
+
+  function viewFile(f) {
+    supabase.storage.from("horse-files").createSignedUrl(f.file_path, 3600).then(function(res) {
+      if (res.data && res.data.signedUrl) window.open(res.data.signedUrl, "_blank");
+    });
+  }
+
+  function deleteFile(f) {
+    if (!window.confirm("Delete " + f.file_name + "?")) return;
+    setFiles(function(p) { return p.filter(function(x) { return x.id !== f.id; }); });
+    supabase.storage.from("horse-files").remove([f.file_path]).then(function() {});
+    supabase.from("horse_files").delete().eq("id", f.id).then(function() {});
+  }
+
+  return (
+    <div style={{ marginTop: 8 }}>
+      <button onClick={function() { setOpen(!open); }} style={{ fontSize: 11, fontWeight: 700, padding: "4px 10px", borderRadius: 6, border: "1px solid " + C.border, background: C.cardOff, color: C.navy, cursor: "pointer" }}>
+        {open ? "Hide files" : "Files & Photos" + (files.length ? " (" + files.length + ")" : "")}
+      </button>
+      {open && (
+        <div style={{ marginTop: 8, padding: "10px 12px", background: C.cardOff, borderRadius: 8, border: "1px solid " + C.border }}>
+          <label style={{ display: "inline-block", marginBottom: files.length ? 10 : 0 }}>
+            <span style={{ fontSize: 12, fontWeight: 700, color: C.navy, padding: "6px 12px", background: C.goldBg, borderRadius: 6, cursor: "pointer", display: "inline-block" }}>{uploading ? "Uploading..." : "+ Upload photo / video / document"}</span>
+            <input type="file" accept="image/*,video/*,.pdf,.doc,.docx" onChange={handleUpload} disabled={uploading} style={{ display: "none" }} />
+          </label>
+          {files.map(function(f) {
+            return (
+              <div key={f.id} style={{ display: "flex", alignItems: "center", justifyContent: "space-between", gap: 8, padding: "6px 0", borderTop: "1px solid " + C.border }}>
+                <span onClick={function() { viewFile(f); }} style={{ fontSize: 12, color: C.blue, cursor: "pointer", fontWeight: 600, overflow: "hidden", textOverflow: "ellipsis", whiteSpace: "nowrap", flex: 1 }}>{f.file_name}</span>
+                <button onClick={function() { deleteFile(f); }} style={{ fontSize: 11, color: C.red, background: "none", border: "none", cursor: "pointer", fontWeight: 700, flexShrink: 0 }}>Delete</button>
+              </div>
+            );
+          })}
+        </div>
+      )}
+    </div>
+  );
+}
+
+export { Silk, Tag, Btn, FormDots, StatusPill, HorseFiles };
 export { C, TODAY, SILKS, ANTHROPIC_KEY, getAnthropicKey };
 export { getAge, coolingDate, canRace, daysUntil, getDaysInMonth, isEligible };
