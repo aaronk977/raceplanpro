@@ -1,6 +1,7 @@
 import React, { useState, useEffect } from "react";
 
-var NAVY = "#0a1628";
+var HERO_IMAGE = ""; // <-- paste a racing photo URL here later for an immersive hero background
+  var NAVY = "#0a1628";
 var NAVY2 = "#112240";
 var GOLD = "#c9952a";
 var GOLD2 = "#f5c842";
@@ -37,6 +38,11 @@ var CSS = FONTS + `
   .cta-btn { transition: transform 0.15s ease, opacity 0.15s ease; }
   .cta-btn:hover { transform: translateY(-2px); box-shadow: 0 12px 32px rgba(201,149,42,0.3); }
   .cta-btn { transition: transform 0.2s cubic-bezier(0.22,1,0.36,1), box-shadow 0.2s ease; }
+  .feature-card { transition: transform 0.25s cubic-bezier(0.22,1,0.36,1), box-shadow 0.25s ease, border-color 0.25s ease; }
+  .feature-card:hover { transform: translateY(-4px) scale(1.015); box-shadow: 0 20px 50px rgba(10,22,40,0.14); }
+  .glow-hover { transition: box-shadow 0.3s ease, transform 0.3s ease; }
+  .glow-hover:hover { box-shadow: 0 0 40px rgba(201,149,42,0.25); transform: translateY(-2px); }
+  @keyframes pulseGlow { 0%, 100% { opacity: 0.5; } 50% { opacity: 0.9; } }
   @media (max-width: 767px) {
     .hide-mobile { display: none !important; }
     .hero-stat { font-size: clamp(52px,18vw,90px) !important; }
@@ -234,6 +240,36 @@ function DemoWidget() {
   );
 }
 
+function CountUp({ end, suffix, duration }) {
+  var valState = useState(0);
+  var val = valState[0]; var setVal = valState[1];
+  var ref = React.useRef(null);
+  var startedState = useState(false);
+  var started = startedState[0]; var setStarted = startedState[1];
+  useEffect(function() {
+    if (!ref.current || started) return;
+    var obs = new IntersectionObserver(function(entries) {
+      entries.forEach(function(e) {
+        if (e.isIntersecting && !started) {
+          setStarted(true);
+          var startT = Date.now();
+          var dur = duration || 1400;
+          var tick = function() {
+            var p = Math.min((Date.now() - startT) / dur, 1);
+            var eased = 1 - Math.pow(1 - p, 3);
+            setVal(Math.round(eased * end));
+            if (p < 1) requestAnimationFrame(tick);
+          };
+          requestAnimationFrame(tick);
+        }
+      });
+    }, { threshold: 0.5 });
+    obs.observe(ref.current);
+    return function() { obs.disconnect(); };
+  }, [started]);
+  return <span ref={ref}>{val}{suffix || ""}</span>;
+}
+
 function LandingPage({ onLogin }) {
   useEffect(function() {
     if (typeof window === "undefined" || !("IntersectionObserver" in window)) return;
@@ -301,7 +337,14 @@ function LandingPage({ onLogin }) {
 
       {/* HERO */}
       <div style={{ background: "linear-gradient(160deg, " + NAVY + " 0%, " + NAVY2 + " 100%)", minHeight: "92vh", display: "flex", flexDirection: "column", justifyContent: "center", padding: "clamp(48px,10vw,80px) clamp(16px,6vw,80px)", position: "relative", overflow: "hidden" }}>
-        <div style={{ position: "absolute", inset: 0, backgroundImage: "radial-gradient(ellipse 60% 50% at 80% 50%, rgba(201,149,42,0.06) 0%, transparent 70%), radial-gradient(ellipse 40% 60% at 10% 80%, rgba(26,122,74,0.08) 0%, transparent 60%)", pointerEvents: "none" }} />
+        {HERO_IMAGE ? (
+          <div style={{ position: "absolute", inset: 0, backgroundImage: "url(" + HERO_IMAGE + ")", backgroundSize: "cover", backgroundPosition: "center", opacity: 0.45, pointerEvents: "none" }} />
+        ) : null}
+        {HERO_IMAGE ? (
+          <div style={{ position: "absolute", inset: 0, background: "linear-gradient(160deg, rgba(10,22,40,0.82) 0%, rgba(17,34,64,0.88) 100%)", pointerEvents: "none" }} />
+        ) : null}
+        <div style={{ position: "absolute", inset: 0, backgroundImage: "radial-gradient(ellipse 60% 50% at 80% 50%, rgba(201,149,42,0.10) 0%, transparent 70%), radial-gradient(ellipse 40% 60% at 10% 80%, rgba(26,122,74,0.10) 0%, transparent 60%)", pointerEvents: "none" }} />
+        <div style={{ position: "absolute", inset: 0, opacity: 0.025, pointerEvents: "none", backgroundImage: "url(\"data:image/svg+xml,%3Csvg xmlns='http://www.w3.org/2000/svg' width='120' height='120'%3E%3Cfilter id='n'%3E%3CfeTurbulence type='fractalNoise' baseFrequency='0.9' numOctaves='3'/%3E%3C/filter%3E%3Crect width='100%25' height='100%25' filter='url(%23n)'/%3E%3C/svg%3E\")" }} />
         <div style={{ position: "absolute", right: "clamp(-20px,5vw,60px)", top: "50%", transform: "translateY(-50%)", opacity: 0.05, pointerEvents: "none", animation: "floatSlow 8s ease-in-out infinite" }} className="hide-mobile">
           <svg width="600" height="600" viewBox="0 0 600 600" fill="none">
             <circle cx="300" cy="300" r="280" stroke={WHITE} strokeWidth="2"/>
