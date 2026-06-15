@@ -178,7 +178,7 @@ function OwnerContactsPanel({ edit, update }) {
             <div style={{ gridColumn: "1 / -1" }}>
               <div style={{ fontSize: 10, fontWeight: 700, color: C.textMid, marginBottom: 3, textTransform: "uppercase", letterSpacing: 0.5 }}>Owner Name</div>
               <input type="text" value={newOwner.name} onChange={function(e) { setNewOwner(function(p) { return Object.assign({}, p, { name: e.target.value }); }); }}
-                placeholder="e.g. John Murphy"
+                placeholder="e.g. Owner Name"
                 style={{ width: "100%", padding: "10px 14px", background: "#fff", border: "1px solid " + C.border, borderRadius: 9, fontSize: 14, color: C.text }} />
             </div>
             <div>
@@ -936,8 +936,8 @@ function YardSettings({ settings, setSettings, supabase, user }) {
 
           <div style={{ display: "grid", gridTemplateColumns: "1fr 1fr", gap: 12 }}>
             {[
-              { key: "yardName", label: "Yard Name", placeholder: "e.g. Closutton Racing" },
-              { key: "trainerName", label: "Trainer Name", placeholder: "e.g. Gordon Elliott" },
+              { key: "yardName", label: "Yard Name", placeholder: "e.g. Yard Name" },
+              { key: "trainerName", label: "Trainer Name", placeholder: "e.g. Trainer Name" },
               { key: "location", label: "Location (auto-filled from eircode)", placeholder: "e.g. Robertstown, Co. Meath" },
               { key: "trainerLicence", label: "Trainer Licence No.", placeholder: "e.g. 12345" },
             ].map(function(field) {
@@ -1034,7 +1034,7 @@ function YardSettings({ settings, setSettings, supabase, user }) {
                   <div>
                     <div style={{ fontSize: 10, fontWeight: 700, color: C.textMid, marginBottom: 3, textTransform: "uppercase" }}>Name</div>
                     <input type="text" value={(edit.newUserName || "")} onChange={function(e) { update("newUserName", e.target.value); }}
-                      placeholder="e.g. Sean Murphy"
+                      placeholder="e.g. Owner Name"
                       style={{ width: "100%", padding: "9px 12px", background: "#fff", border: "1px solid " + C.border, borderRadius: 8, fontSize: 13, color: C.text }} />
                   </div>
                   <div>
@@ -1144,7 +1144,7 @@ function YardSettings({ settings, setSettings, supabase, user }) {
                   <div>
                     <div style={{ fontSize: 10, fontWeight: 700, color: C.textMid, marginBottom: 3, textTransform: "uppercase", letterSpacing: 0.5 }}>Name</div>
                     <input type="text" value={contact.name || ""} onChange={function(e) { updateContact(idx, "name", e.target.value); }}
-                      placeholder="e.g. Tommy Walsh"
+                      placeholder="e.g. Staff Name"
                       style={{ width: "100%", padding: "8px 12px", background: C.cardOff, border: "1px solid " + C.border, borderRadius: 8, fontSize: 13, color: C.text }} />
                   </div>
                   <div>
