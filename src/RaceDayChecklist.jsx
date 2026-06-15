@@ -1,5 +1,5 @@
 import React, { useState, useEffect } from "react";
-import { Btn, C } from "./shared";
+import { Btn, C, HorseFiles } from "./shared";
 
 var DEFAULT_CHECKLIST = [
   { id: "silks", label: "Silks", category: "Equipment" },
@@ -226,6 +226,13 @@ function RaceDayChecklist({ horses, wbEntries, user, supabase }) {
             {/* Expanded content */}
             {isExpanded && (
               <div style={{ padding: "0 18px 18px" }}>
+
+                {/* Post-race jockey report / photos / video */}
+                <div style={{ fontSize: 12, fontWeight: 700, color: C.textMid, textTransform: "uppercase", letterSpacing: 0.5, marginBottom: 6 }}>
+                  Jockey Report / Photos / Video
+                </div>
+                <HorseFiles horseId={horse.id} horseName={horse.name} context="raceday" user={user} />
+                <div style={{ height: 16 }} />
 
                 {/* Packing checklist by category */}
                 <div style={{ fontSize: 12, fontWeight: 700, color: C.textMid, textTransform: "uppercase", letterSpacing: 0.5, marginBottom: 10, marginTop: 4 }}>
