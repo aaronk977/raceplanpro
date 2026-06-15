@@ -641,7 +641,7 @@ function App() {
   return (
     <div className="app-wrapper" style={{ minHeight: "100vh", background: C.bg, fontFamily: "Inter, Helvetica Neue, sans-serif" }}>
       <style dangerouslySetInnerHTML={{ __html: globalCSS }} />
-      <div style={{ background: C.navy, height: 56, display: "flex", alignItems: "center", padding: "0 16px", gap: 10, position: "sticky", top: 0, zIndex: 100 }}>
+      <div style={{ background: C.navy, minHeight: 56, display: "flex", alignItems: "center", padding: "0 16px", paddingTop: "env(safe-area-inset-top, 0px)", position: "sticky", top: 0, zIndex: 200, gap: 10, position: "sticky", top: 0, zIndex: 100 }}>
         <button onClick={function() {
           if (window.innerWidth < 768) { setMobileNavOpen(function(o) { return !o; }); }
           else { setSidebarOpen(function(o) { return !o; }); }
@@ -649,7 +649,7 @@ function App() {
           style={{ background: "rgba(255,255,255,0.08)", border: "none", color: "#fff", width: 32, height: 32, borderRadius: 8, cursor: "pointer", fontSize: 13 }}>
           {"☰"}
         </button>
-        <svg width="170" height="38" viewBox="0 0 250 58" fill="none" style={{ flexShrink: 0 }}>
+        <svg onClick={function() { setTab("yard"); setMobileNavOpen(false); }} width="170" height="38" viewBox="0 0 250 58" fill="none" style={{ flexShrink: 0, cursor: "pointer" }}>
           <path d="M28 3 L48 9 L48 31 C48 42 38 50 28 53 C18 50 8 42 8 31 L8 9 Z" fill="#c9a84c" fillOpacity="0.1" stroke="#c9a84c" strokeWidth="1.5"/>
           <g transform="translate(13, 11) scale(0.056)">
             <path d="M0 464V316.9C0 208.5 68.3 111.8 170.5 75.6L340.2 15.5C361.6 7.9 384 23.8 384 46.4c0 11-5.5 21.2-14.6 27.3L336 96c48.1 0 91.2 29.8 108.1 74.9l48.6 129.5c11.8 31.4 4.1 66.8-19.6 90.5c-16 16-37.8 25.1-60.5 25.1h-3.4c-26.1 0-50.9-11.6-67.6-31.7l-32.3-38.7c-11.7 4.1-24.2 6.4-37.3 6.4l-.1 0 0 0c-6.3 0-12.5-.5-18.6-1.5c-3.6-.6-7.2-1.4-10.7-2.3l0 0c-28.9-7.8-53.1-26.8-67.8-52.2c-4.4-7.6-14.2-10.3-21.9-5.8s-10.3 14.2-5.8 21.9c24 41.5 68.3 70 119.3 71.9l47.2 70.8c4 6.1 6.2 13.2 6.2 20.4c0 20.3-16.5 36.8-36.8 36.8H48c-26.5 0-48-21.5-48-48zM328 224c13.3 0 24-10.7 24-24s-10.7-24-24-24s-24 10.7-24 24s10.7 24 24 24z" fill="#c9a84c"/>
@@ -779,14 +779,14 @@ function App() {
             { id: "assistant", icon: "🤖", label: "AI" },
           ].filter(function(t) { return allowedTabs.indexOf(t.id) >= 0; }).map(function(t) {
             return (
-              <button key={t.id} onClick={function() { setSafeTab(t.id); }}
+              <button key={t.id} onClick={function() { setTab(t.id); }}
                 style={{ flex: 1, padding: "8px 4px 6px", background: "none", border: "none", color: safeTab === t.id ? C.gold : "rgba(255,255,255,0.4)", cursor: "pointer", display: "flex", flexDirection: "column", alignItems: "center", gap: 2 }}>
                 <span style={{ fontSize: 20 }}>{t.icon}</span>
                 <span style={{ fontSize: 9, fontWeight: safeTab === t.id ? 700 : 400 }}>{t.label}</span>
               </button>
             );
           })}
-          <button onClick={function() { setSafeTab("settings"); }}
+          <button onClick={function() { setTab("settings"); }}
             style={{ flex: 1, padding: "8px 4px 6px", background: "none", border: "none", color: safeTab === "settings" ? C.gold : "rgba(255,255,255,0.4)", cursor: "pointer", display: "flex", flexDirection: "column", alignItems: "center", gap: 2 }}>
             <span style={{ fontSize: 20 }}>{"\u22EF"}</span>
             <span style={{ fontSize: 9 }}>More</span>
