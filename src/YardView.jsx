@@ -1,7 +1,7 @@
 import React, { useState } from "react";
-import { Btn, Tag, Silk, StatusPill, FormDots, C, TODAY, daysUntil, canRace, getAge, SILKS } from "./shared";
+import { Btn, Tag, Silk, StatusPill, FormDots, C, TODAY, daysUntil, canRace, getAge, SILKS, HorseFiles } from "./shared";
 
-function YardView({ horses, setHorses }) {
+function YardView({ horses, setHorses, user }) {
   var todayStr = TODAY.toISOString().slice(0, 10);
   var showAddState = useState(false);
   var showAdd = showAddState[0]; var setShowAdd = showAddState[1];
@@ -384,6 +384,11 @@ function YardView({ horses, setHorses }) {
                 <Btn variant="ghost" onClick={function() { if (window.confirm("Remove " + h.name + " from the yard?")) setHorses(function(prev) { return prev.filter(function(x) { return x.id !== h.id; }); }); }} style={{ fontSize: 11, padding: "5px 12px", color: C.red }}>Remove</Btn>
               </div>
             </div>
+            {user && (
+              <div style={{ marginTop: 10, paddingTop: 10, borderTop: "1px solid " + C.border }}>
+                <HorseFiles horseId={h.id} horseName={h.name} context="general" user={user} />
+              </div>
+            )}
           </div>
         );
       })}
