@@ -1,4 +1,4 @@
-import React, { useState } from "react";
+import React, { useState, useEffect } from "react";
 
 var NAVY = "#0a1628";
 var NAVY2 = "#112240";
@@ -18,12 +18,25 @@ var CSS = FONTS + `
   body { font-family: 'Outfit', sans-serif; background: ${PAPER}; color: ${TEXT}; }
   .serif { font-family: 'Outfit', sans-serif; }
   .hero-stat { font-family: 'Outfit', sans-serif; font-style: italic; font-size: clamp(64px,12vw,130px); font-weight: 900; line-height: 1; color: ${GOLD}; }
+  @keyframes fadeUp { from { opacity: 0; transform: translateY(24px); } to { opacity: 1; transform: translateY(0); } }
+  @keyframes fadeIn { from { opacity: 0; } to { opacity: 1; } }
+  @keyframes floatSlow { 0%, 100% { transform: translateY(0); } 50% { transform: translateY(-12px); } }
+  @keyframes shimmer { 0% { background-position: -200% center; } 100% { background-position: 200% center; } }
+  .reveal { opacity: 0; }
+  .reveal.in { animation: fadeUp 0.7s cubic-bezier(0.22, 1, 0.36, 1) forwards; }
+  .hero-fade-1 { animation: fadeUp 0.8s cubic-bezier(0.22,1,0.36,1) 0.05s both; }
+  .hero-fade-2 { animation: fadeUp 0.8s cubic-bezier(0.22,1,0.36,1) 0.18s both; }
+  .hero-fade-3 { animation: fadeUp 0.8s cubic-bezier(0.22,1,0.36,1) 0.32s both; }
+  .hero-fade-4 { animation: fadeUp 0.8s cubic-bezier(0.22,1,0.36,1) 0.46s both; }
+  .gold-shimmer { background: linear-gradient(90deg, ${GOLD} 0%, ${GOLD2} 50%, ${GOLD} 100%); background-size: 200% auto; -webkit-background-clip: text; background-clip: text; -webkit-text-fill-color: transparent; animation: shimmer 4s linear infinite; }
+  html { scroll-behavior: smooth; }
   .pain-card:hover { transform: translateY(-3px); box-shadow: 0 16px 48px rgba(0,0,0,0.12); }
   .pain-card { transition: transform 0.2s ease, box-shadow 0.2s ease; }
   .feature-card:hover { border-color: ${GOLD}80; }
   .feature-card { transition: border-color 0.2s ease; }
   .cta-btn { transition: transform 0.15s ease, opacity 0.15s ease; }
-  .cta-btn:hover { transform: translateY(-2px); opacity: 0.92; }
+  .cta-btn:hover { transform: translateY(-2px); box-shadow: 0 12px 32px rgba(201,149,42,0.3); }
+  .cta-btn { transition: transform 0.2s cubic-bezier(0.22,1,0.36,1), box-shadow 0.2s ease; }
   @media (max-width: 767px) {
     .hide-mobile { display: none !important; }
     .hero-stat { font-size: clamp(52px,18vw,90px) !important; }
@@ -222,6 +235,16 @@ function DemoWidget() {
 }
 
 function LandingPage({ onLogin }) {
+  useEffect(function() {
+    if (typeof window === "undefined" || !("IntersectionObserver" in window)) return;
+    var obs = new IntersectionObserver(function(entries) {
+      entries.forEach(function(e) { if (e.isIntersecting) { e.target.classList.add("in"); obs.unobserve(e.target); } });
+    }, { threshold: 0.12, rootMargin: "0px 0px -40px 0px" });
+    var els = document.querySelectorAll(".reveal");
+    els.forEach(function(el) { obs.observe(el); });
+    return function() { obs.disconnect(); };
+  }, []);
+
   var demoOpenState = useState(false);
   var demoOpen = demoOpenState[0]; var setDemoOpen = demoOpenState[1];
   var demoOpen2State = useState(false);
@@ -233,6 +256,15 @@ function LandingPage({ onLogin }) {
   var showPrivacyState = useState(false); var showPrivacy = showPrivacyState[0]; var setShowPrivacy = showPrivacyState[1];
   var showTermsState = useState(false); var showTerms = showTermsState[0]; var setShowTerms = showTermsState[1];
   var showContactState = useState(false); var showContact = showContactState[0]; var setShowContact = showContactState[1];
+  var cNameState = useState(""); var cName = cNameState[0]; var setCName = cNameState[1];
+  var cEmailState = useState(""); var cEmail = cEmailState[0]; var setCEmail = cEmailState[1];
+  var cMsgState = useState(""); var cMsg = cMsgState[0]; var setCMsg = cMsgState[1];
+
+  function sendContact() {
+    var subject = encodeURIComponent("RacePlan Pro enquiry from " + (cName || "website"));
+    var body = encodeURIComponent("Name: " + cName + "\nEmail: " + cEmail + "\n\n" + cMsg);
+    window.location.href = "mailto:hello@raceplanpro.com?subject=" + subject + "&body=" + body;
+  }
   var calcCourseState = useState("Leopardstown");
   var calcCourse = calcCourseState[0]; var setCalcCourse = calcCourseState[1];
 
@@ -263,14 +295,14 @@ function LandingPage({ onLogin }) {
           <span onClick={function() { setShowContact(true); }} style={{ color: "rgba(255,255,255,0.7)", fontSize: 13, fontWeight: 500, cursor: "pointer", marginRight: 4 }} className="hide-mobile">Contact</span>
           <button onClick={onLogin} style={{ background: "transparent", border: "1px solid rgba(255,255,255,0.2)", color: "rgba(255,255,255,0.8)", padding: "8px 16px", borderRadius: 6, cursor: "pointer", fontSize: 13, fontWeight: 500 }}>Log In</button>
           <button onClick={onLogin} style={{ background: "transparent", border: "1px solid rgba(201,149,42,0.5)", color: GOLD, padding: "8px 16px", borderRadius: 6, cursor: "pointer", fontSize: 13, fontWeight: 700 }} className="cta-btn">Sign Up Free</button>
-          <button onClick={function() { setDemoOpen(true); }} style={{ background: GOLD, border: "none", color: NAVY, padding: "8px 18px", borderRadius: 6, cursor: "pointer", fontSize: 13, fontWeight: 800 }} className="cta-btn">Book Demo</button>
+          <a href="#contact" style={{ background: GOLD, color: NAVY, padding: "8px 18px", borderRadius: 6, cursor: "pointer", fontSize: 13, fontWeight: 800, textDecoration: "none" }} className="cta-btn">Contact</a>
         </div>
       </div>
 
       {/* HERO */}
       <div style={{ background: "linear-gradient(160deg, " + NAVY + " 0%, " + NAVY2 + " 100%)", minHeight: "92vh", display: "flex", flexDirection: "column", justifyContent: "center", padding: "clamp(48px,10vw,80px) clamp(16px,6vw,80px)", position: "relative", overflow: "hidden" }}>
         <div style={{ position: "absolute", inset: 0, backgroundImage: "radial-gradient(ellipse 60% 50% at 80% 50%, rgba(201,149,42,0.06) 0%, transparent 70%), radial-gradient(ellipse 40% 60% at 10% 80%, rgba(26,122,74,0.08) 0%, transparent 60%)", pointerEvents: "none" }} />
-        <div style={{ position: "absolute", right: "clamp(-20px,5vw,60px)", top: "50%", transform: "translateY(-50%)", opacity: 0.04, pointerEvents: "none" }} className="hide-mobile">
+        <div style={{ position: "absolute", right: "clamp(-20px,5vw,60px)", top: "50%", transform: "translateY(-50%)", opacity: 0.05, pointerEvents: "none", animation: "floatSlow 8s ease-in-out infinite" }} className="hide-mobile">
           <svg width="600" height="600" viewBox="0 0 600 600" fill="none">
             <circle cx="300" cy="300" r="280" stroke={WHITE} strokeWidth="2"/>
             <circle cx="300" cy="300" r="200" stroke={WHITE} strokeWidth="1.5"/>
@@ -278,18 +310,18 @@ function LandingPage({ onLogin }) {
           </svg>
         </div>
         <div style={{ maxWidth: 820, position: "relative" }}>
-          <div style={{ display: "inline-flex", alignItems: "center", gap: 8, background: "rgba(201,149,42,0.12)", border: "1px solid rgba(201,149,42,0.25)", borderRadius: 4, padding: "5px 14px", fontSize: 11, color: GOLD, fontWeight: 700, letterSpacing: 1.5, textTransform: "uppercase", marginBottom: 32 }}>
-            Beta — Free for Founding Trainers
+          <div className="hero-fade-1" style={{ display: "inline-flex", alignItems: "center", gap: 8, background: "rgba(201,149,42,0.12)", border: "1px solid rgba(201,149,42,0.25)", borderRadius: 4, padding: "5px 14px", fontSize: 11, color: GOLD, fontWeight: 700, letterSpacing: 1.5, textTransform: "uppercase", marginBottom: 32 }}>
+            Beta - Free for Founding Trainers
           </div>
-          <h1 className="serif" style={{ fontSize: "clamp(40px,7vw,80px)", fontWeight: 900, color: WHITE, lineHeight: 1.08, marginBottom: 24, letterSpacing: "-1px" }}>
+          <h1 className="serif hero-fade-2" style={{ fontSize: "clamp(40px,7vw,80px)", fontWeight: 900, color: WHITE, lineHeight: 1.08, marginBottom: 24, letterSpacing: "-1px" }}>
             Save hours every day.<br />
             <span style={{ color: GOLD, fontStyle: "normal" }}>Stay fully compliant.</span>
           </h1>
-          <p style={{ fontSize: "clamp(15px,2vw,18px)", color: "rgba(255,255,255,0.65)", maxWidth: 560, lineHeight: 1.75, marginBottom: 40 }}>
+          <p className="hero-fade-3" style={{ fontSize: "clamp(15px,2vw,18px)", color: "rgba(255,255,255,0.65)", maxWidth: 560, lineHeight: 1.75, marginBottom: 40 }}>
             RacePlan Pro puts your medication records, race entries, owner comms, weights and compliance documents in one place — saving trainers hours of admin every day.
           </p>
-          <div style={{ display: "flex", gap: 12, flexWrap: "wrap" }}>
-            <button onClick={function() { setDemoOpen(true); }} style={{ background: GOLD, border: "none", color: NAVY, padding: "14px 32px", borderRadius: 8, cursor: "pointer", fontSize: 15, fontWeight: 800, letterSpacing: 0.2 }} className="cta-btn">Book a Demo</button>
+          <div className="hero-fade-4" style={{ display: "flex", gap: 12, flexWrap: "wrap" }}>
+            <button onClick={onLogin} style={{ background: GOLD, border: "none", color: NAVY, padding: "14px 32px", borderRadius: 8, cursor: "pointer", fontSize: 15, fontWeight: 800, letterSpacing: 0.2 }} className="cta-btn">Start Your 14-Day Free Trial</button>
             <button onClick={onLogin} style={{ background: "transparent", border: "1.5px solid rgba(255,255,255,0.25)", color: WHITE, padding: "14px 32px", borderRadius: 8, cursor: "pointer", fontSize: 15, fontWeight: 600 }} className="cta-btn">Start Free</button>
           </div>
         </div>
@@ -320,9 +352,9 @@ function LandingPage({ onLogin }) {
         <div style={{ maxWidth: 1040, margin: "0 auto" }}>
           <div style={{ marginBottom: 48 }}>
             <div style={{ fontSize: 11, fontWeight: 700, color: GOLD, letterSpacing: 2, textTransform: "uppercase", marginBottom: 12 }}>Sound familiar?</div>
-            <h2 className="serif" style={{ fontSize: "clamp(28px,4vw,46px)", fontWeight: 900, color: NAVY, lineHeight: 1.15 }}>Every trainer in Ireland is dealing<br />with the same daily fire-fighting.</h2>
+            <h2 className="serif reveal" style={{ fontSize: "clamp(28px,4vw,46px)", fontWeight: 900, color: NAVY, lineHeight: 1.15 }}>Every trainer in Ireland is dealing<br />with the same daily fire-fighting.</h2>
           </div>
-          <div style={{ display: "grid", gridTemplateColumns: "repeat(auto-fill, minmax(min(300px,100%), 1fr))", gap: 2 }}>
+          <div className="reveal" style={{ display: "grid", gridTemplateColumns: "repeat(auto-fill, minmax(min(300px,100%), 1fr))", gap: 2 }}>
             {[
               { num: "01", pain: "Secretary spending 1-2 hours transcribing vet prescriptions into a ring binder every single morning.", fix: "The digital Medicines Register replaces the ring binder. Log once, IHRB sheet prints in one tap." },
               { num: "02", pain: "A horse gets medication the morning of entries. You miss the withdrawal period — a fine, a missed run, potentially thousands.", fix: "Every withdrawal date tracked automatically. Ineligible horses flagged before you enter them." },
@@ -348,9 +380,9 @@ function LandingPage({ onLogin }) {
         <div style={{ maxWidth: 1040, margin: "0 auto" }}>
           <div style={{ marginBottom: 48 }}>
             <div style={{ fontSize: 11, fontWeight: 700, color: GOLD, letterSpacing: 2, textTransform: "uppercase", marginBottom: 12 }}>What you get back</div>
-            <h2 className="serif" style={{ fontSize: "clamp(28px,4vw,46px)", fontWeight: 900, color: WHITE, lineHeight: 1.15 }}>The numbers that matter.</h2>
+            <h2 className="serif reveal" style={{ fontSize: "clamp(28px,4vw,46px)", fontWeight: 900, color: WHITE, lineHeight: 1.15 }}>The numbers that matter.</h2>
           </div>
-          <div style={{ display: "grid", gridTemplateColumns: "repeat(auto-fill, minmax(220px, 1fr))", gap: 1, border: "1px solid rgba(201,149,42,0.15)" }}>
+          <div className="reveal" style={{ display: "grid", gridTemplateColumns: "repeat(auto-fill, minmax(220px, 1fr))", gap: 1, border: "1px solid rgba(201,149,42,0.15)" }}>
             {[
               { number: "2hrs", unit: "Saved daily", sub: "On medicines transcription alone. 60 hours a month back." },
               { number: "0", unit: "Missed deadlines", sub: "Withdrawal tracking means no horse enters while ineligible." },
@@ -376,19 +408,22 @@ function LandingPage({ onLogin }) {
         <div style={{ maxWidth: 1040, margin: "0 auto" }}>
           <div style={{ marginBottom: 48 }}>
             <div style={{ fontSize: 11, fontWeight: 700, color: GOLD, letterSpacing: 2, textTransform: "uppercase", marginBottom: 12 }}>Everything in one place</div>
-            <h2 className="serif" style={{ fontSize: "clamp(28px,4vw,46px)", fontWeight: 900, color: NAVY, lineHeight: 1.15 }}>Built for the way you actually work.</h2>
+            <h2 className="serif reveal" style={{ fontSize: "clamp(28px,4vw,46px)", fontWeight: 900, color: NAVY, lineHeight: 1.15 }}>Built for the way you actually work.</h2>
           </div>
-          <div style={{ display: "grid", gridTemplateColumns: "repeat(auto-fill, minmax(min(220px,100%), 1fr))", gap: 16 }}>
+          <div className="reveal" style={{ display: "grid", gridTemplateColumns: "repeat(auto-fill, minmax(min(220px,100%), 1fr))", gap: 16 }}>
             {[
-              { icon: "H", label: "Race Planner", desc: "AI reads race conditions and checks your whole yard for eligible horses in seconds." },
-              { icon: "R", label: "Med Register", desc: "Rule 148 compliant digital register. Replaces the ring binder. IHRB sheet in one tap." },
-              { icon: "Rx", label: "Prescriptions", desc: "Photo every vet prescription by date. Retrieve any day's records instantly." },
-              { icon: "G", label: "Galloping", desc: "Log where each horse worked, what they did, how they went. Full history per horse." },
-              { icon: "T", label: "Trotters", desc: "Schedule soundness trots for a batch of horses. Mark outcomes and add notes." },
-              { icon: "W", label: "Whiteboard", desc: "Import your runners from HRI. Print a professional stable-wall sheet in one tap." },
-              { icon: "O", label: "Owner Comms", desc: "WhatsApp every owner directly from the app. Templates for every update type." },
-              { icon: "I", label: "Invoices", desc: "Suppliers upload invoices via a unique link. You mark paid. Month-end solved." },
-              { icon: "S", label: "Reports", desc: "Pull date-range PDF reports for medications, gallops, weights, soundness, invoices." },
+              { icon: "RP", label: "Race Planning", desc: "Paste race conditions and AI instantly checks your whole yard for eligible horses - no more manual cross-checking." },
+              { icon: "MR", label: "Medicines Register", desc: "Rule 148 compliant digital register. Replaces the ring binder and prints an IHRB sheet in one tap." },
+              { icon: "OC", label: "Owner Comms", desc: "Message any owner on WhatsApp in one tap - entries, declarations, results and updates. Keep owners close." },
+              { icon: "EI", label: "End-of-Month Invoices", desc: "Suppliers upload invoices through a link, so your month-end paperwork collects itself instead of you chasing it." },
+              { icon: "LR", label: "Lameness Reports", desc: "Staff flag a lame or off horse in seconds and it shows instantly on the daily summary - no lost WhatsApp messages." },
+              { icon: "GR", label: "Gallop Reports", desc: "Log where each horse worked and how it went. A full, searchable work history for every horse in the yard." },
+              { icon: "DS", label: "Daily Summaries", desc: "Everything happening in the yard that day - meds, movements, concerns - on one screen the whole team can see." },
+              { icon: "CS", label: "Content Scheduler", desc: "Plan owner updates and content across multiple horses at once, with each owner pulled in automatically." },
+              { icon: "PR", label: "Procurement", desc: "Track feed, bedding and supplies per supplier so you always know what is on order and what it costs." },
+              { icon: "RX", label: "Vet Prescriptions", desc: "Photograph every prescription by date and pull up any horse's medication records in seconds for an inspection." },
+              { icon: "TR", label: "Trotters & Soundness", desc: "Schedule soundness trots for a batch of horses, mark outcomes, and surface anything that needs the vet." },
+              { icon: "RD", label: "Race Day", desc: "Printable whiteboard and race-day checklists so nothing gets missed on the busiest mornings." },
             ].map(function(f, i) {
               return (
                 <div key={i} className="feature-card" style={{ background: WHITE, borderRadius: 10, padding: "22px", border: "1px solid rgba(10,22,40,0.08)" }}>
@@ -414,7 +449,7 @@ function LandingPage({ onLogin }) {
           <DemoWidget />
 
           <div style={{ textAlign: "center", marginTop: 28 }}>
-            <button onClick={onLogin} style={{ background: GOLD, border: "none", color: NAVY, padding: "13px 32px", borderRadius: 8, cursor: "pointer", fontSize: 15, fontWeight: 800 }} className="cta-btn">Start Free — No Card Required</button>
+            <button onClick={onLogin} style={{ background: GOLD, border: "none", color: NAVY, padding: "13px 32px", borderRadius: 8, cursor: "pointer", fontSize: 15, fontWeight: 800 }} className="cta-btn">Start Your 14-Day Free Trial</button>
           </div>
         </div>
       </div>
@@ -424,7 +459,7 @@ function LandingPage({ onLogin }) {
         <div style={{ maxWidth: 1040, margin: "0 auto", display: "grid", gridTemplateColumns: "repeat(auto-fit, minmax(280px,1fr))", gap: 48, alignItems: "center" }}>
           <div>
             <div style={{ fontSize: 11, fontWeight: 700, color: GOLD, letterSpacing: 2, textTransform: "uppercase", marginBottom: 12 }}>Race Planning</div>
-            <h2 className="serif" style={{ fontSize: "clamp(24px,3vw,38px)", fontWeight: 900, color: NAVY, lineHeight: 1.2, marginBottom: 20 }}>Stop cross-referencing by hand.</h2>
+            <h2 className="serif reveal" style={{ fontSize: "clamp(24px,3vw,38px)", fontWeight: 900, color: NAVY, lineHeight: 1.2, marginBottom: 20 }}>Stop cross-referencing by hand.</h2>
             <p style={{ fontSize: 15, color: TEXT, lineHeight: 1.8, marginBottom: 16, opacity: 0.8 }}>Paste any race conditions — age, rating, sex, discipline, distance. The AI reads them instantly and tells you which horses are eligible, which are not, and why.</p>
             <p style={{ fontSize: 15, color: TEXT, lineHeight: 1.8, marginBottom: 24, opacity: 0.8 }}>Withdrawal periods checked automatically. A horse that cannot run will not appear as eligible. No manual checking. No risk of error.</p>
             {["Checks every horse in your yard instantly", "Withdrawal periods calculated automatically", "AI analysis on each eligible horse", "Works for HRI and BHA conditions"].map(function(t, i) {
@@ -461,14 +496,23 @@ function LandingPage({ onLogin }) {
         </div>
       </div>
 
+      {/* MISSION STATEMENT BAND */}
+      <div style={{ background: GOLD, padding: "clamp(40px,7vw,72px) clamp(16px,4vw,48px)", textAlign: "center" }}>
+        <div style={{ maxWidth: 820, margin: "0 auto" }}>
+          <p style={{ fontSize: "clamp(22px,3.5vw,36px)", fontWeight: 800, color: NAVY, lineHeight: 1.35, letterSpacing: "-0.3px" }}>
+            RacePlan Pro takes the admin off your plate and puts your whole yard in your pocket{"\u2014"}so you can stop managing paperwork and get back to what you do best: <span style={{ fontStyle: "italic" }}>training horses.</span>
+          </p>
+        </div>
+      </div>
+
       {/* BETA CTA */}
       <div style={{ background: NAVY2, padding: "clamp(48px,8vw,80px) clamp(16px,4vw,48px)", textAlign: "center" }}>
         <div style={{ maxWidth: 580, margin: "0 auto" }}>
           <div style={{ fontSize: 11, fontWeight: 700, color: GOLD, letterSpacing: 2, textTransform: "uppercase", marginBottom: 16 }}>Beta Access</div>
-          <h2 className="serif" style={{ fontSize: "clamp(28px,4vw,46px)", fontWeight: 900, color: WHITE, lineHeight: 1.15, marginBottom: 16, fontStyle: "italic" }}>Free during beta.</h2>
-          <p style={{ fontSize: 16, color: "rgba(255,255,255,0.6)", lineHeight: 1.8, marginBottom: 36 }}>We are working with a select group of Irish and UK trainers to shape the product. Full access, unlimited horses, no credit card. Founding trainers get preferential pricing at launch.</p>
+          <h2 className="serif reveal" style={{ fontSize: "clamp(28px,4vw,46px)", fontWeight: 900, color: WHITE, lineHeight: 1.15, marginBottom: 16, fontStyle: "italic" }}>Free during beta.</h2>
+          <p style={{ fontSize: 16, color: "rgba(255,255,255,0.6)", lineHeight: 1.8, marginBottom: 36 }}>We are working with a select group of Irish and UK trainers to shape the product. Full access, unlimited horses, 14-day free trial. Founding trainers get preferential pricing at launch.</p>
           <div style={{ display: "flex", gap: 12, justifyContent: "center", flexWrap: "wrap" }}>
-            <button onClick={function() { setDemoOpen(true); }} style={{ background: GOLD, border: "none", color: NAVY, padding: "14px 36px", borderRadius: 8, cursor: "pointer", fontSize: 15, fontWeight: 800 }} className="cta-btn">Book a Demo</button>
+            <a href="#contact" style={{ background: GOLD, color: NAVY, padding: "14px 36px", borderRadius: 8, cursor: "pointer", fontSize: 15, fontWeight: 800, textDecoration: "none", display: "inline-block" }} className="cta-btn">Get in Touch</a>
             <button onClick={onLogin} style={{ background: "transparent", border: "1.5px solid rgba(255,255,255,0.25)", color: WHITE, padding: "14px 36px", borderRadius: 8, cursor: "pointer", fontSize: 15, fontWeight: 600 }} className="cta-btn">Start Free</button>
           </div>
         </div>
@@ -483,6 +527,33 @@ function LandingPage({ onLogin }) {
           <p style={{ fontSize: 16, color: TEXT, lineHeight: 1.8, marginBottom: 18, opacity: 0.85 }}>We know the yard because we come from it. Every feature is built around how a working trainer and their staff actually operate, on the gallops and in the office, on a phone and on the move, with compliance and owner communication at the centre.</p>
           <p style={{ fontSize: 16, color: TEXT, lineHeight: 1.8, marginBottom: 32, opacity: 0.85 }}>Our goal is simple: give you back your time, keep you fully compliant, and put everything you need in one place.</p>
           <button onClick={function() { setShowContact(true); }} style={{ background: NAVY, border: "none", color: "#fff", padding: "13px 32px", borderRadius: 8, cursor: "pointer", fontSize: 15, fontWeight: 700 }} className="cta-btn">Get in Touch</button>
+        </div>
+      </div>
+
+      {/* CONTACT SECTION */}
+      <div id="contact" style={{ background: NAVY, padding: "clamp(48px,8vw,80px) clamp(16px,4vw,48px)" }}>
+        <div style={{ maxWidth: 620, margin: "0 auto" }}>
+          <div style={{ textAlign: "center", marginBottom: 36 }}>
+            <div style={{ fontSize: 11, fontWeight: 700, color: GOLD, letterSpacing: 2, textTransform: "uppercase", marginBottom: 12 }}>Get in touch</div>
+            <h2 style={{ fontSize: "clamp(26px,4vw,42px)", fontWeight: 900, color: WHITE, lineHeight: 1.15, marginBottom: 12 }}>Questions? Talk to us.</h2>
+            <p style={{ fontSize: 15, color: "rgba(255,255,255,0.6)", lineHeight: 1.7 }}>Whether you want to see it in action or just have a question, drop us a line and we will get back to you.</p>
+          </div>
+          <div style={{ background: "rgba(255,255,255,0.04)", border: "1px solid rgba(201,149,42,0.2)", borderRadius: 14, padding: "28px 24px" }}>
+            <div style={{ marginBottom: 14 }}>
+              <div style={{ fontSize: 11, fontWeight: 700, color: "rgba(255,255,255,0.6)", marginBottom: 6, textTransform: "uppercase", letterSpacing: 0.5 }}>Your Name</div>
+              <input type="text" value={cName} onChange={function(e) { setCName(e.target.value); }} style={{ width: "100%", padding: "12px 14px", background: "rgba(255,255,255,0.06)", border: "1px solid rgba(255,255,255,0.15)", borderRadius: 8, fontSize: 15, color: WHITE }} />
+            </div>
+            <div style={{ marginBottom: 14 }}>
+              <div style={{ fontSize: 11, fontWeight: 700, color: "rgba(255,255,255,0.6)", marginBottom: 6, textTransform: "uppercase", letterSpacing: 0.5 }}>Your Email</div>
+              <input type="email" value={cEmail} onChange={function(e) { setCEmail(e.target.value); }} style={{ width: "100%", padding: "12px 14px", background: "rgba(255,255,255,0.06)", border: "1px solid rgba(255,255,255,0.15)", borderRadius: 8, fontSize: 15, color: WHITE }} />
+            </div>
+            <div style={{ marginBottom: 18 }}>
+              <div style={{ fontSize: 11, fontWeight: 700, color: "rgba(255,255,255,0.6)", marginBottom: 6, textTransform: "uppercase", letterSpacing: 0.5 }}>Message</div>
+              <textarea value={cMsg} onChange={function(e) { setCMsg(e.target.value); }} style={{ width: "100%", padding: "12px 14px", background: "rgba(255,255,255,0.06)", border: "1px solid rgba(255,255,255,0.15)", borderRadius: 8, fontSize: 15, color: WHITE, minHeight: 110, fontFamily: "inherit" }} />
+            </div>
+            <button onClick={sendContact} style={{ width: "100%", background: GOLD, border: "none", color: NAVY, padding: "14px", borderRadius: 8, cursor: "pointer", fontSize: 15, fontWeight: 800 }} className="cta-btn">Send Message</button>
+            <div style={{ textAlign: "center", marginTop: 14, fontSize: 13, color: "rgba(255,255,255,0.5)" }}>Or email us directly at hello@raceplanpro.com</div>
+          </div>
         </div>
       </div>
 
@@ -547,13 +618,18 @@ function LandingPage({ onLogin }) {
                 <li style={{ marginBottom: 4 }}>Excessive automated or non-human usage</li>
               </ul>
 
-              <p style={{ marginBottom: 6, fontWeight: 700, color: "#0a1628" }}>4. Accuracy</p>
-              <p style={{ marginBottom: 12 }}>RacePlan Pro does not guarantee the accuracy of eligibility calculations, withdrawal period calculations or any AI-generated analysis. Trainers remain solely responsible for verifying all entries and declarations with HRI, the BHA or the relevant racing authority.</p>
+              <p style={{ marginBottom: 6, fontWeight: 700, color: "#0a1628" }}>4. A Tool Only - No Liability</p>
+              <p style={{ marginBottom: 8 }}>RacePlan Pro is a record-keeping and organisational tool only. It is provided "as is" to help yards manage their own information. It is not a professional, veterinary, legal, financial, accounting or regulatory service, and nothing in the app constitutes advice of any kind.</p>
+              <p style={{ marginBottom: 8 }}>All information in the app is entered and controlled by the user. RacePlan Pro accepts no responsibility or liability whatsoever for: (a) any information that is incorrectly, incompletely or inaccurately entered by a user; (b) any decision, action or omission taken in reliance on information held in or produced by the app; (c) any error in eligibility, withdrawal period, medication, entry, declaration or any other calculation or record; or (d) any event, loss, injury, fine, penalty, disqualification or damage of any kind arising in or in connection with the operation of a yard.</p>
+              <p style={{ marginBottom: 12 }}>The user is solely responsible for the accuracy of all data entered, for verifying all entries, declarations, medications and withdrawal periods directly with HRI, the BHA, the IHRB or the relevant racing or veterinary authority, and for all decisions made in running their yard. To the fullest extent permitted by law, RacePlan Pro excludes all liability for any direct, indirect or consequential loss arising from use of the app.</p>
 
-              <p style={{ marginBottom: 6, fontWeight: 700, color: "#0a1628" }}>5. Intellectual Property</p>
+              <p style={{ marginBottom: 6, fontWeight: 700, color: "#0a1628" }}>5. Not an Invoicing or Financial Platform</p>
+              <p style={{ marginBottom: 12 }}>RacePlan Pro is not an invoicing, accounting, payment or financial platform. Any invoice, procurement, cost or supplier feature is provided purely as a convenience for storing and organising the user's own records. RacePlan Pro does not process payments between users and third parties, does not verify the accuracy of any invoice or financial figure, and accepts no responsibility for any financial record, transaction, dispute or tax matter. Users must maintain their own proper accounting records and seek their own professional advice.</p>
+
+              <p style={{ marginBottom: 6, fontWeight: 700, color: "#0a1628" }}>6. Intellectual Property</p>
               <p style={{ marginBottom: 12 }}>{"\u00a9 2026 RacePlan Pro\u2122. All rights reserved. The RacePlan Pro name, logo, software and content are the exclusive property of RacePlan Pro. Unauthorised copying or reproduction is strictly prohibited."}</p>
 
-              <p style={{ marginBottom: 6, fontWeight: 700, color: "#0a1628" }}>6. Governing Law</p>
+              <p style={{ marginBottom: 6, fontWeight: 700, color: "#0a1628" }}>7. Governing Law</p>
               <p>These terms are governed by the laws of Ireland. Any disputes shall be subject to the exclusive jurisdiction of the Irish courts.</p>
             </div>
             <button onClick={function() { setShowTerms(false); }} style={{ marginTop: 20, width: "100%", background: NAVY, border: "none", color: WHITE, padding: "12px", borderRadius: 8, cursor: "pointer", fontWeight: 700 }}>Close</button>
@@ -582,54 +658,14 @@ function LandingPage({ onLogin }) {
                   <div style={{ fontSize: 15, color: NAVY, fontWeight: 600 }}>Available on request</div>
                 </div>
               </a>
-              <button onClick={function() { setShowContact(false); setDemoOpen(true); }} style={{ display: "flex", alignItems: "center", gap: 12, padding: "14px 16px", background: GOLD, borderRadius: 10, border: "none", cursor: "pointer", textAlign: "left" }}>
-                <span style={{ fontSize: 20 }}>{"\u25b6"}</span>
-                <div>
-                  <div style={{ fontSize: 11, color: NAVY, textTransform: "uppercase", fontWeight: 700, letterSpacing: 0.5, opacity: 0.7 }}>Or</div>
-                  <div style={{ fontSize: 15, color: NAVY, fontWeight: 800 }}>Book a Demo</div>
-                </div>
-              </button>
+              
             </div>
             <button onClick={function() { setShowContact(false); }} style={{ marginTop: 18, width: "100%", background: "transparent", border: "1px solid rgba(10,22,40,0.15)", color: MUTED, padding: "11px", borderRadius: 8, cursor: "pointer", fontWeight: 600 }}>Close</button>
           </div>
         </div>
       )}
 
-      {/* DEMO MODAL */}
-      {demoOpen && (
-        <div onClick={function() { setDemoOpen(false); }} style={{ position: "fixed", inset: 0, background: "rgba(0,0,0,0.75)", zIndex: 999, display: "flex", alignItems: "center", justifyContent: "center", padding: 20 }}>
-          <div onClick={function(e) { e.stopPropagation(); }} style={{ background: WHITE, borderRadius: 14, padding: "36px 32px", maxWidth: 440, width: "100%" }}>
-            <div className="serif" style={{ fontSize: 24, fontWeight: 900, color: NAVY, marginBottom: 8 }}>Book a Demo</div>
-            <p style={{ fontSize: 14, color: MUTED, marginBottom: 24, lineHeight: 1.7 }}>Leave your details and we will be in touch within 24 hours for a 20-minute walkthrough.</p>
-            {[
-              { label: "Your Name", val: demoName, set: setDemoName, type: "text", ph: "e.g. John Murphy" },
-              { label: "Email Address", val: demoEmail, set: setDemoEmail, type: "email", ph: "trainer@example.com" },
-              { label: "Yard / Phone (optional)", val: demoYard, set: setDemoYard, type: "text", ph: "e.g. Murphy Racing, Co. Tipperary" },
-            ].map(function(f, i) {
-              return (
-                <div key={i} style={{ marginBottom: 14 }}>
-                  <div style={{ fontSize: 11, fontWeight: 700, color: MUTED, textTransform: "uppercase", letterSpacing: 0.8, marginBottom: 6 }}>{f.label}</div>
-                  <input type={f.type} value={f.val} onChange={function(e) { f.set(e.target.value); }} placeholder={f.ph}
-                    style={{ width: "100%", padding: "11px 14px", border: "1.5px solid rgba(10,22,40,0.12)", borderRadius: 8, fontSize: 14, color: NAVY, fontFamily: "inherit", outline: "none" }} />
-                </div>
-              );
-            })}
-            {demoSent ? (
-              <div style={{ background: "#f0fdf4", border: "1px solid #86efac", borderRadius: 8, padding: "14px", textAlign: "center", marginBottom: 12 }}>
-                <div style={{ fontSize: 15, fontWeight: 800, color: GREEN }}>Request sent!</div>
-                <div style={{ fontSize: 13, color: MUTED, marginTop: 4 }}>{"We will be in touch at " + demoEmail + " within 24 hours."}</div>
-              </div>
-            ) : (
-              <a href={"mailto:hello@raceplanpro.com?subject=Demo Request from " + encodeURIComponent(demoName) + "&body=Name: " + encodeURIComponent(demoName) + "%0AEmail: " + encodeURIComponent(demoEmail) + "%0AYard: " + encodeURIComponent(demoYard)}
-                onClick={function() { if (demoEmail) setDemoSent(true); }}
-                style={{ display: "block", background: demoEmail ? NAVY : "#ccc", color: WHITE, padding: "13px", borderRadius: 8, textAlign: "center", fontWeight: 800, fontSize: 15, textDecoration: "none", marginBottom: 10, cursor: demoEmail ? "pointer" : "not-allowed" }}>
-                Send Demo Request
-              </a>
-            )}
-            <button onClick={function() { setDemoOpen(false); setDemoSent(false); }} style={{ width: "100%", background: PAPER, border: "none", color: MUTED, padding: "10px", borderRadius: 8, cursor: "pointer", fontSize: 13 }}>Close</button>
-          </div>
-        </div>
-      )}
+      
     </div>
   );
 }
