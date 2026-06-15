@@ -1,5 +1,5 @@
 import React, { useState, useEffect } from "react";
-import { Btn, C } from "./shared";
+import { Btn, C, HorseFiles } from "./shared";
 
 var OUTCOMES = ["Pending", "Sound", "Lame", "Slight Lameness", "Needs Vet", "Monitor"];
 
@@ -282,7 +282,9 @@ function Trotters({ horses, user, supabase }) {
               if (horseHistory.length === 0) return null;
               return (
                 <div key={h.id} style={{ background: C.card, border: "1px solid " + C.border, borderRadius: 12, padding: "14px 16px", marginBottom: 10 }}>
-                  <div style={{ fontSize: 15, fontWeight: 800, color: C.text, marginBottom: 10 }}>{h.name}</div>
+                  <div style={{ fontSize: 15, fontWeight: 800, color: C.text, marginBottom: 6 }}>{h.name}</div>
+                  <HorseFiles horseId={h.id} horseName={h.name} context="trotter" user={user} />
+                  <div style={{ height: 8 }} />
                   {horseHistory.map(function(e) {
                     return (
                       <div key={e.id} style={{ display: "flex", alignItems: "flex-start", gap: 12, padding: "8px 0", borderBottom: "1px solid " + C.cardOff }}>
