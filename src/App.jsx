@@ -9,6 +9,7 @@ import YardView from "./YardView";
 import MovementLog from "./MovementLog";
 import OwnerPortal from "./OwnerPortal";
 import StaffNotify from "./StaffNotify";
+import RacingExpenses from "./RacingExpenses";
 import YardSettings from "./YardSettings";
 import LandingPage from "./LandingPage";
 import TravelCost from "./TravelCost";
@@ -20,7 +21,10 @@ import Galloping from "./Galloping";
 import Reports from "./Reports";
 import Invoices from "./Invoices";
 import SupplierPortal from "./SupplierPortal";
+import VetPortal from "./VetPortal";
 import WeightsTracker from "./WeightsTracker";
+import TemperatureTracker from "./TemperatureTracker";
+import WorkBoard from "./WorkBoard";
 import YardAssistant from "./YardAssistant";
 import ContentScheduler from "./ContentScheduler";
 import EntriesComms from "./EntriesComms";
@@ -37,17 +41,17 @@ try { if (SUPABASE_URL && SUPABASE_ANON_KEY) supabase = createClient(SUPABASE_UR
 const globalCSS = ".desktop-only { display: flex !important; } * { box-sizing: border-box; margin: 0; padding: 0; } body { font-family: Inter, Helvetica Neue, sans-serif; } button:hover { opacity: 0.88; } input:focus, select:focus { outline: none; } ::-webkit-scrollbar { width: 4px; } ::-webkit-scrollbar-thumb { background: #b8c8da; border-radius: 2px; } @media print { body * { visibility: hidden; } #print-area, #print-area * { visibility: visible; } #print-area { position: absolute; left: 0; top: 0; } } @media (max-width: 767px) { .desktop-only { display: none !important; } html, body { overflow-x: hidden; overflow-y: scroll !important; -webkit-overflow-scrolling: touch; height: auto !important; } [style*=\"1fr 1fr\"] { grid-template-columns: 1fr !important; } [style*=\"repeat(3\"], [style*=\"repeat(4\"], [style*=\"repeat(5\"] { grid-template-columns: 1fr 1fr !important; } [style*=\"minmax\"] { grid-template-columns: repeat(auto-fill, minmax(110px, 1fr)) !important; } [style*=\"min-width: 600\"], [style*=\"minWidth\"] { min-width: 0 !important; } table { font-size: 12px !important; } .main-content, .app-wrapper { padding-left: 12px !important; padding-right: 12px !important; } input, select, textarea { font-size: 16px !important; } } @media (min-width: 768px) { .app-wrapper { height: 100vh; overflow: hidden; } .main-content { overflow-y: auto; height: calc(100vh - 56px); } }";
 
 var ROLE_TABS = {
-  "Trainer":           ["yard","planner","provisional","meds","register","prescriptions","whiteboard","entrycomms","movements","owners","staff","weights","trotters","galloping","checklist","assistant","content","summary","reminders","procurement","travel","invoices","reports","settings"],
-  "Secretary":         ["yard","planner","provisional","meds","register","prescriptions","whiteboard","entrycomms","movements","owners","staff","weights","trotters","galloping","checklist","assistant","content","summary","reminders","procurement","travel","invoices","reports","settings"],
-  "Head Lad":          ["yard","planner","provisional","meds","register","prescriptions","whiteboard","entrycomms","movements","owners","staff","weights","trotters","galloping","checklist","assistant","content","summary","reminders","procurement","travel","invoices","reports","settings"],
-  "Head Girl":         ["yard","planner","provisional","meds","register","prescriptions","whiteboard","entrycomms","movements","owners","staff","weights","trotters","galloping","checklist","assistant","content","summary","reminders","procurement","travel","invoices","reports","settings"],
-  "Assistant Trainer": ["yard","planner","provisional","meds","register","prescriptions","whiteboard","entrycomms","movements","owners","staff","weights","trotters","galloping","checklist","assistant","content","summary","reminders","procurement","travel","invoices","reports","settings"],
-  "Staff":             ["meds","movements","staff","weights","reminders","summary","trotters","checklist"],
-  "Vet":               ["yard","meds","register","prescriptions","movements","weights","trotters","galloping","summary"],
+  "Trainer":           ["yard","planner","provisional","meds","register","prescriptions","whiteboard","entrycomms","movements","owners","staff","expenses","weights","temperatures","workboard","trotters","galloping","checklist","assistant","content","summary","reminders","procurement","travel","invoices","reports","settings"],
+  "Secretary":         ["yard","planner","provisional","meds","register","prescriptions","whiteboard","entrycomms","movements","owners","staff","expenses","weights","temperatures","workboard","trotters","galloping","checklist","assistant","content","summary","reminders","procurement","travel","invoices","reports","settings"],
+  "Head Lad":          ["yard","planner","provisional","meds","register","prescriptions","whiteboard","entrycomms","movements","owners","staff","expenses","weights","temperatures","workboard","trotters","galloping","checklist","assistant","content","summary","reminders","procurement","travel","invoices","reports","settings"],
+  "Head Girl":         ["yard","planner","provisional","meds","register","prescriptions","whiteboard","entrycomms","movements","owners","staff","expenses","weights","temperatures","workboard","trotters","galloping","checklist","assistant","content","summary","reminders","procurement","travel","invoices","reports","settings"],
+  "Assistant Trainer": ["yard","planner","provisional","meds","register","prescriptions","whiteboard","entrycomms","movements","owners","staff","expenses","weights","temperatures","workboard","trotters","galloping","checklist","assistant","content","summary","reminders","procurement","travel","invoices","reports","settings"],
+  "Staff":             ["meds","movements","staff","weights","temperatures","workboard","reminders","summary","trotters","checklist"],
+  "Vet":               ["yard","meds","register","prescriptions","movements","weights","temperatures","workboard","trotters","galloping","summary"],
   "Owner":             ["owners","whiteboard"]
 };
 
-var ALL_TABS = ["yard","planner","provisional","meds","register","prescriptions","whiteboard","entrycomms","movements","owners","staff","weights","trotters","galloping","checklist","assistant","content","summary","reminders","procurement","travel","invoices","reports","settings"];
+var ALL_TABS = ["yard","planner","provisional","meds","register","prescriptions","whiteboard","entrycomms","movements","owners","staff","expenses","weights","temperatures","workboard","trotters","galloping","checklist","assistant","content","summary","reminders","procurement","travel","invoices","reports","settings"];
 
 function App() {
   const [user, setUser] = useState(null);
@@ -106,6 +110,7 @@ function App() {
     }
   };
   const [weightsRaw, setWeightsRaw] = useState({});
+  const [temperaturesRaw, setTemperaturesRaw] = useState({});
   const [reminders, setReminders] = useState([]);
   const [userRole, setUserRole] = useState(null);
   const [ordersRaw, setOrdersRaw] = useState([]);
@@ -197,6 +202,13 @@ function App() {
         setWeightsRaw(w);
       }
     });
+    supabase.from("horse_temperatures").select("*").eq("user_id", user.id).then(function(res) {
+      if (res.data) {
+        var tmp = {};
+        res.data.forEach(function(row) { tmp[row.horse_id + "_" + row.temp_date] = row.temp_c; });
+        setTemperaturesRaw(tmp);
+      }
+    });
     supabase.from("whiteboard_entries").select("*").eq("user_id", user.id).then(function(res) {
       if (res.data) setWbEntriesRaw(res.data.map(function(e) {
         return { id: e.id, horseId: e.horse_id, horseName: e.horse_name || "",
@@ -268,6 +280,41 @@ function App() {
             supabase.from("med_logs").upsert({ user_id: user.id, horse_id: horseId, log_date: logDate, med_type: medType, value: val }).then(function() {});
           } else {
             supabase.from("med_logs").delete().match({ user_id: user.id, horse_id: horseId, log_date: logDate, med_type: medType }).then(function() {});
+          }
+        }
+      });
+      return next;
+    });
+  };
+
+  var setTemperatures = function(updater) {
+    setTemperaturesRaw(function(prev) {
+      var next = typeof updater === "function" ? updater(prev) : updater;
+      if (!user) return next;
+      function parseTKey(key) {
+        var lastUnd = key.lastIndexOf("_");
+        return { horseId: key.slice(0, lastUnd), tempDate: key.slice(lastUnd + 1) };
+      }
+      Object.keys(next).forEach(function(key) {
+        if (next[key] !== prev[key]) {
+          var p = parseTKey(key);
+          if (next[key] && p.tempDate && p.tempDate.length === 10) {
+            supabase.from("horse_temperatures").upsert({
+              user_id: user.id, horse_id: p.horseId, temp_date: p.tempDate,
+              temp_c: parseFloat(next[key])
+            }, { onConflict: "user_id,horse_id,temp_date" }).then(function(r) {
+              if (r.error) console.error("Temp save:", r.error);
+            });
+          }
+        }
+      });
+      Object.keys(prev).forEach(function(key) {
+        if (!(key in next)) {
+          var p = parseTKey(key);
+          if (p.tempDate && p.tempDate.length === 10) {
+            supabase.from("horse_temperatures").delete()
+              .eq("user_id", user.id).eq("horse_id", p.horseId).eq("temp_date", p.tempDate)
+              .then(function(r) { if (r.error) console.error("Temp delete:", r.error); });
           }
         }
       });
@@ -457,6 +504,10 @@ function App() {
   if (supplierToken && typeof window !== "undefined" && window.location.pathname.indexOf("supplier") >= 0) {
     return <SupplierPortal token={supplierToken} />;
   }
+  var vetToken = urlParams2 ? urlParams2.get("vet") : null;
+  if (vetToken) {
+    return <VetPortal token={vetToken} />;
+  }
   var NAV = [
     { id: "yard", label: "My Yard", icon: "🐎" },
     { id: "planner", label: "Race Planner", icon: "📋" },
@@ -468,7 +519,10 @@ function App() {
     { id: "movements", label: "Movements", icon: "🚛" },
     { id: "owners", label: "Owners", icon: "👤" },
     { id: "staff", label: "Staff Hours", icon: "🌙" },
+    { id: "expenses", label: "Racing Expenses", icon: "€" },
     { id: "weights", label: "Weights", icon: "⚖️" },
+    { id: "temperatures", label: "Temperatures", icon: "🌡️" },
+    { id: "workboard", label: "Work Board", icon: "📋" },
     { id: "assistant", label: "AI Assistant", icon: "🤖" },
     { id: "content", label: "Content", icon: "🎥" },
     { id: "entrycomms", label: "Entries & Decs", icon: "ENT" },
@@ -641,7 +695,7 @@ function App() {
   return (
     <div className="app-wrapper" style={{ minHeight: "100vh", background: C.bg, fontFamily: "Inter, Helvetica Neue, sans-serif" }}>
       <style dangerouslySetInnerHTML={{ __html: globalCSS }} />
-      <div style={{ background: C.navy, minHeight: 56, display: "flex", alignItems: "center", padding: "0 16px", paddingTop: "env(safe-area-inset-top, 0px)", position: "sticky", top: 0, zIndex: 200, gap: 10, position: "sticky", top: 0, zIndex: 100 }}>
+      <div style={{ background: C.navy, minHeight: 56, display: "flex", alignItems: "center", padding: "0 16px", paddingTop: "env(safe-area-inset-top, 0px)", position: "sticky", top: 0, zIndex: 200, gap: 10 }}>
         <button onClick={function() {
           if (window.innerWidth < 768) { setMobileNavOpen(function(o) { return !o; }); }
           else { setSidebarOpen(function(o) { return !o; }); }
@@ -751,6 +805,7 @@ function App() {
           {safeTab === "movements" && <MovementLog horses={horses} settings={settings} user={user} supabase={supabase} />}
           {safeTab === "owners" && <OwnerPortal horses={horses} settings={settings} setHorses={setHorses} />}
           {safeTab === "staff" && <StaffNotify user={user} supabase={supabase} settings={settings} />}
+          {safeTab === "expenses" && <RacingExpenses horses={horses} user={user} supabase={supabase} settings={settings} setSettings={saveSettings} onNavigate={setTab} />}
           {safeTab === "trotters" && <Trotters horses={horses} user={user} supabase={supabase} />}
           {safeTab === "galloping" && <Galloping horses={horses} user={user} supabase={supabase} settings={settings} />}
           {safeTab === "checklist" && <RaceDayChecklist horses={horses} wbEntries={wbEntries} user={user} supabase={supabase} />}
@@ -761,6 +816,8 @@ function App() {
           {safeTab === "reports" && <Reports horses={horses} user={user} supabase={supabase} settings={settings} />}
           {safeTab === "settings" && <YardSettings settings={settings} setSettings={saveSettings} supabase={supabase} user={user} />}
           {safeTab === "weights" && <WeightsTracker horses={horses} weights={weightsRaw} setWeights={setWeights} settings={settings} />}
+          {safeTab === "temperatures" && <TemperatureTracker horses={horses} temperatures={temperaturesRaw} setTemperatures={setTemperatures} settings={settings} />}
+          {safeTab === "workboard" && <WorkBoard horses={horses} user={user} supabase={supabase} settings={settings} />}
           {safeTab === "assistant" && <YardAssistant horses={horses} setHorses={setHorses} weights={weightsRaw} medLogs={medLogs} setMedLogs={setMedLogs} reminders={reminders} setReminders={setReminders} settings={settings} user={user} supabase={supabase} onNavigate={setTab} />}
           {safeTab === "content" && <ContentScheduler horses={horses} settings={settings} />}
           {safeTab === "entrycomms" && <EntriesComms horses={horses} user={user} supabase={supabase} settings={settings} />}
