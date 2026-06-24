@@ -42,9 +42,8 @@ function parseDate(raw) {
   return s;
 }
 
-function RacedayPrint({ horses }) {
-  var entriesState = useState([]);
-  var entries = entriesState[0]; var setEntries = entriesState[1];
+function RacedayPrint({ horses, entries, setEntries }) {
+  // entries + setEntries come from App (persisted to Supabase) - no local state
   var showAddState = useState(false);
   var showAdd = showAddState[0]; var setShowAdd = showAddState[1];
   var csvStatusState = useState(null);
