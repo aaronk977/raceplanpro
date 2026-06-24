@@ -1,5 +1,5 @@
 import React, { useState } from "react";
-import { Btn, Tag, Silk, FormDots, StatusPill, C, TODAY, daysUntil, canRace, coolingDate, getAge, ANTHROPIC_KEY } from "./shared";
+import { Btn, Tag, Silk, FormDots, StatusPill, C, TODAY, daysUntil, canRace, coolingDate, getAge, isEligible, ANTHROPIC_KEY } from "./shared";
 
 // API_HEADERS removed - using server-side proxy
 
