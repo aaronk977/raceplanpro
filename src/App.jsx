@@ -22,6 +22,7 @@ import Reports from "./Reports";
 import Invoices from "./Invoices";
 import SupplierPortal from "./SupplierPortal";
 import VetPortal from "./VetPortal";
+import RiderBoard from "./RiderBoard";
 import WeightsTracker from "./WeightsTracker";
 import TemperatureTracker from "./TemperatureTracker";
 import WorkBoard from "./WorkBoard";
@@ -507,6 +508,10 @@ function App() {
   var vetToken = urlParams2 ? urlParams2.get("vet") : null;
   if (vetToken) {
     return <VetPortal token={vetToken} />;
+  }
+  var riderToken = urlParams2 ? urlParams2.get("rider") : null;
+  if (riderToken) {
+    return <RiderBoard token={riderToken} />;
   }
   var NAV = [
     { id: "yard", label: "My Yard", icon: "🐎" },
