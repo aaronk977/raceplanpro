@@ -47,15 +47,42 @@ function WorkBoard({ horses, user, supabase, settings }) {
     supabase.from("work_boards").select("*").eq("user_id", user.id).eq("board_date", boardDate).maybeSingle()
       .then(function(res) {
         if (res.data && res.data.board_data) {
+          // This date already has a saved board - use it
           var bd = typeof res.data.board_data === "string" ? JSON.parse(res.data.board_data) : res.data.board_data;
           setBoard(bd);
           setNumLots(bd.numLots || 3);
+          setLoading(false);
         } else {
-          var nb = emptyBoard();
-          setBoard(nb);
-          setNumLots(nb.numLots || 3);
+          // New date - build the roster from the MOST RECENT board's riders (so all
+          // riders persist across dates) merged with any settings contacts, lots cleared.
+          supabase.from("work_boards").select("board_data").eq("user_id", user.id)
+            .order("board_date", { ascending: false }).limit(1)
+            .then(function(recent) {
+              var roster = [];
+              var names = {};
+              // Riders from the most recent saved board
+              if (recent.data && recent.data[0] && recent.data[0].board_data) {
+                var lastBd = typeof recent.data[0].board_data === "string" ? JSON.parse(recent.data[0].board_data) : recent.data[0].board_data;
+                (lastBd.riders || []).forEach(function(r) {
+                  if (r.name && !names[r.name.toLowerCase()]) {
+                    names[r.name.toLowerCase()] = true;
+                    roster.push({ name: r.name, lots: {} });
+                  }
+                });
+              }
+              // Plus any rider/staff contacts from settings not already in the roster
+              seedRiders().forEach(function(r) {
+                if (r.name && !names[r.name.toLowerCase()]) {
+                  names[r.name.toLowerCase()] = true;
+                  roster.push({ name: r.name, lots: {} });
+                }
+              });
+              var nb = { date: boardDate, numLots: 3, riders: roster };
+              setBoard(nb);
+              setNumLots(3);
+              setLoading(false);
+            });
         }
-        setLoading(false);
       });
   }, [boardDate, user]);
 
