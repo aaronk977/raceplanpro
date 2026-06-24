@@ -28,6 +28,8 @@ function DailySummary({ horses, medLogs, weights, wbEntries, settings, user, sup
   var flagsState = useState([]);
   var healthFlags = flagsState[0]; var setHealthFlags = flagsState[1];
   var highTempState = useState([]); var highTemps = highTempState[0]; var setHighTemps = highTempState[1];
+  var lameGallopState = useState([]); var lameGallopers = lameGallopState[0]; var setLameGallopers = lameGallopState[1];
+  var dayRemState = useState([]); var dayReminders = dayRemState[0]; var setDayReminders = dayRemState[1];
   var showFlagState = useState(false);
   var showFlag = showFlagState[0]; var setShowFlag = showFlagState[1];
   var flagFormState = useState({ horseId: "", note: "", needsVet: false, needsTrot: false });
@@ -39,6 +41,12 @@ function DailySummary({ horses, medLogs, weights, wbEntries, settings, user, sup
       .in("outcome", ["Lame", "Slight Lameness", "Needs Vet"])
       .order("created_at", { ascending: false }).limit(20)
       .then(function(res) { if (res.data) setLameTrotters(res.data); });
+    supabase.from("galloping").select("*").eq("user_id", user.id)
+      .in("outcome", ["Lame", "Slight Lameness", "Needs Vet"])
+      .order("created_at", { ascending: false }).limit(20)
+      .then(function(res) { if (res.data) setLameGallopers(res.data); });
+    supabase.from("reminders").select("*").eq("user_id", user.id).eq("reminder_date", selectedDate)
+      .then(function(res) { if (res.data) setDayReminders(res.data); });
     supabase.from("movements").select("*").eq("user_id", user.id).eq("date", selectedDate)
       .then(function(res) { if (res.data) setDayMovements(res.data); });
     supabase.from("horse_temperatures").select("*").eq("user_id", user.id).eq("temp_date", selectedDate)
@@ -296,6 +304,43 @@ function DailySummary({ horses, medLogs, weights, wbEntries, settings, user, sup
               <Btn variant="ghost" onClick={function() { setShowFlag(false); }}>Cancel</Btn>
             </div>
           </div>
+        </div>
+      )}
+      {dayReminders.length > 0 && (
+        <div style={{ background: C.blue + "12", border: "1.5px solid " + C.blue, borderRadius: 12, padding: "14px 16px", marginBottom: 16 }}>
+          <div style={{ fontSize: 13, fontWeight: 800, color: C.blue, marginBottom: 8, display: "flex", alignItems: "center", gap: 6 }}>
+            <span>{"\ud83d\udd14"}</span> Reminders today
+          </div>
+          {dayReminders.map(function(r, i) {
+            return (
+              <div key={r.id || i} style={{ display: "flex", alignItems: "center", gap: 8, padding: "5px 0" }}>
+                <span style={{ width: 7, height: 7, borderRadius: "50%", background: C.blue, flexShrink: 0 }} />
+                <span style={{ fontSize: 14, fontWeight: 600, color: C.text }}>{r.text || r.title || "Reminder"}</span>
+                {r.time && <span style={{ fontSize: 12, color: C.textMid }}>{r.time}</span>}
+                {r.horse_name && <span style={{ fontSize: 12, color: C.textMid }}>{"- " + r.horse_name}</span>}
+              </div>
+            );
+          })}
+        </div>
+      )}
+      {lameGallopers.length > 0 && (
+        <div style={{ background: C.red + "12", border: "1.5px solid " + C.red, borderRadius: 12, padding: "14px 16px", marginBottom: 16 }}>
+          <div style={{ fontSize: 13, fontWeight: 800, color: C.red, marginBottom: 8, display: "flex", alignItems: "center", gap: 6 }}>
+            <span>{"\u26a0"}</span> Gallop concerns reported
+          </div>
+          {lameGallopers.map(function(t, i) {
+            var horseName = t.horse_name || "";
+            (horses || []).forEach(function(h) { if (h.id === t.horse_id || h.id === t.horseId) horseName = h.name; });
+            if (!horseName) horseName = "Horse";
+            return (
+              <div key={t.id || i} style={{ display: "flex", alignItems: "center", gap: 8, padding: "5px 0" }}>
+                <span style={{ width: 7, height: 7, borderRadius: "50%", background: C.red, flexShrink: 0 }} />
+                <span style={{ fontSize: 14, fontWeight: 700, color: C.text }}>{horseName}</span>
+                <span style={{ fontSize: 12, color: C.red, fontWeight: 600 }}>{t.outcome || "Concern"}</span>
+                {t.notes && <span style={{ fontSize: 12, color: C.textMid }}>{t.notes}</span>}
+              </div>
+            );
+          })}
         </div>
       )}
       {lameTrotters.length > 0 && (
