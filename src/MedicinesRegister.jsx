@@ -12,6 +12,8 @@ function MedicinesRegister({ horses, user, supabase, settings }) {
   var pinError = pinErrorState[0]; var setPinError = pinErrorState[1];
   var entriesState = useState([]);
   var entries = entriesState[0]; var setEntries = entriesState[1];
+  var pendingState = useState([]);
+  var pendingVet = pendingState[0]; var setPendingVet = pendingState[1];
   var showAddState = useState(false);
   var showAdd = showAddState[0]; var setShowAdd = showAddState[1];
   var savingState = useState(false);
@@ -52,7 +54,32 @@ function MedicinesRegister({ horses, user, supabase, settings }) {
     supabase.from("medicines_register").select("*").eq("user_id", user.id)
       .order("date", { ascending: false })
       .then(function(res) { if (res.data) setEntries(res.data); });
+    supabase.from("vet_prescriptions").select("*").eq("user_id", user.id).eq("status", "pending")
+      .order("submitted_at", { ascending: false })
+      .then(function(res) { if (res.data) setPendingVet(res.data); });
   }, [user]);
+
+  function confirmVetRx(rx) {
+    var rec = {
+      user_id: user.id, horse_id: rx.horse_id, horse_name: rx.horse_name,
+      date: rx.date, drug_brand: rx.drug_brand, drug_active: rx.drug_active,
+      route: rx.route, quantity: rx.quantity, reason: rx.reason,
+      administered_by: "", vet: rx.vet_name || defaultVet,
+      withdrawal_time: rx.withdrawal_time, trainer_auth: (trainerName || "Authorised"),
+      created_at: new Date().toISOString()
+    };
+    supabase.from("medicines_register").insert(rec).select().then(function(res) {
+      if (res.data && res.data[0]) setEntries(function(p) { return [res.data[0]].concat(p); });
+      supabase.from("vet_prescriptions").update({ status: "confirmed" }).eq("id", rx.id).then(function() {});
+      setPendingVet(function(p) { return p.filter(function(x) { return x.id !== rx.id; }); });
+    });
+  }
+
+  function dismissVetRx(rx) {
+    if (!window.confirm("Dismiss this vet prescription without adding it to the register?")) return;
+    supabase.from("vet_prescriptions").update({ status: "dismissed" }).eq("id", rx.id).then(function() {});
+    setPendingVet(function(p) { return p.filter(function(x) { return x.id !== rx.id; }); });
+  }
 
   function upd(k, v) { setForm(function(p) { return Object.assign({}, p, { [k]: v }); }); }
 
@@ -206,6 +233,39 @@ function MedicinesRegister({ horses, user, supabase, settings }) {
           <Btn onClick={function() { setForm(Object.assign({}, blank, { vet: defaultVet })); setSelHorses({}); setHorseSearch(""); setShowAdd(true); }}>+ Record</Btn>
         </div>
       </div>
+
+      {pendingVet.length > 0 && (
+        <div style={{ background: C.amberBg, border: "1.5px solid " + C.amber, borderRadius: 12, padding: "14px 16px", marginBottom: 16 }}>
+          <div style={{ fontSize: 13, fontWeight: 800, color: C.amber, marginBottom: 10, textTransform: "uppercase", letterSpacing: 0.5 }}>
+            {pendingVet.length + " vet prescription" + (pendingVet.length > 1 ? "s" : "") + " awaiting your confirmation"}
+          </div>
+          {pendingVet.map(function(rx) {
+            return (
+              <div key={rx.id} style={{ background: C.card, border: "1px solid " + C.border, borderRadius: 10, padding: "12px 14px", marginBottom: 8 }}>
+                <div style={{ display: "flex", justifyContent: "space-between", alignItems: "flex-start", gap: 10, flexWrap: "wrap" }}>
+                  <div style={{ flex: 1, minWidth: 200 }}>
+                    <div style={{ fontSize: 14, fontWeight: 700, color: C.text }}>{rx.horse_name}{rx.drug_brand ? " - " + rx.drug_brand : ""}</div>
+                    <div style={{ fontSize: 12, color: C.textMid, marginTop: 3, lineHeight: 1.5 }}>
+                      {[rx.drug_active, rx.route, rx.quantity, rx.reason].filter(Boolean).join(" / ")}
+                      {rx.withdrawal_time ? " - withdrawal: " + rx.withdrawal_time : ""}
+                    </div>
+                    <div style={{ fontSize: 11, color: C.textMid, marginTop: 3 }}>
+                      {(rx.vet_name ? "Vet: " + rx.vet_name + " - " : "") + (rx.date || "")}
+                      {rx.file_path ? " - document attached" : ""}
+                    </div>
+                    {rx.notes && <div style={{ fontSize: 12, color: C.textMid, marginTop: 3, fontStyle: "italic" }}>{rx.notes}</div>}
+                  </div>
+                  <div style={{ display: "flex", gap: 6 }}>
+                    <button onClick={function() { confirmVetRx(rx); }} style={{ fontSize: 12, fontWeight: 700, padding: "7px 14px", borderRadius: 7, border: "none", background: C.green, color: "#fff", cursor: "pointer" }}>Confirm</button>
+                    <button onClick={function() { dismissVetRx(rx); }} style={{ fontSize: 12, fontWeight: 700, padding: "7px 12px", borderRadius: 7, border: "1px solid " + C.border, background: C.cardOff, color: C.red, cursor: "pointer" }}>Dismiss</button>
+                  </div>
+                </div>
+              </div>
+            );
+          })}
+          <div style={{ fontSize: 11, color: C.textMid, marginTop: 4 }}>Review each prescription, then Confirm to add it to your register. You remain responsible for what is recorded.</div>
+        </div>
+      )}
 
       {/* View toggle */}
       <div style={{ display: "flex", gap: 0, marginBottom: 14, border: "1px solid " + C.border, borderRadius: 10, overflow: "hidden", width: "fit-content" }}>
