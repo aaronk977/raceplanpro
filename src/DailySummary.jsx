@@ -27,6 +27,7 @@ function DailySummary({ horses, medLogs, weights, wbEntries, settings, user, sup
   var dayMovements = moveState[0]; var setDayMovements = moveState[1];
   var flagsState = useState([]);
   var healthFlags = flagsState[0]; var setHealthFlags = flagsState[1];
+  var highTempState = useState([]); var highTemps = highTempState[0]; var setHighTemps = highTempState[1];
   var showFlagState = useState(false);
   var showFlag = showFlagState[0]; var setShowFlag = showFlagState[1];
   var flagFormState = useState({ horseId: "", note: "", needsVet: false, needsTrot: false });
@@ -40,6 +41,13 @@ function DailySummary({ horses, medLogs, weights, wbEntries, settings, user, sup
       .then(function(res) { if (res.data) setLameTrotters(res.data); });
     supabase.from("movements").select("*").eq("user_id", user.id).eq("date", selectedDate)
       .then(function(res) { if (res.data) setDayMovements(res.data); });
+    supabase.from("horse_temperatures").select("*").eq("user_id", user.id).eq("temp_date", selectedDate)
+      .then(function(res) {
+        if (res.data) {
+          var hot = res.data.filter(function(t) { return parseFloat(t.temp_c) >= 38.6; });
+          setHighTemps(hot);
+        }
+      });
     supabase.from("health_flags").select("*").eq("user_id", user.id).eq("resolved", false)
       .order("created_at", { ascending: false }).limit(30)
       .then(function(res) { if (res.data) setHealthFlags(res.data); });
@@ -217,6 +225,24 @@ function DailySummary({ horses, medLogs, weights, wbEntries, settings, user, sup
       <div style={{ display: "flex", justifyContent: "flex-end", marginBottom: 12 }}>
         <button onClick={function() { setShowFlag(true); }} style={{ background: C.red, color: "#fff", border: "none", padding: "9px 16px", borderRadius: 8, fontSize: 13, fontWeight: 700, cursor: "pointer" }}>+ Flag a Concern</button>
       </div>
+      {highTemps.length > 0 && (
+        <div style={{ background: C.red + "12", border: "1.5px solid " + C.red, borderRadius: 12, padding: "12px 16px", marginBottom: 12 }}>
+          <div style={{ fontSize: 13, fontWeight: 800, color: C.red, marginBottom: 8, display: "flex", alignItems: "center", gap: 6 }}>
+            <span>{"\ud83c\udf21\ufe0f"}</span> High temperatures today
+          </div>
+          {highTemps.map(function(t, i) {
+            var hn = t.horse_name || "Horse";
+            (horses || []).forEach(function(h) { if (h.id === t.horse_id) hn = h.name; });
+            return (
+              <div key={t.id || i} style={{ display: "flex", alignItems: "center", gap: 8, padding: "5px 0" }}>
+                <span style={{ width: 7, height: 7, borderRadius: "50%", background: C.red, flexShrink: 0 }} />
+                <span style={{ fontSize: 14, fontWeight: 700, color: C.text }}>{hn}</span>
+                <span style={{ fontSize: 13, fontWeight: 800, color: C.red }}>{t.temp_c + " \u00b0C"}</span>
+              </div>
+            );
+          })}
+        </div>
+      )}
       {healthFlags.length > 0 && (
         <div style={{ background: C.red + "12", border: "1.5px solid " + C.red, borderRadius: 12, padding: "14px 16px", marginBottom: 16 }}>
           <div style={{ fontSize: 13, fontWeight: 800, color: C.red, marginBottom: 8, display: "flex", alignItems: "center", gap: 6 }}>
