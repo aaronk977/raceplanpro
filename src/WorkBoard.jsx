@@ -21,6 +21,8 @@ function WorkBoard({ horses, user, supabase, settings }) {
   var numLots = numLotsState[0]; var setNumLots = numLotsState[1];
   var toastState = useState(null);
   var toast = toastState[0]; var setToast = toastState[1];
+  var linkState = useState("");
+  var riderLink = linkState[0]; var setRiderLink = linkState[1];
 
   // Seed riders from notify contacts (riders/staff) if available
   function seedRiders() {
@@ -99,6 +101,40 @@ function WorkBoard({ horses, user, supabase, settings }) {
     });
   }
 
+
+  function makeRiderLink() {
+    if (!user || !supabase) return;
+    var yardName = (settings && settings.yardName) || "the yard";
+    supabase.from("work_board_links").select("token").eq("user_id", user.id).maybeSingle()
+      .then(function(res) {
+        if (res.data && res.data.token) {
+          var url = window.location.origin + "/?rider=" + res.data.token;
+          setRiderLink(url);
+          copyLink(url);
+        } else {
+          var token = "wb_" + Math.random().toString(36).slice(2, 11) + Date.now().toString(36);
+          supabase.from("work_board_links").insert({ user_id: user.id, yard_name: yardName, token: token, active: true })
+            .then(function(r2) {
+              if (!r2.error) {
+                var url = window.location.origin + "/?rider=" + token;
+                setRiderLink(url);
+                copyLink(url);
+              } else {
+                showToast("Could not create link", C.red);
+              }
+            });
+        }
+      });
+  }
+
+  function copyLink(url) {
+    try {
+      navigator.clipboard.writeText(url).then(function() { showToast("Rider link copied", C.green); });
+    } catch (e) {
+      showToast("Link ready below", C.green);
+    }
+  }
+
   function addRider() {
     if (!newRider.trim()) return;
     setBoard(function(b) {
@@ -155,9 +191,18 @@ function WorkBoard({ horses, user, supabase, settings }) {
           <div style={{ fontSize: 22, fontWeight: 800, color: C.text }}>Work Riding Board</div>
           <div style={{ fontSize: 13, color: C.textMid, marginTop: 3 }}>Set the lots for each rider. Riders see their own board on their phone.</div>
         </div>
-        <Btn onClick={saveBoard} disabled={saving}>{saving ? "Saving..." : "Save Board"}</Btn>
+        <div style={{ display: "flex", gap: 8, flexWrap: "wrap" }}>
+          <Btn variant="ghost" onClick={makeRiderLink}>Rider Link</Btn>
+          <Btn onClick={saveBoard} disabled={saving}>{saving ? "Saving..." : "Save Board"}</Btn>
+        </div>
       </div>
 
+      {riderLink && (
+        <div style={{ background: C.goldBg, border: "1px solid " + C.gold, borderRadius: 10, padding: "12px 14px", marginBottom: 12 }}>
+          <div style={{ fontSize: 12, fontWeight: 700, color: C.navy, marginBottom: 4 }}>Rider link (share with your riders - they pick their name and see their lots):</div>
+          <div style={{ fontSize: 12, color: C.blue, wordBreak: "break-all" }}>{riderLink}</div>
+        </div>
+      )}
       <div style={{ background: C.card, border: "1px solid " + C.border, borderRadius: 12, padding: "14px 16px", marginBottom: 14, display: "flex", gap: 16, flexWrap: "wrap", alignItems: "flex-end" }}>
         <div>
           <div style={{ fontSize: 10, fontWeight: 700, color: C.textMid, marginBottom: 4, textTransform: "uppercase", letterSpacing: 0.5 }}>Date</div>
