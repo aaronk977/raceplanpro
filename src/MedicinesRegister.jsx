@@ -14,6 +14,8 @@ function MedicinesRegister({ horses, user, supabase, settings }) {
   var entries = entriesState[0]; var setEntries = entriesState[1];
   var pendingState = useState([]);
   var pendingVet = pendingState[0]; var setPendingVet = pendingState[1];
+  var vetLinkState = useState("");
+  var vetLink = vetLinkState[0]; var setVetLink = vetLinkState[1];
   var showAddState = useState(false);
   var showAdd = showAddState[0]; var setShowAdd = showAddState[1];
   var savingState = useState(false);
@@ -58,6 +60,30 @@ function MedicinesRegister({ horses, user, supabase, settings }) {
       .order("submitted_at", { ascending: false })
       .then(function(res) { if (res.data) setPendingVet(res.data); });
   }, [user]);
+
+
+  function makeVetLink() {
+    if (!user || !supabase) return;
+    var yardName = (settings && settings.yardName) || "the yard";
+    supabase.from("vet_links").select("token").eq("user_id", user.id).maybeSingle()
+      .then(function(res) {
+        if (res.data && res.data.token) {
+          var url = window.location.origin + "/?vet=" + res.data.token;
+          setVetLink(url);
+          try { navigator.clipboard.writeText(url); } catch(e) {}
+        } else {
+          var token = "vet_" + Math.random().toString(36).slice(2, 11) + Date.now().toString(36);
+          supabase.from("vet_links").insert({ user_id: user.id, yard_name: yardName, token: token, active: true })
+            .then(function(r2) {
+              if (!r2.error) {
+                var url = window.location.origin + "/?vet=" + token;
+                setVetLink(url);
+                try { navigator.clipboard.writeText(url); } catch(e) {}
+              }
+            });
+        }
+      });
+  }
 
   function confirmVetRx(rx) {
     var rec = {
@@ -228,12 +254,20 @@ function MedicinesRegister({ horses, user, supabase, settings }) {
           <div style={{ fontSize: 12, color: C.textMid, marginTop: 2 }}>Rule 148 compliant record of all medicines administered</div>
         </div>
         <div style={{ display: "flex", gap: 8, flexWrap: "wrap" }}>
+          <Btn variant="ghost" onClick={makeVetLink}>Vet Link</Btn>
           <Btn variant="ghost" onClick={function() { setShowDetection(true); }}>Detection Times</Btn>
           <Btn variant="ghost" onClick={printRegister}>Print / PDF</Btn>
           <Btn onClick={function() { setForm(Object.assign({}, blank, { vet: defaultVet })); setSelHorses({}); setHorseSearch(""); setShowAdd(true); }}>+ Record</Btn>
         </div>
       </div>
 
+      {vetLink && (
+        <div style={{ background: C.goldBg, border: "1px solid " + C.gold, borderRadius: 10, padding: "12px 14px", marginBottom: 12 }}>
+          <div style={{ fontSize: 12, fontWeight: 700, color: C.navy, marginBottom: 4 }}>Vet link (send to your vet - they submit prescriptions you then confirm):</div>
+          <div style={{ fontSize: 12, color: C.blue, wordBreak: "break-all" }}>{vetLink}</div>
+          <div style={{ fontSize: 11, color: C.green, marginTop: 4 }}>Copied to clipboard</div>
+        </div>
+      )}
       {pendingVet.length > 0 && (
         <div style={{ background: C.amberBg, border: "1.5px solid " + C.amber, borderRadius: 12, padding: "14px 16px", marginBottom: 16 }}>
           <div style={{ fontSize: 13, fontWeight: 800, color: C.amber, marginBottom: 10, textTransform: "uppercase", letterSpacing: 0.5 }}>
