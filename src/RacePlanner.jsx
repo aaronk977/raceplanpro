@@ -39,7 +39,7 @@ async function getAITake(horse, race) {
   return JSON.parse(txt.slice(s, e + 1));
 }
 
-function RacePlanner({ horses, setHorses }) {
+function RacePlanner({ horses, setHorses, settings }) {
   var parseErrorState = useState(""); var parseError = parseErrorState[0]; var setParseError = parseErrorState[1];
   var racesState = useState([]);
   var races = racesState[0]; var setRaces = racesState[1];
