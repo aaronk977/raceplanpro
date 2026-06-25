@@ -129,7 +129,13 @@ function App() {
       setAppLoading(false);
     });
     var listener = supabase.auth.onAuthStateChange(function(event, session) {
-      setUser(session ? session.user : null);
+      var newUser = session ? session.user : null;
+      setUser(function(prev) {
+        var prevId = prev ? prev.id : null;
+        var newId = newUser ? newUser.id : null;
+        if (prevId === newId) return prev; // same user - keep same reference, no re-render/reload
+        return newUser;
+      });
     });
     return function() { listener.data.subscription.unsubscribe(); };
   }, []);
