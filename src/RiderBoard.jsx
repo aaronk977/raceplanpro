@@ -127,6 +127,12 @@ function RiderBoard({ token }) {
                 </button>
               </div>
 
+              {myRow && myRow.note && (
+                <div style={{ background: C.goldBg, border: "1px solid " + C.gold, borderRadius: 10, padding: "12px 14px", marginBottom: 12 }}>
+                  <div style={{ fontSize: 11, fontWeight: 700, color: C.navy, marginBottom: 4, textTransform: "uppercase", letterSpacing: 0.5 }}>Note from the yard</div>
+                  <div style={{ fontSize: 14, color: C.text }}>{myRow.note}</div>
+                </div>
+              )}
               {lotsArr.map(function(lot) {
                 var horse = (myRow && myRow.lots && myRow.lots[lot]) || "";
                 return (
