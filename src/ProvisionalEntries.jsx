@@ -1,4 +1,4 @@
-import React, { useState } from "react";
+import React, { useState, useEffect } from "react";
 import { Btn, Tag, Silk, C, daysUntil } from "./shared";
 
 // Provisional Entries - REDESIGNED
@@ -7,7 +7,9 @@ import { Btn, Tag, Silk, C, daysUntil } from "./shared";
 // entry showing medication start/finish dates. All entries live here, not on paper.
 
 function ProvisionalEntries({ horses, setHorses, settings }) {
-  var racesState = useState([]);
+  var racesState = useState(function() {
+    try { var saved = localStorage.getItem("rpp_provisional_races"); return saved ? JSON.parse(saved) : []; } catch(e) { return []; }
+  });
   var provisionalRaces = racesState[0]; var setProvisionalRaces = racesState[1];
   var pasteState = useState("");
   var pasteText = pasteState[0]; var setPasteText = pasteState[1];
@@ -17,6 +19,10 @@ function ProvisionalEntries({ horses, setHorses, settings }) {
   var fetchStatus = fetchStatusState[0]; var setFetchStatus = fetchStatusState[1];
   var pickRaceState = useState(null);
   var pickForRace = pickRaceState[0]; var setPickForRace = pickRaceState[1];
+
+  useEffect(function() {
+    try { localStorage.setItem("rpp_provisional_races", JSON.stringify(provisionalRaces)); } catch(e) {}
+  }, [provisionalRaces]);
 
   var defaultMeds = [
     { name: "Peptizole", courseDays: 12, withdrawalDays: 4 },
@@ -42,6 +48,21 @@ function ProvisionalEntries({ horses, setHorses, settings }) {
       }
     }
     return races;
+  }
+
+  // All provisional entries across every horse, grouped by race - always visible
+  function allEntriesGrouped() {
+    var groups = {};
+    activeHorses.forEach(function(h) {
+      (h.provisionalEntries || []).forEach(function(e) {
+        var key = (e.raceName || "Race") + "|" + (e.date || "");
+        if (!groups[key]) groups[key] = { raceName: e.raceName || "Race", venue: e.venue || "", date: e.date || "", discipline: e.discipline || "", grade: e.grade || "", horses: [] };
+        groups[key].horses.push({ horse: h, entry: e });
+      });
+    });
+    var arr = Object.keys(groups).map(function(k) { return groups[k]; });
+    arr.sort(function(a, b) { return (a.date || "").localeCompare(b.date || ""); });
+    return arr;
   }
 
   function parseProvisional() {
@@ -118,6 +139,18 @@ function ProvisionalEntries({ horses, setHorses, settings }) {
     setPickForRace(null);
   }
 
+  // Collect every provisional entry across all horses, newest race date first
+  function allEntries() {
+    var list = [];
+    activeHorses.forEach(function(h) {
+      (h.provisionalEntries || []).forEach(function(e) {
+        list.push({ horse: h, entry: e });
+      });
+    });
+    list.sort(function(a, b) { return (a.entry.date || "").localeCompare(b.entry.date || ""); });
+    return list;
+  }
+
   function removeEntry(horseId, entryId) {
     setHorses(function(prev) {
       return prev.map(function(h) {
@@ -158,6 +191,92 @@ function ProvisionalEntries({ horses, setHorses, settings }) {
         <Btn onClick={function() { setShowPaste(!showPaste); }}>{showPaste ? "Close" : "Paste Races"}</Btn>
       </div>
 
+      {(function() {
+        var ents = allEntries();
+        if (ents.length === 0) return null;
+        var today0 = new Date(); today0.setHours(0, 0, 0, 0);
+        var meds0 = (settings && settings.medications) || defaultMeds;
+        return (
+          <div style={{ background: C.navy, borderRadius: 12, padding: "16px 18px", marginBottom: 16 }}>
+            <div style={{ fontSize: 13, fontWeight: 800, color: "#fff", marginBottom: 12, display: "flex", alignItems: "center", gap: 6 }}>
+              <span>{"\ud83c\udfaf"}</span> Your provisional entries ({ents.length})
+            </div>
+            {ents.map(function(en) {
+              var rd = en.entry.date ? new Date(en.entry.date + "T12:00:00") : null;
+              var pretty = rd ? rd.toLocaleDateString("en-IE", { weekday: "short", day: "numeric", month: "short" }) : "";
+              var cards = en.entry.date ? getMedCards(en.entry.date, meds0, today0) : [];
+              return (
+                <div key={en.entry.id} style={{ background: "rgba(255,255,255,0.06)", borderRadius: 10, padding: "10px 12px", marginBottom: 8 }}>
+                  <div style={{ display: "flex", alignItems: "center", gap: 8, flexWrap: "wrap" }}>
+                    <Silk silk={en.horse.silk} size={24} />
+                    <span style={{ fontSize: 14, fontWeight: 800, color: "#fff" }}>{en.horse.name}</span>
+                    <span style={{ fontSize: 12, color: "rgba(255,255,255,0.6)" }}>{en.entry.raceName || "Race"}</span>
+                    <span style={{ fontSize: 11, color: C.gold, fontWeight: 700 }}>{[en.entry.venue, pretty].filter(Boolean).join(" - ")}</span>
+                    <button onClick={function() { removeEntry(en.horse.id, en.entry.id); }}
+                      style={{ marginLeft: "auto", fontSize: 11, fontWeight: 700, padding: "4px 9px", borderRadius: 6, border: "none", background: "rgba(255,255,255,0.1)", color: "#fff", cursor: "pointer" }}>
+                      Remove
+                    </button>
+                  </div>
+                  {cards.length > 0 && (
+                    <div style={{ display: "flex", gap: 6, flexWrap: "wrap", marginTop: 8 }}>
+                      {cards.map(function(card) {
+                        return (
+                          <span key={card.key} style={{ fontSize: 11, padding: "3px 8px", borderRadius: 20, background: card.urgent ? "rgba(239,68,68,0.25)" : "rgba(255,255,255,0.1)", color: card.urgent ? "#fca5a5" : "rgba(255,255,255,0.85)", fontWeight: 600 }}>
+                            {card.medName + ": " + card.startStr + " - " + card.finishStr}
+                          </span>
+                        );
+                      })}
+                    </div>
+                  )}
+                </div>
+              );
+            })}
+          </div>
+        );
+      })()}
+
+      {(function() {
+        var grouped = allEntriesGrouped();
+        if (grouped.length === 0) return null;
+        return (
+          <div style={{ background: C.goldBg, border: "1.5px solid " + C.gold, borderRadius: 12, padding: "14px 16px", marginBottom: 16 }}>
+            <div style={{ fontSize: 13, fontWeight: 800, color: C.navy, marginBottom: 10, textTransform: "uppercase", letterSpacing: 0.5 }}>Your provisional entries</div>
+            {grouped.map(function(g) {
+              var raceDate = g.date ? new Date(g.date + "T12:00:00") : null;
+              var prettyDate = raceDate ? raceDate.toLocaleDateString("en-IE", { weekday: "short", day: "numeric", month: "short" }) : "";
+              var medCards = g.date ? getMedCards(g.date, meds, today) : [];
+              return (
+                <div key={g.raceName + g.date} style={{ background: C.card, border: "1px solid " + C.border, borderRadius: 10, padding: "10px 12px", marginBottom: 8 }}>
+                  <div style={{ fontSize: 14, fontWeight: 800, color: C.navy }}>{g.raceName}</div>
+                  <div style={{ fontSize: 11, color: C.textMid, marginTop: 2 }}>{[g.venue, prettyDate, g.discipline, g.grade].filter(Boolean).join("  -  ")}</div>
+                  {g.horses.map(function(en) {
+                    return (
+                      <div key={en.entry.id} style={{ display: "flex", alignItems: "center", gap: 10, padding: "8px 0", flexWrap: "wrap", borderTop: "1px solid " + C.cardOff }}>
+                        <Silk silk={en.horse.silk} size={26} />
+                        <span style={{ fontSize: 14, fontWeight: 700, color: C.text }}>{en.horse.name}</span>
+                        <div style={{ display: "flex", gap: 6, flexWrap: "wrap", flex: 1 }}>
+                          {medCards.map(function(card) {
+                            return (
+                              <span key={card.key} style={{ fontSize: 11, padding: "3px 8px", borderRadius: 20, background: card.urgent ? C.red + "15" : C.green + "12", color: card.urgent ? C.red : C.green, fontWeight: 600 }}>
+                                {card.medName + ": " + card.startStr + " - " + card.finishStr}
+                              </span>
+                            );
+                          })}
+                        </div>
+                        <button onClick={function() { removeEntry(en.horse.id, en.entry.id); }}
+                          style={{ fontSize: 11, fontWeight: 700, padding: "5px 10px", borderRadius: 7, border: "1px solid " + C.border, background: C.card, color: C.red, cursor: "pointer" }}>
+                          Remove
+                        </button>
+                      </div>
+                    );
+                  })}
+                </div>
+              );
+            })}
+          </div>
+        );
+      })()}
+
       {showPaste && (
         <div style={{ background: C.card, border: "1px solid " + C.border, borderRadius: 12, padding: "16px", marginBottom: 16 }}>
           <div style={{ fontSize: 13, fontWeight: 700, color: C.textMid, marginBottom: 8 }}>Paste the provisional races text from the HRI PDF:</div>
@@ -172,7 +291,7 @@ function ProvisionalEntries({ horses, setHorses, settings }) {
         </div>
       )}
 
-      {sortedRaces.length === 0 && !showPaste && (
+      {sortedRaces.length === 0 && !showPaste && allEntriesGrouped().length === 0 && (
         <div style={{ background: C.card, border: "1.5px dashed " + C.border, borderRadius: 12, padding: "40px 20px", textAlign: "center" }}>
           <div style={{ fontSize: 15, fontWeight: 700, color: C.text, marginBottom: 6 }}>No races listed yet</div>
           <div style={{ fontSize: 13, color: C.textMid, marginBottom: 16 }}>Paste this week's provisional races to get started.</div>
