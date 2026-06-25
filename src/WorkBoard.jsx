@@ -154,6 +154,17 @@ function WorkBoard({ horses, user, supabase, settings }) {
     });
   }
 
+  function setRiderNote(riderIdx, note) {
+    setBoard(function(b) {
+      var nb = Object.assign({}, b);
+      nb.riders = b.riders.map(function(r, i) {
+        if (i !== riderIdx) return r;
+        return Object.assign({}, r, { note: note });
+      });
+      return nb;
+    });
+  }
+
   function assignHorse(riderIdx, lotNum, horseName) {
     setBoard(function(b) {
       var nb = Object.assign({}, b);
@@ -228,6 +239,8 @@ function WorkBoard({ horses, user, supabase, settings }) {
                 return <th key={lot} style={{ padding: "12px 14px", textAlign: "left", color: C.gold, fontSize: 12, fontWeight: 700, textTransform: "uppercase", letterSpacing: 0.5, minWidth: 120 }}>{"Lot " + lot}</th>;
               })}
               <th style={{ width: 40 }}></th>
+            <th style={{ padding: "12px 14px", textAlign: "left", color: C.gold, fontSize: 12, fontWeight: 700, textTransform: "uppercase", letterSpacing: 0.5, minWidth: 160 }}>Note</th>
+              <th style={{ width: 30 }}></th>
             </tr>
           </thead>
           <tbody>
@@ -246,6 +259,11 @@ function WorkBoard({ horses, user, supabase, settings }) {
                       </td>
                     );
                   })}
+                  <td style={{ padding: "6px 8px", minWidth: 160 }}>
+                    <input type="text" value={rider.note || ""} onChange={function(e) { setRiderNote(ri, e.target.value); }}
+                      placeholder="Note for rider..."
+                      style={{ width: "100%", padding: "8px 10px", border: "1px solid " + C.border, borderRadius: 6, fontSize: 12, color: C.text, background: C.cardOff }} />
+                  </td>
                   <td style={{ padding: "6px 4px", textAlign: "center" }}>
                     <button onClick={function() { removeRider(ri); }} style={{ background: "none", border: "none", color: C.red, cursor: "pointer", fontSize: 16 }}>{"\u00d7"}</button>
                   </td>
