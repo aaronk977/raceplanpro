@@ -41,9 +41,8 @@ function DailySummary({ horses, medLogs, weights, wbEntries, settings, user, sup
       .in("outcome", ["Lame", "Slight Lameness", "Needs Vet"])
       .order("created_at", { ascending: false }).limit(20)
       .then(function(res) { if (res.data) setLameTrotters(res.data); });
-    supabase.from("galloping").select("*").eq("user_id", user.id)
-      .in("outcome", ["Lame", "Slight Lameness", "Needs Vet"])
-      .order("created_at", { ascending: false }).limit(20)
+    supabase.from("gallops").select("*").eq("user_id", user.id).eq("date", selectedDate)
+      .order("created_at", { ascending: false })
       .then(function(res) { if (res.data) setLameGallopers(res.data); });
     supabase.from("reminders").select("*").eq("user_id", user.id).eq("reminder_date", selectedDate)
       .then(function(res) { if (res.data) setDayReminders(res.data); });
@@ -324,20 +323,21 @@ function DailySummary({ horses, medLogs, weights, wbEntries, settings, user, sup
         </div>
       )}
       {lameGallopers.length > 0 && (
-        <div style={{ background: C.red + "12", border: "1.5px solid " + C.red, borderRadius: 12, padding: "14px 16px", marginBottom: 16 }}>
-          <div style={{ fontSize: 13, fontWeight: 800, color: C.red, marginBottom: 8, display: "flex", alignItems: "center", gap: 6 }}>
-            <span>{"\u26a0"}</span> Gallop concerns reported
+        <div style={{ background: C.green + "12", border: "1.5px solid " + C.green, borderRadius: 12, padding: "14px 16px", marginBottom: 16 }}>
+          <div style={{ fontSize: 13, fontWeight: 800, color: C.green, marginBottom: 8, display: "flex", alignItems: "center", gap: 6 }}>
+            <span>{"\ud83c\udfc7"}</span> Gallop work today
           </div>
           {lameGallopers.map(function(t, i) {
             var horseName = t.horse_name || "";
-            (horses || []).forEach(function(h) { if (h.id === t.horse_id || h.id === t.horseId) horseName = h.name; });
+            (horses || []).forEach(function(h) { if (h.id === t.horse_id) horseName = h.name; });
             if (!horseName) horseName = "Horse";
             return (
-              <div key={t.id || i} style={{ display: "flex", alignItems: "center", gap: 8, padding: "5px 0" }}>
-                <span style={{ width: 7, height: 7, borderRadius: "50%", background: C.red, flexShrink: 0 }} />
+              <div key={t.id || i} style={{ display: "flex", alignItems: "center", gap: 8, padding: "5px 0", flexWrap: "wrap" }}>
+                <span style={{ width: 7, height: 7, borderRadius: "50%", background: C.green, flexShrink: 0 }} />
                 <span style={{ fontSize: 14, fontWeight: 700, color: C.text }}>{horseName}</span>
-                <span style={{ fontSize: 12, color: C.red, fontWeight: 600 }}>{t.outcome || "Concern"}</span>
-                {t.notes && <span style={{ fontSize: 12, color: C.textMid }}>{t.notes}</span>}
+                {t.work && <span style={{ fontSize: 12, color: C.textMid }}>{t.work}</span>}
+                {t.location && <span style={{ fontSize: 12, color: C.textMid }}>{"@ " + t.location}</span>}
+                {t.comment && <span style={{ fontSize: 12, color: C.textMid, fontStyle: "italic" }}>{t.comment}</span>}
               </div>
             );
           })}
