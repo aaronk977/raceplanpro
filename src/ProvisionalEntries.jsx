@@ -25,11 +25,30 @@ function ProvisionalEntries({ horses, setHorses, settings }) {
 
   var activeHorses = (horses || []).filter(function(h) { return h.status !== "Retired" && h.status !== "Sold"; });
 
+  // If the AI response is cut off mid-list, recover every complete race object from it
+  function salvageRaces(str) {
+    var races = [];
+    var depth = 0; var start = -1;
+    for (var i = 0; i < str.length; i++) {
+      var ch = str[i];
+      if (ch === "{") { if (depth === 0) start = i; depth++; }
+      else if (ch === "}") {
+        depth--;
+        if (depth === 0 && start >= 0) {
+          var chunk = str.slice(start, i + 1);
+          try { races.push(JSON.parse(chunk)); } catch(e) {}
+          start = -1;
+        }
+      }
+    }
+    return races;
+  }
+
   function parseProvisional() {
     if (!pasteText.trim()) return;
     setFetchStatus("fetching");
     var body = JSON.stringify({
-      model: "claude-sonnet-4-6", max_tokens: 4000,
+      model: "claude-sonnet-4-6", max_tokens: 8000,
       messages: [{ role: "user", content: "Parse every race from this HRI provisional summary text into a JSON array. Return ONLY a raw JSON array, no other text. Each item needs: id, raceName, venue, date (YYYY-MM-DD), discipline, distanceFurlongs, minAge, maxAge, minRating, maxRating, sex, grade, prizeMoney. Text:\n\n" + pasteText }]
     });
     fetch("/api/claude", {
@@ -40,13 +59,23 @@ function ProvisionalEntries({ horses, setHorses, settings }) {
     .then(function(data) {
       var text = data.content && data.content[0] && data.content[0].text;
       if (text) {
+        var clean = text.replace(/```json|```/g, "").trim();
+        var parsed = null;
         try {
-          var clean = text.replace(/```json|```/g, "").trim();
-          var parsed = JSON.parse(clean);
-          if (Array.isArray(parsed)) { setProvisionalRaces(parsed); }
-        } catch(e) { console.error("Parse error", e); setFetchStatus("error"); return; }
+          parsed = JSON.parse(clean);
+        } catch(e) {
+          // Response may have been cut off (truncated). Salvage every COMPLETE race object.
+          parsed = salvageRaces(clean);
+        }
+        if (parsed && Array.isArray(parsed) && parsed.length > 0) {
+          setProvisionalRaces(parsed);
+          setFetchStatus(""); setShowPaste(false); setPasteText("");
+        } else {
+          setFetchStatus("error");
+        }
+        return;
       }
-      setFetchStatus(""); setShowPaste(false); setPasteText("");
+      setFetchStatus("error");
     }).catch(function() { setFetchStatus("error"); });
   }
 
