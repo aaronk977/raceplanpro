@@ -389,13 +389,13 @@ function RacePlanner({ horses, setHorses, settings }) {
                     <span style={{ fontSize: 12, color: C.textMid }}>none eligible</span>
                   )}
                   {eligibleHorses.length > 0 && (
-                    <span style={{ fontSize: 14, color: C.textMid }}>{isExpanded ? "^" : "v"}</span>
+                    <span style={{ fontSize: 14, color: C.textMid }}>{expanded[race.id] ? "^" : "v"}</span>
                   )}
                 </div>
               </div>
             </div>
 
-            {isExpanded && (
+            {expanded[race.id] && (
               <div style={{ borderTop: "1px solid " + C.border }}>
                 {eligibleHorses.map(function(horse) {
                   var key = k(horse.id, race.id);
